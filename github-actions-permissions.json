@@ -64,8 +64,10 @@
         "kms:EnableKeyRotation",
         "kms:GetKeyRotationStatus",
         "kms:PutKeyPolicy",
+        "kms:GetKeyPolicy",
         "kms:TagResource",
-        "kms:ListResourceTags"
+        "kms:ListResourceTags",
+        "kms:UntagResource"
       ],
       "Resource": "*"
     },
