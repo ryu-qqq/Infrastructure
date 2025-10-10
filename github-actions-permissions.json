@@ -26,51 +26,18 @@
       "Resource": "arn:aws:dynamodb:*:646886795421:table/terraform-lock*"
     },
     {
-      "Sid": "ECRAccess",
+      "Sid": "ECRFullAccess",
       "Effect": "Allow",
       "Action": [
-        "ecr:GetAuthorizationToken",
-        "ecr:BatchCheckLayerAvailability",
-        "ecr:GetDownloadUrlForLayer",
-        "ecr:BatchGetImage",
-        "ecr:PutImage",
-        "ecr:InitiateLayerUpload",
-        "ecr:UploadLayerPart",
-        "ecr:CompleteLayerUpload",
-        "ecr:DescribeRepositories",
-        "ecr:CreateRepository",
-        "ecr:DescribeImages",
-        "ecr:DescribeImageScanFindings",
-        "ecr:PutImageTagMutability",
-        "ecr:PutImageScanningConfiguration",
-        "ecr:PutLifecyclePolicy",
-        "ecr:SetRepositoryPolicy",
-        "ecr:TagResource",
-        "ecr:UntagResource",
-        "ecr:ListTagsForResource"
+        "ecr:*"
       ],
       "Resource": "*"
     },
     {
-      "Sid": "KMSAccess",
+      "Sid": "KMSFullAccess",
       "Effect": "Allow",
       "Action": [
-        "kms:Decrypt",
-        "kms:Encrypt",
-        "kms:GenerateDataKey",
-        "kms:DescribeKey",
-        "kms:CreateGrant",
-        "kms:RetireGrant",
-        "kms:CreateKey",
-        "kms:CreateAlias",
-        "kms:ListAliases",
-        "kms:EnableKeyRotation",
-        "kms:GetKeyRotationStatus",
-        "kms:PutKeyPolicy",
-        "kms:GetKeyPolicy",
-        "kms:TagResource",
-        "kms:ListResourceTags",
-        "kms:UntagResource"
+        "kms:*"
       ],
       "Resource": "*"
     },
