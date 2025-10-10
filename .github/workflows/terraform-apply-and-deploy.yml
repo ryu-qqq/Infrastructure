@@ -40,29 +40,42 @@ jobs:
           role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
           aws-region: ${{ env.AWS_REGION }}
 
-      - name: Clean up orphaned KMS resources
+      - name: Clean up orphaned resources
         run: |
-          echo "🧹 Checking for orphaned KMS resources..."
+          echo "🧹 Checking for orphaned resources..."
+
+          # Clean up ECR repository
+          echo "📦 Checking for orphaned ECR repository..."
+          if aws ecr describe-repositories --repository-names ${{ env.ECR_REPOSITORY }} --region ${{ env.AWS_REGION }} &>/dev/null; then
+            echo "🗑️  Deleting orphaned ECR repository..."
+            aws ecr delete-repository --repository-name ${{ env.ECR_REPOSITORY }} --region ${{ env.AWS_REGION }} --force
+            echo "✓ ECR repository deleted"
+          else
+            echo "✓ No orphaned ECR repository"
+          fi
+
+          # Clean up KMS resources
+          echo "🔐 Checking for orphaned KMS resources..."
           ALIAS_NAME="alias/ecr-atlantis"
 
-          # Get the target key ID if alias exists
           TARGET_KEY_ID=$(aws kms list-aliases --region ${{ env.AWS_REGION }} \
             --query "Aliases[?AliasName=='$ALIAS_NAME'].TargetKeyId" \
             --output text 2>/dev/null || echo "")
 
           if [ ! -z "$TARGET_KEY_ID" ]; then
-            echo "📋 Found orphaned alias pointing to key: $TARGET_KEY_ID"
             echo "🗑️  Deleting KMS alias..."
             aws kms delete-alias --alias-name $ALIAS_NAME --region ${{ env.AWS_REGION }}
 
-            echo "🗑️  Scheduling KMS key for deletion..."
+            echo "🗑️  Scheduling KMS key for deletion (7 days)..."
             aws kms schedule-key-deletion --key-id $TARGET_KEY_ID \
               --pending-window-in-days 7 --region ${{ env.AWS_REGION }}
 
-            echo "✅ Orphaned resources cleaned up"
+            echo "✓ KMS resources cleaned up"
           else
-            echo "✓ No orphaned resources found"
+            echo "✓ No orphaned KMS resources"
           fi
+
+          echo "✅ Cleanup complete"
 
       - name: Terraform Init
         working-directory: terraform/atlantis
