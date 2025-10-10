@@ -2,7 +2,7 @@
 
 # ECS Task Execution Role
 # This role is used by ECS to pull container images and publish logs
-resource "aws_iam_role" "ecs_task_execution" {
+resource "aws_iam_role" "ecs-task-execution" {
   name = "atlantis-ecs-task-execution-${var.environment}"
 
   assume_role_policy = jsonencode({
@@ -29,15 +29,15 @@ resource "aws_iam_role" "ecs_task_execution" {
 }
 
 # Attach AWS managed policy for ECS task execution
-resource "aws_iam_role_policy_attachment" "ecs_task_execution_policy" {
-  role       = aws_iam_role.ecs_task_execution.name
+resource "aws_iam_role_policy_attachment" "ecs-task-execution-policy" {
+  role       = aws_iam_role.ecs-task-execution.name
   policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy"
 }
 
 # Additional policy for KMS decryption (ECR permissions already in AmazonECSTaskExecutionRolePolicy)
-resource "aws_iam_role_policy" "ecs_task_execution_kms" {
+resource "aws_iam_role_policy" "ecs-task-execution-kms" {
   name = "atlantis-ecs-task-execution-kms"
-  role = aws_iam_role.ecs_task_execution.id
+  role = aws_iam_role.ecs-task-execution.id
 
   policy = jsonencode({
     Version = "2012-10-17"
@@ -56,7 +56,7 @@ resource "aws_iam_role_policy" "ecs_task_execution_kms" {
 
 # ECS Task Role
 # This role is used by the Atlantis container for AWS API operations
-resource "aws_iam_role" "ecs_task" {
+resource "aws_iam_role" "ecs-task" {
   name = "atlantis-ecs-task-${var.environment}"
 
   assume_role_policy = jsonencode({
@@ -83,9 +83,9 @@ resource "aws_iam_role" "ecs_task" {
 }
 
 # Policy for Atlantis to manage Terraform state and resources
-resource "aws_iam_role_policy" "atlantis_terraform_operations" {
+resource "aws_iam_role_policy" "atlantis-terraform-operations" {
   name = "atlantis-terraform-operations"
-  role = aws_iam_role.ecs_task.id
+  role = aws_iam_role.ecs-task.id
 
   policy = jsonencode({
     Version = "2012-10-17"
@@ -150,9 +150,9 @@ resource "aws_iam_role_policy" "atlantis_terraform_operations" {
 }
 
 # CloudWatch Logs policy for task role
-resource "aws_iam_role_policy" "atlantis_cloudwatch_logs" {
+resource "aws_iam_role_policy" "atlantis-cloudwatch-logs" {
   name = "atlantis-cloudwatch-logs"
-  role = aws_iam_role.ecs_task.id
+  role = aws_iam_role.ecs-task.id
 
   policy = jsonencode({
     Version = "2012-10-17"
@@ -173,10 +173,10 @@ resource "aws_iam_role_policy" "atlantis_cloudwatch_logs" {
 # Outputs
 output "atlantis_ecs_task_execution_role_arn" {
   description = "The ARN of the ECS task execution role"
-  value       = aws_iam_role.ecs_task_execution.arn
+  value       = aws_iam_role.ecs-task-execution.arn
 }
 
 output "atlantis_ecs_task_role_arn" {
   description = "The ARN of the ECS task role"
-  value       = aws_iam_role.ecs_task.arn
+  value       = aws_iam_role.ecs-task.arn
 }
