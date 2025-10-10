@@ -15,7 +15,7 @@ variable "aws_region" {
 variable "atlantis_version" {
   description = "Atlantis version to deploy"
   type        = string
-  default     = "latest"
+  default     = "v0.30.0"
 }
 
 # Required Tags (Governance Standard)
@@ -47,6 +47,49 @@ variable "service" {
   description = "Service name this resource belongs to"
   type        = string
   default     = "atlantis"
+}
+
+# ECS Task Configuration
+variable "atlantis_cpu" {
+  description = "CPU units for the Atlantis task (256, 512, 1024, 2048, 4096)"
+  type        = number
+  default     = 512
+}
+
+variable "atlantis_memory" {
+  description = "Memory (MiB) for the Atlantis task"
+  type        = number
+  default     = 1024
+}
+
+variable "atlantis_container_port" {
+  description = "Port the Atlantis container listens on"
+  type        = number
+  default     = 4141
+}
+
+variable "atlantis_repo_allowlist" {
+  description = "Allowed repositories for Atlantis webhooks (e.g., github.com/your-org/*)"
+  type        = string
+  default     = "github.com/ryu-qqq/*"
+}
+
+variable "atlantis_url" {
+  description = "The URL that Atlantis will be accessible at"
+  type        = string
+  default     = "https://atlantis.example.com"
+}
+
+variable "terraform_state_bucket_prefix" {
+  description = "Prefix for Terraform state S3 bucket names"
+  type        = string
+  default     = "terraform-state"
+}
+
+variable "terraform_state_lock_table" {
+  description = "DynamoDB table name for Terraform state locking"
+  type        = string
+  default     = "terraform-state-lock"
 }
 
 # Locals for common tags
