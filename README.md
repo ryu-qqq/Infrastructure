@@ -6,8 +6,9 @@ Infrastructure as Code (IaC) repository for managing cloud infrastructure with T
 
 ```
 infrastructure/
-├── .claude/           # Claude Code session rules
-│   └── INFRASTRUCTURE_RULES.md # Governance enforcement for AI
+├── .claude/           # Claude Code session configuration
+│   ├── hooks.json              # Session hooks for automatic validation
+│   └── INFRASTRUCTURE_RULES.md # Governance rules documentation
 ├── terraform/          # Terraform configurations
 │   └── atlantis/      # Atlantis server infrastructure
 │       ├── ecr.tf     # ECR repository for Docker images
@@ -20,7 +21,8 @@ infrastructure/
 │   ├── validators/    # Governance validation scripts
 │   │   ├── check-tags.sh       # Required tags validator
 │   │   ├── check-encryption.sh # KMS encryption validator
-│   │   └── check-naming.sh     # Naming conventions validator
+│   │   ├── check-naming.sh     # Naming conventions validator
+│   │   └── validate-terraform-file.sh # Single file validator for Claude hooks
 │   ├── hooks/         # Git hooks templates
 │   │   ├── pre-commit  # Pre-commit validation
 │   │   └── pre-push    # Pre-push validation
@@ -78,17 +80,29 @@ Run validators manually anytime:
 ./scripts/validators/check-*.sh
 ```
 
-### 3. Claude Session Rules (For AI Development)
+### 3. Claude Session Hooks (For AI Development)
 
-**When working with Claude Code on this project**, Claude automatically follows governance rules from the start:
+**When working with Claude Code on this project**, governance validation runs automatically during development:
 
-Claude session rules are defined in `.claude/INFRASTRUCTURE_RULES.md` and enforce:
-- ✅ **Auto-apply** `merge(local.required_tags)` pattern for all resources
-- ✅ **Auto-use** KMS encryption (never AES256)
-- ✅ **Auto-enforce** naming conventions (kebab-case/snake_case)
-- ✅ **Auto-prevent** hardcoded secrets and passwords
+**Session Hooks** (`.claude/hooks.json`):
+- 🔍 **After Write/Edit**: Validates all `.tf` files against governance rules
+- 🎯 **Session Start**: Displays governance reminder
+- 💡 **On Terraform work**: Reminds about required tags pattern
 
-This ensures compliance **before** code is even written, with Git hooks as the final safety net.
+**Validation Script** (`scripts/validators/validate-terraform-file.sh`):
+- ✅ Required tags pattern (`merge(local.required_tags)`)
+- ✅ KMS encryption (no AES256)
+- ✅ Naming conventions (kebab-case/snake_case)
+- ✅ No hardcoded secrets
+
+**Test validation manually**:
+```bash
+./scripts/validators/validate-terraform-file.sh terraform/atlantis/ecr.tf
+```
+
+This creates **two-layer defense**:
+1. **Claude hooks**: Validate immediately after code changes
+2. **Git hooks**: Final safety net before commit/push
 
 ### 4. Governance Standards
 
