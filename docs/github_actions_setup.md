@@ -218,17 +218,14 @@ Repository Settings > Secrets and variables > Actions에서 설정:
 ### 태그 사용 예시
 
 ```bash
-# Production 배포 (권장)
-kubectl set image deployment/atlantis \
-  atlantis=123456789012.dkr.ecr.ap-northeast-2.amazonaws.com/atlantis:a1b2c3d
+# ECS Task Definition에서 사용 (권장: Git SHA)
+"image": "123456789012.dkr.ecr.ap-northeast-2.amazonaws.com/atlantis:a1b2c3d"
 
-# Development 배포
-kubectl set image deployment/atlantis \
-  atlantis=123456789012.dkr.ecr.ap-northeast-2.amazonaws.com/atlantis:latest
+# Development/Staging 환경 (latest)
+"image": "123456789012.dkr.ecr.ap-northeast-2.amazonaws.com/atlantis:latest"
 
-# 특정 시점으로 롤백
-kubectl set image deployment/atlantis \
-  atlantis=123456789012.dkr.ecr.ap-northeast-2.amazonaws.com/atlantis:20250110-143022
+# 특정 시점으로 롤백 (timestamp)
+"image": "123456789012.dkr.ecr.ap-northeast-2.amazonaws.com/atlantis:20250110-143022"
 ```
 
 ## 워크플로우 테스트
@@ -366,5 +363,5 @@ Error: failed to solve: failed to compute cache key
 3. ✅ PR 생성하여 Plan 테스트
 4. ✅ PR 머지하여 Deploy 테스트
 5. ✅ ECR 이미지 확인
-6. 🔄 Kubernetes/ECS 배포 매니페스트 업데이트
+6. 🔄 ECS Task Definition 업데이트 (이미지 태그 반영)
 7. 🔄 모니터링 및 알림 설정
