@@ -6,6 +6,8 @@ Infrastructure as Code (IaC) repository for managing cloud infrastructure with T
 
 ```
 infrastructure/
+├── .claude/           # Claude Code session rules
+│   └── INFRASTRUCTURE_RULES.md # Governance enforcement for AI
 ├── terraform/          # Terraform configurations
 │   └── atlantis/      # Atlantis server infrastructure
 │       ├── ecr.tf     # ECR repository for Docker images
@@ -76,9 +78,22 @@ Run validators manually anytime:
 ./scripts/validators/check-*.sh
 ```
 
-### 3. Governance Standards
+### 3. Claude Session Rules (For AI Development)
+
+**When working with Claude Code on this project**, Claude automatically follows governance rules from the start:
+
+Claude session rules are defined in `.claude/INFRASTRUCTURE_RULES.md` and enforce:
+- ✅ **Auto-apply** `merge(local.required_tags)` pattern for all resources
+- ✅ **Auto-use** KMS encryption (never AES256)
+- ✅ **Auto-enforce** naming conventions (kebab-case/snake_case)
+- ✅ **Auto-prevent** hardcoded secrets and passwords
+
+This ensures compliance **before** code is even written, with Git hooks as the final safety net.
+
+### 4. Governance Standards
 
 All infrastructure code must follow the governance standards defined in:
+- `.claude/INFRASTRUCTURE_RULES.md` - Claude session enforcement rules
 - `docs/infrastructure_governance.md` - Required tags, KMS strategy, naming rules
 - `docs/infrastructure_pr.md` - PR workflow and gate checklist
 
