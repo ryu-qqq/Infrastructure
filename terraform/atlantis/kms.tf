@@ -8,15 +8,13 @@ resource "aws_kms_key" "ecr" {
   deletion_window_in_days = 30
   enable_key_rotation     = true
 
-  tags = {
-    Name        = "ecr-atlantis"
-    Environment = var.environment
-    ManagedBy   = "terraform"
-    Project     = "infrastructure"
-    Component   = "atlantis"
-    Service     = "atlantis"
-    DataClass   = "confidential"
-  }
+  tags = merge(
+    local.required_tags,
+    {
+      Name      = "ecr-atlantis"
+      Component = "atlantis"
+    }
+  )
 }
 
 resource "aws_kms_alias" "ecr" {

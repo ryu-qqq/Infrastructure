@@ -15,13 +15,72 @@ infrastructure/
 ├── docker/            # Docker configurations
 │   └── Dockerfile     # Atlantis custom image
 ├── scripts/           # Automation scripts
-│   └── build-and-push.sh # ECR build and push script
+│   ├── validators/    # Governance validation scripts
+│   │   ├── check-tags.sh       # Required tags validator
+│   │   ├── check-encryption.sh # KMS encryption validator
+│   │   └── check-naming.sh     # Naming conventions validator
+│   ├── hooks/         # Git hooks templates
+│   │   ├── pre-commit  # Pre-commit validation
+│   │   └── pre-push    # Pre-push validation
+│   ├── build-and-push.sh # ECR build and push script
+│   └── setup-hooks.sh    # Git hooks installer
 ├── docs/              # Documentation
 │   ├── infrastructure_governance.md
 │   ├── infrastructure_notion.md
 │   └── infrastructure_pr.md
 └── README.md         # This file
 ```
+
+## Development Setup
+
+### 1. Install Git Hooks (Governance Validation)
+
+First, install Git hooks for automatic governance validation:
+
+```bash
+./scripts/setup-hooks.sh
+```
+
+This installs:
+- **pre-commit hook**: Fast validation before commits (fmt, secrets, basic checks)
+- **pre-push hook**: Comprehensive validation before push (tags, encryption, naming)
+
+**What gets validated:**
+- ✅ Required tags (Owner, CostCenter, Environment, Lifecycle, DataClass, Service)
+- ✅ KMS encryption (no AES256, customer-managed keys only)
+- ✅ Naming conventions (kebab-case for resources, snake_case for variables)
+- ✅ Terraform formatting and validation
+- ✅ Sensitive information detection
+
+**Bypass (emergency only):**
+```bash
+git commit --no-verify  # Skip pre-commit checks
+git push --no-verify    # Skip pre-push checks
+```
+
+### 2. Manual Validation
+
+Run validators manually anytime:
+
+```bash
+# Check required tags
+./scripts/validators/check-tags.sh
+
+# Check KMS encryption
+./scripts/validators/check-encryption.sh
+
+# Check naming conventions
+./scripts/validators/check-naming.sh
+
+# Run all validations (same as pre-push)
+./scripts/validators/check-*.sh
+```
+
+### 3. Governance Standards
+
+All infrastructure code must follow the governance standards defined in:
+- `docs/infrastructure_governance.md` - Required tags, KMS strategy, naming rules
+- `docs/infrastructure_pr.md` - PR workflow and gate checklist
 
 ## Atlantis ECR Setup
 
@@ -31,6 +90,7 @@ infrastructure/
 - Docker installed and running
 - Terraform >= 1.5.0
 - AWS account with ECR permissions
+- Git hooks installed (see Development Setup above)
 
 ### 1. Create ECR Repository
 
