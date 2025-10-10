@@ -15,6 +15,12 @@ GitHub Actions에서 AWS에 안전하게 접근하기 위해 OIDC(OpenID Connect
 
 ### 1. IAM Identity Provider 생성
 
+**이미 생성되어 있습니다:**
+```
+ARN: arn:aws:iam::646886795421:oidc-provider/token.actions.githubusercontent.com
+```
+
+만약 생성이 안되어 있다면:
 ```bash
 # AWS Console에서:
 # IAM > Identity providers > Add provider
@@ -26,6 +32,10 @@ GitHub Actions에서 AWS에 안전하게 접근하기 위해 OIDC(OpenID Connect
 ### 2. IAM Role 생성
 
 **Trust Policy** (`github-actions-trust-policy.json`):
+
+**중요**: `{GITHUB_ORG}/{REPO_NAME}` 부분을 실제 저장소 경로로 변경하세요.
+예: `ryu-qqq/Infrastructure`
+
 ```json
 {
   "Version": "2012-10-17",
@@ -33,7 +43,7 @@ GitHub Actions에서 AWS에 안전하게 접근하기 위해 OIDC(OpenID Connect
     {
       "Effect": "Allow",
       "Principal": {
-        "Federated": "arn:aws:iam::{AWS_ACCOUNT_ID}:oidc-provider/token.actions.githubusercontent.com"
+        "Federated": "arn:aws:iam::646886795421:oidc-provider/token.actions.githubusercontent.com"
       },
       "Action": "sts:AssumeRoleWithWebIdentity",
       "Condition": {
@@ -41,7 +51,7 @@ GitHub Actions에서 AWS에 안전하게 접근하기 위해 OIDC(OpenID Connect
           "token.actions.githubusercontent.com:aud": "sts.amazonaws.com"
         },
         "StringLike": {
-          "token.actions.githubusercontent.com:sub": "repo:{GITHUB_ORG}/{REPO_NAME}:*"
+          "token.actions.githubusercontent.com:sub": "repo:ryu-qqq/Infrastructure:*"
         }
       }
     }
@@ -125,20 +135,31 @@ GitHub Actions에서 AWS에 안전하게 접근하기 위해 OIDC(OpenID Connect
 
 ### 3. Role 생성 명령어
 
+먼저 위의 Trust Policy와 Permissions Policy를 파일로 저장하세요:
+- `github-actions-trust-policy.json`
+- `github-actions-permissions.json`
+
+그 다음 아래 명령어를 실행:
+
 ```bash
-# Trust policy로 role 생성
+# 1. Trust policy로 role 생성
 aws iam create-role \
   --role-name GitHubActionsRole \
   --assume-role-policy-document file://github-actions-trust-policy.json
 
-# Permissions policy attach
+# 2. Permissions policy attach
 aws iam put-role-policy \
   --role-name GitHubActionsRole \
   --policy-name GitHubActionsPermissions \
   --policy-document file://github-actions-permissions.json
 
-# Role ARN 확인 (GitHub Secrets에 사용)
+# 3. Role ARN 확인 (이 값을 GitHub Secrets에 추가)
 aws iam get-role --role-name GitHubActionsRole --query 'Role.Arn' --output text
+```
+
+**예상 출력 (GitHub Secrets의 AWS_ROLE_ARN 값으로 사용):**
+```
+arn:aws:iam::646886795421:role/GitHubActionsRole
 ```
 
 ## GitHub Secrets 설정
@@ -149,7 +170,14 @@ Repository Settings > Secrets and variables > Actions에서 설정:
 
 | Secret Name | Description | Example |
 |------------|-------------|---------|
-| `AWS_ROLE_ARN` | GitHub Actions가 assume할 IAM Role ARN | `arn:aws:iam::123456789012:role/GitHubActionsRole` |
+| `AWS_ROLE_ARN` | GitHub Actions가 assume할 IAM Role ARN | `arn:aws:iam::646886795421:role/GitHubActionsRole` |
+
+**설정 방법:**
+1. GitHub 저장소 → Settings → Secrets and variables → Actions
+2. "New repository secret" 클릭
+3. Name: `AWS_ROLE_ARN`
+4. Secret: 위에서 생성한 Role ARN 입력
+5. "Add secret" 클릭
 
 ### Optional Variables (Environment Variables)
 
