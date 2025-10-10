@@ -80,6 +80,18 @@ variable "atlantis_url" {
   default     = "https://atlantis.example.com"
 }
 
+variable "terraform_state_bucket_prefix" {
+  description = "Prefix for Terraform state S3 bucket names"
+  type        = string
+  default     = "terraform-state"
+}
+
+variable "terraform_state_lock_table" {
+  description = "DynamoDB table name for Terraform state locking"
+  type        = string
+  default     = "terraform-state-lock"
+}
+
 # Locals for common tags
 locals {
   required_tags = {
