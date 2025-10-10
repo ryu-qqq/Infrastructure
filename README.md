@@ -9,12 +9,17 @@ infrastructure/
 ├── terraform/          # Terraform configurations
 │   └── atlantis/      # Atlantis server infrastructure
 │       ├── ecr.tf     # ECR repository for Docker images
+│       ├── kms.tf     # KMS key for ECR encryption
 │       ├── provider.tf # AWS provider configuration
-│       └── variables.tf # Terraform variables
+│       └── variables.tf # Terraform variables (includes governance tags)
 ├── docker/            # Docker configurations
 │   └── Dockerfile     # Atlantis custom image
 ├── scripts/           # Automation scripts
 │   └── build-and-push.sh # ECR build and push script
+├── docs/              # Documentation
+│   ├── infrastructure_governance.md
+│   ├── infrastructure_notion.md
+│   └── infrastructure_pr.md
 └── README.md         # This file
 ```
 
@@ -40,9 +45,12 @@ terraform apply
 
 This will create:
 - ECR repository named `atlantis`
+- KMS key for ECR encryption (data-class based separation)
+- ECR repository policy (access control for ECS tasks)
 - Lifecycle policy to manage image retention (keep last 10 tagged images)
 - Image scanning on push enabled
-- AES256 encryption enabled
+- KMS encryption with automatic key rotation
+- Governance-compliant tags (Owner, CostCenter, Environment, Lifecycle, DataClass, Service)
 
 ### 2. Build and Push Docker Image
 
@@ -151,6 +159,11 @@ docker push \
 | `environment` | Environment name (dev, staging, prod) | `prod` |
 | `aws_region` | AWS region for resources | `ap-northeast-2` |
 | `atlantis_version` | Atlantis version to deploy | `latest` |
+| `owner` | Team responsible for the resource | `platform-team` |
+| `cost_center` | Cost center for billing | `engineering` |
+| `lifecycle` | Resource lifecycle (permanent/temporary) | `permanent` |
+| `data_class` | Data classification level | `confidential` |
+| `service` | Service name | `atlantis` |
 
 ## Next Steps
 
@@ -197,10 +210,22 @@ terraform init -upgrade
 ## Security Considerations
 
 - **Image Scanning**: Enabled on push to detect vulnerabilities
-- **Encryption**: Images encrypted at rest with AES256
+- **KMS Encryption**: Images encrypted at rest with customer-managed KMS key
+- **Key Rotation**: Automatic key rotation enabled for KMS key
+- **Repository Policy**: Explicit access control for ECS tasks and account principals
 - **Non-root User**: Container runs as `atlantis` user
 - **Lifecycle Policies**: Automatic cleanup of old images
-- **Access Control**: Use IAM policies to restrict ECR access
+- **Governance Tags**: All resources tagged according to organizational standards
+
+## Governance Compliance
+
+This infrastructure follows the organization's governance standards:
+
+- **Required Tags**: All resources include Owner, CostCenter, Environment, Lifecycle, DataClass, Service tags
+- **KMS Strategy**: Data-class based key separation (ECR uses dedicated KMS key)
+- **Access Control**: Least-privilege IAM policies via repository policy
+- **Encryption**: Customer-managed KMS keys instead of AWS-managed keys
+- **Audit Trail**: All changes tracked through Git and Terraform state
 
 ## References
 
