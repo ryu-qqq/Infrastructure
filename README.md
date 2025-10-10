@@ -6,6 +6,10 @@ Infrastructure as Code (IaC) repository for managing cloud infrastructure with T
 
 ```
 infrastructure/
+├── .github/           # GitHub Actions workflows
+│   └── workflows/
+│       ├── terraform-plan.yml           # Terraform plan on PR
+│       └── terraform-apply-and-deploy.yml # Apply & deploy on merge
 ├── .claude/           # Claude Code session configuration
 │   ├── hooks.json              # Session hooks for automatic validation
 │   └── INFRASTRUCTURE_RULES.md # Governance rules documentation
@@ -26,9 +30,10 @@ infrastructure/
 │   ├── hooks/         # Git hooks templates
 │   │   ├── pre-commit  # Pre-commit validation
 │   │   └── pre-push    # Pre-push validation
-│   ├── build-and-push.sh # ECR build and push script
+│   ├── build-and-push.sh # ECR build and push script (manual/local)
 │   └── setup-hooks.sh    # Git hooks installer
 ├── docs/              # Documentation
+│   ├── github_actions_setup.md    # CI/CD setup guide
 │   ├── infrastructure_governance.md
 │   ├── infrastructure_notion.md
 │   └── infrastructure_pr.md
@@ -111,15 +116,59 @@ All infrastructure code must follow the governance standards defined in:
 - `docs/infrastructure_governance.md` - Required tags, KMS strategy, naming rules
 - `docs/infrastructure_pr.md` - PR workflow and gate checklist
 
+## CI/CD with GitHub Actions
+
+### Overview
+
+This project uses GitHub Actions for automated Terraform deployment and Docker image management:
+
+- **PR Creation**: Automatic Terraform plan and governance validation
+- **PR Merge**: Automatic Terraform apply and Docker image build/push to ECR
+- **Image Tags**: Git SHA, latest, timestamp (for traceability)
+
+### Setup
+
+1. **AWS OIDC Configuration**: See [GitHub Actions Setup Guide](docs/github_actions_setup.md)
+2. **GitHub Secrets**: Configure `AWS_ROLE_ARN` in repository settings
+3. **Workflow Files**:
+   - `.github/workflows/terraform-plan.yml` - Plan on PR
+   - `.github/workflows/terraform-apply-and-deploy.yml` - Apply and deploy on merge
+
+### Workflows
+
+#### Terraform Plan (PR)
+Triggers on PR to `main`:
+1. ✅ Run governance validators
+2. ✅ Terraform format, init, validate
+3. ✅ Generate plan and comment on PR
+
+#### Terraform Apply & Deploy (Merge)
+Triggers on push to `main`:
+1. ✅ Apply Terraform (create ECR)
+2. ✅ Build Docker image
+3. ✅ Push to ECR with multiple tags
+4. ✅ Trigger image scan
+
+### Image Tagging Strategy
+
+Every deployment creates 3 tags:
+- **Git SHA**: `{account}.dkr.ecr.{region}.amazonaws.com/atlantis:a1b2c3d` (immutable, recommended for prod)
+- **Latest**: `{account}.dkr.ecr.{region}.amazonaws.com/atlantis:latest` (mutable, for dev/staging)
+- **Timestamp**: `{account}.dkr.ecr.{region}.amazonaws.com/atlantis:20250110-143022` (immutable, for rollback)
+
+For detailed setup instructions, see [GitHub Actions Setup Guide](docs/github_actions_setup.md).
+
 ## Atlantis ECR Setup
 
 ### Prerequisites
 
 - AWS CLI configured with appropriate credentials
-- Docker installed and running
+- Docker installed and running (for local builds)
 - Terraform >= 1.5.0
 - AWS account with ECR permissions
 - Git hooks installed (see Development Setup above)
+
+**Note**: With GitHub Actions configured, manual build/push is optional. CI/CD handles deployment automatically.
 
 ### 1. Create ECR Repository
 
