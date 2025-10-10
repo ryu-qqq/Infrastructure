@@ -45,11 +45,11 @@ resource "aws_ecs_task_definition" "atlantis" {
         },
         {
           name  = "ATLANTIS_ATLANTIS_URL"
-          value = "https://atlantis.example.com"
+          value = var.atlantis_url
         },
         {
           name  = "ATLANTIS_REPO_ALLOWLIST"
-          value = "github.com/*"
+          value = var.atlantis_repo_allowlist
         },
         {
           name  = "ATLANTIS_LOG_LEVEL"
@@ -61,7 +61,7 @@ resource "aws_ecs_task_definition" "atlantis" {
       healthCheck = {
         command = [
           "CMD-SHELL",
-          "wget --no-verbose --tries=1 --spider http://localhost:${var.atlantis_container_port}/healthz || exit 1"
+          "curl -f http://localhost:${var.atlantis_container_port}/healthz || exit 1"
         ]
         interval    = 30
         timeout     = 5

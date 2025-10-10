@@ -34,9 +34,9 @@ resource "aws_iam_role_policy_attachment" "ecs_task_execution_policy" {
   policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy"
 }
 
-# Additional policy for ECR access with KMS decryption
-resource "aws_iam_role_policy" "ecs_task_execution_ecr_kms" {
-  name = "atlantis-ecs-task-execution-ecr-kms"
+# Additional policy for KMS decryption (ECR permissions already in AmazonECSTaskExecutionRolePolicy)
+resource "aws_iam_role_policy" "ecs_task_execution_kms" {
+  name = "atlantis-ecs-task-execution-kms"
   role = aws_iam_role.ecs_task_execution.id
 
   policy = jsonencode({
@@ -49,16 +49,6 @@ resource "aws_iam_role_policy" "ecs_task_execution_ecr_kms" {
           "kms:DescribeKey"
         ]
         Resource = aws_kms_key.ecr.arn
-      },
-      {
-        Effect = "Allow"
-        Action = [
-          "ecr:GetAuthorizationToken",
-          "ecr:BatchCheckLayerAvailability",
-          "ecr:GetDownloadUrlForLayer",
-          "ecr:BatchGetImage"
-        ]
-        Resource = "*"
       }
     ]
   })
@@ -131,14 +121,29 @@ resource "aws_iam_role_policy" "atlantis_terraform_operations" {
           "ec2:Describe*",
           "ecs:Describe*",
           "ecr:Describe*",
-          "iam:Get*",
-          "iam:List*",
           "kms:Describe*",
           "kms:List*",
           "logs:Describe*",
           "s3:List*"
         ]
         Resource = "*"
+      },
+      {
+        Sid    = "IAMReadOnlyForTerraformResources"
+        Effect = "Allow"
+        Action = [
+          "iam:GetRole",
+          "iam:GetRolePolicy",
+          "iam:GetPolicy",
+          "iam:GetPolicyVersion",
+          "iam:ListRolePolicies",
+          "iam:ListAttachedRolePolicies",
+          "iam:ListPolicyVersions"
+        ]
+        Resource = [
+          "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/atlantis-*",
+          "arn:aws:iam::${data.aws_caller_identity.current.account_id}:policy/atlantis-*"
+        ]
       }
     ]
   })
@@ -159,7 +164,7 @@ resource "aws_iam_role_policy" "atlantis_cloudwatch_logs" {
           "logs:CreateLogStream",
           "logs:PutLogEvents"
         ]
-        Resource = "arn:aws:logs:${var.aws_region}:${data.aws_caller_identity.current.account_id}:log-group:/ecs/atlantis-*:*"
+        Resource = "arn:aws:logs:${var.aws_region}:${data.aws_caller_identity.current.account_id}:log-group:/ecs/atlantis-${var.environment}:*"
       }
     ]
   })

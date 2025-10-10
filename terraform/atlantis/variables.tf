@@ -15,7 +15,7 @@ variable "aws_region" {
 variable "atlantis_version" {
   description = "Atlantis version to deploy"
   type        = string
-  default     = "latest"
+  default     = "v0.30.0"
 }
 
 # Required Tags (Governance Standard)
@@ -66,6 +66,18 @@ variable "atlantis_container_port" {
   description = "Port the Atlantis container listens on"
   type        = number
   default     = 4141
+}
+
+variable "atlantis_repo_allowlist" {
+  description = "Allowed repositories for Atlantis webhooks (e.g., github.com/your-org/*)"
+  type        = string
+  default     = "github.com/ryu-qqq/*"
+}
+
+variable "atlantis_url" {
+  description = "The URL that Atlantis will be accessible at"
+  type        = string
+  default     = "https://atlantis.example.com"
 }
 
 # Locals for common tags
