@@ -44,7 +44,10 @@
         "ecr:PutImageTagMutability",
         "ecr:PutImageScanningConfiguration",
         "ecr:PutLifecyclePolicy",
-        "ecr:SetRepositoryPolicy"
+        "ecr:SetRepositoryPolicy",
+        "ecr:TagResource",
+        "ecr:UntagResource",
+        "ecr:ListTagsForResource"
       ],
       "Resource": "*"
     },
