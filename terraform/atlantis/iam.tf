@@ -100,8 +100,8 @@ resource "aws_iam_role_policy" "atlantis_terraform_operations" {
           "s3:DeleteObject"
         ]
         Resource = [
-          "arn:aws:s3:::terraform-state-*",
-          "arn:aws:s3:::terraform-state-*/*"
+          "arn:aws:s3:::${var.terraform_state_bucket_prefix}-*",
+          "arn:aws:s3:::${var.terraform_state_bucket_prefix}-*/*"
         ]
       },
       {
@@ -112,7 +112,7 @@ resource "aws_iam_role_policy" "atlantis_terraform_operations" {
           "dynamodb:PutItem",
           "dynamodb:DeleteItem"
         ]
-        Resource = "arn:aws:dynamodb:*:${data.aws_caller_identity.current.account_id}:table/terraform-state-lock"
+        Resource = "arn:aws:dynamodb:*:${data.aws_caller_identity.current.account_id}:table/${var.terraform_state_lock_table}"
       },
       {
         Sid    = "TerraformPlanOperations"
