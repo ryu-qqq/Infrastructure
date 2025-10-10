@@ -49,6 +49,25 @@ variable "service" {
   default     = "atlantis"
 }
 
+# ECS Task Configuration
+variable "atlantis_cpu" {
+  description = "CPU units for the Atlantis task (256, 512, 1024, 2048, 4096)"
+  type        = number
+  default     = 512
+}
+
+variable "atlantis_memory" {
+  description = "Memory (MiB) for the Atlantis task"
+  type        = number
+  default     = 1024
+}
+
+variable "atlantis_container_port" {
+  description = "Port the Atlantis container listens on"
+  type        = number
+  default     = 4141
+}
+
 # Locals for common tags
 locals {
   required_tags = {
