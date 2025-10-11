@@ -47,6 +47,31 @@ Atlantis 서버를 AWS ECS Fargate에 배포하기 위한 Terraform 구성입니
 - 자동 키 회전 활성화
 - ECR 및 ECS 서비스 접근 권한
 
+### Application Load Balancer (alb.tf)
+- **ALB 보안 그룹**:
+  - HTTP (80) 및 HTTPS (443) 인바운드 허용
+  - 모든 아웃바운드 트래픽 허용
+  - 설정 가능한 CIDR 블록 제한
+
+- **ECS Task 보안 그룹**:
+  - ALB로부터의 컨테이너 포트 인바운드 허용
+  - 모든 아웃바운드 트래픽 허용
+
+- **Application Load Balancer**:
+  - Internet-facing 구성
+  - HTTP/2 활성화
+  - Cross-zone 로드 밸런싱 활성화
+  - Public 서브넷에 배포
+
+- **Target Group**:
+  - IP 타겟 타입 (Fargate용)
+  - 헬스체크 경로: `/healthz`
+  - 설정 가능한 헬스체크 파라미터
+
+- **리스너**:
+  - HTTP (80): HTTPS로 영구 리다이렉트
+  - HTTPS (443): TLS 1.3 지원, ACM 인증서 사용
+
 ## 사용 방법
 
 ### 1. 사전 요구사항
@@ -87,6 +112,12 @@ terraform apply
 | `atlantis_cpu` | Task CPU | `512` |
 | `atlantis_memory` | Task Memory (MiB) | `1024` |
 | `atlantis_container_port` | 컨테이너 포트 | `4141` |
+| `vpc_id` | VPC ID | *필수* |
+| `public_subnet_ids` | Public 서브넷 ID 목록 | *필수* |
+| `private_subnet_ids` | Private 서브넷 ID 목록 | *필수* |
+| `acm_certificate_arn` | ACM 인증서 ARN | *필수* |
+| `allowed_cidr_blocks` | ALB 접근 허용 CIDR | `["0.0.0.0/0"]` |
+| `alb_health_check_path` | 헬스체크 경로 | `/healthz` |
 
 ## 출력값
 
@@ -96,6 +127,10 @@ terraform apply
 - IAM 역할 ARN
 - Task Definition ARN 및 버전
 - CloudWatch Log Group 이름
+- **ALB DNS 이름** (atlantis_alb_dns_name)
+- **ALB Zone ID** (atlantis_alb_zone_id)
+- **Target Group ARN** (atlantis_target_group_arn)
+- **보안 그룹 ID** (ALB 및 ECS Tasks)
 
 ## 주의사항
 
@@ -111,16 +146,19 @@ terraform apply
 - ✅ Task Definition
 - ✅ IAM 역할 및 정책
 - ✅ CloudWatch Log Group
+- ✅ **Application Load Balancer 및 관련 리소스**
+- ✅ **보안 그룹 (ALB 및 ECS Tasks)**
+- ✅ **Target Group 및 헬스체크**
+- ✅ **HTTP/HTTPS 리스너**
 
 추가로 필요한 작업 (Phase 1 완료를 위해):
-- [ ] VPC 및 서브넷 구성
-- [ ] Application Load Balancer 설정
+- [ ] VPC 및 서브넷 구성 (또는 기존 VPC 사용)
 - [ ] ACM 인증서 발급
-- [ ] ECS 서비스 정의
-- [ ] 보안 그룹 구성
+- [ ] ECS 서비스 정의 및 배포
 - [ ] Route53 DNS 설정
 
 ## 관련 이슈
 
+- Jira: [IN-12](https://ryuqqq.atlassian.net/browse/IN-12) - Application Load Balancer 구성
 - Jira: [IN-11](https://ryuqqq.atlassian.net/browse/IN-11) - ECS 클러스터 및 Task Definition 생성
 - Epic: [IN-1](https://ryuqqq.atlassian.net/browse/IN-1) - Phase 1: Atlantis 서버 ECS 배포
