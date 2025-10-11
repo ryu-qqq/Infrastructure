@@ -140,11 +140,6 @@ resource "aws_kms_key_policy" "efs" {
           "kms:CreateGrant"
         ]
         Resource = "*"
-        Condition = {
-          StringEquals = {
-            "kms:ViaService" = "elasticfilesystem.ap-northeast-2.amazonaws.com"
-          }
-        }
       },
       {
         Sid    = "Allow ECS tasks to use the key for EFS"
