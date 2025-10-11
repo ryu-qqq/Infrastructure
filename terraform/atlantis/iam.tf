@@ -173,6 +173,32 @@ resource "aws_iam_role_policy" "atlantis-cloudwatch-logs" {
   })
 }
 
+# EFS access policy for task role
+resource "aws_iam_role_policy" "atlantis-efs-access" {
+  name = "atlantis-efs-access"
+  role = aws_iam_role.ecs-task.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow"
+        Action = [
+          "elasticfilesystem:ClientMount",
+          "elasticfilesystem:ClientWrite",
+          "elasticfilesystem:ClientRootAccess"
+        ]
+        Resource = aws_efs_file_system.atlantis.arn
+        Condition = {
+          StringEquals = {
+            "elasticfilesystem:AccessPointArn" = aws_efs_access_point.atlantis.arn
+          }
+        }
+      }
+    ]
+  })
+}
+
 # Outputs
 output "atlantis_ecs_task_execution_role_arn" {
   description = "The ARN of the ECS task execution role"

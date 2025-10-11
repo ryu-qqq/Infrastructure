@@ -25,6 +25,22 @@ resource "aws_ecs_task_definition" "atlantis" {
   execution_role_arn       = aws_iam_role.ecs-task-execution.arn
   task_role_arn            = aws_iam_role.ecs-task.arn
 
+  # EFS Volume for Atlantis data persistence
+  volume {
+    name = "atlantis-data"
+
+    efs_volume_configuration {
+      file_system_id          = aws_efs_file_system.atlantis.id
+      transit_encryption      = "ENABLED"
+      transit_encryption_port = 2049
+
+      authorization_config {
+        access_point_id = aws_efs_access_point.atlantis.id
+        iam             = "ENABLED"
+      }
+    }
+  }
+
   container_definitions = jsonencode([
     {
       name      = "atlantis"
@@ -35,6 +51,15 @@ resource "aws_ecs_task_definition" "atlantis" {
         {
           containerPort = var.atlantis_container_port
           protocol      = "tcp"
+        }
+      ]
+
+      # Mount EFS volume to Atlantis data directory
+      mountPoints = [
+        {
+          sourceVolume  = "atlantis-data"
+          containerPath = "/home/atlantis/.atlantis"
+          readOnly      = false
         }
       ]
 
