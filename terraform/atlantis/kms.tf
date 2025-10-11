@@ -114,6 +114,20 @@ resource "aws_kms_key_policy" "efs" {
         Resource = "*"
       },
       {
+        Sid    = "Allow GitHub Actions to manage the key"
+        Effect = "Allow"
+        Principal = {
+          AWS = "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/GitHubActionsRole"
+        }
+        Action = [
+          "kms:Decrypt",
+          "kms:DescribeKey",
+          "kms:GenerateDataKey",
+          "kms:CreateGrant"
+        ]
+        Resource = "*"
+      },
+      {
         Sid    = "Allow EFS to use the key"
         Effect = "Allow"
         Principal = {
