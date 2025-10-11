@@ -44,6 +44,44 @@ jobs:
         run: |
           echo "🧹 Checking for orphaned resources..."
 
+          # Clean up IAM roles
+          echo "👤 Checking for orphaned IAM roles..."
+          for role in atlantis-ecs-task-execution-prod atlantis-ecs-task-prod; do
+            if aws iam get-role --role-name $role &>/dev/null; then
+              echo "🗑️  Deleting IAM role: $role"
+              # Delete inline policies
+              aws iam list-role-policies --role-name $role --query 'PolicyNames[*]' --output text 2>/dev/null | tr '\t' '\n' | while read policy; do
+                [ ! -z "$policy" ] && aws iam delete-role-policy --role-name $role --policy-name "$policy" 2>/dev/null || true
+              done
+              # Detach managed policies
+              aws iam list-attached-role-policies --role-name $role --query 'AttachedPolicies[*].PolicyArn' --output text 2>/dev/null | tr '\t' '\n' | while read arn; do
+                [ ! -z "$arn" ] && aws iam detach-role-policy --role-name $role --policy-arn "$arn" 2>/dev/null || true
+              done
+              # Delete role
+              aws iam delete-role --role-name $role 2>/dev/null && echo "✓ Role $role deleted" || echo "! Failed to delete $role"
+            else
+              echo "✓ No orphaned role: $role"
+            fi
+          done
+
+          # Clean up CloudWatch Log Group
+          echo "📊 Checking for orphaned CloudWatch Log Group..."
+          if aws logs describe-log-groups --log-group-name-prefix /ecs/atlantis-prod --region ${{ env.AWS_REGION }} --query 'logGroups[0]' --output text &>/dev/null; then
+            echo "🗑️  Deleting CloudWatch Log Group..."
+            aws logs delete-log-group --log-group-name /ecs/atlantis-prod --region ${{ env.AWS_REGION }} 2>/dev/null && echo "✓ Log group deleted" || echo "! Failed to delete log group"
+          else
+            echo "✓ No orphaned log group"
+          fi
+
+          # Clean up ECS Cluster
+          echo "🎯 Checking for orphaned ECS Cluster..."
+          if aws ecs describe-clusters --clusters atlantis-prod --region ${{ env.AWS_REGION }} --query 'clusters[0].status' --output text 2>/dev/null | grep -q "ACTIVE"; then
+            echo "🗑️  Deleting ECS Cluster..."
+            aws ecs delete-cluster --cluster atlantis-prod --region ${{ env.AWS_REGION }} 2>/dev/null && echo "✓ Cluster deleted" || echo "! Failed to delete cluster"
+          else
+            echo "✓ No active ECS cluster"
+          fi
+
           # Clean up ECR repository
           echo "📦 Checking for orphaned ECR repository..."
           if aws ecr describe-repositories --repository-names ${{ env.ECR_REPOSITORY }} --region ${{ env.AWS_REGION }} &>/dev/null; then
