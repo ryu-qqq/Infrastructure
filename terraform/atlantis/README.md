@@ -116,7 +116,8 @@ terraform apply
 | `public_subnet_ids` | Public 서브넷 ID 목록 | *필수* |
 | `private_subnet_ids` | Private 서브넷 ID 목록 | *필수* |
 | `acm_certificate_arn` | ACM 인증서 ARN | *필수* |
-| `allowed_cidr_blocks` | ALB 접근 허용 CIDR | `["0.0.0.0/0"]` |
+| `allowed_cidr_blocks` | ALB 접근 허용 CIDR | *필수* |
+| `alb_enable_deletion_protection` | ALB 삭제 보호 활성화 | `false` |
 | `alb_health_check_path` | 헬스체크 경로 | `/healthz` |
 
 ## 출력값
