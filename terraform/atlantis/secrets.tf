@@ -1,8 +1,9 @@
 # AWS Secrets Manager for Atlantis GitHub credentials
 
 resource "aws_secretsmanager_secret" "atlantis-github" {
-  name        = "atlantis/github-token-${var.environment}"
-  description = "GitHub Personal Access Token for Atlantis"
+  name                    = "atlantis/github-token-${var.environment}"
+  description             = "GitHub Personal Access Token for Atlantis"
+  recovery_window_in_days = 0 # Force immediate deletion to allow recreation
 
   tags = merge(
     local.required_tags,
