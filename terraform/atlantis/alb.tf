@@ -162,7 +162,7 @@ resource "aws_lb_listener" "atlantis-http" {
     {
       Name        = "atlantis-http-${var.environment}"
       Component   = "atlantis"
-      Description = "HTTP listener for Atlantis ALB (redirects to HTTPS)"
+      Description = "HTTP listener for Atlantis ALB redirects to HTTPS"
     }
   )
 }

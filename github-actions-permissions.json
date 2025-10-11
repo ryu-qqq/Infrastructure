@@ -126,11 +126,21 @@
       "Resource": "*"
     },
     {
-      "Sid": "KMSManagement",
+      "Sid": "KMSAliasManagement",
       "Effect": "Allow",
       "Action": [
         "kms:CreateAlias",
-        "kms:DeleteAlias",
+        "kms:DeleteAlias"
+      ],
+      "Resource": [
+        "arn:aws:kms:ap-northeast-2:646886795421:key/*",
+        "arn:aws:kms:ap-northeast-2:646886795421:alias/*"
+      ]
+    },
+    {
+      "Sid": "KMSManagement",
+      "Effect": "Allow",
+      "Action": [
         "kms:DescribeKey",
         "kms:EnableKeyRotation",
         "kms:GetKeyPolicy",
@@ -208,6 +218,7 @@
         "elasticloadbalancing:CreateListener",
         "elasticloadbalancing:DeleteListener",
         "elasticloadbalancing:DescribeListeners",
+        "elasticloadbalancing:DescribeListenerAttributes",
         "elasticloadbalancing:ModifyListener",
         "elasticloadbalancing:AddTags",
         "elasticloadbalancing:RemoveTags",
