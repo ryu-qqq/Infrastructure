@@ -1,7 +1,7 @@
 # AWS Secrets Manager for Atlantis GitHub credentials
 
 resource "aws_secretsmanager_secret" "atlantis-github" {
-  name                    = "atlantis/github-token-${var.environment}"
+  name                    = "atlantis/github-token-v2-${var.environment}"
   description             = "GitHub Personal Access Token for Atlantis"
   recovery_window_in_days = 0 # Force immediate deletion to allow recreation
 
