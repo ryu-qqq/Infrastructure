@@ -267,6 +267,45 @@
         "dynamodb:DescribeTable"
       ],
       "Resource": "arn:aws:dynamodb:ap-northeast-2:646886795421:table/prod-connectly-tf-lock"
+    },
+    {
+      "Sid": "EFSManagement",
+      "Effect": "Allow",
+      "Action": [
+        "elasticfilesystem:CreateFileSystem",
+        "elasticfilesystem:DeleteFileSystem",
+        "elasticfilesystem:DescribeFileSystems",
+        "elasticfilesystem:DescribeFileSystemPolicy",
+        "elasticfilesystem:PutFileSystemPolicy",
+        "elasticfilesystem:DeleteFileSystemPolicy",
+        "elasticfilesystem:CreateMountTarget",
+        "elasticfilesystem:DeleteMountTarget",
+        "elasticfilesystem:DescribeMountTargets",
+        "elasticfilesystem:DescribeMountTargetSecurityGroups",
+        "elasticfilesystem:ModifyMountTargetSecurityGroups",
+        "elasticfilesystem:CreateAccessPoint",
+        "elasticfilesystem:DeleteAccessPoint",
+        "elasticfilesystem:DescribeAccessPoints",
+        "elasticfilesystem:TagResource",
+        "elasticfilesystem:UntagResource",
+        "elasticfilesystem:ListTagsForResource",
+        "elasticfilesystem:PutLifecycleConfiguration",
+        "elasticfilesystem:DescribeLifecycleConfiguration"
+      ],
+      "Resource": "*"
+    },
+    {
+      "Sid": "ECSServiceManagement",
+      "Effect": "Allow",
+      "Action": [
+        "ecs:CreateService",
+        "ecs:DeleteService",
+        "ecs:UpdateService",
+        "ecs:DescribeServices",
+        "ecs:TagResource",
+        "ecs:UntagResource"
+      ],
+      "Resource": "*"
     }
   ]
 }
