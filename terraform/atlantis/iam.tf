@@ -99,6 +99,9 @@ resource "aws_iam_role_policy" "atlantis-terraform-operations" {
           "s3:PutObject",
           "s3:DeleteObject"
         ]
+        # Wildcard pattern is intentional: Atlantis manages multiple projects' state files
+        # across different S3 buckets following the naming pattern: terraform-state-*
+        # This allows Atlantis to automate Terraform operations for all managed projects
         Resource = [
           "arn:aws:s3:::${var.terraform_state_bucket_prefix}-*",
           "arn:aws:s3:::${var.terraform_state_bucket_prefix}-*/*"
