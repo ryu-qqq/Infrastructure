@@ -47,7 +47,8 @@ resource "aws_security_group" "atlantis-efs" {
 resource "aws_efs_file_system" "atlantis" {
   creation_token = "atlantis-${var.environment}"
   encrypted      = true
-  kms_key_id     = aws_kms_key.efs.arn
+  # TODO: Re-enable KMS encryption after EFS is created successfully
+  # kms_key_id     = aws_kms_key.efs.arn
 
   # Performance settings
   performance_mode = "generalPurpose"
