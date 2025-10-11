@@ -156,6 +156,19 @@ variable "alb_enable_deletion_protection" {
   default     = false
 }
 
+# GitHub Configuration
+variable "github_username" {
+  description = "GitHub username for Atlantis authentication"
+  type        = string
+  sensitive   = true
+}
+
+variable "github_token" {
+  description = "GitHub Personal Access Token for Atlantis"
+  type        = string
+  sensitive   = true
+}
+
 # Locals for common tags
 locals {
   required_tags = {

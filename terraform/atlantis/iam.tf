@@ -54,6 +54,25 @@ resource "aws_iam_role_policy" "ecs-task-execution-kms" {
   })
 }
 
+# Policy for Secrets Manager access (GitHub credentials)
+resource "aws_iam_role_policy" "ecs-task-execution-secrets" {
+  name = "atlantis-ecs-task-execution-secrets"
+  role = aws_iam_role.ecs-task-execution.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow"
+        Action = [
+          "secretsmanager:GetSecretValue"
+        ]
+        Resource = aws_secretsmanager_secret.atlantis-github.arn
+      }
+    ]
+  })
+}
+
 # ECS Task Role
 # This role is used by the Atlantis container for AWS API operations
 resource "aws_iam_role" "ecs-task" {

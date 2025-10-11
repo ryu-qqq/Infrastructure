@@ -82,6 +82,18 @@ resource "aws_ecs_task_definition" "atlantis" {
         }
       ]
 
+      # GitHub credentials from Secrets Manager
+      secrets = [
+        {
+          name      = "ATLANTIS_GH_USER"
+          valueFrom = "${aws_secretsmanager_secret.atlantis-github.arn}:username::"
+        },
+        {
+          name      = "ATLANTIS_GH_TOKEN"
+          valueFrom = "${aws_secretsmanager_secret.atlantis-github.arn}:token::"
+        }
+      ]
+
       # Health check configuration
       healthCheck = {
         command = [
