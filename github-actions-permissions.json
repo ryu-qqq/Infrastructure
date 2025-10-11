@@ -162,10 +162,17 @@
       "Resource": "*"
     },
     {
+      "Sid": "SecurityGroupCreation",
+      "Effect": "Allow",
+      "Action": [
+        "ec2:CreateSecurityGroup"
+      ],
+      "Resource": "*"
+    },
+    {
       "Sid": "SecurityGroupManagement",
       "Effect": "Allow",
       "Action": [
-        "ec2:CreateSecurityGroup",
         "ec2:AuthorizeSecurityGroupIngress",
         "ec2:AuthorizeSecurityGroupEgress",
         "ec2:RevokeSecurityGroupIngress",
@@ -176,8 +183,8 @@
       "Resource": "*",
       "Condition": {
         "StringLike": {
-          "aws:RequestTag/ManagedBy": "terraform",
-          "aws:RequestTag/Service": "atlantis"
+          "ec2:ResourceTag/ManagedBy": "terraform",
+          "ec2:ResourceTag/Service": "atlantis"
         }
       }
     },
