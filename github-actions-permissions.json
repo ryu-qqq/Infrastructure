@@ -139,7 +139,13 @@
         "kms:CreateGrant",
         "kms:ListGrants"
       ],
-      "Resource": "*"
+      "Resource": "*",
+      "Condition": {
+        "StringLike": {
+          "aws:RequestTag/Service": "atlantis",
+          "aws:RequestTag/ManagedBy": "terraform"
+        }
+      }
     },
     {
       "Sid": "EC2NetworkingReadOnly",
@@ -160,7 +166,6 @@
       "Effect": "Allow",
       "Action": [
         "ec2:CreateSecurityGroup",
-        "ec2:DeleteSecurityGroup",
         "ec2:AuthorizeSecurityGroupIngress",
         "ec2:AuthorizeSecurityGroupEgress",
         "ec2:RevokeSecurityGroupIngress",
@@ -181,7 +186,6 @@
       "Effect": "Allow",
       "Action": [
         "elasticloadbalancing:CreateLoadBalancer",
-        "elasticloadbalancing:DeleteLoadBalancer",
         "elasticloadbalancing:DescribeLoadBalancers",
         "elasticloadbalancing:DescribeLoadBalancerAttributes",
         "elasticloadbalancing:ModifyLoadBalancerAttributes",
