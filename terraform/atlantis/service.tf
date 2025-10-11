@@ -22,12 +22,16 @@ resource "aws_ecs_service" "atlantis" {
   }
 
   # Deployment configuration - Blue/Green strategy
-  # maximum_percent = 100: Only 1 task can run at a time
-  # minimum_healthy_percent = 0: Old task stops before new task starts
+  # deployment_maximum_percent = 100: Only 1 task can run at a time
+  # deployment_minimum_healthy_percent = 0: Old task stops before new task starts
   # This prevents concurrent access to EFS Atlantis data directory
-  deployment_configuration {
-    maximum_percent         = 100  # Only one task at a time
-    minimum_healthy_percent = 0    # Stop old before starting new
+  deployment_maximum_percent         = 100  # Only one task at a time
+  deployment_minimum_healthy_percent = 0    # Stop old before starting new
+
+  # Deployment circuit breaker for automatic rollback
+  deployment_circuit_breaker {
+    enable   = true
+    rollback = true
   }
 
   # Health check grace period for ALB health checks
@@ -36,12 +40,6 @@ resource "aws_ecs_service" "atlantis" {
   # Enable ECS managed tags
   enable_ecs_managed_tags = true
   propagate_tags          = "SERVICE"
-
-  # Deployment circuit breaker
-  deployment_circuit_breaker {
-    enable   = true
-    rollback = true
-  }
 
   tags = merge(
     local.required_tags,
