@@ -138,6 +138,14 @@
       ]
     },
     {
+      "Sid": "KMSListOperations",
+      "Effect": "Allow",
+      "Action": [
+        "kms:ListAliases"
+      ],
+      "Resource": "*"
+    },
+    {
       "Sid": "KMSManagement",
       "Effect": "Allow",
       "Action": [
@@ -145,7 +153,6 @@
         "kms:EnableKeyRotation",
         "kms:GetKeyPolicy",
         "kms:GetKeyRotationStatus",
-        "kms:ListAliases",
         "kms:ListResourceTags",
         "kms:PutKeyPolicy",
         "kms:ScheduleKeyDeletion",
