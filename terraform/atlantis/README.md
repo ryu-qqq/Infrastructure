@@ -100,25 +100,60 @@ terraform plan
 terraform apply
 ```
 
-## 변수
+## 변수 설정
 
-주요 변수는 `variables.tf`에 정의되어 있습니다:
+### terraform.tfvars 생성
+
+주요 변수는 `variables.tf`에 정의되어 있습니다. 실제 값은 `terraform.tfvars` 파일에 설정합니다:
+
+```bash
+# terraform.tfvars.example을 복사하여 시작
+cp terraform.tfvars.example terraform.tfvars
+
+# 실제 값으로 수정
+vi terraform.tfvars
+```
+
+**⚠️ 주의**: `terraform.tfvars`는 민감한 정보를 포함하므로 `.gitignore`에 포함되어 있습니다.
+
+### 필수 변수
+
+| 변수 | 설명 | 예시 | 확인 방법 |
+|------|------|------|----------|
+| `vpc_id` | VPC ID | `vpc-0f162b9e588276e09` | `aws ec2 describe-vpcs` |
+| `public_subnet_ids` | Public 서브넷 ID 목록 | `["subnet-xxx", "subnet-yyy"]` | `aws ec2 describe-subnets` |
+| `private_subnet_ids` | Private 서브넷 ID 목록 | `["subnet-zzz", "subnet-aaa"]` | `aws ec2 describe-subnets` |
+| `acm_certificate_arn` | ACM 인증서 ARN | `arn:aws:acm:...` | `aws acm list-certificates` |
+| `allowed_cidr_blocks` | ALB 접근 허용 CIDR | `["0.0.0.0/0"]` | 보안 정책에 따라 설정 |
+
+### 선택적 변수 (기본값 있음)
 
 | 변수 | 설명 | 기본값 |
 |------|------|--------|
 | `environment` | 환경 이름 | `prod` |
 | `aws_region` | AWS 리전 | `ap-northeast-2` |
-| `atlantis_version` | Atlantis 버전 | `latest` |
+| `atlantis_version` | Atlantis 버전 | `v0.30.0` |
 | `atlantis_cpu` | Task CPU | `512` |
 | `atlantis_memory` | Task Memory (MiB) | `1024` |
 | `atlantis_container_port` | 컨테이너 포트 | `4141` |
-| `vpc_id` | VPC ID | *필수* |
-| `public_subnet_ids` | Public 서브넷 ID 목록 | *필수* |
-| `private_subnet_ids` | Private 서브넷 ID 목록 | *필수* |
-| `acm_certificate_arn` | ACM 인증서 ARN | *필수* |
-| `allowed_cidr_blocks` | ALB 접근 허용 CIDR | *필수* |
-| `alb_enable_deletion_protection` | ALB 삭제 보호 활성화 | `false` |
+| `atlantis_url` | Atlantis 접속 URL | `https://atlantis.example.com` |
+| `atlantis_repo_allowlist` | 허용된 리포지토리 | `github.com/ryu-qqq/*` |
+| `alb_enable_deletion_protection` | ALB 삭제 보호 | `false` |
 | `alb_health_check_path` | 헬스체크 경로 | `/healthz` |
+
+### ACM 인증서 설정
+
+현재 사용 중인 ACM 인증서:
+- **도메인**: `*.set-of.com` 및 `set-of.com`
+- **타입**: AWS-issued (자동 갱신 가능)
+- **상태**: ISSUED
+- **유효기간**: 2026-09-05까지
+
+인증서 확인:
+```bash
+aws acm list-certificates --region ap-northeast-2 \
+  --query 'CertificateSummaryList[?Status==`ISSUED`]'
+```
 
 ## 출력값
 

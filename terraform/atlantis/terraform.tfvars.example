@@ -1,0 +1,42 @@
+# Atlantis Terraform Configuration Variables - Example
+# Copy this file to terraform.tfvars and fill in the actual values
+
+# Environment
+environment = "prod"
+aws_region  = "ap-northeast-2"
+
+# ACM Certificate ARN for HTTPS
+# Get from: aws acm list-certificates --region ap-northeast-2
+# Use a certificate that covers your domain (e.g., *.set-of.com)
+acm_certificate_arn = "arn:aws:acm:ap-northeast-2:ACCOUNT_ID:certificate/CERTIFICATE_ID"
+
+# Atlantis Configuration
+atlantis_url            = "https://atlantis.your-domain.com"
+atlantis_repo_allowlist = "github.com/your-org/*"
+
+# Network Configuration
+# Get from: aws ec2 describe-vpcs --region ap-northeast-2
+vpc_id = "vpc-xxxxxxxxxxxxxxxxx"
+
+# Get from: aws ec2 describe-subnets --region ap-northeast-2 --filters "Name=vpc-id,Values=vpc-xxx"
+public_subnet_ids = [
+  "subnet-xxxxxxxxxxxxxxxxx", # Public subnet in AZ a
+  "subnet-yyyyyyyyyyyyyyyyy"  # Public subnet in AZ b
+]
+private_subnet_ids = [
+  "subnet-zzzzzzzzzzzzzzzzz", # Private subnet in AZ a
+  "subnet-aaaaaaaaaaaaaaaaa"  # Private subnet in AZ b
+]
+
+# Security - Allowed CIDR blocks for ALB access
+# IMPORTANT: Restrict this to specific IP ranges for production
+allowed_cidr_blocks = [
+  "0.0.0.0/0" # WARNING: Allow from anywhere - restrict in production
+]
+
+# Resource Configuration
+atlantis_cpu    = 512  # CPU units (256, 512, 1024, 2048, 4096)
+atlantis_memory = 1024 # Memory in MiB
+
+# ALB Configuration
+alb_enable_deletion_protection = false # Set to true for production
