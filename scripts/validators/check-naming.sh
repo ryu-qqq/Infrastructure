@@ -18,7 +18,7 @@
 #   1 - Naming violations found
 #
 
-set -e
+# Removed set -e to allow warnings without failing
 set -o pipefail
 
 # Colors for output
@@ -175,21 +175,23 @@ while IFS= read -r line; do
 done < <(grep -n "^output\s" $(find "$TERRAFORM_DIR" -name "*.tf" -type f) 2>/dev/null || true)
 
 # Check locals (warnings only)
-echo -e "\n${BLUE}🔍 Checking local names (snake_case)...${NC}"
-while IFS= read -r line; do
-    file=$(echo "$line" | cut -d: -f1)
-    line_number=$(echo "$line" | cut -d: -f2)
-    locals_line=$(echo "$line" | cut -d: -f3-)
-
-    # Extract local variable names from locals block
-    # This is simplified - may need more robust parsing
-    if [[ $locals_line =~ ([a-zA-Z_][a-zA-Z0-9_]*)[[:space:]]*= ]]; then
-        local_name="${BASH_REMATCH[1]}"
-        if [[ "$local_name" != "locals" ]]; then
-            check_local_naming "$file" "$local_name" "$line_number"
-        fi
-    fi
-done < <(grep -n "^\s*[a-zA-Z_][a-zA-Z0-9_]*\s*=" $(find "$TERRAFORM_DIR" -name "*.tf" -type f) 2>/dev/null | grep -v "variable\|output\|resource\|data\|module" || true)
+# NOTE: Disabled due to false positives with JSON keys inside resource blocks
+# TODO: Improve parsing to only check actual locals {} block content
+# echo -e "\n${BLUE}🔍 Checking local names (snake_case)...${NC}"
+# while IFS= read -r line; do
+#     file=$(echo "$line" | cut -d: -f1)
+#     line_number=$(echo "$line" | cut -d: -f2)
+#     locals_line=$(echo "$line" | cut -d: -f3-)
+#
+#     # Extract local variable names from locals block
+#     # This is simplified - may need more robust parsing
+#     if [[ $locals_line =~ ([a-zA-Z_][a-zA-Z0-9_]*)[[:space:]]*= ]]; then
+#         local_name="${BASH_REMATCH[1]}"
+#         if [[ "$local_name" != "locals" ]]; then
+#             check_local_naming "$file" "$local_name" "$line_number"
+#         fi
+#     fi
+# done < <(grep -n "^\s*[a-zA-Z_][a-zA-Z0-9_]*\s*=" $(find "$TERRAFORM_DIR" -name "*.tf" -type f) 2>/dev/null | grep -v "variable\|output\|resource\|data\|module" || true)
 
 # Summary
 echo -e "\n${BLUE}════════════════════════════════════════${NC}"
