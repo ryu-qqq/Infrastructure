@@ -117,10 +117,18 @@
       "Resource": "*"
     },
     {
-      "Sid": "KMSManagement",
+      "Sid": "KMSKeyCreation",
       "Effect": "Allow",
       "Action": [
         "kms:CreateKey",
+        "kms:TagResource"
+      ],
+      "Resource": "*"
+    },
+    {
+      "Sid": "KMSManagement",
+      "Effect": "Allow",
+      "Action": [
         "kms:CreateAlias",
         "kms:DeleteAlias",
         "kms:DescribeKey",
@@ -132,20 +140,13 @@
         "kms:PutKeyPolicy",
         "kms:ScheduleKeyDeletion",
         "kms:CancelKeyDeletion",
-        "kms:TagResource",
         "kms:UntagResource",
         "kms:RetireGrant",
         "kms:RevokeGrant",
         "kms:CreateGrant",
         "kms:ListGrants"
       ],
-      "Resource": "*",
-      "Condition": {
-        "StringLike": {
-          "aws:RequestTag/Service": "atlantis",
-          "aws:RequestTag/ManagedBy": "terraform"
-        }
-      }
+      "Resource": "arn:aws:kms:ap-northeast-2:646886795421:key/*"
     },
     {
       "Sid": "EC2NetworkingReadOnly",
@@ -165,9 +166,13 @@
       "Sid": "SecurityGroupCreation",
       "Effect": "Allow",
       "Action": [
-        "ec2:CreateSecurityGroup"
+        "ec2:CreateSecurityGroup",
+        "ec2:CreateTags"
       ],
-      "Resource": "*"
+      "Resource": [
+        "arn:aws:ec2:ap-northeast-2:646886795421:security-group/*",
+        "arn:aws:ec2:ap-northeast-2:646886795421:vpc/*"
+      ]
     },
     {
       "Sid": "SecurityGroupManagement",
@@ -177,7 +182,6 @@
         "ec2:AuthorizeSecurityGroupEgress",
         "ec2:RevokeSecurityGroupIngress",
         "ec2:RevokeSecurityGroupEgress",
-        "ec2:CreateTags",
         "ec2:DeleteTags"
       ],
       "Resource": "*",
