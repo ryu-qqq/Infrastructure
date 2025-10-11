@@ -93,7 +93,7 @@ resource "aws_lb" "atlantis" {
   security_groups    = [aws_security_group.atlantis-alb.id]
   subnets            = var.public_subnet_ids
 
-  enable_deletion_protection       = false
+  enable_deletion_protection       = var.alb_enable_deletion_protection
   enable_http2                     = true
   enable_cross_zone_load_balancing = true
 

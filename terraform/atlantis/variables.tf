@@ -117,7 +117,7 @@ variable "acm_certificate_arn" {
 variable "allowed_cidr_blocks" {
   description = "List of CIDR blocks allowed to access the ALB"
   type        = list(string)
-  default     = ["0.0.0.0/0"]
+  # No default value - must be explicitly set for security
 }
 
 variable "alb_health_check_path" {
@@ -148,6 +148,12 @@ variable "alb_health_check_unhealthy_threshold" {
   description = "Number of consecutive health check failures required"
   type        = number
   default     = 3
+}
+
+variable "alb_enable_deletion_protection" {
+  description = "Enable deletion protection for ALB (recommended for production environments)"
+  type        = bool
+  default     = false
 }
 
 # Locals for common tags
