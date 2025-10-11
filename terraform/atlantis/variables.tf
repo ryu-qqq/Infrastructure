@@ -92,6 +92,70 @@ variable "terraform_state_lock_table" {
   default     = "terraform-state-lock"
 }
 
+# Network Configuration
+variable "vpc_id" {
+  description = "VPC ID where ALB and ECS will be deployed"
+  type        = string
+}
+
+variable "public_subnet_ids" {
+  description = "List of public subnet IDs for ALB deployment"
+  type        = list(string)
+}
+
+variable "private_subnet_ids" {
+  description = "List of private subnet IDs for ECS tasks"
+  type        = list(string)
+}
+
+# ALB Configuration
+variable "acm_certificate_arn" {
+  description = "ARN of the ACM certificate for HTTPS listener"
+  type        = string
+}
+
+variable "allowed_cidr_blocks" {
+  description = "List of CIDR blocks allowed to access the ALB"
+  type        = list(string)
+  # No default value - must be explicitly set for security
+}
+
+variable "alb_health_check_path" {
+  description = "Health check path for ALB target group"
+  type        = string
+  default     = "/healthz"
+}
+
+variable "alb_health_check_interval" {
+  description = "Health check interval in seconds"
+  type        = number
+  default     = 30
+}
+
+variable "alb_health_check_timeout" {
+  description = "Health check timeout in seconds"
+  type        = number
+  default     = 5
+}
+
+variable "alb_health_check_healthy_threshold" {
+  description = "Number of consecutive health checks successes required"
+  type        = number
+  default     = 2
+}
+
+variable "alb_health_check_unhealthy_threshold" {
+  description = "Number of consecutive health check failures required"
+  type        = number
+  default     = 3
+}
+
+variable "alb_enable_deletion_protection" {
+  description = "Enable deletion protection for ALB (recommended for production environments)"
+  type        = bool
+  default     = false
+}
+
 # Locals for common tags
 locals {
   required_tags = {
