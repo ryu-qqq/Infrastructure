@@ -10,8 +10,13 @@ terraform {
     }
   }
 
-  # Backend configuration should be provided via backend config file or CLI
-  # backend "s3" {}
+  backend "s3" {
+    bucket         = "prod-connectly"
+    key            = "atlantis/terraform.tfstate"
+    region         = "ap-northeast-2"
+    dynamodb_table = "prod-connectly-tf-lock"
+    encrypt        = true
+  }
 }
 
 provider "aws" {
