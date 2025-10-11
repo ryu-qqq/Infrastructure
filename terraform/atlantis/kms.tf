@@ -142,6 +142,20 @@ resource "aws_kms_key_policy" "efs" {
         Resource = "*"
       },
       {
+        Sid    = "Allow EFS service-linked role to use the key"
+        Effect = "Allow"
+        Principal = {
+          AWS = "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/aws-service-role/elasticfilesystem.amazonaws.com/AWSServiceRoleForAmazonElasticFileSystem"
+        }
+        Action = [
+          "kms:Decrypt",
+          "kms:DescribeKey",
+          "kms:GenerateDataKey",
+          "kms:CreateGrant"
+        ]
+        Resource = "*"
+      },
+      {
         Sid    = "Allow ECS tasks to use the key for EFS"
         Effect = "Allow"
         Principal = {
