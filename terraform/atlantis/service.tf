@@ -25,8 +25,8 @@ resource "aws_ecs_service" "atlantis" {
   # deployment_maximum_percent = 100: Only 1 task can run at a time
   # deployment_minimum_healthy_percent = 0: Old task stops before new task starts
   # This prevents concurrent access to EFS Atlantis data directory
-  deployment_maximum_percent         = 100  # Only one task at a time
-  deployment_minimum_healthy_percent = 0    # Stop old before starting new
+  deployment_maximum_percent         = 100 # Only one task at a time
+  deployment_minimum_healthy_percent = 0   # Stop old before starting new
 
   # Deployment circuit breaker for automatic rollback
   deployment_circuit_breaker {
