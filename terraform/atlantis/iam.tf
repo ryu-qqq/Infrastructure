@@ -153,6 +153,8 @@ resource "aws_iam_role_policy" "atlantis-terraform-operations" {
           "ec2:Describe*",
           "ecs:Describe*",
           "ecr:Describe*",
+          "ecr:GetLifecyclePolicy",
+          "ecr:GetRepositoryPolicy",
           "ecr:ListTagsForResource",
           "elasticloadbalancing:Describe*",
           "elasticfilesystem:Describe*",
