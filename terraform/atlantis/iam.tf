@@ -153,9 +153,16 @@ resource "aws_iam_role_policy" "atlantis-terraform-operations" {
           "ec2:Describe*",
           "ecs:Describe*",
           "ecr:Describe*",
+          "elasticloadbalancing:Describe*",
+          "elasticfilesystem:Describe*",
           "kms:Describe*",
           "kms:List*",
+          "kms:GetKeyPolicy",
           "logs:Describe*",
+          "logs:ListTagsForResource",
+          "secretsmanager:DescribeSecret",
+          "secretsmanager:GetResourcePolicy",
+          "secretsmanager:ListSecretVersionIds",
           "s3:List*"
         ]
         Resource = "*"
