@@ -12,7 +12,7 @@ Atlantis가 GitHub PR 이벤트를 자동으로 감지하고 처리할 수 있�
 
 ### 1.2 기본 정보 설정
 
-**GitHub App name**: `atlantis-terraform-automation`
+**GitHub App name**: `ryu-qqq-atlantis-terraform-auto`
 
 **Description**:
 ```
