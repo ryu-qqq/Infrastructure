@@ -8,6 +8,15 @@ on:
       - 'terraform/**'
       - 'docker/**'
       - '.github/workflows/terraform-*.yml'
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Environment to deploy'
+        required: false
+        default: 'prod'
+        type: choice
+        options:
+          - prod
 
 permissions:
   contents: read
