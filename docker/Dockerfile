@@ -21,8 +21,8 @@ RUN apk add --no-cache \
 # Switch back to atlantis user for security
 USER atlantis
 
-# Copy any custom configuration files if needed
-# COPY --chown=atlantis:atlantis config/ /home/atlantis/
+# Copy server-side repository configuration
+COPY --chown=atlantis:atlantis terraform/atlantis/repos.yaml /home/atlantis/repos.yaml
 
 # Set working directory
 WORKDIR /home/atlantis
