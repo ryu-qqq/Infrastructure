@@ -44,10 +44,15 @@ resource "aws_security_group" "vpc_endpoints" {
   # No egress rules needed - VPC Interface Endpoints only handle inbound traffic from VPC to AWS services
   # AWS services respond through the same interface without requiring explicit egress rules
 
-  tags = {
-    Name        = "vpc-endpoint-sg"
-    Environment = "prod"
-  }
+  tags = merge(
+    local.required_tags,
+    {
+      Name        = "vpc-endpoint-sg"
+      Environment = "prod"
+      Component   = "vpc-endpoints"
+      Description = "Security group for VPC Interface Endpoints"
+    }
+  )
 }
 
 # S3 Gateway Endpoint (Free)
@@ -57,11 +62,15 @@ resource "aws_vpc_endpoint" "s3" {
   vpc_endpoint_type = "Gateway"
   route_table_ids   = data.aws_route_tables.private.ids
 
-  tags = {
-    Name        = "s3-gateway-endpoint"
-    Environment = "prod"
-    Purpose     = "Cost optimization for S3 access"
-  }
+  tags = merge(
+    local.required_tags,
+    {
+      Name        = "s3-gateway-endpoint"
+      Environment = "prod"
+      Component   = "vpc-endpoints"
+      Purpose     = "Cost optimization for S3 access"
+    }
+  )
 }
 
 # ECR API Interface Endpoint
@@ -73,11 +82,15 @@ resource "aws_vpc_endpoint" "ecr_api" {
   security_group_ids  = [aws_security_group.vpc_endpoints.id]
   private_dns_enabled = true
 
-  tags = {
-    Name        = "ecr-api-endpoint"
-    Environment = "prod"
-    Purpose     = "ECS container image pull optimization"
-  }
+  tags = merge(
+    local.required_tags,
+    {
+      Name        = "ecr-api-endpoint"
+      Environment = "prod"
+      Component   = "vpc-endpoints"
+      Purpose     = "ECS container image pull optimization"
+    }
+  )
 }
 
 # ECR DKR Interface Endpoint
@@ -89,11 +102,15 @@ resource "aws_vpc_endpoint" "ecr_dkr" {
   security_group_ids  = [aws_security_group.vpc_endpoints.id]
   private_dns_enabled = true
 
-  tags = {
-    Name        = "ecr-dkr-endpoint"
-    Environment = "prod"
-    Purpose     = "ECS Docker registry access optimization"
-  }
+  tags = merge(
+    local.required_tags,
+    {
+      Name        = "ecr-dkr-endpoint"
+      Environment = "prod"
+      Component   = "vpc-endpoints"
+      Purpose     = "ECS Docker registry access optimization"
+    }
+  )
 }
 
 # Secrets Manager Interface Endpoint
@@ -105,11 +122,15 @@ resource "aws_vpc_endpoint" "secretsmanager" {
   security_group_ids  = [aws_security_group.vpc_endpoints.id]
   private_dns_enabled = true
 
-  tags = {
-    Name        = "secretsmanager-endpoint"
-    Environment = "prod"
-    Purpose     = "Secure secrets access from private subnets"
-  }
+  tags = merge(
+    local.required_tags,
+    {
+      Name        = "secretsmanager-endpoint"
+      Environment = "prod"
+      Component   = "vpc-endpoints"
+      Purpose     = "Secure secrets access from private subnets"
+    }
+  )
 }
 
 # CloudWatch Logs Interface Endpoint
@@ -121,11 +142,15 @@ resource "aws_vpc_endpoint" "logs" {
   security_group_ids  = [aws_security_group.vpc_endpoints.id]
   private_dns_enabled = true
 
-  tags = {
-    Name        = "logs-endpoint"
-    Environment = "prod"
-    Purpose     = "CloudWatch Logs optimization"
-  }
+  tags = merge(
+    local.required_tags,
+    {
+      Name        = "logs-endpoint"
+      Environment = "prod"
+      Component   = "vpc-endpoints"
+      Purpose     = "CloudWatch Logs optimization"
+    }
+  )
 }
 
 # Outputs
