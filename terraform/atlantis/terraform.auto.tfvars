@@ -40,3 +40,4 @@ atlantis_memory = 1024
 alb_enable_deletion_protection = false # Set to true for production
 # Updated: Sat Oct 11 16:40:30 KST 2025
 # Updated: Sun Oct 12 20:53:17 KST 2025
+# Updated: Sun Oct 12 23:01:00 KST 2025 - New GitHub App configuration
