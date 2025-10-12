@@ -28,7 +28,7 @@ data "aws_route_tables" "private" {
 }
 
 # Security Group for VPC Endpoints (Interface type)
-resource "aws_security_group" "vpc_endpoints" {
+resource "aws_security_group" "vpc-endpoints" {
   name        = "vpc-endpoint-sg"
   description = "Security group for VPC Interface Endpoints"
   vpc_id      = data.aws_vpc.main.id
@@ -74,12 +74,12 @@ resource "aws_vpc_endpoint" "s3" {
 }
 
 # ECR API Interface Endpoint
-resource "aws_vpc_endpoint" "ecr_api" {
+resource "aws_vpc_endpoint" "ecr-api" {
   vpc_id              = data.aws_vpc.main.id
   service_name        = "com.amazonaws.${var.aws_region}.ecr.api"
   vpc_endpoint_type   = "Interface"
   subnet_ids          = data.aws_subnets.private.ids
-  security_group_ids  = [aws_security_group.vpc_endpoints.id]
+  security_group_ids  = [aws_security_group.vpc-endpoints.id]
   private_dns_enabled = true
 
   tags = merge(
@@ -94,12 +94,12 @@ resource "aws_vpc_endpoint" "ecr_api" {
 }
 
 # ECR DKR Interface Endpoint
-resource "aws_vpc_endpoint" "ecr_dkr" {
+resource "aws_vpc_endpoint" "ecr-dkr" {
   vpc_id              = data.aws_vpc.main.id
   service_name        = "com.amazonaws.${var.aws_region}.ecr.dkr"
   vpc_endpoint_type   = "Interface"
   subnet_ids          = data.aws_subnets.private.ids
-  security_group_ids  = [aws_security_group.vpc_endpoints.id]
+  security_group_ids  = [aws_security_group.vpc-endpoints.id]
   private_dns_enabled = true
 
   tags = merge(
@@ -119,7 +119,7 @@ resource "aws_vpc_endpoint" "secretsmanager" {
   service_name        = "com.amazonaws.${var.aws_region}.secretsmanager"
   vpc_endpoint_type   = "Interface"
   subnet_ids          = data.aws_subnets.private.ids
-  security_group_ids  = [aws_security_group.vpc_endpoints.id]
+  security_group_ids  = [aws_security_group.vpc-endpoints.id]
   private_dns_enabled = true
 
   tags = merge(
@@ -139,7 +139,7 @@ resource "aws_vpc_endpoint" "logs" {
   service_name        = "com.amazonaws.${var.aws_region}.logs"
   vpc_endpoint_type   = "Interface"
   subnet_ids          = data.aws_subnets.private.ids
-  security_group_ids  = [aws_security_group.vpc_endpoints.id]
+  security_group_ids  = [aws_security_group.vpc-endpoints.id]
   private_dns_enabled = true
 
   tags = merge(
@@ -161,12 +161,12 @@ output "vpc_endpoint_s3_id" {
 
 output "vpc_endpoint_ecr_api_id" {
   description = "ID of ECR API Interface Endpoint"
-  value       = aws_vpc_endpoint.ecr_api.id
+  value       = aws_vpc_endpoint.ecr-api.id
 }
 
 output "vpc_endpoint_ecr_dkr_id" {
   description = "ID of ECR DKR Interface Endpoint"
-  value       = aws_vpc_endpoint.ecr_dkr.id
+  value       = aws_vpc_endpoint.ecr-dkr.id
 }
 
 output "vpc_endpoint_secretsmanager_id" {
@@ -181,5 +181,5 @@ output "vpc_endpoint_logs_id" {
 
 output "vpc_endpoint_sg_id" {
   description = "Security Group ID for VPC Endpoints"
-  value       = aws_security_group.vpc_endpoints.id
+  value       = aws_security_group.vpc-endpoints.id
 }
