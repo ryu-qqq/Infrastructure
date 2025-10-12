@@ -41,13 +41,8 @@ resource "aws_security_group" "vpc_endpoints" {
     cidr_blocks = [data.aws_vpc.main.cidr_block]
   }
 
-  egress {
-    description = "Allow all outbound traffic"
-    from_port   = 0
-    to_port     = 0
-    protocol    = "-1"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
+  # No egress rules needed - VPC Interface Endpoints only handle inbound traffic from VPC to AWS services
+  # AWS services respond through the same interface without requiring explicit egress rules
 
   tags = {
     Name        = "vpc-endpoint-sg"
