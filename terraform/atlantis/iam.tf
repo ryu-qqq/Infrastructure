@@ -158,10 +158,12 @@ resource "aws_iam_role_policy" "atlantis-terraform-operations" {
           "kms:Describe*",
           "kms:List*",
           "kms:GetKeyPolicy",
+          "kms:GetKeyRotationStatus",
           "logs:Describe*",
           "logs:ListTagsForResource",
           "secretsmanager:DescribeSecret",
           "secretsmanager:GetResourcePolicy",
+          "secretsmanager:GetSecretValue",
           "secretsmanager:ListSecretVersionIds",
           "s3:List*"
         ]
