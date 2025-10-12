@@ -54,7 +54,7 @@ resource "aws_iam_role_policy" "ecs-task-execution-kms" {
   })
 }
 
-# Policy for Secrets Manager access (GitHub credentials)
+# Policy for Secrets Manager access (GitHub App credentials and webhook secret)
 resource "aws_iam_role_policy" "ecs-task-execution-secrets" {
   name = "atlantis-ecs-task-execution-secrets"
   role = aws_iam_role.ecs-task-execution.id
@@ -67,7 +67,10 @@ resource "aws_iam_role_policy" "ecs-task-execution-secrets" {
         Action = [
           "secretsmanager:GetSecretValue"
         ]
-        Resource = aws_secretsmanager_secret.atlantis-github.arn
+        Resource = [
+          aws_secretsmanager_secret.atlantis-github-app.arn,
+          aws_secretsmanager_secret.atlantis-webhook-secret.arn
+        ]
       }
     ]
   })
