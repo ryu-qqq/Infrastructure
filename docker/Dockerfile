@@ -21,11 +21,15 @@ RUN apk add --no-cache \
 # Switch back to atlantis user for security
 USER atlantis
 
-# Copy server-side repository configuration
-COPY --chown=atlantis:atlantis terraform/atlantis/repos.yaml /home/atlantis/repos.yaml
-
 # Set working directory
 WORKDIR /home/atlantis
+
+# Copy server-side repository configuration
+# Force rebuild: 2025-10-13
+COPY --chown=atlantis:atlantis terraform/atlantis/repos.yaml /home/atlantis/repos.yaml
+
+# Verify file was copied
+RUN ls -la /home/atlantis/repos.yaml && echo "repos.yaml successfully copied"
 
 # Expose Atlantis server port
 EXPOSE 4141
