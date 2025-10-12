@@ -124,9 +124,12 @@ resource "aws_iam_role_policy" "atlantis-terraform-operations" {
         # Wildcard pattern is intentional: Atlantis manages multiple projects' state files
         # across different S3 buckets following the naming pattern: terraform-state-*
         # This allows Atlantis to automate Terraform operations for all managed projects
+        # Also includes prod-connectly bucket for legacy infrastructure state management
         Resource = [
           "arn:aws:s3:::${var.terraform_state_bucket_prefix}-*",
-          "arn:aws:s3:::${var.terraform_state_bucket_prefix}-*/*"
+          "arn:aws:s3:::${var.terraform_state_bucket_prefix}-*/*",
+          "arn:aws:s3:::prod-connectly",
+          "arn:aws:s3:::prod-connectly/*"
         ]
       },
       {
