@@ -1,4 +1,5 @@
 # ECS Task Definition for Atlantis
+# Force task definition recreation to apply correct GitHub App secrets
 
 # CloudWatch Log Group for Atlantis
 resource "aws_cloudwatch_log_group" "atlantis" {
