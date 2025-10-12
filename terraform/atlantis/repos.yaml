@@ -48,10 +48,3 @@ workflows:
     apply:
       steps:
         - apply
-
-# Global apply requirements (can be overridden by repos)
-apply_requirements: [mergeable]
-
-# Parallel plan/apply settings
-parallel_plan: true
-parallel_apply: false
