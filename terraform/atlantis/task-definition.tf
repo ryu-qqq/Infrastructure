@@ -111,6 +111,29 @@ resource "aws_ecs_task_definition" "atlantis" {
         }
       ]
 
+      # GitHub credentials from Secrets Manager
+      # Using GitHub App authentication (recommended for production)
+      secrets = [
+        # GitHub App credentials
+        {
+          name      = "ATLANTIS_GH_APP_ID"
+          valueFrom = "${aws_secretsmanager_secret.atlantis-github-app.arn}:app_id::"
+        },
+        {
+          name      = "ATLANTIS_GH_APP_INSTALLATION_ID"
+          valueFrom = "${aws_secretsmanager_secret.atlantis-github-app.arn}:installation_id::"
+        },
+        {
+          name      = "ATLANTIS_GH_APP_KEY"
+          valueFrom = "${aws_secretsmanager_secret.atlantis-github-app.arn}:private_key::"
+        },
+        # GitHub Webhook Secret
+        {
+          name      = "ATLANTIS_GH_WEBHOOK_SECRET"
+          valueFrom = "${aws_secretsmanager_secret.atlantis-webhook-secret.arn}:webhook_secret::"
+        }
+      ]
+
       # Health check configuration
       healthCheck = {
         command = [
