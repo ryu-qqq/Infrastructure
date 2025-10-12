@@ -104,6 +104,12 @@ check_resource_tags() {
         return
     fi
 
+    # S3 bucket sub-resources don't support tags (only the bucket itself does)
+    # Exclude all aws_s3_bucket_* except aws_s3_bucket itself
+    if [[ "$resource_type" =~ ^aws_s3_bucket_ ]]; then
+        return
+    fi
+
     # Extract the resource block
     local resource_block=$(awk -v start="$line_number" '
         NR == start { depth=0; print }
