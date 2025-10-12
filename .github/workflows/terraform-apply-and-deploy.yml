@@ -47,8 +47,10 @@ jobs:
       - name: Terraform Apply
         working-directory: terraform/atlantis
         env:
-          TF_VAR_github_username: ${{ secrets.ATLANTIS_GITHUB_USERNAME }}
-          TF_VAR_github_token: ${{ secrets.ATLANTIS_GITHUB_TOKEN }}
+          TF_VAR_github_app_id: ${{ secrets.TF_VAR_GITHUB_APP_ID }}
+          TF_VAR_github_app_installation_id: ${{ secrets.TF_VAR_GITHUB_APP_INSTALLATION_ID }}
+          TF_VAR_github_app_private_key: ${{ secrets.TF_VAR_GITHUB_APP_PRIVATE_KEY }}
+          TF_VAR_github_webhook_secret: ${{ secrets.TF_VAR_GITHUB_WEBHOOK_SECRET }}
         run: terraform apply -auto-approve
 
       - name: Get ECR Registry
