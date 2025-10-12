@@ -90,7 +90,7 @@ check_resource_tags() {
     local line_number=$4
 
     # Skip certain resource types that don't support tags
-    local skip_types=("aws_kms_alias" "aws_kms_key_policy" "aws_ecr_repository_policy" "aws_ecr_lifecycle_policy" "aws_iam_role_policy_attachment" "aws_iam_role_policy" "aws_ecs_cluster_capacity_providers" "data")
+    local skip_types=("aws_kms_alias" "aws_kms_key_policy" "aws_ecr_repository_policy" "aws_ecr_lifecycle_policy" "aws_iam_role_policy_attachment" "aws_iam_role_policy" "aws_ecs_cluster_capacity_providers" "aws_secretsmanager_secret_version" "data")
 
     for skip_type in "${skip_types[@]}"; do
         if [[ "$resource_type" == "$skip_type" ]]; then
