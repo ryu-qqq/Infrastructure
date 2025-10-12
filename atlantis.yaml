@@ -33,6 +33,7 @@ projects:
     apply_requirements: ["approved", "mergeable"]
     workflow: default
 
+
 # Workflows
 workflows:
   default:

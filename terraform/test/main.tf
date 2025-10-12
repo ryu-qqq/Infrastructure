@@ -16,10 +16,10 @@ terraform {
   }
 
   backend "s3" {
-    bucket         = "terraform-state-ryu-qqq"
-    key            = "infrastructure/test/terraform.tfstate"
+    bucket         = "prod-connectly"
+    key            = "test/terraform.tfstate"
     region         = "ap-northeast-2"
-    dynamodb_table = "terraform-state-lock"
+    dynamodb_table = "prod-connectly-tf-lock"
     encrypt        = true
   }
 }
@@ -34,7 +34,7 @@ resource "random_id" "suffix" {
 }
 
 # Test S3 bucket
-resource "aws_s3_bucket" "atlantis_test" {
+resource "aws_s3_bucket" "atlantis-test" {
   bucket = "atlantis-test-${random_id.suffix.hex}"
 
   tags = merge(
@@ -48,8 +48,8 @@ resource "aws_s3_bucket" "atlantis_test" {
 }
 
 # Enable versioning
-resource "aws_s3_bucket_versioning" "atlantis_test" {
-  bucket = aws_s3_bucket.atlantis_test.id
+resource "aws_s3_bucket_versioning" "atlantis-test" {
+  bucket = aws_s3_bucket.atlantis-test.id
 
   versioning_configuration {
     status = "Enabled"
@@ -57,8 +57,8 @@ resource "aws_s3_bucket_versioning" "atlantis_test" {
 }
 
 # Block public access
-resource "aws_s3_bucket_public_access_block" "atlantis_test" {
-  bucket = aws_s3_bucket.atlantis_test.id
+resource "aws_s3_bucket_public_access_block" "atlantis-test" {
+  bucket = aws_s3_bucket.atlantis-test.id
 
   block_public_acls       = true
   block_public_policy     = true

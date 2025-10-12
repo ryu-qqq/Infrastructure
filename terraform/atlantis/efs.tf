@@ -93,8 +93,8 @@ resource "aws_efs_access_point" "atlantis" {
     path = "/atlantis-data"
 
     creation_info {
-      owner_gid   = 100  # atlantis user group
-      owner_uid   = 100  # atlantis user
+      owner_gid   = 100 # atlantis user group
+      owner_uid   = 100 # atlantis user
       permissions = "755"
     }
   }

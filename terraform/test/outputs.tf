@@ -2,15 +2,15 @@
 
 output "test_bucket_name" {
   description = "Name of the test S3 bucket"
-  value       = aws_s3_bucket.atlantis_test.id
+  value       = aws_s3_bucket.atlantis-test.id
 }
 
 output "test_bucket_arn" {
   description = "ARN of the test S3 bucket"
-  value       = aws_s3_bucket.atlantis_test.arn
+  value       = aws_s3_bucket.atlantis-test.arn
 }
 
 output "test_bucket_region" {
   description = "Region of the test S3 bucket"
-  value       = aws_s3_bucket.atlantis_test.region
+  value       = aws_s3_bucket.atlantis-test.region
 }

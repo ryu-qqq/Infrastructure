@@ -90,13 +90,25 @@ check_resource_tags() {
     local line_number=$4
 
     # Skip certain resource types that don't support tags
-    local skip_types=("aws_kms_alias" "aws_kms_key_policy" "aws_ecr_repository_policy" "aws_ecr_lifecycle_policy" "aws_iam_role_policy_attachment" "aws_iam_role_policy" "aws_ecs_cluster_capacity_providers" "data")
+    local skip_types=("aws_kms_alias" "aws_kms_key_policy" "aws_ecr_repository_policy" "aws_ecr_lifecycle_policy" "aws_iam_role_policy_attachment" "aws_iam_role_policy" "aws_ecs_cluster_capacity_providers" "aws_secretsmanager_secret_version" "aws_efs_mount_target" "aws_efs_access_point" "data")
 
     for skip_type in "${skip_types[@]}"; do
         if [[ "$resource_type" == "$skip_type" ]]; then
             return
         fi
     done
+
+    # Skip resource types that don't support tags based on patterns
+    # Random provider resources don't support tags
+    if [[ "$resource_type" =~ ^random_ ]]; then
+        return
+    fi
+
+    # S3 bucket sub-resources don't support tags (only the bucket itself does)
+    # Exclude all aws_s3_bucket_* except aws_s3_bucket itself
+    if [[ "$resource_type" =~ ^aws_s3_bucket_ ]]; then
+        return
+    fi
 
     # Extract the resource block
     local resource_block=$(awk -v start="$line_number" '
