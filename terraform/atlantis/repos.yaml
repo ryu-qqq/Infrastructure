@@ -8,20 +8,14 @@ repos:
     allowed_workflows: [default, custom]
     allow_custom_workflows: true
 
-  # Crawler repository
-  - id: github.com/ryu-qqq/crawler
-    allowed_overrides: [workflow, apply_requirements]
-    allowed_workflows: [default, custom]
-    allow_custom_workflows: true
-
-  # AuthHub repository - Authentication service
-  - id: github.com/ryu-qqq/authhub
+  # CrawlingHub repository - Web crawling service
+  - id: github.com/ryu-qqq/CrawlingHub
     allowed_overrides: [workflow, apply_requirements]
     allowed_workflows: [default, custom]
     allow_custom_workflows: true
 
   # FileFlow repository - File management service
-  - id: github.com/ryu-qqq/fileflow
+  - id: github.com/ryu-qqq/FileFlow
     allowed_overrides: [workflow, apply_requirements]
     allowed_workflows: [default, custom]
     allow_custom_workflows: true
