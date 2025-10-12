@@ -54,7 +54,7 @@ resource "aws_iam_role_policy" "ecs-task-execution-kms" {
   })
 }
 
-# Policy for Secrets Manager access (GitHub credentials and GitHub App)
+# Policy for Secrets Manager access (GitHub App credentials and webhook secret)
 resource "aws_iam_role_policy" "ecs-task-execution-secrets" {
   name = "atlantis-ecs-task-execution-secrets"
   role = aws_iam_role.ecs-task-execution.id
@@ -68,7 +68,6 @@ resource "aws_iam_role_policy" "ecs-task-execution-secrets" {
           "secretsmanager:GetSecretValue"
         ]
         Resource = [
-          aws_secretsmanager_secret.atlantis-github.arn,
           aws_secretsmanager_secret.atlantis-github-app.arn,
           aws_secretsmanager_secret.atlantis-webhook-secret.arn
         ]
@@ -125,9 +124,12 @@ resource "aws_iam_role_policy" "atlantis-terraform-operations" {
         # Wildcard pattern is intentional: Atlantis manages multiple projects' state files
         # across different S3 buckets following the naming pattern: terraform-state-*
         # This allows Atlantis to automate Terraform operations for all managed projects
+        # Also includes prod-connectly bucket for legacy infrastructure state management
         Resource = [
           "arn:aws:s3:::${var.terraform_state_bucket_prefix}-*",
-          "arn:aws:s3:::${var.terraform_state_bucket_prefix}-*/*"
+          "arn:aws:s3:::${var.terraform_state_bucket_prefix}-*/*",
+          "arn:aws:s3:::prod-connectly",
+          "arn:aws:s3:::prod-connectly/*"
         ]
       },
       {
@@ -138,7 +140,11 @@ resource "aws_iam_role_policy" "atlantis-terraform-operations" {
           "dynamodb:PutItem",
           "dynamodb:DeleteItem"
         ]
-        Resource = "arn:aws:dynamodb:*:${data.aws_caller_identity.current.account_id}:table/${var.terraform_state_lock_table}"
+        # Allows access to standard lock table and legacy prod-connectly lock table
+        Resource = [
+          "arn:aws:dynamodb:*:${data.aws_caller_identity.current.account_id}:table/${var.terraform_state_lock_table}",
+          "arn:aws:dynamodb:*:${data.aws_caller_identity.current.account_id}:table/prod-connectly-tf-lock"
+        ]
       },
       {
         Sid    = "TerraformPlanOperations"
@@ -147,9 +153,21 @@ resource "aws_iam_role_policy" "atlantis-terraform-operations" {
           "ec2:Describe*",
           "ecs:Describe*",
           "ecr:Describe*",
+          "ecr:GetLifecyclePolicy",
+          "ecr:GetRepositoryPolicy",
+          "ecr:ListTagsForResource",
+          "elasticloadbalancing:Describe*",
+          "elasticfilesystem:Describe*",
           "kms:Describe*",
           "kms:List*",
+          "kms:GetKeyPolicy",
+          "kms:GetKeyRotationStatus",
           "logs:Describe*",
+          "logs:ListTagsForResource",
+          "secretsmanager:DescribeSecret",
+          "secretsmanager:GetResourcePolicy",
+          "secretsmanager:GetSecretValue",
+          "secretsmanager:ListSecretVersionIds",
           "s3:List*"
         ]
         Resource = "*"

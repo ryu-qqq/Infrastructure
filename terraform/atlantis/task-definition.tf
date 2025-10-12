@@ -1,4 +1,5 @@
 # ECS Task Definition for Atlantis
+# Force task definition recreation to apply correct GitHub App secrets
 
 # CloudWatch Log Group for Atlantis
 resource "aws_cloudwatch_log_group" "atlantis" {
@@ -78,7 +79,35 @@ resource "aws_ecs_task_definition" "atlantis" {
         },
         {
           name  = "ATLANTIS_LOG_LEVEL"
-          value = "info"
+          value = "debug"
+        },
+        {
+          name  = "ATLANTIS_WRITE_GIT_CREDS"
+          value = "true"
+        },
+        {
+          name  = "ATLANTIS_REPO_CONFIG"
+          value = "/home/atlantis/repos.yaml"
+        }
+      ]
+
+      # GitHub App credentials from Secrets Manager
+      secrets = [
+        {
+          name      = "ATLANTIS_GH_APP_ID"
+          valueFrom = "${aws_secretsmanager_secret.atlantis-github-app.arn}:app_id::"
+        },
+        {
+          name      = "ATLANTIS_GH_APP_INSTALLATION_ID"
+          valueFrom = "${aws_secretsmanager_secret.atlantis-github-app.arn}:installation_id::"
+        },
+        {
+          name      = "ATLANTIS_GH_APP_KEY"
+          valueFrom = "${aws_secretsmanager_secret.atlantis-github-app.arn}:private_key::"
+        },
+        {
+          name      = "ATLANTIS_GH_WEBHOOK_SECRET"
+          valueFrom = "${aws_secretsmanager_secret.atlantis-webhook-secret.arn}:webhook_secret::"
         }
       ]
 

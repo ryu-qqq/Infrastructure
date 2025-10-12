@@ -156,29 +156,16 @@ variable "alb_enable_deletion_protection" {
   default     = false
 }
 
-# GitHub Configuration
-variable "github_username" {
-  description = "GitHub username for Atlantis authentication"
-  type        = string
-  sensitive   = true
-}
-
-variable "github_token" {
-  description = "GitHub Personal Access Token for Atlantis"
-  type        = string
-  sensitive   = true
-}
-
 # GitHub App Configuration
 variable "github_app_id" {
-  description = "GitHub App ID for Atlantis"
+  description = "GitHub App ID for Atlantis authentication"
   type        = string
   default     = ""
   sensitive   = true
 }
 
 variable "github_app_installation_id" {
-  description = "GitHub App Installation ID"
+  description = "GitHub App Installation ID for Atlantis"
   type        = string
   default     = ""
   sensitive   = true

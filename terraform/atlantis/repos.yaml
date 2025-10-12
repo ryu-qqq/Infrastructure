@@ -1,0 +1,44 @@
+# Atlantis Server-Side Repository Configuration
+# This file defines organization-level policies and permissions
+
+repos:
+  # Infrastructure repository - Terraform automation infrastructure
+  - id: github.com/ryu-qqq/Infrastructure
+    allowed_overrides: [workflow, apply_requirements]
+    allowed_workflows: [default, custom]
+    allow_custom_workflows: true
+
+  # CrawlingHub repository - Web crawling service
+  - id: github.com/ryu-qqq/CrawlingHub
+    allowed_overrides: [workflow, apply_requirements]
+    allowed_workflows: [default, custom]
+    allow_custom_workflows: true
+
+  # FileFlow repository - File management service
+  - id: github.com/ryu-qqq/FileFlow
+    allowed_overrides: [workflow, apply_requirements]
+    allowed_workflows: [default, custom]
+    allow_custom_workflows: true
+
+# Default workflow for all repositories
+workflows:
+  default:
+    plan:
+      steps:
+        - init
+        - plan
+    apply:
+      steps:
+        - apply
+
+  # Custom workflow with additional validation
+  custom:
+    plan:
+      steps:
+        - init
+        - run: terraform fmt -check
+        - run: terraform validate
+        - plan
+    apply:
+      steps:
+        - apply
