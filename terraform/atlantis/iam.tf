@@ -140,7 +140,11 @@ resource "aws_iam_role_policy" "atlantis-terraform-operations" {
           "dynamodb:PutItem",
           "dynamodb:DeleteItem"
         ]
-        Resource = "arn:aws:dynamodb:*:${data.aws_caller_identity.current.account_id}:table/${var.terraform_state_lock_table}"
+        # Allows access to standard lock table and legacy prod-connectly lock table
+        Resource = [
+          "arn:aws:dynamodb:*:${data.aws_caller_identity.current.account_id}:table/${var.terraform_state_lock_table}",
+          "arn:aws:dynamodb:*:${data.aws_caller_identity.current.account_id}:table/prod-connectly-tf-lock"
+        ]
       },
       {
         Sid    = "TerraformPlanOperations"
