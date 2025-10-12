@@ -98,6 +98,12 @@ check_resource_tags() {
         fi
     done
 
+    # Skip resource types that don't support tags based on patterns
+    # Random provider resources don't support tags
+    if [[ "$resource_type" =~ ^random_ ]]; then
+        return
+    fi
+
     # Extract the resource block
     local resource_block=$(awk -v start="$line_number" '
         NR == start { depth=0; print }
