@@ -84,6 +84,10 @@ resource "aws_ecs_task_definition" "atlantis" {
         {
           name  = "ATLANTIS_WRITE_GIT_CREDS"
           value = "true"
+        },
+        {
+          name  = "ATLANTIS_REPO_CONFIG"
+          value = "/home/atlantis/repos.yaml"
         }
       ]
 
