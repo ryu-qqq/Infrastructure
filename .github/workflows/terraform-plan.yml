@@ -61,8 +61,11 @@ jobs:
         id: plan
         working-directory: terraform/atlantis
         run: |
+          set +e
           terraform plan -no-color -out=tfplan
+          PLAN_EXIT_CODE=$?
           terraform show -no-color tfplan > plan.txt
+          exit $PLAN_EXIT_CODE
         continue-on-error: true
 
       - name: Comment Plan on PR
@@ -74,7 +77,14 @@ jobs:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
             const fs = require('fs');
-            const plan = fs.readFileSync('terraform/atlantis/plan.txt', 'utf8');
+            const planFile = 'terraform/atlantis/plan.txt';
+            let plan = '';
+            try {
+              plan = fs.readFileSync(planFile, 'utf8');
+            } catch (error) {
+              plan = 'Error reading plan file. Check workflow logs for details.';
+            }
+
             const output = `#### Terraform Plan 📋
 
             <details><summary>Show Plan</summary>
