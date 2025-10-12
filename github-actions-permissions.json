@@ -117,35 +117,53 @@
       "Resource": "*"
     },
     {
-      "Sid": "KMSManagement",
+      "Sid": "KMSKeyCreation",
       "Effect": "Allow",
       "Action": [
         "kms:CreateKey",
+        "kms:TagResource"
+      ],
+      "Resource": "*"
+    },
+    {
+      "Sid": "KMSAliasManagement",
+      "Effect": "Allow",
+      "Action": [
         "kms:CreateAlias",
-        "kms:DeleteAlias",
+        "kms:DeleteAlias"
+      ],
+      "Resource": [
+        "arn:aws:kms:ap-northeast-2:646886795421:key/*",
+        "arn:aws:kms:ap-northeast-2:646886795421:alias/*"
+      ]
+    },
+    {
+      "Sid": "KMSListOperations",
+      "Effect": "Allow",
+      "Action": [
+        "kms:ListAliases"
+      ],
+      "Resource": "*"
+    },
+    {
+      "Sid": "KMSManagement",
+      "Effect": "Allow",
+      "Action": [
         "kms:DescribeKey",
         "kms:EnableKeyRotation",
         "kms:GetKeyPolicy",
         "kms:GetKeyRotationStatus",
-        "kms:ListAliases",
         "kms:ListResourceTags",
         "kms:PutKeyPolicy",
         "kms:ScheduleKeyDeletion",
         "kms:CancelKeyDeletion",
-        "kms:TagResource",
         "kms:UntagResource",
         "kms:RetireGrant",
         "kms:RevokeGrant",
         "kms:CreateGrant",
         "kms:ListGrants"
       ],
-      "Resource": "*",
-      "Condition": {
-        "StringLike": {
-          "aws:RequestTag/Service": "atlantis",
-          "aws:RequestTag/ManagedBy": "terraform"
-        }
-      }
+      "Resource": "arn:aws:kms:ap-northeast-2:646886795421:key/*"
     },
     {
       "Sid": "EC2NetworkingReadOnly",
@@ -162,22 +180,32 @@
       "Resource": "*"
     },
     {
-      "Sid": "SecurityGroupManagement",
+      "Sid": "SecurityGroupCreation",
       "Effect": "Allow",
       "Action": [
         "ec2:CreateSecurityGroup",
+        "ec2:CreateTags"
+      ],
+      "Resource": [
+        "arn:aws:ec2:ap-northeast-2:646886795421:security-group/*",
+        "arn:aws:ec2:ap-northeast-2:646886795421:vpc/*"
+      ]
+    },
+    {
+      "Sid": "SecurityGroupManagement",
+      "Effect": "Allow",
+      "Action": [
         "ec2:AuthorizeSecurityGroupIngress",
         "ec2:AuthorizeSecurityGroupEgress",
         "ec2:RevokeSecurityGroupIngress",
         "ec2:RevokeSecurityGroupEgress",
-        "ec2:CreateTags",
         "ec2:DeleteTags"
       ],
       "Resource": "*",
       "Condition": {
         "StringLike": {
-          "aws:RequestTag/ManagedBy": "terraform",
-          "aws:RequestTag/Service": "atlantis"
+          "ec2:ResourceTag/ManagedBy": "terraform",
+          "ec2:ResourceTag/Service": "atlantis"
         }
       }
     },
@@ -197,6 +225,7 @@
         "elasticloadbalancing:CreateListener",
         "elasticloadbalancing:DeleteListener",
         "elasticloadbalancing:DescribeListeners",
+        "elasticloadbalancing:DescribeListenerAttributes",
         "elasticloadbalancing:ModifyListener",
         "elasticloadbalancing:AddTags",
         "elasticloadbalancing:RemoveTags",
@@ -238,6 +267,45 @@
         "dynamodb:DescribeTable"
       ],
       "Resource": "arn:aws:dynamodb:ap-northeast-2:646886795421:table/prod-connectly-tf-lock"
+    },
+    {
+      "Sid": "EFSManagement",
+      "Effect": "Allow",
+      "Action": [
+        "elasticfilesystem:CreateFileSystem",
+        "elasticfilesystem:DeleteFileSystem",
+        "elasticfilesystem:DescribeFileSystems",
+        "elasticfilesystem:DescribeFileSystemPolicy",
+        "elasticfilesystem:PutFileSystemPolicy",
+        "elasticfilesystem:DeleteFileSystemPolicy",
+        "elasticfilesystem:CreateMountTarget",
+        "elasticfilesystem:DeleteMountTarget",
+        "elasticfilesystem:DescribeMountTargets",
+        "elasticfilesystem:DescribeMountTargetSecurityGroups",
+        "elasticfilesystem:ModifyMountTargetSecurityGroups",
+        "elasticfilesystem:CreateAccessPoint",
+        "elasticfilesystem:DeleteAccessPoint",
+        "elasticfilesystem:DescribeAccessPoints",
+        "elasticfilesystem:TagResource",
+        "elasticfilesystem:UntagResource",
+        "elasticfilesystem:ListTagsForResource",
+        "elasticfilesystem:PutLifecycleConfiguration",
+        "elasticfilesystem:DescribeLifecycleConfiguration"
+      ],
+      "Resource": "*"
+    },
+    {
+      "Sid": "ECSServiceManagement",
+      "Effect": "Allow",
+      "Action": [
+        "ecs:CreateService",
+        "ecs:DeleteService",
+        "ecs:UpdateService",
+        "ecs:DescribeServices",
+        "ecs:TagResource",
+        "ecs:UntagResource"
+      ],
+      "Resource": "*"
     }
   ]
 }

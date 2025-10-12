@@ -54,6 +54,29 @@ resource "aws_iam_role_policy" "ecs-task-execution-kms" {
   })
 }
 
+# Policy for Secrets Manager access (GitHub credentials and GitHub App)
+resource "aws_iam_role_policy" "ecs-task-execution-secrets" {
+  name = "atlantis-ecs-task-execution-secrets"
+  role = aws_iam_role.ecs-task-execution.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow"
+        Action = [
+          "secretsmanager:GetSecretValue"
+        ]
+        Resource = [
+          aws_secretsmanager_secret.atlantis-github.arn,
+          aws_secretsmanager_secret.atlantis-github-app.arn,
+          aws_secretsmanager_secret.atlantis-webhook-secret.arn
+        ]
+      }
+    ]
+  })
+}
+
 # ECS Task Role
 # This role is used by the Atlantis container for AWS API operations
 resource "aws_iam_role" "ecs-task" {
@@ -168,6 +191,32 @@ resource "aws_iam_role_policy" "atlantis-cloudwatch-logs" {
           "logs:PutLogEvents"
         ]
         Resource = "arn:aws:logs:${var.aws_region}:${data.aws_caller_identity.current.account_id}:log-group:/ecs/atlantis-${var.environment}:*"
+      }
+    ]
+  })
+}
+
+# EFS access policy for task role
+resource "aws_iam_role_policy" "atlantis-efs-access" {
+  name = "atlantis-efs-access"
+  role = aws_iam_role.ecs-task.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow"
+        Action = [
+          "elasticfilesystem:ClientMount",
+          "elasticfilesystem:ClientWrite",
+          "elasticfilesystem:ClientRootAccess"
+        ]
+        Resource = aws_efs_file_system.atlantis.arn
+        Condition = {
+          StringEquals = {
+            "elasticfilesystem:AccessPointArn" = aws_efs_access_point.atlantis.arn
+          }
+        }
       }
     ]
   })
