@@ -92,10 +92,10 @@ cd terraform/cloudtrail
 terraform init
 
 # Review the plan
-terraform plan -var="aws_account_id=646886795421"
+terraform plan -var="aws_account_id=<YOUR_AWS_ACCOUNT_ID>"
 
 # Apply the configuration
-terraform apply -var="aws_account_id=646886795421"
+terraform apply -var="aws_account_id=<YOUR_AWS_ACCOUNT_ID>"
 ```
 
 ### Configure Variables
@@ -103,7 +103,7 @@ terraform apply -var="aws_account_id=646886795421"
 Create `terraform.tfvars`:
 
 ```hcl
-aws_account_id = "646886795421"
+aws_account_id = "<YOUR_AWS_ACCOUNT_ID>"
 aws_region     = "ap-northeast-2"
 environment    = "prod"
 
@@ -216,7 +216,7 @@ If you provided an `alert_email`, confirm the SNS subscription:
 aws cloudtrail get-trail-status --name central-cloudtrail
 
 # Verify S3 bucket policy
-aws s3api get-bucket-policy --bucket cloudtrail-logs-646886795421
+aws s3api get-bucket-policy --bucket cloudtrail-logs-<ACCOUNT_ID>
 
 # Check KMS key policy
 aws kms get-key-policy --key-id alias/cloudtrail-logs --policy-name default
@@ -240,11 +240,11 @@ MSCK REPAIR TABLE cloudtrail_logs;
 ```bash
 # Check SNS subscription status
 aws sns list-subscriptions-by-topic \
-  --topic-arn arn:aws:sns:ap-northeast-2:646886795421:cloudtrail-security-alerts
+  --topic-arn arn:aws:sns:ap-northeast-2:<ACCOUNT_ID>:cloudtrail-security-alerts
 
 # Test SNS topic
 aws sns publish \
-  --topic-arn arn:aws:sns:ap-northeast-2:646886795421:cloudtrail-security-alerts \
+  --topic-arn arn:aws:sns:ap-northeast-2:<ACCOUNT_ID>:cloudtrail-security-alerts \
   --message "Test alert"
 
 # Check EventBridge rule status

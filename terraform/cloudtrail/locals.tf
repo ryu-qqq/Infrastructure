@@ -8,6 +8,7 @@ locals {
     CostCenter  = var.cost_center
     Lifecycle   = var.resource_lifecycle
     Service     = var.service
+    DataClass   = "confidential"
     ManagedBy   = "terraform"
   }
 

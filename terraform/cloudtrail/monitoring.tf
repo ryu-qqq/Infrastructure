@@ -49,7 +49,7 @@ resource "aws_sns_topic_subscription" "security_alerts_email" {
 # EventBridge Rule: Root Account Usage
 resource "aws_cloudwatch_event_rule" "root_account_usage" {
   count       = var.enable_security_alerts ? 1 : 0
-  name        = "cloudtrail-root-account-usage"
+  name        = "${var.cloudtrail_name}-root-account-usage"
   description = "Alert when root account is used"
 
   event_pattern = jsonencode({
@@ -91,7 +91,7 @@ resource "aws_cloudwatch_event_target" "root_account_usage" {
 # EventBridge Rule: Unauthorized API Calls
 resource "aws_cloudwatch_event_rule" "unauthorized_api_calls" {
   count       = var.enable_security_alerts ? 1 : 0
-  name        = "cloudtrail-unauthorized-api-calls"
+  name        = "${var.cloudtrail_name}-unauthorized-api-calls"
   description = "Alert on unauthorized API calls"
 
   event_pattern = jsonencode({
@@ -135,7 +135,7 @@ resource "aws_cloudwatch_event_target" "unauthorized_api_calls" {
 # EventBridge Rule: IAM Policy Changes
 resource "aws_cloudwatch_event_rule" "iam_policy_changes" {
   count       = var.enable_security_alerts ? 1 : 0
-  name        = "cloudtrail-iam-policy-changes"
+  name        = "${var.cloudtrail_name}-iam-policy-changes"
   description = "Alert on IAM policy changes"
 
   event_pattern = jsonencode({
@@ -188,7 +188,7 @@ resource "aws_cloudwatch_event_target" "iam_policy_changes" {
 # EventBridge Rule: Console Login Failures
 resource "aws_cloudwatch_event_rule" "console_login_failures" {
   count       = var.enable_security_alerts ? 1 : 0
-  name        = "cloudtrail-console-login-failures"
+  name        = "${var.cloudtrail_name}-console-login-failures"
   description = "Alert on console login failures"
 
   event_pattern = jsonencode({
@@ -230,7 +230,7 @@ resource "aws_cloudwatch_event_target" "console_login_failures" {
 # EventBridge Rule: Security Group Changes
 resource "aws_cloudwatch_event_rule" "security_group_changes" {
   count       = var.enable_security_alerts ? 1 : 0
-  name        = "cloudtrail-security-group-changes"
+  name        = "${var.cloudtrail_name}-security-group-changes"
   description = "Alert on security group changes"
 
   event_pattern = jsonencode({

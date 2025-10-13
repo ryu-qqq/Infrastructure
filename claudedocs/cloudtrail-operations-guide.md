@@ -26,7 +26,7 @@ aws cloudtrail get-trail-status --name central-cloudtrail
 # - LatestNotificationTime: recent timestamp
 
 # Check S3 bucket for recent logs
-aws s3 ls s3://cloudtrail-logs-646886795421/cloudtrail/AWSLogs/646886795421/CloudTrail/ap-northeast-2/$(date +%Y/%m/%d)/ | tail -5
+aws s3 ls s3://cloudtrail-logs-<ACCOUNT_ID>/cloudtrail/AWSLogs/<ACCOUNT_ID>/CloudTrail/ap-northeast-2/$(date +%Y/%m/%d)/ | tail -5
 
 # Check CloudWatch Logs delivery
 aws logs describe-log-streams \
@@ -67,7 +67,7 @@ SELECT
   responseelements
 FROM cloudtrail_logs
 WHERE useridentity.type = 'Root'
-  AND eventtime >= timestamp '2024-01-01 00:00:00'  -- Adjust timestamp
+  AND date >= date_format(current_date - interval '30' day, '%Y/%m/%d')  -- Last 30 days
 ORDER BY eventtime DESC
 LIMIT 100;
 ```
@@ -134,8 +134,9 @@ FROM cloudtrail_logs
 WHERE eventsource = 'iam.amazonaws.com'
   AND eventname IN (
     'PutUserPolicy', 'PutGroupPolicy', 'PutRolePolicy',
-    'CreatePolicy', 'DeletePolicy', 'AttachUserPolicy',
-    'AttachRolePolicy'
+    'CreatePolicy', 'DeletePolicy', 'CreatePolicyVersion',
+    'AttachUserPolicy', 'AttachGroupPolicy', 'AttachRolePolicy',
+    'DetachUserPolicy', 'DetachGroupPolicy', 'DetachRolePolicy'
   )
   AND date >= date_format(current_date - interval '1' day, '%Y/%m/%d')
 ORDER BY eventtime DESC;
@@ -166,7 +167,7 @@ FROM cloudtrail_logs
 WHERE eventname = 'ConsoleLogin'
   AND errorcode = 'Failed authentication'
   AND date >= date_format(current_date - interval '1' day, '%Y/%m/%d')
-GROUP BY useridentity.principalid, sourceipaddress, useragent, eventtime
+GROUP BY useridentity.principalid, sourceipaddress, useragent
 ORDER BY failure_count DESC;
 ```
 
@@ -198,7 +199,11 @@ FROM cloudtrail_logs
 WHERE eventsource = 'ec2.amazonaws.com'
   AND eventname IN (
     'AuthorizeSecurityGroupIngress',
-    'AuthorizeSecurityGroupEgress'
+    'AuthorizeSecurityGroupEgress',
+    'RevokeSecurityGroupIngress',
+    'RevokeSecurityGroupEgress',
+    'CreateSecurityGroup',
+    'DeleteSecurityGroup'
   )
   AND date >= date_format(current_date - interval '1' day, '%Y/%m/%d')
 ORDER BY eventtime DESC;
@@ -232,7 +237,7 @@ SELECT
   sourceipaddress,
   requestparameters
 FROM cloudtrail_logs
-WHERE useridentity.arn = 'arn:aws:iam::646886795421:user/USERNAME'
+WHERE useridentity.arn = 'arn:aws:iam::<ACCOUNT_ID>:user/USERNAME'
   AND date >= date_format(current_date - interval '7' day, '%Y/%m/%d')
 ORDER BY eventtime DESC;
 ```
@@ -310,7 +315,7 @@ aws cloudtrail describe-trails --trail-name-list central-cloudtrail
 2. **S3 Bucket Permission Issue**: Check `LatestDeliveryError`
    - **Fix**: Verify S3 bucket policy allows CloudTrail to write
    ```bash
-   aws s3api get-bucket-policy --bucket cloudtrail-logs-646886795421
+   aws s3api get-bucket-policy --bucket cloudtrail-logs-<ACCOUNT_ID>
    ```
 
 3. **KMS Key Permission Issue**: Check `LatestNotificationError`
@@ -349,7 +354,7 @@ DROP TABLE cloudtrail_logs;
 ```bash
 # Check SNS subscription status
 aws sns list-subscriptions-by-topic \
-  --topic-arn arn:aws:sns:ap-northeast-2:646886795421:cloudtrail-security-alerts
+  --topic-arn arn:aws:sns:ap-northeast-2:<ACCOUNT_ID>:cloudtrail-security-alerts
 
 # Expected: Subscription with status "Confirmed"
 
@@ -364,7 +369,7 @@ aws events list-rules --name-prefix cloudtrail-
    - Resend confirmation email
    ```bash
    aws sns subscribe \
-     --topic-arn arn:aws:sns:ap-northeast-2:646886795421:cloudtrail-security-alerts \
+     --topic-arn arn:aws:sns:ap-northeast-2:<ACCOUNT_ID>:cloudtrail-security-alerts \
      --protocol email \
      --notification-endpoint your-email@example.com
    ```
@@ -377,7 +382,7 @@ aws events list-rules --name-prefix cloudtrail-
 3. **Test Alert Delivery**:
    ```bash
    aws sns publish \
-     --topic-arn arn:aws:sns:ap-northeast-2:646886795421:cloudtrail-security-alerts \
+     --topic-arn arn:aws:sns:ap-northeast-2:<ACCOUNT_ID>:cloudtrail-security-alerts \
      --subject "Test Alert" \
      --message "This is a test alert from CloudTrail monitoring"
    ```
@@ -455,7 +460,7 @@ ORDER BY date DESC;
    aws iam put-user-policy \
      --user-name COMPROMISED_USER \
      --policy-name DenyAll \
-     --policy-document file://deny-all-policy.json
+     --policy-document '{"Version":"2012-10-17","Statement":[{"Effect":"Deny","Action":"*","Resource":"*"}]}'
    ```
 
 2. **Investigation**:

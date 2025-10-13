@@ -73,6 +73,18 @@ variable "enable_cloudwatch_logs" {
   default     = true
 }
 
+variable "enable_s3_data_events" {
+  description = "Enable S3 data events logging (WARNING: Can generate massive costs)"
+  type        = bool
+  default     = false
+}
+
+variable "enable_lambda_data_events" {
+  description = "Enable Lambda data events logging (WARNING: Can generate massive costs)"
+  type        = bool
+  default     = false
+}
+
 # S3 Bucket Configuration
 variable "s3_bucket_name" {
   description = "Name of the S3 bucket for CloudTrail logs"

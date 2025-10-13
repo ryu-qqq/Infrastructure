@@ -60,6 +60,12 @@ resource "aws_iam_role_policy" "cloudtrail_cloudwatch" {
           "logs:PutLogEvents"
         ]
         Resource = "${aws_cloudwatch_log_group.cloudtrail[0].arn}:*"
+      },
+      {
+        Sid      = "AWSCloudTrailKmsAccess"
+        Effect   = "Allow"
+        Action   = "kms:GenerateDataKey*"
+        Resource = aws_kms_key.cloudtrail.arn
       }
     ]
   })
@@ -89,31 +95,39 @@ resource "aws_cloudtrail" "main" {
     }
   }
 
-  advanced_event_selector {
-    name = "Log S3 data events for all buckets"
+  # S3 Data Events - Disabled by default due to cost concerns
+  dynamic "advanced_event_selector" {
+    for_each = var.enable_s3_data_events ? [1] : []
+    content {
+      name = "Log S3 data events for all buckets"
 
-    field_selector {
-      field  = "eventCategory"
-      equals = ["Data"]
-    }
+      field_selector {
+        field  = "eventCategory"
+        equals = ["Data"]
+      }
 
-    field_selector {
-      field  = "resources.type"
-      equals = ["AWS::S3::Object"]
+      field_selector {
+        field  = "resources.type"
+        equals = ["AWS::S3::Object"]
+      }
     }
   }
 
-  advanced_event_selector {
-    name = "Log Lambda data events"
+  # Lambda Data Events - Disabled by default due to cost concerns
+  dynamic "advanced_event_selector" {
+    for_each = var.enable_lambda_data_events ? [1] : []
+    content {
+      name = "Log Lambda data events"
 
-    field_selector {
-      field  = "eventCategory"
-      equals = ["Data"]
-    }
+      field_selector {
+        field  = "eventCategory"
+        equals = ["Data"]
+      }
 
-    field_selector {
-      field  = "resources.type"
-      equals = ["AWS::Lambda::Function"]
+      field_selector {
+        field  = "resources.type"
+        equals = ["AWS::Lambda::Function"]
+      }
     }
   }
 
