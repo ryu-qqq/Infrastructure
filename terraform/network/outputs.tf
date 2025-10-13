@@ -39,3 +39,25 @@ output "private_route_table_ids" {
   description = "List of private route table IDs"
   value       = aws_route_table.private[*].id
 }
+
+# Transit Gateway Outputs
+
+output "transit_gateway_id" {
+  description = "Transit Gateway ID"
+  value       = var.enable_transit_gateway ? aws_ec2_transit_gateway.main[0].id : null
+}
+
+output "transit_gateway_arn" {
+  description = "Transit Gateway ARN"
+  value       = var.enable_transit_gateway ? aws_ec2_transit_gateway.main[0].arn : null
+}
+
+output "transit_gateway_vpc_attachment_id" {
+  description = "Transit Gateway VPC Attachment ID"
+  value       = var.enable_transit_gateway ? aws_ec2_transit_gateway_vpc_attachment.main[0].id : null
+}
+
+output "transit_gateway_route_table_id" {
+  description = "Transit Gateway default route table ID"
+  value       = var.enable_transit_gateway ? aws_ec2_transit_gateway.main[0].association_default_route_table_id : null
+}
