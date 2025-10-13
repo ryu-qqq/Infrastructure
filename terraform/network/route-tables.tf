@@ -15,6 +15,7 @@ resource "aws_route_table" "public" {
 }
 
 # Public Route - Internet Gateway
+# Note: aws_route resources do not support tags - they inherit from route table
 
 resource "aws_route" "public_internet" {
   route_table_id         = aws_route_table.public.id
@@ -48,6 +49,7 @@ resource "aws_route_table" "private" {
 }
 
 # Private Route - NAT Gateway
+# Note: aws_route resources do not support tags - they inherit from route table
 
 resource "aws_route" "private_nat" {
   route_table_id         = aws_route_table.private.id
