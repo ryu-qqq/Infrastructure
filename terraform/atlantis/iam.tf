@@ -124,12 +124,12 @@ resource "aws_iam_role_policy" "atlantis-terraform-operations" {
         # Wildcard pattern is intentional: Atlantis manages multiple projects' state files
         # across different S3 buckets following the naming pattern: terraform-state-*
         # This allows Atlantis to automate Terraform operations for all managed projects
-        # Also includes prod-connectly bucket for legacy infrastructure state management
+        # Also includes legacy bucket for backward compatibility
         Resource = [
           "arn:aws:s3:::${var.terraform_state_bucket_prefix}-*",
           "arn:aws:s3:::${var.terraform_state_bucket_prefix}-*/*",
-          "arn:aws:s3:::prod-connectly",
-          "arn:aws:s3:::prod-connectly/*"
+          "arn:aws:s3:::${var.legacy_terraform_state_bucket}",
+          "arn:aws:s3:::${var.legacy_terraform_state_bucket}/*"
         ]
       },
       {
@@ -140,10 +140,10 @@ resource "aws_iam_role_policy" "atlantis-terraform-operations" {
           "dynamodb:PutItem",
           "dynamodb:DeleteItem"
         ]
-        # Allows access to standard lock table and legacy prod-connectly lock table
+        # Allows access to standard lock table and legacy lock table for backward compatibility
         Resource = [
           "arn:aws:dynamodb:*:${data.aws_caller_identity.current.account_id}:table/${var.terraform_state_lock_table}",
-          "arn:aws:dynamodb:*:${data.aws_caller_identity.current.account_id}:table/prod-connectly-tf-lock"
+          "arn:aws:dynamodb:*:${data.aws_caller_identity.current.account_id}:table/${var.legacy_terraform_lock_table}"
         ]
       },
       {
