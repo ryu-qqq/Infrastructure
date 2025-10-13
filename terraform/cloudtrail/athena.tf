@@ -34,6 +34,14 @@ resource "aws_glue_catalog_database" "cloudtrail" {
   name  = var.athena_database_name
 
   description = "Database for CloudTrail log analysis"
+
+  tags = merge(
+    local.required_tags,
+    {
+      Name      = var.athena_database_name
+      Component = "athena"
+    }
+  )
 }
 
 # Glue Table for CloudTrail logs
