@@ -202,6 +202,14 @@ resource "aws_glue_catalog_table" "cloudtrail" {
     name = "date"
     type = "string"
   }
+
+  tags = merge(
+    local.required_tags,
+    {
+      Name      = "cloudtrail_logs"
+      Component = "athena"
+    }
+  )
 }
 
 # Named Queries for common CloudTrail analysis
