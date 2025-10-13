@@ -92,6 +92,19 @@ variable "terraform_state_lock_table" {
   default     = "terraform-state-lock"
 }
 
+# Legacy Infrastructure Support
+variable "legacy_terraform_state_bucket" {
+  description = "Legacy S3 bucket name for Terraform state (for backward compatibility)"
+  type        = string
+  default     = "prod-connectly"
+}
+
+variable "legacy_terraform_lock_table" {
+  description = "Legacy DynamoDB table name for Terraform state locking (for backward compatibility)"
+  type        = string
+  default     = "prod-connectly-tf-lock"
+}
+
 # Network Configuration
 variable "vpc_id" {
   description = "VPC ID where ALB and ECS will be deployed"

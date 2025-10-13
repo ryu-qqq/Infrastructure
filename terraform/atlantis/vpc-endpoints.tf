@@ -3,7 +3,7 @@
 
 # Data sources for existing VPC resources
 data "aws_vpc" "main" {
-  id = "vpc-0f162b9e588276e09"
+  id = var.vpc_id
 }
 
 data "aws_subnets" "private" {

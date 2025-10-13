@@ -6,7 +6,9 @@ version: 3
 # Global settings
 automerge: false
 delete_source_branch_on_merge: false
-parallel_plan: true
+# Disable parallel plan to prevent plugin cache conflicts
+# Multiple terraform init operations can race for the same plugin cache files
+parallel_plan: false
 parallel_apply: false
 
 # Projects configuration
@@ -39,7 +41,14 @@ workflows:
   default:
     plan:
       steps:
-        - init
+        # Disable shared plugin cache to prevent "text file busy" race conditions
+        # Forces each terraform init to use project-local plugins
+        - env:
+            name: TF_PLUGIN_CACHE_DIR
+            value: ""
+        - init:
+            extra_args:
+              - "-upgrade"
         - plan
     apply:
       steps:
