@@ -4,7 +4,7 @@
 data "aws_caller_identity" "current" {}
 
 # KMS key for S3 state bucket encryption
-resource "aws_kms_key" "terraform_state" {
+resource "aws_kms_key" "terraform-state" {
   description             = "KMS key for Terraform state S3 bucket encryption"
   deletion_window_in_days = 30
   enable_key_rotation     = true
@@ -18,14 +18,14 @@ resource "aws_kms_key" "terraform_state" {
   )
 }
 
-resource "aws_kms_alias" "terraform_state" {
+resource "aws_kms_alias" "terraform-state" {
   name          = "alias/terraform-state-${var.environment}"
-  target_key_id = aws_kms_key.terraform_state.key_id
+  target_key_id = aws_kms_key.terraform-state.key_id
 }
 
 # KMS Key Policy
-resource "aws_kms_key_policy" "terraform_state" {
-  key_id = aws_kms_key.terraform_state.id
+resource "aws_kms_key_policy" "terraform-state" {
+  key_id = aws_kms_key.terraform-state.id
 
   policy = jsonencode({
     Version = "2012-10-17"
@@ -78,10 +78,10 @@ resource "aws_kms_key_policy" "terraform_state" {
 
 output "kms_key_id" {
   description = "The ID of the KMS key for Terraform state encryption"
-  value       = aws_kms_key.terraform_state.key_id
+  value       = aws_kms_key.terraform-state.key_id
 }
 
 output "kms_key_arn" {
   description = "The ARN of the KMS key for Terraform state encryption"
-  value       = aws_kms_key.terraform_state.arn
+  value       = aws_kms_key.terraform-state.arn
 }

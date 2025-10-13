@@ -7,7 +7,7 @@
 # - Server-side encryption with KMS (optional, DynamoDB default encryption is sufficient)
 # - LockID as partition key (required by Terraform)
 
-resource "aws_dynamodb_table" "terraform_lock" {
+resource "aws_dynamodb_table" "terraform-lock" {
   name         = local.lock_table_name
   billing_mode = "PAY_PER_REQUEST" # On-demand pricing
   hash_key     = "LockID"
@@ -26,7 +26,7 @@ resource "aws_dynamodb_table" "terraform_lock" {
   # For customer-managed KMS key, uncomment below:
   # server_side_encryption {
   #   enabled     = true
-  #   kms_key_arn = aws_kms_key.terraform_state.arn
+  #   kms_key_arn = aws_kms_key.terraform-state.arn
   # }
 
   tags = merge(
@@ -41,10 +41,10 @@ resource "aws_dynamodb_table" "terraform_lock" {
 
 output "lock_table_name" {
   description = "The name of the DynamoDB table for state locking"
-  value       = aws_dynamodb_table.terraform_lock.name
+  value       = aws_dynamodb_table.terraform-lock.name
 }
 
 output "lock_table_arn" {
   description = "The ARN of the DynamoDB table for state locking"
-  value       = aws_dynamodb_table.terraform_lock.arn
+  value       = aws_dynamodb_table.terraform-lock.arn
 }
