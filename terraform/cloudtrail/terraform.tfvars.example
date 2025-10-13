@@ -1,0 +1,38 @@
+# CloudTrail Configuration Example
+# Copy this file to terraform.tfvars and update with your values
+
+# AWS Configuration
+aws_account_id = "646886795421"
+aws_region     = "ap-northeast-2"
+environment    = "prod"
+
+# CloudTrail Configuration
+cloudtrail_name                 = "central-cloudtrail"
+enable_log_file_validation      = true
+include_global_service_events   = true
+is_multi_region_trail           = true
+enable_cloudwatch_logs          = true
+
+# S3 Bucket Configuration
+s3_bucket_name     = "cloudtrail-logs"
+s3_key_prefix      = "cloudtrail"
+log_retention_days = 90  # 90 days total (30 days Standard, 60 days Glacier)
+
+# Athena Configuration
+enable_athena          = true
+athena_database_name   = "cloudtrail_logs"
+athena_workgroup_name  = "cloudtrail-analysis"
+
+# Security Alerts Configuration
+enable_security_alerts = true
+alert_email            = ""  # Optional: Add email for SNS alerts
+
+# KMS Configuration
+kms_key_deletion_window_in_days = 30
+enable_kms_key_rotation         = true
+
+# Required Tags (Governance Standard)
+owner              = "platform-team"
+cost_center        = "infrastructure"
+resource_lifecycle = "permanent"
+service            = "common-platform"
