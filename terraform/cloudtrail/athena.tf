@@ -234,6 +234,14 @@ resource "aws_athena_named_query" "unauthorized_api_calls" {
   SQL
 
   description = "Find unauthorized API calls in the last 7 days"
+
+  tags = merge(
+    local.required_tags,
+    {
+      Name      = "unauthorized-api-calls"
+      Component = "athena"
+    }
+  )
 }
 
 resource "aws_athena_named_query" "root_account_usage" {
@@ -256,6 +264,14 @@ resource "aws_athena_named_query" "root_account_usage" {
   SQL
 
   description = "Find root account usage in the last 30 days"
+
+  tags = merge(
+    local.required_tags,
+    {
+      Name      = "root-account-usage"
+      Component = "athena"
+    }
+  )
 }
 
 resource "aws_athena_named_query" "console_login_failures" {
@@ -279,6 +295,14 @@ resource "aws_athena_named_query" "console_login_failures" {
   SQL
 
   description = "Find failed console login attempts in the last 7 days"
+
+  tags = merge(
+    local.required_tags,
+    {
+      Name      = "console-login-failures"
+      Component = "athena"
+    }
+  )
 }
 
 resource "aws_athena_named_query" "iam_policy_changes" {
@@ -306,4 +330,12 @@ resource "aws_athena_named_query" "iam_policy_changes" {
   SQL
 
   description = "Find IAM policy changes in the last 30 days"
+
+  tags = merge(
+    local.required_tags,
+    {
+      Name      = "iam-policy-changes"
+      Component = "athena"
+    }
+  )
 }
