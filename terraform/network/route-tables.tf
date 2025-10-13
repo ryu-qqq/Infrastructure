@@ -26,7 +26,7 @@ resource "aws_route" "public-internet" {
 # Public Subnet Route Table Associations
 
 resource "aws_route_table_association" "public" {
-  count = 2
+  count = length(var.public_subnet_cidrs)
 
   subnet_id      = aws_subnet.public[count.index].id
   route_table_id = aws_route_table.public.id
@@ -35,12 +35,13 @@ resource "aws_route_table_association" "public" {
 # Private Route Table
 
 resource "aws_route_table" "private" {
+  count  = length(var.private_subnet_cidrs)
   vpc_id = aws_vpc.main.id
 
   # Note: Imported existing route table - tags defined for governance compliance
   # Tags are not modified in AWS due to IAM permission constraints
   tags = merge(local.required_tags, {
-    Name = "${var.environment}-private-rt"
+    Name = "${var.environment}-private-rt-${var.availability_zones[count.index]}"
   })
 
   lifecycle {
@@ -52,16 +53,17 @@ resource "aws_route_table" "private" {
 # Note: aws_route resources do not support tags - they inherit from route table
 
 resource "aws_route" "private-nat" {
-  route_table_id         = aws_route_table.private.id
+  count                  = length(var.private_subnet_cidrs)
+  route_table_id         = aws_route_table.private[count.index].id
   destination_cidr_block = "0.0.0.0/0"
-  nat_gateway_id         = aws_nat_gateway.main.id
+  nat_gateway_id         = aws_nat_gateway.main[count.index].id
 }
 
 # Private Subnet Route Table Associations
 
 resource "aws_route_table_association" "private" {
-  count = 2
+  count = length(var.private_subnet_cidrs)
 
   subnet_id      = aws_subnet.private[count.index].id
-  route_table_id = aws_route_table.private.id
+  route_table_id = aws_route_table.private[count.index].id
 }

@@ -9,7 +9,6 @@ variable "aws_region" {
 variable "environment" {
   description = "Environment name"
   type        = string
-  default     = "prod"
 }
 
 variable "vpc_cidr" {
