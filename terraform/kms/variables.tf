@@ -53,3 +53,9 @@ variable "enable_key_rotation" {
   type        = bool
   default     = true
 }
+
+variable "github_actions_role_name" {
+  description = "Name of the GitHub Actions IAM role for KMS key access"
+  type        = string
+  default     = "GitHubActionsRole"
+}

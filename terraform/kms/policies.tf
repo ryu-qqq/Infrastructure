@@ -33,26 +33,11 @@ resource "aws_kms_key_policy" "terraform-state" {
         Resource = "*"
       },
       {
-        Sid    = "Allow GitHub Actions to encrypt/decrypt state files"
-        Effect = "Allow"
-        Principal = {
-          AWS = "arn:aws:iam::${local.account_id}:role/GitHubActionsRole"
-        }
-        Action = [
-          "kms:Decrypt",
-          "kms:DescribeKey",
-          "kms:Encrypt",
-          "kms:GenerateDataKey",
-          "kms:ReEncrypt*"
-        ]
-        Resource = "*"
-      },
-      {
-        Sid    = "Allow Terraform to access state encryption key"
+        Sid    = "Allow GitHub Actions and Terraform to access state encryption key"
         Effect = "Allow"
         Principal = {
           AWS = [
-            "arn:aws:iam::${local.account_id}:role/GitHubActionsRole",
+            local.github_actions_role_arn,
             "arn:aws:iam::${local.account_id}:root"
           ]
         }
@@ -61,6 +46,7 @@ resource "aws_kms_key_policy" "terraform-state" {
           "kms:DescribeKey",
           "kms:Encrypt",
           "kms:GenerateDataKey*",
+          "kms:ReEncrypt*",
           "kms:CreateGrant",
           "kms:ListGrants",
           "kms:RevokeGrant"
@@ -115,7 +101,7 @@ resource "aws_kms_key_policy" "rds" {
         Sid    = "Allow GitHub Actions to manage RDS encryption"
         Effect = "Allow"
         Principal = {
-          AWS = "arn:aws:iam::${local.account_id}:role/GitHubActionsRole"
+          AWS = local.github_actions_role_arn
         }
         Action = [
           "kms:Decrypt",
@@ -177,7 +163,7 @@ resource "aws_kms_key_policy" "ecs-secrets" {
         Sid    = "Allow GitHub Actions to manage ECS secrets"
         Effect = "Allow"
         Principal = {
-          AWS = "arn:aws:iam::${local.account_id}:role/GitHubActionsRole"
+          AWS = local.github_actions_role_arn
         }
         Action = [
           "kms:Decrypt",
@@ -227,12 +213,10 @@ resource "aws_kms_key_policy" "secrets-manager" {
         Resource = "*"
       },
       {
-        Sid    = "Allow application roles to decrypt secrets"
+        Sid    = "Allow GitHub Actions to decrypt secrets via Secrets Manager"
         Effect = "Allow"
         Principal = {
-          AWS = [
-            "arn:aws:iam::${local.account_id}:role/GitHubActionsRole"
-          ]
+          AWS = local.github_actions_role_arn
         }
         Action = [
           "kms:Decrypt",
@@ -248,14 +232,12 @@ resource "aws_kms_key_policy" "secrets-manager" {
         }
       },
       {
-        Sid    = "Allow GitHub Actions to manage secrets"
+        Sid    = "Allow GitHub Actions to manage secrets directly"
         Effect = "Allow"
         Principal = {
-          AWS = "arn:aws:iam::${local.account_id}:role/GitHubActionsRole"
+          AWS = local.github_actions_role_arn
         }
         Action = [
-          "kms:Decrypt",
-          "kms:DescribeKey",
           "kms:Encrypt",
           "kms:GenerateDataKey",
           "kms:CreateGrant"
