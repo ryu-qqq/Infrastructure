@@ -3,10 +3,13 @@
 # check-tags.sh - Terraform Required Tags Validator
 #
 # Validates that all Terraform resources include required governance tags.
-# Based on docs/infrastructure_governance.md standards.
+# Based on docs/TAGGING_STANDARDS.md standards.
 #
 # Required Tags:
-#   - Owner, CostCenter, Environment, Lifecycle, DataClass, Service
+#   - Environment, Service, Team, Owner, CostCenter, ManagedBy, Project
+#
+# Optional Tags:
+#   - DataClass (for data-storing resources)
 #
 # Usage:
 #   ./scripts/validators/check-tags.sh [terraform_directory]
@@ -26,8 +29,8 @@ YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
 NC='\033[0m' # No Color
 
-# Required tags based on governance standards
-REQUIRED_TAGS=("Owner" "CostCenter" "Environment" "Lifecycle" "DataClass" "Service")
+# Required tags based on new governance standards (docs/TAGGING_STANDARDS.md)
+REQUIRED_TAGS=("Environment" "Service" "Team" "Owner" "CostCenter" "ManagedBy" "Project")
 
 # Configuration
 TERRAFORM_DIR="${1:-terraform}"
