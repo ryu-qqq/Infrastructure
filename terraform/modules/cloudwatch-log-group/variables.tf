@@ -20,9 +20,35 @@ variable "retention_in_days" {
   }
 }
 
-variable "common_tags" {
-  description = "Common tags from common-tags module (Environment, Service, Team, Owner, CostCenter, ManagedBy, Project)"
-  type        = map(string)
+# Required Tag Variables
+variable "environment" {
+  description = "Environment name (dev, staging, prod)"
+  type        = string
+}
+
+variable "service" {
+  description = "Service name"
+  type        = string
+}
+
+variable "team" {
+  description = "Team responsible for this resource"
+  type        = string
+}
+
+variable "owner" {
+  description = "Owner email or identifier"
+  type        = string
+}
+
+variable "cost_center" {
+  description = "Cost center for billing"
+  type        = string
+}
+
+variable "project" {
+  description = "Project name"
+  type        = string
 }
 
 # Optional Variables with Defaults

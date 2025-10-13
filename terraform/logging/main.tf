@@ -3,20 +3,6 @@
 # IN-116: Central logging system setup
 
 # ============================================================================
-# Common Tags
-# ============================================================================
-
-module "common_tags" {
-  source = "../modules/common-tags"
-
-  environment = var.environment
-  service     = "logging"
-  team        = "platform-team"
-  owner       = var.owner
-  cost_center = var.cost_center
-}
-
-# ============================================================================
 # KMS Key Reference from Remote State
 # ============================================================================
 
@@ -41,7 +27,14 @@ module "atlantis_application_logs" {
   retention_in_days = 14
   kms_key_id        = data.terraform_remote_state.kms.outputs.cloudwatch_logs_key_arn
   log_type          = "application"
-  common_tags       = module.common_tags.tags
+
+  # Required tags
+  environment = var.environment
+  service     = "logging"
+  team        = "platform-team"
+  owner       = var.owner
+  cost_center = var.cost_center
+  project     = "infrastructure"
 }
 
 # Atlantis Error Logs (Future Sentry integration)
@@ -52,7 +45,14 @@ module "atlantis_error_logs" {
   retention_in_days = 90
   kms_key_id        = data.terraform_remote_state.kms.outputs.cloudwatch_logs_key_arn
   log_type          = "errors"
-  common_tags       = module.common_tags.tags
+
+  # Required tags
+  environment = var.environment
+  service     = "logging"
+  team        = "platform-team"
+  owner       = var.owner
+  cost_center = var.cost_center
+  project     = "infrastructure"
 
   # Sentry integration (future)
   sentry_sync_status       = "pending"
@@ -73,7 +73,14 @@ module "secrets_rotation_logs" {
   retention_in_days = 14
   kms_key_id        = data.terraform_remote_state.kms.outputs.cloudwatch_logs_key_arn
   log_type          = "application"
-  common_tags       = module.common_tags.tags
+
+  # Required tags
+  environment = var.environment
+  service     = "logging"
+  team        = "platform-team"
+  owner       = var.owner
+  cost_center = var.cost_center
+  project     = "infrastructure"
 }
 
 # ============================================================================

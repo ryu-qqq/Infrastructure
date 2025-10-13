@@ -1,13 +1,25 @@
 # CloudWatch Log Group Module
 # Creates a CloudWatch Log Group with KMS encryption, retention policy, and standard tagging
 
+locals {
+  required_tags = {
+    Environment = var.environment
+    Service     = var.service
+    Team        = var.team
+    Owner       = var.owner
+    CostCenter  = var.cost_center
+    ManagedBy   = "Terraform"
+    Project     = var.project
+  }
+}
+
 resource "aws_cloudwatch_log_group" "this" {
   name              = var.name
   retention_in_days = var.retention_in_days
   kms_key_id        = var.kms_key_id
 
   tags = merge(
-    var.common_tags,
+    local.required_tags,
     {
       Name          = var.name
       LogType       = var.log_type
