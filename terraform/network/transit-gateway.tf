@@ -7,7 +7,7 @@ resource "aws_ec2_transit_gateway" "main" {
 
   description                     = "Transit Gateway for ${var.environment} environment"
   amazon_side_asn                 = var.transit_gateway_asn
-  auto_accept_shared_attachments  = "enable"
+  auto_accept_shared_attachments  = "disable"
   default_route_table_association = "enable"
   default_route_table_propagation = "enable"
   dns_support                     = "enable"
@@ -48,8 +48,8 @@ resource "aws_ec2_transit_gateway_vpc_attachment" "main" {
 
 # Routes for Transit Gateway
 # Add routes to private subnet route table pointing to Transit Gateway
-resource "aws_route" "private_to_tgw" {
-  count = var.enable_transit_gateway && length(var.transit_gateway_routes) > 0 ? length(var.transit_gateway_routes) : 0
+resource "aws_route" "private-to-tgw" {
+  count = var.enable_transit_gateway ? length(var.transit_gateway_routes) : 0
 
   route_table_id         = aws_route_table.private.id
   destination_cidr_block = var.transit_gateway_routes[count.index]
