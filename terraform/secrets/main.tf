@@ -2,7 +2,7 @@
 
 # Example Secrets - These demonstrate the structure
 # In production, service-specific secrets would be managed in their respective modules
-resource "aws_secretsmanager_secret" "example_secrets" {
+resource "aws_secretsmanager_secret" "example-secrets" {
   for_each = local.example_secrets
 
   name        = each.value.name
@@ -24,17 +24,17 @@ resource "aws_secretsmanager_secret" "example_secrets" {
 
 # Example: RDS Secret with JSON structure
 # This would typically be in a service-specific module
-resource "random_password" "db_master" {
+resource "random_password" "db-master" {
   length  = 32
   special = true
 }
 
-resource "aws_secretsmanager_secret_version" "db_master" {
-  secret_id = aws_secretsmanager_secret.example_secrets["db_master"].id
+resource "aws_secretsmanager_secret_version" "db-master" {
+  secret_id = aws_secretsmanager_secret.example-secrets["db_master"].id
 
   secret_string = jsonencode({
     username = "admin"
-    password = random_password.db_master.result
+    password = random_password.db-master.result
     engine   = "postgres"
     host     = "example-db.ap-northeast-2.rds.amazonaws.com"
     port     = 5432
@@ -47,10 +47,10 @@ resource "aws_secretsmanager_secret_version" "db_master" {
 }
 
 # Rotation configuration for RDS secret
-resource "aws_secretsmanager_secret_rotation" "db_master" {
+resource "aws_secretsmanager_secret_rotation" "db-master" {
   count = var.enable_rotation ? 1 : 0
 
-  secret_id           = aws_secretsmanager_secret.example_secrets["db_master"].id
+  secret_id           = aws_secretsmanager_secret.example-secrets["db_master"].id
   rotation_lambda_arn = aws_lambda_function.rotation.arn
 
   rotation_rules {
@@ -58,6 +58,6 @@ resource "aws_secretsmanager_secret_rotation" "db_master" {
   }
 
   depends_on = [
-    aws_lambda_permission.allow_secrets_manager
+    aws_lambda_permission.allow-secrets-manager
   ]
 }

@@ -13,14 +13,14 @@ output "secrets_manager_kms_key_arn" {
 output "example_secret_arns" {
   description = "ARNs of example secrets created"
   value = {
-    for k, v in aws_secretsmanager_secret.example_secrets : k => v.arn
+    for k, v in aws_secretsmanager_secret.example-secrets : k => v.arn
   }
 }
 
 output "example_secret_ids" {
   description = "IDs of example secrets created"
   value = {
-    for k, v in aws_secretsmanager_secret.example_secrets : k => v.id
+    for k, v in aws_secretsmanager_secret.example-secrets : k => v.id
   }
 }
 
@@ -31,7 +31,7 @@ output "rotation_lambda_arn" {
 
 output "rotation_lambda_role_arn" {
   description = "ARN of the rotation Lambda execution role"
-  value       = aws_iam_role.rotation_lambda.arn
+  value       = aws_iam_role.rotation-lambda.arn
 }
 
 output "secret_naming_pattern" {
@@ -47,15 +47,15 @@ output "rotation_schedule_days" {
 # IAM Policy ARN outputs for service repositories
 output "crawler_secrets_read_policy_arn" {
   description = "ARN of the Crawler service secrets read policy"
-  value       = aws_iam_policy.crawler_secrets_read.arn
+  value       = aws_iam_policy.crawler-secrets-read.arn
 }
 
 output "devops_secrets_management_policy_arn" {
   description = "ARN of the DevOps secrets management policy"
-  value       = aws_iam_policy.devops_secrets_management.arn
+  value       = aws_iam_policy.devops-secrets-management.arn
 }
 
 output "github_actions_secrets_policy_arn" {
   description = "ARN of the GitHub Actions secrets policy"
-  value       = aws_iam_policy.github_actions_secrets.arn
+  value       = aws_iam_policy.github-actions-secrets.arn
 }

@@ -1,7 +1,7 @@
 # Lambda Function for Secrets Rotation
 
 # IAM Role for Lambda execution
-resource "aws_iam_role" "rotation_lambda" {
+resource "aws_iam_role" "rotation-lambda" {
   name = "secrets-manager-rotation-lambda-role"
 
   assume_role_policy = jsonencode({
@@ -26,15 +26,15 @@ resource "aws_iam_role" "rotation_lambda" {
 }
 
 # Attach AWS managed policy for Lambda VPC execution (if needed)
-resource "aws_iam_role_policy_attachment" "lambda_vpc_execution" {
-  role       = aws_iam_role.rotation_lambda.name
+resource "aws_iam_role_policy_attachment" "lambda-vpc-execution" {
+  role       = aws_iam_role.rotation-lambda.name
   policy_arn = "arn:aws:iam::aws:policy/service-role/AWSLambdaVPCAccessExecutionRole"
 }
 
 # Custom policy for Lambda to manage secrets
-resource "aws_iam_role_policy" "rotation_lambda_policy" {
+resource "aws_iam_role_policy" "rotation-lambda-policy" {
   name = "rotation-lambda-policy"
-  role = aws_iam_role.rotation_lambda.id
+  role = aws_iam_role.rotation-lambda.id
 
   policy = jsonencode({
     Version = "2012-10-17"
@@ -82,7 +82,7 @@ resource "aws_iam_role_policy" "rotation_lambda_policy" {
 }
 
 # CloudWatch Log Group for Lambda
-resource "aws_cloudwatch_log_group" "rotation_lambda" {
+resource "aws_cloudwatch_log_group" "rotation-lambda" {
   name              = "/aws/lambda/secrets-manager-rotation"
   retention_in_days = 14
   kms_key_id        = data.terraform_remote_state.kms.outputs.secrets_manager_key_arn
@@ -99,7 +99,7 @@ resource "aws_cloudwatch_log_group" "rotation_lambda" {
 resource "aws_lambda_function" "rotation" {
   filename         = "${path.module}/lambda/rotation.zip"
   function_name    = "secrets-manager-rotation"
-  role             = aws_iam_role.rotation_lambda.arn
+  role             = aws_iam_role.rotation-lambda.arn
   handler          = "index.lambda_handler"
   source_code_hash = fileexists("${path.module}/lambda/rotation.zip") ? filebase64sha256("${path.module}/lambda/rotation.zip") : null
   runtime          = "python3.11"
@@ -119,12 +119,12 @@ resource "aws_lambda_function" "rotation" {
   )
 
   depends_on = [
-    aws_cloudwatch_log_group.rotation_lambda
+    aws_cloudwatch_log_group.rotation-lambda
   ]
 }
 
 # Permission for Secrets Manager to invoke Lambda
-resource "aws_lambda_permission" "allow_secrets_manager" {
+resource "aws_lambda_permission" "allow-secrets-manager" {
   statement_id  = "AllowExecutionFromSecretsManager"
   action        = "lambda:InvokeFunction"
   function_name = aws_lambda_function.rotation.function_name
@@ -132,7 +132,7 @@ resource "aws_lambda_permission" "allow_secrets_manager" {
 }
 
 # CloudWatch alarm for rotation failures
-resource "aws_cloudwatch_metric_alarm" "rotation_failures" {
+resource "aws_cloudwatch_metric_alarm" "rotation-failures" {
   alarm_name          = "secrets-manager-rotation-failures"
   comparison_operator = "GreaterThanThreshold"
   evaluation_periods  = 1

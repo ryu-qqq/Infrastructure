@@ -40,7 +40,7 @@ data "aws_iam_policy_document" "service_read_secrets" {
 }
 
 # Example: Crawler service specific policy
-resource "aws_iam_policy" "crawler_secrets_read" {
+resource "aws_iam_policy" "crawler-secrets-read" {
   name        = "crawler-secrets-read-policy"
   description = "Policy for crawler service to read its secrets"
 
@@ -129,7 +129,7 @@ data "aws_iam_policy_document" "devops_manage_secrets" {
   }
 }
 
-resource "aws_iam_policy" "devops_secrets_management" {
+resource "aws_iam_policy" "devops-secrets-management" {
   name        = "devops-secrets-management-policy"
   description = "Policy for DevOps team to manage all secrets"
   policy      = data.aws_iam_policy_document.devops_manage_secrets.json
@@ -143,7 +143,7 @@ resource "aws_iam_policy" "devops_secrets_management" {
 }
 
 # GitHub Actions policy for CI/CD
-resource "aws_iam_policy" "github_actions_secrets" {
+resource "aws_iam_policy" "github-actions-secrets" {
   name        = "github-actions-secrets-policy"
   description = "Policy for GitHub Actions to read and create secrets"
 
