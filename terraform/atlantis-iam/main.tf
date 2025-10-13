@@ -8,7 +8,7 @@
 # --------------------------------------------
 
 # Atlantis Task Role (ECS에서 실행되는 Atlantis 서비스가 사용)
-resource "aws_iam_role" "atlantis_task_role" {
+resource "aws_iam_role" "atlantis-task-role" {
   name               = var.atlantis_task_role_name
   description        = "IAM Role for Atlantis ECS Task to assume Target Roles"
   assume_role_policy = data.aws_iam_policy_document.ecs_assume_role_policy.json
@@ -34,9 +34,9 @@ data "aws_iam_policy_document" "ecs_assume_role_policy" {
 }
 
 # Atlantis Task Role에 AssumeRole 권한 부여
-resource "aws_iam_role_policy" "atlantis_assume_role_policy" {
+resource "aws_iam_role_policy" "atlantis-assume-role-policy" {
   name   = "atlantis-assume-role-policy"
-  role   = aws_iam_role.atlantis_task_role.id
+  role   = aws_iam_role.atlantis-task-role.id
   policy = data.aws_iam_policy_document.atlantis_assume_role_policy.json
 }
 
@@ -47,7 +47,7 @@ data "aws_iam_policy_document" "atlantis_assume_role_policy" {
       "sts:AssumeRole"
     ]
     resources = [
-      aws_iam_role.atlantis_target_prod.arn,
+      aws_iam_role.atlantis-target-prod.arn,
     ]
   }
 }
@@ -57,7 +57,7 @@ data "aws_iam_policy_document" "atlantis_assume_role_policy" {
 # --------------------------------------------
 
 # PROD 환경 Target Role
-resource "aws_iam_role" "atlantis_target_prod" {
+resource "aws_iam_role" "atlantis-target-prod" {
   name               = "atlantis-target-prod"
   description        = "Target Role for Atlantis to manage prod environment resources"
   assume_role_policy = data.aws_iam_policy_document.target_role_trust_policy.json
@@ -77,7 +77,7 @@ data "aws_iam_policy_document" "target_role_trust_policy" {
     effect = "Allow"
     principals {
       type        = "AWS"
-      identifiers = [aws_iam_role.atlantis_task_role.arn]
+      identifiers = [aws_iam_role.atlantis-task-role.arn]
     }
     actions = ["sts:AssumeRole"]
   }
@@ -237,8 +237,8 @@ data "aws_iam_policy_document" "terraform_base_permissions" {
 }
 
 # PROD 환경 정책 연결
-resource "aws_iam_role_policy" "atlantis_target_prod_policy" {
+resource "aws_iam_role_policy" "atlantis-target-prod-policy" {
   name   = "terraform-base-permissions"
-  role   = aws_iam_role.atlantis_target_prod.id
+  role   = aws_iam_role.atlantis-target-prod.id
   policy = data.aws_iam_policy_document.terraform_base_permissions.json
 }
