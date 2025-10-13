@@ -5,7 +5,7 @@
 # 1. Terraform State Encryption Key (Highest Priority)
 # ============================================================================
 
-resource "aws_kms_key" "terraform_state" {
+resource "aws_kms_key" "terraform-state" {
   description             = "KMS key for Terraform state file encryption in S3"
   deletion_window_in_days = var.key_deletion_window_in_days
   enable_key_rotation     = var.enable_key_rotation
@@ -20,9 +20,9 @@ resource "aws_kms_key" "terraform_state" {
   )
 }
 
-resource "aws_kms_alias" "terraform_state" {
+resource "aws_kms_alias" "terraform-state" {
   name          = "alias/terraform-state"
-  target_key_id = aws_kms_key.terraform_state.key_id
+  target_key_id = aws_kms_key.terraform-state.key_id
 }
 
 # ============================================================================
@@ -53,7 +53,7 @@ resource "aws_kms_alias" "rds" {
 # 3. ECS Secrets Encryption Key (Short-term Priority)
 # ============================================================================
 
-resource "aws_kms_key" "ecs_secrets" {
+resource "aws_kms_key" "ecs-secrets" {
   description             = "KMS key for ECS task secrets and environment variables encryption"
   deletion_window_in_days = var.key_deletion_window_in_days
   enable_key_rotation     = var.enable_key_rotation
@@ -68,16 +68,16 @@ resource "aws_kms_key" "ecs_secrets" {
   )
 }
 
-resource "aws_kms_alias" "ecs_secrets" {
+resource "aws_kms_alias" "ecs-secrets" {
   name          = "alias/ecs-secrets"
-  target_key_id = aws_kms_key.ecs_secrets.key_id
+  target_key_id = aws_kms_key.ecs-secrets.key_id
 }
 
 # ============================================================================
 # 4. Secrets Manager Encryption Key (Short-term Priority)
 # ============================================================================
 
-resource "aws_kms_key" "secrets_manager" {
+resource "aws_kms_key" "secrets-manager" {
   description             = "KMS key for AWS Secrets Manager encryption"
   deletion_window_in_days = var.key_deletion_window_in_days
   enable_key_rotation     = var.enable_key_rotation
@@ -92,7 +92,7 @@ resource "aws_kms_key" "secrets_manager" {
   )
 }
 
-resource "aws_kms_alias" "secrets_manager" {
+resource "aws_kms_alias" "secrets-manager" {
   name          = "alias/secrets-manager"
-  target_key_id = aws_kms_key.secrets_manager.key_id
+  target_key_id = aws_kms_key.secrets-manager.key_id
 }

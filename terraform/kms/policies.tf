@@ -5,8 +5,8 @@
 # 1. Terraform State Key Policy
 # ============================================================================
 
-resource "aws_kms_key_policy" "terraform_state" {
-  key_id = aws_kms_key.terraform_state.id
+resource "aws_kms_key_policy" "terraform-state" {
+  key_id = aws_kms_key.terraform-state.id
 
   policy = jsonencode({
     Version = "2012-10-17"
@@ -133,8 +133,8 @@ resource "aws_kms_key_policy" "rds" {
 # 3. ECS Secrets Key Policy
 # ============================================================================
 
-resource "aws_kms_key_policy" "ecs_secrets" {
-  key_id = aws_kms_key.ecs_secrets.id
+resource "aws_kms_key_policy" "ecs-secrets" {
+  key_id = aws_kms_key.ecs-secrets.id
 
   policy = jsonencode({
     Version = "2012-10-17"
@@ -196,8 +196,8 @@ resource "aws_kms_key_policy" "ecs_secrets" {
 # 4. Secrets Manager Key Policy
 # ============================================================================
 
-resource "aws_kms_key_policy" "secrets_manager" {
-  key_id = aws_kms_key.secrets_manager.id
+resource "aws_kms_key_policy" "secrets-manager" {
+  key_id = aws_kms_key.secrets-manager.id
 
   policy = jsonencode({
     Version = "2012-10-17"

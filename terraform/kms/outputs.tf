@@ -6,17 +6,17 @@
 
 output "terraform_state_key_id" {
   description = "The ID of the KMS key for Terraform state encryption"
-  value       = aws_kms_key.terraform_state.key_id
+  value       = aws_kms_key.terraform-state.key_id
 }
 
 output "terraform_state_key_arn" {
   description = "The ARN of the KMS key for Terraform state encryption"
-  value       = aws_kms_key.terraform_state.arn
+  value       = aws_kms_key.terraform-state.arn
 }
 
 output "terraform_state_key_alias" {
   description = "The alias of the KMS key for Terraform state encryption"
-  value       = aws_kms_alias.terraform_state.name
+  value       = aws_kms_alias.terraform-state.name
 }
 
 # ============================================================================
@@ -44,17 +44,17 @@ output "rds_key_alias" {
 
 output "ecs_secrets_key_id" {
   description = "The ID of the KMS key for ECS secrets encryption"
-  value       = aws_kms_key.ecs_secrets.key_id
+  value       = aws_kms_key.ecs-secrets.key_id
 }
 
 output "ecs_secrets_key_arn" {
   description = "The ARN of the KMS key for ECS secrets encryption"
-  value       = aws_kms_key.ecs_secrets.arn
+  value       = aws_kms_key.ecs-secrets.arn
 }
 
 output "ecs_secrets_key_alias" {
   description = "The alias of the KMS key for ECS secrets encryption"
-  value       = aws_kms_alias.ecs_secrets.name
+  value       = aws_kms_alias.ecs-secrets.name
 }
 
 # ============================================================================
@@ -63,17 +63,17 @@ output "ecs_secrets_key_alias" {
 
 output "secrets_manager_key_id" {
   description = "The ID of the KMS key for Secrets Manager encryption"
-  value       = aws_kms_key.secrets_manager.key_id
+  value       = aws_kms_key.secrets-manager.key_id
 }
 
 output "secrets_manager_key_arn" {
   description = "The ARN of the KMS key for Secrets Manager encryption"
-  value       = aws_kms_key.secrets_manager.arn
+  value       = aws_kms_key.secrets-manager.arn
 }
 
 output "secrets_manager_key_alias" {
   description = "The alias of the KMS key for Secrets Manager encryption"
-  value       = aws_kms_alias.secrets_manager.name
+  value       = aws_kms_alias.secrets-manager.name
 }
 
 # ============================================================================
@@ -84,9 +84,9 @@ output "kms_keys_summary" {
   description = "Summary of all KMS keys created"
   value = {
     terraform_state = {
-      key_id = aws_kms_key.terraform_state.key_id
-      arn    = aws_kms_key.terraform_state.arn
-      alias  = aws_kms_alias.terraform_state.name
+      key_id = aws_kms_key.terraform-state.key_id
+      arn    = aws_kms_key.terraform-state.arn
+      alias  = aws_kms_alias.terraform-state.name
     }
     rds = {
       key_id = aws_kms_key.rds.key_id
@@ -94,14 +94,14 @@ output "kms_keys_summary" {
       alias  = aws_kms_alias.rds.name
     }
     ecs_secrets = {
-      key_id = aws_kms_key.ecs_secrets.key_id
-      arn    = aws_kms_key.ecs_secrets.arn
-      alias  = aws_kms_alias.ecs_secrets.name
+      key_id = aws_kms_key.ecs-secrets.key_id
+      arn    = aws_kms_key.ecs-secrets.arn
+      alias  = aws_kms_alias.ecs-secrets.name
     }
     secrets_manager = {
-      key_id = aws_kms_key.secrets_manager.key_id
-      arn    = aws_kms_key.secrets_manager.arn
-      alias  = aws_kms_alias.secrets_manager.name
+      key_id = aws_kms_key.secrets-manager.key_id
+      arn    = aws_kms_key.secrets-manager.arn
+      alias  = aws_kms_alias.secrets-manager.name
     }
   }
 }
