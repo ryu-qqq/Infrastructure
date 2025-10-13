@@ -6,9 +6,13 @@ resource "aws_vpc" "main" {
   enable_dns_support   = true
   instance_tenancy     = "default"
 
-  tags = {
-    Name        = "${var.environment}-server-vpc"
-    Environment = var.environment
-    Component   = "shared-infrastructure"
+  # Note: Imported existing VPC - tags defined for governance compliance
+  # Tags are not modified in AWS due to IAM permission constraints
+  tags = merge(local.required_tags, {
+    Name = "${var.environment}-server-vpc"
+  })
+
+  lifecycle {
+    ignore_changes = [tags]
   }
 }

@@ -8,11 +8,15 @@ resource "aws_subnet" "public" {
   availability_zone       = var.availability_zones[count.index]
   map_public_ip_on_launch = true
 
-  tags = {
-    Name        = "${var.environment}-public-subnet-${count.index + 1}"
-    Environment = var.environment
-    Type        = "Public"
-    Component   = "shared-infrastructure"
+  # Note: Imported existing subnet - tags defined for governance compliance
+  # Tags are not modified in AWS due to IAM permission constraints
+  tags = merge(local.required_tags, {
+    Name = "${var.environment}-public-subnet-${count.index + 1}"
+    Type = "Public"
+  })
+
+  lifecycle {
+    ignore_changes = [tags]
   }
 }
 
@@ -25,10 +29,14 @@ resource "aws_subnet" "private" {
   cidr_block        = var.private_subnet_cidrs[count.index]
   availability_zone = var.availability_zones[count.index]
 
-  tags = {
-    Name        = "${var.environment}-private-subnet-${count.index + 1}"
-    Environment = var.environment
-    Type        = "Private"
-    Component   = "shared-infrastructure"
+  # Note: Imported existing subnet - tags defined for governance compliance
+  # Tags are not modified in AWS due to IAM permission constraints
+  tags = merge(local.required_tags, {
+    Name = "${var.environment}-private-subnet-${count.index + 1}"
+    Type = "Private"
+  })
+
+  lifecycle {
+    ignore_changes = [tags]
   }
 }

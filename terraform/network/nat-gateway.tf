@@ -3,10 +3,14 @@
 resource "aws_eip" "nat" {
   domain = "vpc"
 
-  tags = {
-    Name        = "${var.environment}-nat-eip"
-    Environment = var.environment
-    Component   = "shared-infrastructure"
+  # Note: Imported existing EIP - tags defined for governance compliance
+  # Tags are not modified in AWS due to IAM permission constraints
+  tags = merge(local.required_tags, {
+    Name = "${var.environment}-nat-eip"
+  })
+
+  lifecycle {
+    ignore_changes = [tags]
   }
 
   depends_on = [aws_internet_gateway.main]
@@ -18,10 +22,14 @@ resource "aws_nat_gateway" "main" {
   allocation_id = aws_eip.nat.id
   subnet_id     = aws_subnet.public[0].id
 
-  tags = {
-    Name        = "${var.environment}-nat-gateway"
-    Environment = var.environment
-    Component   = "shared-infrastructure"
+  # Note: Imported existing NAT Gateway - tags defined for governance compliance
+  # Tags are not modified in AWS due to IAM permission constraints
+  tags = merge(local.required_tags, {
+    Name = "${var.environment}-nat-gateway"
+  })
+
+  lifecycle {
+    ignore_changes = [tags]
   }
 
   depends_on = [aws_internet_gateway.main]

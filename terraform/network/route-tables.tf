@@ -3,10 +3,14 @@
 resource "aws_route_table" "public" {
   vpc_id = aws_vpc.main.id
 
-  tags = {
-    Name        = "${var.environment}-public-rt"
-    Environment = var.environment
-    Component   = "shared-infrastructure"
+  # Note: Imported existing route table - tags defined for governance compliance
+  # Tags are not modified in AWS due to IAM permission constraints
+  tags = merge(local.required_tags, {
+    Name = "${var.environment}-public-rt"
+  })
+
+  lifecycle {
+    ignore_changes = [tags]
   }
 }
 
@@ -32,10 +36,14 @@ resource "aws_route_table_association" "public" {
 resource "aws_route_table" "private" {
   vpc_id = aws_vpc.main.id
 
-  tags = {
-    Name        = "${var.environment}-private-rt"
-    Environment = var.environment
-    Component   = "shared-infrastructure"
+  # Note: Imported existing route table - tags defined for governance compliance
+  # Tags are not modified in AWS due to IAM permission constraints
+  tags = merge(local.required_tags, {
+    Name = "${var.environment}-private-rt"
+  })
+
+  lifecycle {
+    ignore_changes = [tags]
   }
 }
 
