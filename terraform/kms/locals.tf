@@ -3,15 +3,16 @@
 data "aws_caller_identity" "current" {}
 
 locals {
-  # Required tags for governance compliance
+  # Required tags following governance standards
+  # Reference: docs/TAGGING_STANDARDS.md
   required_tags = {
+    Environment = var.environment
+    Service     = var.service
+    Team        = var.team
     Owner       = var.owner
     CostCenter  = var.cost_center
-    Environment = var.environment
-    Lifecycle   = var.resource_lifecycle
-    Service     = var.service
-    ManagedBy   = "terraform"
-    Project     = "infrastructure"
+    ManagedBy   = var.managed_by
+    Project     = var.project
   }
 
   # Account ID for policies

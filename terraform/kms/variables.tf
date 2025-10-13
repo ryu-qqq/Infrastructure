@@ -13,8 +13,14 @@ variable "aws_region" {
 }
 
 # Required Tags (Governance Standard)
+variable "team" {
+  description = "Team responsible for the resource"
+  type        = string
+  default     = "platform-team"
+}
+
 variable "owner" {
-  description = "Team or individual responsible for the resource"
+  description = "Owner email or identifier"
   type        = string
   default     = "platform-team"
 }
@@ -25,16 +31,22 @@ variable "cost_center" {
   default     = "infrastructure"
 }
 
-variable "resource_lifecycle" {
-  description = "Resource lifecycle (permanent, temporary, ephemeral)"
-  type        = string
-  default     = "permanent"
-}
-
 variable "service" {
   description = "Service name this resource belongs to"
   type        = string
-  default     = "common-platform"
+  default     = "kms"
+}
+
+variable "project" {
+  description = "Project name"
+  type        = string
+  default     = "infrastructure"
+}
+
+variable "managed_by" {
+  description = "How the resource is managed"
+  type        = string
+  default     = "terraform"
 }
 
 # KMS Key Configuration

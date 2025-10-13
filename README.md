@@ -114,7 +114,76 @@ This creates **two-layer defense**:
 All infrastructure code must follow the governance standards defined in:
 - `.claude/INFRASTRUCTURE_RULES.md` - Claude session enforcement rules
 - `docs/infrastructure_governance.md` - Required tags, KMS strategy, naming rules
+- `docs/TAGGING_STANDARDS.md` - AWS resource tagging standards (NEW)
+- `docs/NAMING_CONVENTION.md` - AWS resource naming conventions (NEW)
 - `docs/infrastructure_pr.md` - PR workflow and gate checklist
+
+#### Tagging Standards
+
+All AWS resources must include the following required tags:
+
+| Tag | Description | Example |
+|-----|-------------|---------|
+| `Environment` | Environment name | `dev`, `staging`, `prod` |
+| `Service` | Service or application name | `api`, `web`, `kms`, `cloudtrail` |
+| `Team` | Responsible team | `platform-team`, `backend-team` |
+| `Owner` | Owner email or identifier | `platform-team@company.com` |
+| `CostCenter` | Cost center for billing | `infrastructure`, `product-development` |
+| `ManagedBy` | Management method | `terraform`, `manual`, `cloudformation` |
+| `Project` | Project name | `infrastructure`, `user-analytics` |
+
+**Use common tags module** (Recommended):
+```hcl
+module "common_tags" {
+  source = "../../modules/common-tags"
+
+  environment = "prod"
+  service     = "api"
+  team        = "platform-team"
+  owner       = "platform-team@company.com"
+  cost_center = "infrastructure"
+}
+
+resource "aws_instance" "api" {
+  tags = module.common_tags.tags
+}
+```
+
+For detailed tagging guidelines, see [docs/TAGGING_STANDARDS.md](docs/TAGGING_STANDARDS.md).
+
+#### Naming Conventions
+
+All resource names must follow kebab-case format:
+
+| Resource Type | Pattern | Example |
+|---------------|---------|---------|
+| VPC | `{env}-{purpose}-vpc` | `prod-server-vpc` |
+| Subnet | `{env}-{visibility}-{az}-subnet` | `prod-public-a-subnet` |
+| Security Group | `{env}-{service}-{purpose}-sg` | `prod-api-alb-sg` |
+| KMS Key Alias | `alias/{service}-{purpose}` | `alias/rds-encryption` |
+| S3 Bucket | `{org}-{env}-{service}-{purpose}-{account}` | `myorg-prod-logs-cloudtrail-123456789012` |
+| IAM Role | `{service}-{purpose}-role` | `ecs-task-execution-role` |
+
+For complete naming guidelines, see [docs/NAMING_CONVENTION.md](docs/NAMING_CONVENTION.md).
+
+#### OPA Policy Validation
+
+Policies are automatically validated during Terraform workflow:
+
+```bash
+# Generate Terraform plan JSON
+terraform plan -out=tfplan.binary
+terraform show -json tfplan.binary > tfplan.json
+
+# Validate with OPA
+opa eval --data policies/ --input tfplan.json "data.terraform.deny"
+```
+
+Policies enforce:
+- ✅ Required tags presence and format
+- ✅ Kebab-case naming conventions
+- ✅ Valid tag values (Environment, ManagedBy)
+- ✅ Email format for Owner tag
 
 ## CI/CD with GitHub Actions
 
