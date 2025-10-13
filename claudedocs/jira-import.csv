@@ -1,0 +1,42 @@
+Issue Type,Summary,Description,Labels,Priority,Epic Name,Parent,Story Points
+Epic,EPIC 1: Atlantis 플랫폼 구축,"각 서비스 레포의 PR 기반 Terraform 자동화 기반 마련. Atlantis 서버 구축, State 백엔드, IAM 권한, GitHub 연동 포함","infra,atlantis,automation,platform",P1,EPIC 1: Atlantis 플랫폼 구축,,
+Task,TASK 1-1: Terraform State 백엔드 구축,"S3 버킷(버전관리+암호화), DynamoDB Lock 테이블, KMS 키 생성, 백엔드 설정 문서화","infra,atlantis",P1,,EPIC 1: Atlantis 플랫폼 구축,3
+Task,TASK 1-2: IAM AssumeRole 권한 구조 설계,"Atlantis Task Role 생성, 계정별 Target Role 생성(dev/stg/prod), Trust Policy 설정, 권한 정책 정의","infra,atlantis",P1,,EPIC 1: Atlantis 플랫폼 구축,5
+Task,TASK 1-3: Atlantis 서버 ECS 배포,"ECS Cluster 생성, Task Definition(이미지+환경변수+시크릿), Service 배포(ALB 연동), Health Check 및 로그 설정","infra,atlantis",P1,,EPIC 1: Atlantis 플랫폼 구축,5
+Task,TASK 1-4: GitHub App 및 Webhook 연동,"GitHub App 생성, Webhook URL 설정, Private Key 저장(Secrets Manager), 연동 테스트","infra,atlantis",P1,,EPIC 1: Atlantis 플랫폼 구축,3
+Task,TASK 1-5: 멀티 레포지토리 allowlist 설정,"repos.yaml 작성, FileFlow/CrawlingHub/AuthHub 레포 추가, Atlantis 재배포 및 검증","infra,atlantis",P1,,EPIC 1: Atlantis 플랫폼 구축,2
+Task,TASK 1-6: Atlantis 운영 문서 작성,"레포 추가/제거 프로세스, 업그레이드 절차, 트러블슈팅 가이드, 로그 분석 방법","infra,atlantis",P2,,EPIC 1: Atlantis 플랫폼 구축,2
+Epic,EPIC 2: 공통 플랫폼 인프라,"모든 서비스가 공통으로 사용할 기반 인프라. VPC, KMS, Secrets Manager, CloudTrail, 태그 규약 포함","infra,platform,networking,security",P1,EPIC 2: 공통 플랫폼 인프라,,
+Task,TASK 2-1: VPC 및 네트워크 설계,"VPC CIDR 설계(dev/stg/prod), Public/Private Subnet 구성, NAT Gateway, Route Table 설정","infra,platform",P1,,EPIC 2: 공통 플랫폼 인프라,5
+Task,TASK 2-2: Transit Gateway 구성 (선택),"TGW 생성 여부 결정, VPC Attachment, Route Table 설정, 보안 그룹 규칙","infra,platform",P2,,EPIC 2: 공통 플랫폼 인프라,3
+Task,TASK 2-3: KMS 키 전략 수립,"용도별 KMS 키 생성(State/RDS/ECS/Secrets), 키 정책 설정, 로테이션 정책, 사용 가이드","infra,security",P1,,EPIC 2: 공통 플랫폼 인프라,3
+Task,TASK 2-4: AWS 계정 분리 전략 수립,"계정 구조 결정(단일 vs 멀티), Organizations 설정, 계정 간 IAM 권한, 비용 할당 태그","infra,platform",P2,,EPIC 2: 공통 플랫폼 인프라,3
+Task,TASK 2-5: CloudTrail 중앙 수집,"중앙 CloudTrail 버킷, 모든 계정 로그 집계, Athena 쿼리 설정, 보안 이벤트 알림","infra,security",P1,,EPIC 2: 공통 플랫폼 인프라,3
+Task,TASK 2-6: 필수 태그 및 네이밍 규약,"태그 스키마 정의(Environment/Service/Team/Owner/CostCenter), 네이밍 규칙, OPA 정책, 문서화","infra,platform",P1,,EPIC 2: 공통 플랫폼 인프라,2
+Task,TASK 2-7: Secrets 관리 인프라,"Secrets Manager 구조 설계, 네이밍 규칙, 로테이션 정책, 서비스 레포 접근 가이드","infra,security",P1,,EPIC 2: 공통 플랫폼 인프라,3
+Epic,EPIC 3: 중앙 관측성 시스템,"로깅, 모니터링, 알림 통합 시스템. CloudWatch Logs, Grafana/Prometheus, 드리프트 감지 포함","infra,observability,monitoring,logging",P1,EPIC 3: 중앙 관측성 시스템,,
+Task,TASK 3-1: 중앙 로깅 시스템 구축,"CloudWatch Logs 집계, Log Group 네이밍, Retention 정책, Logs Insights 쿼리 템플릿","infra,observability",P1,,EPIC 3: 중앙 관측성 시스템,3
+Task,TASK 3-2: 모니터링 시스템 선택 및 구축,"CloudWatch Dashboards 또는 Grafana+Prometheus 선택, 메트릭 수집(ECS/RDS/ALB), 대시보드 템플릿","infra,observability",P1,,EPIC 3: 중앙 관측성 시스템,5
+Task,TASK 3-3: 알림 체계 구축,"SNS Topic 생성(Critical/Warning/Info), Slack Webhook 연동, 알림 룰 정의, Runbook 링크","infra,observability",P1,,EPIC 3: 중앙 관측성 시스템,3
+Task,TASK 3-4: 기본 알람 세트 정의,"ECS 알람(CPU/Memory/TaskCount), RDS 알람(Connections/CPU/Storage), ALB 알람(5xx/TargetHealth/ResponseTime), 가이드","infra,observability",P1,,EPIC 3: 중앙 관측성 시스템,3
+Task,TASK 3-5: 드리프트 감지 자동화,"EventBridge Rule(매일 09:00), Lambda 함수(terraform plan), Slack 알림, GitHub Issues 자동 생성, 해결 프로세스","infra,observability",P2,,EPIC 3: 중앙 관측성 시스템,5
+Epic,EPIC 4: 재사용 가능한 표준 모듈,"서비스 레포에서 사용할 검증된 Terraform 모듈. ECS, RDS, ALB, IAM, SG 모듈 및 버전 관리","infra,modules,terraform,reusable",P1,EPIC 4: 재사용 가능한 표준 모듈,,
+Task,TASK 4-1: 모듈 디렉터리 구조 설계,"modules/ 폴더 구조, README 템플릿, Semantic Versioning, CHANGELOG 작성 규칙","infra,modules",P1,,EPIC 4: 재사용 가능한 표준 모듈,2
+Task,TASK 4-2: ECS Service 모듈 개발,"Task Definition(이미지/CPU/메모리/환경변수/시크릿), Service(DesiredCount/AutoScaling), Health Check","infra,modules",P1,,EPIC 4: 재사용 가능한 표준 모듈,5
+Task,TASK 4-3: RDS 모듈 개발,"DB Instance(엔진/버전/인스턴스 타입/스토리지), 백업 설정, 암호화(KMS), Parameter Group, Security Group","infra,modules",P1,,EPIC 4: 재사용 가능한 표준 모듈,5
+Task,TASK 4-4: ALB 모듈 개발,"ALB(VPC/Subnets/SG), Listener(HTTP/HTTPS), Target Group(Health Check), Listener Rules, SSL/TLS 인증서","infra,modules",P1,,EPIC 4: 재사용 가능한 표준 모듈,5
+Task,TASK 4-5: IAM Role/Policy 모듈 개발,"ECS Task Role/Execution Role, RDS 접근 Policy, Secrets Manager 접근, S3 접근, Policy 템플릿(최소 권한)","infra,modules",P1,,EPIC 4: 재사용 가능한 표준 모듈,3
+Task,TASK 4-6: Security Group 모듈 개발,"ALB SG, ECS SG, RDS SG, VPC Endpoint SG(선택), 커스터마이징 옵션","infra,modules",P1,,EPIC 4: 재사용 가능한 표준 모듈,3
+Task,TASK 4-7: 모듈 예제 작성,"examples/ 폴더(ecs-service-basic/rds-postgresql/alb-multi-target), 실제 사용 코드, terraform plan 출력, 복합 예제","infra,modules",P2,,EPIC 4: 재사용 가능한 표준 모듈,3
+Task,TASK 4-8: 모듈 버전 태그 및 릴리스,"모듈 검토, CHANGELOG.md, UPGRADE.md, Git 태그(v1.0.0), GitHub Release","infra,modules",P1,,EPIC 4: 재사용 가능한 표준 모듈,2
+Epic,EPIC 5: 가드레일 및 정책 검증,"서비스 레포 PR의 보안/정책/비용 자동 검증. tfsec, checkov, OPA/Conftest, Infracost 통합","infra,security,policy,cost,guardrails",P1,EPIC 5: 가드레일 및 정책 검증,,
+Task,TASK 5-1: tfsec 보안 스캔 설정,"tfsec 설정 파일(.tfsec/config.yml), 최소 보안 기준선, GitHub Actions 통합, 결과 리포팅 템플릿","infra,security",P1,,EPIC 5: 가드레일 및 정책 검증,3
+Task,TASK 5-2: checkov 정책 검증 설정,"checkov 설정(.checkov.yml), CIS Benchmark 적용, Skip 규칙 관리, GitHub Actions 통합","infra,security",P1,,EPIC 5: 가드레일 및 정책 검증,3
+Task,TASK 5-3: OPA/Conftest In-Repo 정책 작성,"policy/ 디렉터리(tags/naming/security_groups/public_resources), 필수 태그 검증, 네이밍 검증, Conftest 통합","infra,policy",P1,,EPIC 5: 가드레일 및 정책 검증,5
+Task,TASK 5-4: Infracost 비용 검증 설정,"Infracost API Key, 비용 임계치(+10% 경고/+30% 차단), PR 코멘트 자동화, 비용 리포트 템플릿","infra,cost",P1,,EPIC 5: 가드레일 및 정책 검증,3
+Task,TASK 5-5: GitHub Actions 워크플로우 템플릿,"infra-checks.yml 템플릿(tfsec/checkov/conftest/infracost), 통합 리포팅, 실패 시 동작, 서비스 레포 적용 가이드","infra,guardrails",P1,,EPIC 5: 가드레일 및 정책 검증,3
+Epic,EPIC 6: 문서화 및 온보딩,"서비스 팀이 자율적으로 인프라를 구축할 수 있도록 지원. 온보딩 가이드, 모듈 가이드, 런북, PR 템플릿","infra,documentation,onboarding,guide",P2,EPIC 6: 문서화 및 온보딩,,
+Task,TASK 6-1: 서비스 레포 온보딩 가이드,"infra/ 폴더 구조, 중앙 모듈 참조 방법(git::...?ref=vX.Y.Z), backend.tf, atlantis.yaml, 첫 PR 튜토리얼","infra,documentation",P2,,EPIC 6: 문서화 및 온보딩,3
+Task,TASK 6-2: 모듈 사용 가이드,"각 모듈별 사용 예제, 변수 설명 및 기본값, 일반적인 사용 패턴, 트러블슈팅 FAQ","infra,documentation",P2,,EPIC 6: 문서화 및 온보딩,3
+Task,TASK 6-3: 운영 런북,"릴리스 프로세스, 롤백 절차, 핫픽스 프로세스, 드리프트 해결 방법, 스케일링 가이드","infra,documentation",P2,,EPIC 6: 문서화 및 온보딩,3
+Task,TASK 6-4: PR 템플릿 및 체크리스트,"PULL_REQUEST_TEMPLATE.md, ISSUE_TEMPLATE/(bug/feature/infrastructure), CODEOWNERS 예제, PR 리뷰 체크리스트","infra,documentation",P2,,EPIC 6: 문서화 및 온보딩,2

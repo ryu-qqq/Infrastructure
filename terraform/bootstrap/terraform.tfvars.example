@@ -1,0 +1,25 @@
+# Example Terraform Variables for Bootstrap Module
+#
+# Copy this file to terraform.tfvars and modify as needed:
+#   cp terraform.tfvars.example terraform.tfvars
+
+# Environment Configuration
+environment = "prod"
+aws_region  = "ap-northeast-2"
+
+# Backend Resource Names
+# NOTE: These should match your existing resources for import
+state_bucket_name      = "prod-connectly"
+state_lock_table_name  = "prod-connectly-tf-lock"
+
+# S3 Bucket Configuration
+state_bucket_versioning      = true  # Enable versioning for state history
+state_bucket_lifecycle_days  = 90    # Days before moving to Glacier
+state_bucket_expiration_days = 365   # Days before expiring old versions
+
+# Required Tags (Governance Standard)
+owner              = "platform-team"
+cost_center        = "engineering"
+resource_lifecycle = "permanent"
+data_class         = "confidential"
+service            = "terraform-backend"

@@ -47,46 +47,14 @@ data "aws_iam_policy_document" "atlantis_assume_role_policy" {
       "sts:AssumeRole"
     ]
     resources = [
-      aws_iam_role.atlantis_target_dev.arn,
-      aws_iam_role.atlantis_target_stg.arn,
       aws_iam_role.atlantis_target_prod.arn,
     ]
   }
 }
 
 # --------------------------------------------
-# 2. Target Roles (dev/stg/prod)
+# 2. Target Role (PROD only)
 # --------------------------------------------
-
-# DEV 환경 Target Role
-resource "aws_iam_role" "atlantis_target_dev" {
-  name               = "atlantis-target-dev"
-  description        = "Target Role for Atlantis to manage dev environment resources"
-  assume_role_policy = data.aws_iam_policy_document.target_role_trust_policy.json
-
-  tags = merge(
-    local.required_tags,
-    {
-      Name        = "atlantis-target-dev"
-      Environment = "dev"
-    }
-  )
-}
-
-# STG 환경 Target Role
-resource "aws_iam_role" "atlantis_target_stg" {
-  name               = "atlantis-target-stg"
-  description        = "Target Role for Atlantis to manage stg environment resources"
-  assume_role_policy = data.aws_iam_policy_document.target_role_trust_policy.json
-
-  tags = merge(
-    local.required_tags,
-    {
-      Name        = "atlantis-target-stg"
-      Environment = "stg"
-    }
-  )
-}
 
 # PROD 환경 Target Role
 resource "aws_iam_role" "atlantis_target_prod" {
@@ -268,21 +236,7 @@ data "aws_iam_policy_document" "terraform_base_permissions" {
   }
 }
 
-# DEV 환경 정책 연결
-resource "aws_iam_role_policy" "atlantis_target_dev_policy" {
-  name   = "terraform-base-permissions"
-  role   = aws_iam_role.atlantis_target_dev.id
-  policy = data.aws_iam_policy_document.terraform_base_permissions.json
-}
-
-# STG 환경 정책 연결
-resource "aws_iam_role_policy" "atlantis_target_stg_policy" {
-  name   = "terraform-base-permissions"
-  role   = aws_iam_role.atlantis_target_stg.id
-  policy = data.aws_iam_policy_document.terraform_base_permissions.json
-}
-
-# PROD 환경 정책 연결 (더 제한적인 정책 적용 가능)
+# PROD 환경 정책 연결
 resource "aws_iam_role_policy" "atlantis_target_prod_policy" {
   name   = "terraform-base-permissions"
   role   = aws_iam_role.atlantis_target_prod.id
