@@ -23,11 +23,39 @@ valid_environments := ["dev", "staging", "prod"]
 
 valid_managed_by := ["terraform", "manual", "cloudformation", "cdk"]
 
+# Resources that don't support tags
+# These resources are excluded from tag requirements
+tag_exempt_resources := [
+    "aws_secretsmanager_secret_version",
+    "aws_secretsmanager_secret_rotation",
+    "aws_iam_role_policy",
+    "aws_iam_role_policy_attachment",
+    "aws_iam_policy_attachment",
+    "aws_iam_user_policy_attachment",
+    "aws_iam_group_policy_attachment",
+    "aws_lambda_permission",
+    "random_password",
+    "random_string",
+    "random_id",
+    "random_uuid",
+    "random_pet",
+    "random_shuffle",
+    "random_integer",
+    "null_resource",
+    "time_sleep",
+]
+
+# Check if a resource type is exempt from tagging
+is_tag_exempt(resource_type) {
+    resource_type == tag_exempt_resources[_]
+}
+
 # Get all resources with tags from terraform plan
 resources[resource] {
     some path, value
     walk(input.planned_values.root_module, [path, value])
     value.type
+    not is_tag_exempt(value.type)
     value.values.tags
     resource := {
         "address": value.address,
