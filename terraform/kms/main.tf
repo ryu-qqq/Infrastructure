@@ -96,3 +96,67 @@ resource "aws_kms_alias" "secrets-manager" {
   name          = "alias/secrets-manager"
   target_key_id = aws_kms_key.secrets-manager.key_id
 }
+
+# ============================================================================
+# 5. CloudWatch Logs Encryption Key (IN-116)
+# ============================================================================
+
+resource "aws_kms_key" "cloudwatch-logs" {
+  description             = "KMS key for CloudWatch Logs encryption"
+  deletion_window_in_days = var.key_deletion_window_in_days
+  enable_key_rotation     = var.enable_key_rotation
+
+  # KMS key policy to allow CloudWatch Logs service to use the key
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Sid    = "Enable IAM User Permissions"
+        Effect = "Allow"
+        Principal = {
+          AWS = "arn:aws:iam::${data.aws_caller_identity.current.account_id}:root"
+        }
+        Action   = "kms:*"
+        Resource = "*"
+      },
+      {
+        Sid    = "Allow CloudWatch Logs"
+        Effect = "Allow"
+        Principal = {
+          Service = "logs.${var.aws_region}.amazonaws.com"
+        }
+        Action = [
+          "kms:Encrypt",
+          "kms:Decrypt",
+          "kms:ReEncrypt*",
+          "kms:GenerateDataKey*",
+          "kms:CreateGrant",
+          "kms:DescribeKey"
+        ]
+        Resource = "*"
+        Condition = {
+          ArnLike = {
+            "kms:EncryptionContext:aws:logs:arn" = "arn:aws:logs:${var.aws_region}:${data.aws_caller_identity.current.account_id}:log-group:*"
+          }
+        }
+      }
+    ]
+  })
+
+  tags = merge(
+    local.required_tags,
+    {
+      Name      = "cloudwatch-logs"
+      DataClass = "confidential"
+      Component = "cloudwatch-logs"
+    }
+  )
+}
+
+resource "aws_kms_alias" "cloudwatch-logs" {
+  name          = "alias/cloudwatch-logs"
+  target_key_id = aws_kms_key.cloudwatch-logs.key_id
+}
+
+# Data source for current AWS account ID
+data "aws_caller_identity" "current" {}
