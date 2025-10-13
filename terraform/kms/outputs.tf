@@ -77,6 +77,25 @@ output "secrets_manager_key_alias" {
 }
 
 # ============================================================================
+# CloudWatch Logs Key Outputs
+# ============================================================================
+
+output "cloudwatch_logs_key_id" {
+  description = "The ID of the KMS key for CloudWatch Logs encryption"
+  value       = aws_kms_key.cloudwatch-logs.key_id
+}
+
+output "cloudwatch_logs_key_arn" {
+  description = "The ARN of the KMS key for CloudWatch Logs encryption"
+  value       = aws_kms_key.cloudwatch-logs.arn
+}
+
+output "cloudwatch_logs_key_alias" {
+  description = "The alias of the KMS key for CloudWatch Logs encryption"
+  value       = aws_kms_alias.cloudwatch-logs.name
+}
+
+# ============================================================================
 # Summary Output
 # ============================================================================
 
@@ -102,6 +121,11 @@ output "kms_keys_summary" {
       key_id = aws_kms_key.secrets-manager.key_id
       arn    = aws_kms_key.secrets-manager.arn
       alias  = aws_kms_alias.secrets-manager.name
+    }
+    cloudwatch_logs = {
+      key_id = aws_kms_key.cloudwatch-logs.key_id
+      arn    = aws_kms_key.cloudwatch-logs.arn
+      alias  = aws_kms_alias.cloudwatch-logs.name
     }
   }
 }
