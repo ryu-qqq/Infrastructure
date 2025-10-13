@@ -75,7 +75,7 @@ resource "aws_cloudwatch_log_subscription_filter" "langfuse" {
 }
 
 # Optional: Metric Filter for Error Rate Monitoring
-resource "aws_cloudwatch_log_metric_filter" "error_rate" {
+resource "aws_cloudwatch_log_metric_filter" "error-rate" {
   count = var.enable_error_rate_metric ? 1 : 0
 
   name           = "${var.name}-error-rate"
