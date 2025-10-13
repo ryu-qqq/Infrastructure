@@ -13,12 +13,12 @@ resource "aws_iam_role" "atlantis_task_role" {
   description        = "IAM Role for Atlantis ECS Task to assume Target Roles"
   assume_role_policy = data.aws_iam_policy_document.ecs_assume_role_policy.json
 
-  tags = {
-    Name        = var.atlantis_task_role_name
-    Environment = "shared"
-    Service     = "atlantis"
-    ManagedBy   = "terraform"
-  }
+  tags = merge(
+    local.required_tags,
+    {
+      Name = var.atlantis_task_role_name
+    }
+  )
 }
 
 # ECS 태스크가 이 Role을 Assume할 수 있도록 Trust Policy 설정
@@ -64,12 +64,13 @@ resource "aws_iam_role" "atlantis_target_dev" {
   description        = "Target Role for Atlantis to manage dev environment resources"
   assume_role_policy = data.aws_iam_policy_document.target_role_trust_policy.json
 
-  tags = {
-    Name        = "atlantis-target-dev"
-    Environment = "dev"
-    Service     = "atlantis"
-    ManagedBy   = "terraform"
-  }
+  tags = merge(
+    local.required_tags,
+    {
+      Name        = "atlantis-target-dev"
+      Environment = "dev"
+    }
+  )
 }
 
 # STG 환경 Target Role
@@ -78,12 +79,13 @@ resource "aws_iam_role" "atlantis_target_stg" {
   description        = "Target Role for Atlantis to manage stg environment resources"
   assume_role_policy = data.aws_iam_policy_document.target_role_trust_policy.json
 
-  tags = {
-    Name        = "atlantis-target-stg"
-    Environment = "stg"
-    Service     = "atlantis"
-    ManagedBy   = "terraform"
-  }
+  tags = merge(
+    local.required_tags,
+    {
+      Name        = "atlantis-target-stg"
+      Environment = "stg"
+    }
+  )
 }
 
 # PROD 환경 Target Role
@@ -92,12 +94,13 @@ resource "aws_iam_role" "atlantis_target_prod" {
   description        = "Target Role for Atlantis to manage prod environment resources"
   assume_role_policy = data.aws_iam_policy_document.target_role_trust_policy.json
 
-  tags = {
-    Name        = "atlantis-target-prod"
-    Environment = "prod"
-    Service     = "atlantis"
-    ManagedBy   = "terraform"
-  }
+  tags = merge(
+    local.required_tags,
+    {
+      Name        = "atlantis-target-prod"
+      Environment = "prod"
+    }
+  )
 }
 
 # Target Roles의 Trust Policy (Atlantis Task Role만 Assume 가능)

@@ -14,11 +14,59 @@ variable "aws_region" {
   default     = "ap-northeast-2"
 }
 
-variable "tags" {
-  description = "Common tags to apply to all resources"
-  type        = map(string)
-  default = {
-    Project   = "infrastructure"
-    ManagedBy = "terraform"
+# ============================================
+# Required Tags Variables
+# ============================================
+
+variable "owner" {
+  description = "Owner of the infrastructure"
+  type        = string
+  default     = "platform-team"
+}
+
+variable "cost_center" {
+  description = "Cost center for billing"
+  type        = string
+  default     = "infrastructure"
+}
+
+variable "environment" {
+  description = "Environment name"
+  type        = string
+  default     = "shared"
+}
+
+variable "resource_lifecycle" {
+  description = "Resource lifecycle stage"
+  type        = string
+  default     = "permanent"
+}
+
+variable "data_class" {
+  description = "Data classification level"
+  type        = string
+  default     = "internal"
+}
+
+variable "service" {
+  description = "Service name"
+  type        = string
+  default     = "atlantis"
+}
+
+# ============================================
+# Locals
+# ============================================
+
+locals {
+  required_tags = {
+    Owner       = var.owner
+    CostCenter  = var.cost_center
+    Environment = var.environment
+    Lifecycle   = var.resource_lifecycle
+    DataClass   = var.data_class
+    Service     = var.service
+    ManagedBy   = "terraform"
+    Project     = "infrastructure"
   }
 }
