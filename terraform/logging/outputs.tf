@@ -42,7 +42,11 @@ output "secrets_rotation_log_group" {
 output "log_groups_summary" {
   description = "Summary of all created log groups"
   value = {
-    total_groups = 3
+    total_groups = length([
+      module.atlantis_application_logs,
+      module.atlantis_error_logs,
+      module.secrets_rotation_logs
+    ])
     groups = [
       {
         name      = module.atlantis_application_logs.log_group_name
