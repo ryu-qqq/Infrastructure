@@ -35,3 +35,24 @@ variable "private_subnet_cidrs" {
   type        = list(string)
   default     = ["10.0.10.0/24", "10.0.11.0/24"]
 }
+
+# Transit Gateway Variables
+
+variable "enable_transit_gateway" {
+  description = "Enable Transit Gateway for multi-VPC communication"
+  type        = bool
+  default     = true
+}
+
+variable "transit_gateway_asn" {
+  description = "Amazon side ASN for Transit Gateway"
+  type        = number
+  default     = 64512
+}
+
+variable "transit_gateway_routes" {
+  description = "List of CIDR blocks to route through Transit Gateway (for future VPCs)"
+  type        = list(string)
+  default     = []
+  # Example: ["10.1.0.0/16", "10.2.0.0/16"] for additional VPCs
+}
