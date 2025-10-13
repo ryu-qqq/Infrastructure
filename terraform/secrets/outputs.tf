@@ -43,3 +43,19 @@ output "rotation_schedule_days" {
   description = "Number of days between automatic rotations"
   value       = var.rotation_days
 }
+
+# IAM Policy ARN outputs for service repositories
+output "crawler_secrets_read_policy_arn" {
+  description = "ARN of the Crawler service secrets read policy"
+  value       = aws_iam_policy.crawler_secrets_read.arn
+}
+
+output "devops_secrets_management_policy_arn" {
+  description = "ARN of the DevOps secrets management policy"
+  value       = aws_iam_policy.devops_secrets_management.arn
+}
+
+output "github_actions_secrets_policy_arn" {
+  description = "ARN of the GitHub Actions secrets policy"
+  value       = aws_iam_policy.github_actions_secrets.arn
+}

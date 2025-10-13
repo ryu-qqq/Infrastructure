@@ -14,10 +14,10 @@ resource "aws_secretsmanager_secret" "example_secrets" {
   tags = merge(
     local.required_tags,
     {
-      Name        = each.value.name
-      SecretType  = each.value.type
-      Lifecycle   = "permanent"
-      AutoRotate  = var.enable_rotation ? "true" : "false"
+      Name       = each.value.name
+      SecretType = each.value.type
+      Lifecycle  = "permanent"
+      AutoRotate = var.enable_rotation ? "true" : "false"
     }
   )
 }

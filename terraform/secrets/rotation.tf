@@ -85,7 +85,7 @@ resource "aws_iam_role_policy" "rotation_lambda_policy" {
 resource "aws_cloudwatch_log_group" "rotation_lambda" {
   name              = "/aws/lambda/secrets-manager-rotation"
   retention_in_days = 14
-  kms_key_id        = data.terraform_remote_state.kms.outputs.terraform_state_key_arn
+  kms_key_id        = data.terraform_remote_state.kms.outputs.secrets_manager_key_arn
 
   tags = merge(
     local.required_tags,
@@ -100,10 +100,10 @@ resource "aws_lambda_function" "rotation" {
   filename         = "${path.module}/lambda/rotation.zip"
   function_name    = "secrets-manager-rotation"
   role             = aws_iam_role.rotation_lambda.arn
-  handler          = "index.handler"
+  handler          = "index.lambda_handler"
   source_code_hash = fileexists("${path.module}/lambda/rotation.zip") ? filebase64sha256("${path.module}/lambda/rotation.zip") : null
   runtime          = "python3.11"
-  timeout          = 30
+  timeout          = 60
 
   environment {
     variables = {
