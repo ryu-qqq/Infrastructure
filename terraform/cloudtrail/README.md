@@ -88,6 +88,21 @@ This module creates a centralized CloudTrail configuration for tracking all AWS 
 ```bash
 cd terraform/cloudtrail
 
+# Configure Terraform backend (required - backend removed from module)
+# Create backend.tf with your S3 backend configuration:
+cat > backend.tf <<EOF
+terraform {
+  backend "s3" {
+    bucket         = "your-terraform-state-bucket"
+    key            = "cloudtrail/terraform.tfstate"
+    region         = "your-region"
+    encrypt        = true
+    kms_key_id     = "alias/terraform-state"
+    dynamodb_table = "terraform-lock"
+  }
+}
+EOF
+
 # Initialize Terraform
 terraform init
 
@@ -240,11 +255,11 @@ MSCK REPAIR TABLE cloudtrail_logs;
 ```bash
 # Check SNS subscription status
 aws sns list-subscriptions-by-topic \
-  --topic-arn arn:aws:sns:ap-northeast-2:<ACCOUNT_ID>:cloudtrail-security-alerts
+  --topic-arn arn:aws:sns:<AWS_REGION>:<ACCOUNT_ID>:cloudtrail-security-alerts
 
 # Test SNS topic
 aws sns publish \
-  --topic-arn arn:aws:sns:ap-northeast-2:<ACCOUNT_ID>:cloudtrail-security-alerts \
+  --topic-arn arn:aws:sns:<AWS_REGION>:<ACCOUNT_ID>:cloudtrail-security-alerts \
   --message "Test alert"
 
 # Check EventBridge rule status

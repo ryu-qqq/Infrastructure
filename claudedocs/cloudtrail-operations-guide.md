@@ -26,7 +26,7 @@ aws cloudtrail get-trail-status --name central-cloudtrail
 # - LatestNotificationTime: recent timestamp
 
 # Check S3 bucket for recent logs
-aws s3 ls s3://cloudtrail-logs-<ACCOUNT_ID>/cloudtrail/AWSLogs/<ACCOUNT_ID>/CloudTrail/ap-northeast-2/$(date +%Y/%m/%d)/ | tail -5
+aws s3 ls s3://cloudtrail-logs-<ACCOUNT_ID>/cloudtrail/AWSLogs/<ACCOUNT_ID>/CloudTrail/<AWS_REGION>/$(date +%Y/%m/%d)/ | tail -5
 
 # Check CloudWatch Logs delivery
 aws logs describe-log-streams \
@@ -280,11 +280,11 @@ SELECT
   useridentity.arn,
   eventtime,
   eventname,
-  resources[1].arn as s3_object,
+  element_at(resources, 2).ARN as s3_object_arn,
   sourceipaddress
 FROM cloudtrail_logs
 WHERE eventsource = 's3.amazonaws.com'
-  AND eventname IN ('GetObject', 'ListBucket')
+  AND eventname = 'GetObject'
   AND date >= date_format(current_date - interval '1' day, '%Y/%m/%d')
 ORDER BY eventtime DESC
 LIMIT 1000;
@@ -354,7 +354,7 @@ DROP TABLE cloudtrail_logs;
 ```bash
 # Check SNS subscription status
 aws sns list-subscriptions-by-topic \
-  --topic-arn arn:aws:sns:ap-northeast-2:<ACCOUNT_ID>:cloudtrail-security-alerts
+  --topic-arn arn:aws:sns:<AWS_REGION>:<ACCOUNT_ID>:cloudtrail-security-alerts
 
 # Expected: Subscription with status "Confirmed"
 
@@ -369,7 +369,7 @@ aws events list-rules --name-prefix cloudtrail-
    - Resend confirmation email
    ```bash
    aws sns subscribe \
-     --topic-arn arn:aws:sns:ap-northeast-2:<ACCOUNT_ID>:cloudtrail-security-alerts \
+     --topic-arn arn:aws:sns:<AWS_REGION>:<ACCOUNT_ID>:cloudtrail-security-alerts \
      --protocol email \
      --notification-endpoint your-email@example.com
    ```
@@ -382,7 +382,7 @@ aws events list-rules --name-prefix cloudtrail-
 3. **Test Alert Delivery**:
    ```bash
    aws sns publish \
-     --topic-arn arn:aws:sns:ap-northeast-2:<ACCOUNT_ID>:cloudtrail-security-alerts \
+     --topic-arn arn:aws:sns:<AWS_REGION>:<ACCOUNT_ID>:cloudtrail-security-alerts \
      --subject "Test Alert" \
      --message "This is a test alert from CloudTrail monitoring"
    ```
@@ -399,7 +399,7 @@ aws events list-rules --name-prefix cloudtrail-
 #### Cost Optimization Review
 ```bash
 # Check S3 storage usage
-aws s3 ls s3://cloudtrail-logs-646886795421 --recursive --human-readable --summarize | grep "Total Size"
+aws s3 ls s3://cloudtrail-logs-<ACCOUNT_ID> --recursive --human-readable --summarize | grep "Total Size"
 
 # Review Athena query costs
 # Navigate to AWS Billing → Cost Explorer → Athena
