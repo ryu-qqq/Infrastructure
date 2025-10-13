@@ -19,6 +19,7 @@ jobs:
   terraform-plan:
     name: Terraform Plan
     runs-on: ubuntu-latest
+    timeout-minutes: 10  # Prevent hanging workflows
 
     steps:
       - name: Checkout code
@@ -31,9 +32,12 @@ jobs:
 
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
+        timeout-minutes: 2  # OIDC should complete quickly
         with:
           role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
           aws-region: ap-northeast-2
+          role-duration-seconds: 3600  # 1 hour session
+          role-session-name: GitHubActions-TerraformPlan
 
       - name: Run Governance Validators
         run: |
