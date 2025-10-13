@@ -141,7 +141,7 @@ resource "aws_s3_bucket_policy" "cloudtrail" {
 }
 
 # Athena Query Results Bucket
-resource "aws_s3_bucket" "athena_results" {
+resource "aws_s3_bucket" "athena-results" {
   count  = var.enable_athena ? 1 : 0
   bucket = local.athena_result_bucket_name
 
@@ -155,9 +155,9 @@ resource "aws_s3_bucket" "athena_results" {
   )
 }
 
-resource "aws_s3_bucket_public_access_block" "athena_results" {
+resource "aws_s3_bucket_public_access_block" "athena-results" {
   count  = var.enable_athena ? 1 : 0
-  bucket = aws_s3_bucket.athena_results[0].id
+  bucket = aws_s3_bucket.athena-results[0].id
 
   block_public_acls       = true
   block_public_policy     = true
@@ -165,9 +165,9 @@ resource "aws_s3_bucket_public_access_block" "athena_results" {
   restrict_public_buckets = true
 }
 
-resource "aws_s3_bucket_server_side_encryption_configuration" "athena_results" {
+resource "aws_s3_bucket_server_side_encryption_configuration" "athena-results" {
   count  = var.enable_athena ? 1 : 0
-  bucket = aws_s3_bucket.athena_results[0].id
+  bucket = aws_s3_bucket.athena-results[0].id
 
   rule {
     apply_server_side_encryption_by_default {
@@ -177,9 +177,9 @@ resource "aws_s3_bucket_server_side_encryption_configuration" "athena_results" {
 }
 
 # Lifecycle policy for Athena query results
-resource "aws_s3_bucket_lifecycle_configuration" "athena_results" {
+resource "aws_s3_bucket_lifecycle_configuration" "athena-results" {
   count  = var.enable_athena ? 1 : 0
-  bucket = aws_s3_bucket.athena_results[0].id
+  bucket = aws_s3_bucket.athena-results[0].id
 
   rule {
     id     = "athena-results-cleanup"

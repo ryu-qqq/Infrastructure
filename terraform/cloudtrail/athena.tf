@@ -11,7 +11,7 @@ resource "aws_athena_workgroup" "cloudtrail" {
     publish_cloudwatch_metrics_enabled = true
 
     result_configuration {
-      output_location = "s3://${aws_s3_bucket.athena_results[0].id}/query-results/"
+      output_location = "s3://${aws_s3_bucket.athena-results[0].id}/query-results/"
 
       encryption_configuration {
         encryption_option = "SSE_S3"
@@ -213,7 +213,7 @@ resource "aws_glue_catalog_table" "cloudtrail" {
 }
 
 # Named Queries for common CloudTrail analysis
-resource "aws_athena_named_query" "unauthorized_api_calls" {
+resource "aws_athena_named_query" "unauthorized-api-calls" {
   count     = var.enable_athena ? 1 : 0
   name      = "unauthorized-api-calls"
   workgroup = aws_athena_workgroup.cloudtrail[0].id
@@ -244,7 +244,7 @@ resource "aws_athena_named_query" "unauthorized_api_calls" {
   )
 }
 
-resource "aws_athena_named_query" "root_account_usage" {
+resource "aws_athena_named_query" "root-account-usage" {
   count     = var.enable_athena ? 1 : 0
   name      = "root-account-usage"
   workgroup = aws_athena_workgroup.cloudtrail[0].id
@@ -274,7 +274,7 @@ resource "aws_athena_named_query" "root_account_usage" {
   )
 }
 
-resource "aws_athena_named_query" "console_login_failures" {
+resource "aws_athena_named_query" "console-login-failures" {
   count     = var.enable_athena ? 1 : 0
   name      = "console-login-failures"
   workgroup = aws_athena_workgroup.cloudtrail[0].id
@@ -305,7 +305,7 @@ resource "aws_athena_named_query" "console_login_failures" {
   )
 }
 
-resource "aws_athena_named_query" "iam_policy_changes" {
+resource "aws_athena_named_query" "iam-policy-changes" {
   count     = var.enable_athena ? 1 : 0
   name      = "iam-policy-changes"
   workgroup = aws_athena_workgroup.cloudtrail[0].id

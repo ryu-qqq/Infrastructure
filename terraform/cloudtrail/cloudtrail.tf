@@ -18,7 +18,7 @@ resource "aws_cloudwatch_log_group" "cloudtrail" {
 }
 
 # IAM Role for CloudTrail to write to CloudWatch Logs
-resource "aws_iam_role" "cloudtrail_cloudwatch" {
+resource "aws_iam_role" "cloudtrail-cloudwatch" {
   count = var.enable_cloudwatch_logs ? 1 : 0
   name  = "cloudtrail-cloudwatch-logs-role"
 
@@ -44,10 +44,10 @@ resource "aws_iam_role" "cloudtrail_cloudwatch" {
   )
 }
 
-resource "aws_iam_role_policy" "cloudtrail_cloudwatch" {
+resource "aws_iam_role_policy" "cloudtrail-cloudwatch" {
   count = var.enable_cloudwatch_logs ? 1 : 0
   name  = "cloudtrail-cloudwatch-logs-policy"
-  role  = aws_iam_role.cloudtrail_cloudwatch[0].id
+  role  = aws_iam_role.cloudtrail-cloudwatch[0].id
 
   policy = jsonencode({
     Version = "2012-10-17"
@@ -83,7 +83,7 @@ resource "aws_cloudtrail" "main" {
 
   # CloudWatch Logs integration
   cloud_watch_logs_group_arn = var.enable_cloudwatch_logs ? "${aws_cloudwatch_log_group.cloudtrail[0].arn}:*" : null
-  cloud_watch_logs_role_arn  = var.enable_cloudwatch_logs ? aws_iam_role.cloudtrail_cloudwatch[0].arn : null
+  cloud_watch_logs_role_arn  = var.enable_cloudwatch_logs ? aws_iam_role.cloudtrail-cloudwatch[0].arn : null
 
   # Advanced event selectors for detailed logging
   advanced_event_selector {
@@ -133,7 +133,7 @@ resource "aws_cloudtrail" "main" {
 
   depends_on = [
     aws_s3_bucket_policy.cloudtrail,
-    aws_iam_role_policy.cloudtrail_cloudwatch
+    aws_iam_role_policy.cloudtrail-cloudwatch
   ]
 
   tags = merge(

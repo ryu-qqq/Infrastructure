@@ -34,7 +34,7 @@ output "cloudtrail_bucket_arn" {
 
 output "athena_results_bucket_id" {
   description = "The ID of the S3 bucket for Athena query results"
-  value       = var.enable_athena ? aws_s3_bucket.athena_results[0].id : null
+  value       = var.enable_athena ? aws_s3_bucket.athena-results[0].id : null
 }
 
 # KMS Outputs
@@ -83,12 +83,12 @@ output "athena_table_name" {
 # SNS Outputs
 output "security_alerts_topic_arn" {
   description = "The ARN of the SNS topic for security alerts"
-  value       = var.enable_security_alerts ? aws_sns_topic.security_alerts[0].arn : null
+  value       = var.enable_security_alerts ? aws_sns_topic.security-alerts[0].arn : null
 }
 
 output "security_alerts_topic_name" {
   description = "The name of the SNS topic for security alerts"
-  value       = var.enable_security_alerts ? aws_sns_topic.security_alerts[0].name : null
+  value       = var.enable_security_alerts ? aws_sns_topic.security-alerts[0].name : null
 }
 
 # Summary Output

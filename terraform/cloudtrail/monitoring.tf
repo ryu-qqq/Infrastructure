@@ -2,7 +2,7 @@
 # EventBridge rules and SNS notifications for critical security events
 
 # SNS Topic for Security Alerts
-resource "aws_sns_topic" "security_alerts" {
+resource "aws_sns_topic" "security-alerts" {
   count             = var.enable_security_alerts ? 1 : 0
   name              = local.security_alerts_topic_name
   display_name      = "CloudTrail Security Alerts"
@@ -18,9 +18,9 @@ resource "aws_sns_topic" "security_alerts" {
 }
 
 # SNS Topic Policy
-resource "aws_sns_topic_policy" "security_alerts" {
+resource "aws_sns_topic_policy" "security-alerts" {
   count = var.enable_security_alerts ? 1 : 0
-  arn   = aws_sns_topic.security_alerts[0].arn
+  arn   = aws_sns_topic.security-alerts[0].arn
 
   policy = jsonencode({
     Version = "2012-10-17"
@@ -32,22 +32,22 @@ resource "aws_sns_topic_policy" "security_alerts" {
           Service = "events.amazonaws.com"
         }
         Action   = "SNS:Publish"
-        Resource = aws_sns_topic.security_alerts[0].arn
+        Resource = aws_sns_topic.security-alerts[0].arn
       }
     ]
   })
 }
 
 # SNS Email Subscription (if email provided)
-resource "aws_sns_topic_subscription" "security_alerts_email" {
+resource "aws_sns_topic_subscription" "security-alerts-email" {
   count     = var.enable_security_alerts && var.alert_email != "" ? 1 : 0
-  topic_arn = aws_sns_topic.security_alerts[0].arn
+  topic_arn = aws_sns_topic.security-alerts[0].arn
   protocol  = "email"
   endpoint  = var.alert_email
 }
 
 # EventBridge Rule: Root Account Usage
-resource "aws_cloudwatch_event_rule" "root_account_usage" {
+resource "aws_cloudwatch_event_rule" "root-account-usage" {
   count       = var.enable_security_alerts ? 1 : 0
   name        = "${var.cloudtrail_name}-root-account-usage"
   description = "Alert when root account is used"
@@ -70,11 +70,11 @@ resource "aws_cloudwatch_event_rule" "root_account_usage" {
   )
 }
 
-resource "aws_cloudwatch_event_target" "root_account_usage" {
+resource "aws_cloudwatch_event_target" "root-account-usage" {
   count     = var.enable_security_alerts ? 1 : 0
-  rule      = aws_cloudwatch_event_rule.root_account_usage[0].name
+  rule      = aws_cloudwatch_event_rule.root-account-usage[0].name
   target_id = "SendToSNS"
-  arn       = aws_sns_topic.security_alerts[0].arn
+  arn       = aws_sns_topic.security-alerts[0].arn
 
   input_transformer {
     input_paths = {
@@ -89,7 +89,7 @@ resource "aws_cloudwatch_event_target" "root_account_usage" {
 }
 
 # EventBridge Rule: Unauthorized API Calls
-resource "aws_cloudwatch_event_rule" "unauthorized_api_calls" {
+resource "aws_cloudwatch_event_rule" "unauthorized-api-calls" {
   count       = var.enable_security_alerts ? 1 : 0
   name        = "${var.cloudtrail_name}-unauthorized-api-calls"
   description = "Alert on unauthorized API calls"
@@ -113,11 +113,11 @@ resource "aws_cloudwatch_event_rule" "unauthorized_api_calls" {
   )
 }
 
-resource "aws_cloudwatch_event_target" "unauthorized_api_calls" {
+resource "aws_cloudwatch_event_target" "unauthorized-api-calls" {
   count     = var.enable_security_alerts ? 1 : 0
-  rule      = aws_cloudwatch_event_rule.unauthorized_api_calls[0].name
+  rule      = aws_cloudwatch_event_rule.unauthorized-api-calls[0].name
   target_id = "SendToSNS"
-  arn       = aws_sns_topic.security_alerts[0].arn
+  arn       = aws_sns_topic.security-alerts[0].arn
 
   input_transformer {
     input_paths = {
@@ -133,7 +133,7 @@ resource "aws_cloudwatch_event_target" "unauthorized_api_calls" {
 }
 
 # EventBridge Rule: IAM Policy Changes
-resource "aws_cloudwatch_event_rule" "iam_policy_changes" {
+resource "aws_cloudwatch_event_rule" "iam-policy-changes" {
   count       = var.enable_security_alerts ? 1 : 0
   name        = "${var.cloudtrail_name}-iam-policy-changes"
   description = "Alert on IAM policy changes"
@@ -168,11 +168,11 @@ resource "aws_cloudwatch_event_rule" "iam_policy_changes" {
   )
 }
 
-resource "aws_cloudwatch_event_target" "iam_policy_changes" {
+resource "aws_cloudwatch_event_target" "iam-policy-changes" {
   count     = var.enable_security_alerts ? 1 : 0
-  rule      = aws_cloudwatch_event_rule.iam_policy_changes[0].name
+  rule      = aws_cloudwatch_event_rule.iam-policy-changes[0].name
   target_id = "SendToSNS"
-  arn       = aws_sns_topic.security_alerts[0].arn
+  arn       = aws_sns_topic.security-alerts[0].arn
 
   input_transformer {
     input_paths = {
@@ -186,7 +186,7 @@ resource "aws_cloudwatch_event_target" "iam_policy_changes" {
 }
 
 # EventBridge Rule: Console Login Failures
-resource "aws_cloudwatch_event_rule" "console_login_failures" {
+resource "aws_cloudwatch_event_rule" "console-login-failures" {
   count       = var.enable_security_alerts ? 1 : 0
   name        = "${var.cloudtrail_name}-console-login-failures"
   description = "Alert on console login failures"
@@ -210,11 +210,11 @@ resource "aws_cloudwatch_event_rule" "console_login_failures" {
   )
 }
 
-resource "aws_cloudwatch_event_target" "console_login_failures" {
+resource "aws_cloudwatch_event_target" "console-login-failures" {
   count     = var.enable_security_alerts ? 1 : 0
-  rule      = aws_cloudwatch_event_rule.console_login_failures[0].name
+  rule      = aws_cloudwatch_event_rule.console-login-failures[0].name
   target_id = "SendToSNS"
-  arn       = aws_sns_topic.security_alerts[0].arn
+  arn       = aws_sns_topic.security-alerts[0].arn
 
   input_transformer {
     input_paths = {
@@ -228,7 +228,7 @@ resource "aws_cloudwatch_event_target" "console_login_failures" {
 }
 
 # EventBridge Rule: Security Group Changes
-resource "aws_cloudwatch_event_rule" "security_group_changes" {
+resource "aws_cloudwatch_event_rule" "security-group-changes" {
   count       = var.enable_security_alerts ? 1 : 0
   name        = "${var.cloudtrail_name}-security-group-changes"
   description = "Alert on security group changes"
@@ -257,11 +257,11 @@ resource "aws_cloudwatch_event_rule" "security_group_changes" {
   )
 }
 
-resource "aws_cloudwatch_event_target" "security_group_changes" {
+resource "aws_cloudwatch_event_target" "security-group-changes" {
   count     = var.enable_security_alerts ? 1 : 0
-  rule      = aws_cloudwatch_event_rule.security_group_changes[0].name
+  rule      = aws_cloudwatch_event_rule.security-group-changes[0].name
   target_id = "SendToSNS"
-  arn       = aws_sns_topic.security_alerts[0].arn
+  arn       = aws_sns_topic.security-alerts[0].arn
 
   input_transformer {
     input_paths = {
