@@ -11,6 +11,7 @@ resource "aws_grafana_workspace" "main" {
   authentication_providers = var.amg_authentication_providers
   permission_type          = var.amg_permission_type
   data_sources             = var.amg_data_sources
+  role_arn                 = aws_iam_role.grafana_workspace.arn
 
   # Network access configuration (optional - for VPC access)
   # network_access_control {
@@ -40,29 +41,32 @@ resource "aws_grafana_workspace" "main" {
 }
 
 # ============================================================================
-# AMG IAM Role (Service-Managed Permission Type)
+# AMG IAM Role (Required for CURRENT_ACCOUNT access type)
 # ============================================================================
 
-# When using SERVICE_MANAGED permission type, AWS creates and manages the role
-# No explicit IAM role needed here
+resource "aws_iam_role" "grafana_workspace" {
+  name = "${local.name_prefix}-grafana-workspace-role"
 
-# For CUSTOMER_MANAGED permission type, you would create:
-# resource "aws_iam_role" "grafana_workspace" {
-#   name = "${local.name_prefix}-grafana-workspace-role"
-#
-#   assume_role_policy = jsonencode({
-#     Version = "2012-10-17"
-#     Statement = [{
-#       Action = "sts:AssumeRole"
-#       Effect = "Allow"
-#       Principal = {
-#         Service = "grafana.amazonaws.com"
-#       }
-#     }]
-#   })
-#
-#   tags = local.required_tags
-# }
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [{
+      Action = "sts:AssumeRole"
+      Effect = "Allow"
+      Principal = {
+        Service = "grafana.amazonaws.com"
+      }
+    }]
+  })
+
+  tags = merge(
+    local.required_tags,
+    {
+      Name        = "${local.name_prefix}-grafana-workspace-role"
+      Component   = "iam"
+      Description = "IAM role for Grafana workspace"
+    }
+  )
+}
 
 # ============================================================================
 # AMG Workspace SAML Configuration (Optional)
