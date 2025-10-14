@@ -132,6 +132,57 @@ variable "cloudwatch_metrics_namespaces" {
   default     = ["AWS/ECS", "AWS/RDS", "AWS/ApplicationELB"]
 }
 
+# Alerting Configuration
+variable "enable_ecs_alarms" {
+  description = "Enable CloudWatch alarms for ECS resources"
+  type        = bool
+  default     = true
+}
+
+variable "enable_rds_alarms" {
+  description = "Enable CloudWatch alarms for RDS resources"
+  type        = bool
+  default     = false # Will be enabled when RDS is deployed
+}
+
+variable "enable_alb_alarms" {
+  description = "Enable CloudWatch alarms for ALB resources"
+  type        = bool
+  default     = false # Will be enabled when ALB is deployed
+}
+
+variable "enable_critical_email_alerts" {
+  description = "Enable email notifications for critical alerts"
+  type        = bool
+  default     = false
+}
+
+variable "critical_alert_email" {
+  description = "Email address for critical alert notifications"
+  type        = string
+  default     = ""
+}
+
+variable "slack_workspace_id" {
+  description = "Slack Workspace ID for AWS Chatbot integration"
+  type        = string
+  default     = ""
+  sensitive   = true
+}
+
+variable "slack_channel_id" {
+  description = "Slack Channel ID for all alert notifications (can be split later if needed)"
+  type        = string
+  default     = "" # e.g., #alerts or #monitoring
+  sensitive   = true
+}
+
+variable "enable_chatbot" {
+  description = "Enable AWS Chatbot for Slack notifications"
+  type        = bool
+  default     = false # Will be enabled after Slack workspace setup
+}
+
 # Locals for common tags
 locals {
   required_tags = {
