@@ -453,6 +453,7 @@ This repository includes reusable Terraform modules for standardized infrastruct
 
 ### Module Documentation
 
+**English Documentation:**
 - [Modules Catalog](terraform/modules/README.md) - Complete module listing
 - [Module Directory Structure](docs/MODULES_DIRECTORY_STRUCTURE.md) - Standard structure guide
 - [Module README Template](docs/MODULE_TEMPLATE.md) - Documentation template
@@ -460,6 +461,11 @@ This repository includes reusable Terraform modules for standardized infrastruct
 - [Module Examples Guide](docs/MODULE_EXAMPLES_GUIDE.md) - Example structure guide
 - [Semantic Versioning Guide](docs/VERSIONING.md) - Version management
 - [CHANGELOG Template](docs/CHANGELOG_TEMPLATE.md) - Change log format
+
+**한글 문서 (Korean Documentation):**
+- [프로젝트 개요 (Project Overview)](docs/PROJECT_OVERVIEW_KR.md) - 프로젝트 전체 구조 및 워크플로우
+- [Terraform 모듈 가이드 (Modules Guide)](docs/TERRAFORM_MODULES_KR.md) - 모듈 사용 및 개발 가이드
+- [스크립트 사용 가이드 (Scripts Guide)](docs/SCRIPTS_GUIDE_KR.md) - 검증 스크립트 및 자동화 도구 사용법
 
 ### Quick Start
 
