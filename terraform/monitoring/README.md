@@ -60,8 +60,13 @@ monitoring/
 ```bash
 cd terraform/monitoring
 
-# Terraform 초기화
-terraform init
+# Backend 설정 구성
+# backend.conf.example을 복사하여 backend.conf 생성
+cp backend.conf.example backend.conf
+# backend.conf 파일 편집하여 실제 값 입력
+
+# Terraform 초기화 (backend 설정 포함)
+terraform init -backend-config=backend.conf
 
 # 계획 확인
 terraform plan

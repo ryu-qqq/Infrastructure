@@ -1,0 +1,11 @@
+# Terraform Backend Configuration Example
+# Copy this file to backend.conf and fill in your values
+# Usage: terraform init -backend-config=backend.conf
+
+bucket         = "your-terraform-state-bucket"
+region         = "ap-northeast-2"
+dynamodb_table = "your-terraform-lock-table"
+
+# Note: 'key' and 'encrypt' are already configured in provider.tf
+# key     = "monitoring/terraform.tfstate"
+# encrypt = true

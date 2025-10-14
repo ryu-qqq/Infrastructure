@@ -10,12 +10,12 @@ terraform {
     }
   }
 
+  # Backend configuration should be provided via backend config file or CLI
+  # Example: terraform init -backend-config=backend.conf
+  # See backend.conf.example for required configuration
   backend "s3" {
-    bucket         = "prod-connectly"
-    key            = "monitoring/terraform.tfstate"
-    region         = "ap-northeast-2"
-    dynamodb_table = "prod-connectly-tf-lock"
-    encrypt        = true
+    key     = "monitoring/terraform.tfstate"
+    encrypt = true
   }
 }
 

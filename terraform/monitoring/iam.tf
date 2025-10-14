@@ -106,12 +106,20 @@ resource "aws_iam_role_policy" "amp_query" {
       {
         Effect = "Allow"
         Action = [
-          "aps:ListWorkspaces",
-          "aps:DescribeWorkspace",
           "aps:QueryMetrics",
           "aps:GetLabels",
           "aps:GetSeries",
           "aps:GetMetricMetadata"
+        ]
+        Resource = aws_prometheus_workspace.main.arn
+      },
+      {
+        # ListWorkspaces and DescribeWorkspace require wildcard resource
+        # https://docs.aws.amazon.com/prometheus/latest/userguide/AMP-APIReference.html
+        Effect = "Allow"
+        Action = [
+          "aps:ListWorkspaces",
+          "aps:DescribeWorkspace"
         ]
         Resource = "*"
       }
@@ -132,19 +140,38 @@ resource "aws_iam_role_policy" "cloudwatch_read" {
     Version = "2012-10-17"
     Statement = [
       {
+        # CloudWatch describe/list actions require wildcard resource
+        # https://docs.aws.amazon.com/AmazonCloudWatch/latest/monitoring/permissions-reference-cw.html
         Effect = "Allow"
         Action = [
           "cloudwatch:DescribeAlarmsForMetric",
           "cloudwatch:DescribeAlarmHistory",
           "cloudwatch:DescribeAlarms",
-          "cloudwatch:ListMetrics",
+          "cloudwatch:ListMetrics"
+        ]
+        Resource = "*"
+      },
+      {
+        Effect = "Allow"
+        Action = [
           "cloudwatch:GetMetricStatistics",
           "cloudwatch:GetMetricData",
           "cloudwatch:GetMetricWidgetImage"
         ]
         Resource = "*"
+        Condition = {
+          StringEquals = {
+            "cloudwatch:namespace" = [
+              "AWS/ECS",
+              "AWS/RDS",
+              "AWS/ApplicationELB",
+              "ECS/ContainerInsights"
+            ]
+          }
+        }
       },
       {
+        # CloudWatch Logs actions limited to specific log groups
         Effect = "Allow"
         Action = [
           "logs:DescribeLogGroups",
@@ -154,9 +181,14 @@ resource "aws_iam_role_policy" "cloudwatch_read" {
           "logs:GetQueryResults",
           "logs:GetLogEvents"
         ]
-        Resource = "*"
+        Resource = [
+          "arn:aws:logs:${var.aws_region}:${data.aws_caller_identity.current.account_id}:log-group:/aws/ecs/*",
+          "arn:aws:logs:${var.aws_region}:${data.aws_caller_identity.current.account_id}:log-group:/aws/rds/*",
+          "arn:aws:logs:${var.aws_region}:${data.aws_caller_identity.current.account_id}:log-group:/aws/lambda/*"
+        ]
       },
       {
+        # EC2 describe actions require wildcard resource
         Effect = "Allow"
         Action = [
           "ec2:DescribeTags",
@@ -166,6 +198,7 @@ resource "aws_iam_role_policy" "cloudwatch_read" {
         Resource = "*"
       },
       {
+        # Tag:GetResources requires wildcard resource
         Effect = "Allow"
         Action = [
           "tag:GetResources"
@@ -189,17 +222,23 @@ resource "aws_iam_role_policy" "adot_ecs_metrics" {
     Version = "2012-10-17"
     Statement = [
       {
+        # ECS metadata endpoint access requires wildcard resource
+        # https://docs.aws.amazon.com/AmazonECS/latest/developerguide/task-metadata-endpoint.html
         Effect = "Allow"
         Action = [
-          "ecs:ListTasks",
           "ecs:DescribeTasks",
-          "ecs:DescribeContainerInstances",
-          "ecs:DescribeServices",
-          "ecs:ListServices"
+          "ecs:DescribeContainerInstances"
         ]
         Resource = "*"
+        Condition = {
+          StringEquals = {
+            "ecs:cluster" = data.terraform_remote_state.atlantis.outputs.ecs_cluster_arn
+          }
+        }
       },
       {
+        # EC2 describe actions require wildcard resource
+        # https://docs.aws.amazon.com/AWSEC2/latest/APIReference/
         Effect = "Allow"
         Action = [
           "ec2:DescribeInstances",
