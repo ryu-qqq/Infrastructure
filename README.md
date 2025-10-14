@@ -495,6 +495,25 @@ module "app_logs" {
 
 For detailed usage, see individual module README files.
 
+## Deprecated Scripts
+
+The following utility scripts have been removed from this repository. See [CHANGELOG_INFRASTRUCTURE.md](docs/CHANGELOG_INFRASTRUCTURE.md) for detailed migration guidance.
+
+| Script | Removed Date | Replacement | Migration Guide |
+|--------|--------------|-------------|-----------------|
+| `cleanup-kms.sh` | 2025-10-14 | AWS Console manual cleanup | Use `aws kms list-keys` and Console for safety |
+| `setup-github-actions-role.sh` | 2025-10-14 | Terraform IAM configuration | See [GitHub Actions Setup Guide](docs/github_actions_setup.md) |
+| `update-iam-policy.sh` | 2025-10-14 | GitHub Actions automation | Policies auto-updated by CI/CD workflows |
+
+**Why removed?**
+- **Safety**: Manual operations via Console preferred for destructive actions (KMS)
+- **Infrastructure as Code**: Terraform replaces imperative scripts for reproducibility
+- **Automation**: CI/CD pipelines handle routine updates automatically
+
+**Impact**: None - these were optional utilities, not required for core workflows.
+
+For complete migration instructions and CLI alternatives, see [docs/CHANGELOG_INFRASTRUCTURE.md](docs/CHANGELOG_INFRASTRUCTURE.md).
+
 ## Related Jira Issues
 
 - **Epic**: [IN-1 - Phase 1: Atlantis 서버 ECS 배포](https://ryuqqq.atlassian.net/browse/IN-1)
