@@ -440,8 +440,83 @@ This infrastructure follows the organization's governance standards:
 - [AWS ECR Documentation](https://docs.aws.amazon.com/ecr/)
 - [Terraform AWS Provider](https://registry.terraform.io/providers/hashicorp/aws/latest/docs)
 
+## Terraform Modules
+
+This repository includes reusable Terraform modules for standardized infrastructure components.
+
+### Available Modules
+
+| Module | Description | Status |
+|--------|-------------|--------|
+| [common-tags](terraform/modules/common-tags/) | Standard resource tagging | ✅ Active |
+| [cloudwatch-log-group](terraform/modules/cloudwatch-log-group/) | CloudWatch Log Group with encryption | ✅ Active |
+
+### Module Documentation
+
+**English Documentation:**
+- [Modules Catalog](terraform/modules/README.md) - Complete module listing
+- [Module Directory Structure](docs/MODULES_DIRECTORY_STRUCTURE.md) - Standard structure guide
+- [Module README Template](docs/MODULE_TEMPLATE.md) - Documentation template
+- [Module Standards Guide](docs/MODULE_STANDARDS_GUIDE.md) - Coding standards and conventions
+- [Module Examples Guide](docs/MODULE_EXAMPLES_GUIDE.md) - Example structure guide
+- [Semantic Versioning Guide](docs/VERSIONING.md) - Version management
+- [CHANGELOG Template](docs/CHANGELOG_TEMPLATE.md) - Change log format
+
+**한글 문서 (Korean Documentation):**
+- [프로젝트 개요 (Project Overview)](docs/PROJECT_OVERVIEW_KR.md) - 프로젝트 전체 구조 및 워크플로우
+- [Terraform 모듈 가이드 (Modules Guide)](docs/TERRAFORM_MODULES_KR.md) - 모듈 사용 및 개발 가이드
+- [스크립트 사용 가이드 (Scripts Guide)](docs/SCRIPTS_GUIDE_KR.md) - 검증 스크립트 및 자동화 도구 사용법
+
+### Quick Start
+
+```hcl
+# Use common tags module
+module "common_tags" {
+  source = "../../modules/common-tags"
+
+  environment = "prod"
+  service     = "api-server"
+  team        = "platform-team"
+  owner       = "platform@example.com"
+  cost_center = "engineering"
+}
+
+# Use CloudWatch log group module
+module "app_logs" {
+  source = "../../modules/cloudwatch-log-group"
+
+  name              = "/aws/ecs/api-server/application"
+  retention_in_days = 30
+  kms_key_id        = aws_kms_key.logs.arn
+  log_type          = "application"
+  common_tags       = module.common_tags.tags
+}
+```
+
+For detailed usage, see individual module README files.
+
+## Deprecated Scripts
+
+The following utility scripts have been removed from this repository. See [CHANGELOG_INFRASTRUCTURE.md](docs/CHANGELOG_INFRASTRUCTURE.md) for detailed migration guidance.
+
+| Script | Removed Date | Replacement | Migration Guide |
+|--------|--------------|-------------|-----------------|
+| `cleanup-kms.sh` | 2025-10-14 | AWS Console manual cleanup | Use `aws kms list-keys` and Console for safety |
+| `setup-github-actions-role.sh` | 2025-10-14 | Terraform IAM configuration | See [GitHub Actions Setup Guide](docs/github_actions_setup.md) |
+| `update-iam-policy.sh` | 2025-10-14 | GitHub Actions automation | Policies auto-updated by CI/CD workflows |
+
+**Why removed?**
+- **Safety**: Manual operations via Console preferred for destructive actions (KMS)
+- **Infrastructure as Code**: Terraform replaces imperative scripts for reproducibility
+- **Automation**: CI/CD pipelines handle routine updates automatically
+
+**Impact**: None - these were optional utilities, not required for core workflows.
+
+For complete migration instructions and CLI alternatives, see [docs/CHANGELOG_INFRASTRUCTURE.md](docs/CHANGELOG_INFRASTRUCTURE.md).
+
 ## Related Jira Issues
 
 - **Epic**: [IN-1 - Phase 1: Atlantis 서버 ECS 배포](https://ryuqqq.atlassian.net/browse/IN-1)
+- **Epic**: [IN-100 - EPIC 4: 재사용 가능한 표준 모듈](https://ryuqqq.atlassian.net/browse/IN-100)
 - **Task**: [IN-10 - ECR 저장소 생성 및 Docker 이미지 푸시](https://ryuqqq.atlassian.net/browse/IN-10)
-# Trigger workflow
+- **Task**: [IN-121 - 모듈 디렉터리 구조 설계](https://ryuqqq.atlassian.net/browse/IN-121)
