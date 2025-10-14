@@ -35,7 +35,7 @@ resource "aws_iam_role" "chatbot" {
 }
 
 # IAM Policy for CloudWatch read access
-resource "aws_iam_role_policy" "chatbot_cloudwatch" {
+resource "aws_iam_role_policy" "chatbot-cloudwatch" {
   count = var.enable_chatbot ? 1 : 0
   name  = "chatbot-cloudwatch-policy"
   role  = aws_iam_role.chatbot[0].id

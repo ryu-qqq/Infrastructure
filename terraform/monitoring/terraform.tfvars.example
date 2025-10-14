@@ -1,0 +1,58 @@
+# Terraform Variables for Monitoring System
+# Copy this file to terraform.tfvars and update with your values
+
+# Environment Configuration
+environment = "prod"
+aws_region  = "ap-northeast-2"
+service     = "monitoring"
+
+# Governance Tags
+owner              = "platform-team"
+team               = "platform-team"
+cost_center        = "engineering"
+resource_lifecycle = "permanent"
+data_class         = "internal"
+
+# Terraform State
+terraform_state_bucket = "prod-connectly"
+
+# AMP Configuration
+amp_workspace_alias  = "infrastructure-metrics"
+amp_retention_period = 150 # days
+amp_enable_logging   = true
+
+# AMG Configuration
+amg_workspace_name           = "infrastructure-observability"
+amg_account_access_type      = "CURRENT_ACCOUNT"
+amg_authentication_providers = ["AWS_SSO"]
+amg_permission_type          = "SERVICE_MANAGED"
+amg_data_sources             = ["AMAZON_MANAGED_PROMETHEUS", "CLOUDWATCH"]
+
+# ADOT Collector Configuration
+enable_adot_collector = true
+adot_image_version    = "v0.42.0"
+
+# CloudWatch Metrics Export
+enable_cloudwatch_metrics_export = true
+cloudwatch_metrics_namespaces = [
+  "AWS/ECS",
+  "AWS/RDS",
+  "AWS/ApplicationELB"
+]
+
+# Alerting Configuration (IN-118)
+enable_ecs_alarms = true
+enable_rds_alarms = false # Will be enabled when RDS is deployed
+enable_alb_alarms = false # Will be enabled when ALB is deployed
+
+# Email Alerts (Optional)
+enable_critical_email_alerts = false
+critical_alert_email         = ""
+
+# Slack Integration
+# Get these values from Slack:
+# 1. Workspace ID: Slack Settings → URL에서 T로 시작하는 ID
+# 2. Channel ID: 채널 우클릭 → 링크 복사 → C로 시작하는 ID
+slack_workspace_id = "T0XXXXXXXXX"  # TODO: Update with your Slack workspace ID
+slack_channel_id   = "C0YYYYYYYYY"  # TODO: Update with your Slack channel ID
+enable_chatbot     = true

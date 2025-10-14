@@ -162,7 +162,7 @@ resource "aws_sns_topic_policy" "info" {
 # ============================================================================
 
 # Email subscription for critical alerts
-resource "aws_sns_topic_subscription" "critical_email" {
+resource "aws_sns_topic_subscription" "critical-email" {
   count     = var.enable_critical_email_alerts ? 1 : 0
   topic_arn = aws_sns_topic.critical.arn
   protocol  = "email"
@@ -174,7 +174,7 @@ resource "aws_sns_topic_subscription" "critical_email" {
 # ============================================================================
 
 # Critical: ECS Task Count Zero
-resource "aws_cloudwatch_metric_alarm" "ecs_task_count_zero" {
+resource "aws_cloudwatch_metric_alarm" "ecs-task-count-zero" {
   count               = var.enable_ecs_alarms ? 1 : 0
   alarm_name          = "${local.name_prefix}-ecs-task-count-zero"
   comparison_operator = "LessThanOrEqualToThreshold"
@@ -206,7 +206,7 @@ resource "aws_cloudwatch_metric_alarm" "ecs_task_count_zero" {
 }
 
 # Critical: ECS High Memory (95%)
-resource "aws_cloudwatch_metric_alarm" "ecs_high_memory_critical" {
+resource "aws_cloudwatch_metric_alarm" "ecs-high-memory-critical" {
   count               = var.enable_ecs_alarms ? 1 : 0
   alarm_name          = "${local.name_prefix}-ecs-high-memory-critical"
   comparison_operator = "GreaterThanThreshold"
@@ -238,7 +238,7 @@ resource "aws_cloudwatch_metric_alarm" "ecs_high_memory_critical" {
 }
 
 # Warning: ECS High CPU (80%)
-resource "aws_cloudwatch_metric_alarm" "ecs_high_cpu_warning" {
+resource "aws_cloudwatch_metric_alarm" "ecs-high-cpu-warning" {
   count               = var.enable_ecs_alarms ? 1 : 0
   alarm_name          = "${local.name_prefix}-ecs-high-cpu-warning"
   comparison_operator = "GreaterThanThreshold"
@@ -270,7 +270,7 @@ resource "aws_cloudwatch_metric_alarm" "ecs_high_cpu_warning" {
 }
 
 # Warning: ECS High Memory (80%)
-resource "aws_cloudwatch_metric_alarm" "ecs_high_memory_warning" {
+resource "aws_cloudwatch_metric_alarm" "ecs-high-memory-warning" {
   count               = var.enable_ecs_alarms ? 1 : 0
   alarm_name          = "${local.name_prefix}-ecs-high-memory-warning"
   comparison_operator = "GreaterThanThreshold"
