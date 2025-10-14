@@ -1,5 +1,6 @@
 # Terraform Variables for Monitoring System
-# Copy this file to terraform.tfvars and update with your values
+# IN-117: AMP/AMG Configuration
+# Copy this file to terraform.tfvars and fill in your values
 
 # Environment Configuration
 environment = "prod"
@@ -49,10 +50,7 @@ enable_alb_alarms = false # Will be enabled when ALB is deployed
 enable_critical_email_alerts = false
 critical_alert_email         = ""
 
-# Slack Integration
-# Get these values from Slack:
-# 1. Workspace ID: Slack Settings → URL에서 T로 시작하는 ID
-# 2. Channel ID: 채널 우클릭 → 링크 복사 → C로 시작하는 ID
-slack_workspace_id = "T0XXXXXXXXX"  # TODO: Update with your Slack workspace ID
-slack_channel_id   = "C0YYYYYYYYY"  # TODO: Update with your Slack channel ID
-enable_chatbot     = true
+# Slack Integration (Set via GitHub Secrets in CI/CD)
+# slack_workspace_id = "YOUR_SLACK_WORKSPACE_ID"
+# slack_channel_id   = "YOUR_SLACK_CHANNEL_ID"
+# enable_chatbot     = true

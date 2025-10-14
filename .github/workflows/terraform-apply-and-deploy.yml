@@ -60,6 +60,10 @@ jobs:
 
       - name: Terraform Apply - Monitoring
         working-directory: terraform/monitoring
+        env:
+          TF_VAR_slack_workspace_id: ${{ secrets.SLACK_WORKSPACE_ID }}
+          TF_VAR_slack_channel_id: ${{ secrets.SLACK_CHANNEL_ID }}
+          TF_VAR_enable_chatbot: true
         run: terraform apply -auto-approve
 
       # Atlantis Infrastructure
