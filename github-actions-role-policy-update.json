@@ -428,6 +428,7 @@
         "grafana:DescribeWorkspaceConfiguration",
         "grafana:UpdateWorkspace",
         "grafana:UpdateWorkspaceAuthentication",
+        "grafana:UpdatePermissions",
         "grafana:AssociateLicense",
         "grafana:TagResource",
         "grafana:UntagResource",
@@ -442,7 +443,9 @@
         "sso:DescribeRegisteredRegions",
         "sso:CreateManagedApplicationInstance",
         "sso:DeleteManagedApplicationInstance",
-        "sso:GetManagedApplicationInstance"
+        "sso:GetManagedApplicationInstance",
+        "sso:ListProfiles",
+        "sso:GetProfile"
       ],
       "Resource": "*"
     },
