@@ -170,15 +170,11 @@ variable "slack_workspace_id" {
   sensitive   = true
 }
 
-variable "slack_channel_ids" {
-  description = "Slack Channel IDs for each severity level"
-  type        = map(string)
-  default = {
-    critical = "" # #alerts-critical
-    warning  = "" # #alerts-warning
-    info     = "" # #alerts-info
-  }
-  sensitive = true
+variable "slack_channel_id" {
+  description = "Slack Channel ID for all alert notifications (can be split later if needed)"
+  type        = string
+  default     = "" # e.g., #alerts or #monitoring
+  sensitive   = true
 }
 
 variable "enable_chatbot" {
