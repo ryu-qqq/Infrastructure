@@ -73,7 +73,7 @@ locals {
       },
       {
         name  = "SERVICE_NAME"
-        value = "atlantis"  # Change per service
+        value = "atlantis" # Change per service
       }
     ]
 
@@ -88,15 +88,15 @@ locals {
     # Port mappings for health checks and debugging
     portMappings = [
       {
-        containerPort = 13133  # Health check
+        containerPort = 13133 # Health check
         protocol      = "tcp"
       },
       {
-        containerPort = 8888   # Prometheus metrics
+        containerPort = 8888 # Prometheus metrics
         protocol      = "tcp"
       },
       {
-        containerPort = 55679  # zPages
+        containerPort = 55679 # zPages
         protocol      = "tcp"
       }
     ]

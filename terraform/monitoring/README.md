@@ -39,6 +39,8 @@ monitoring/
 ├── amp.tf                      # AMP Workspace 리소스
 ├── amg.tf                      # AMG Workspace 리소스
 ├── iam.tf                      # IAM 역할 및 정책
+├── alerting.tf                 # SNS Topics, CloudWatch Alarms (IN-118)
+├── chatbot.tf                  # AWS Chatbot for Slack (IN-118)
 ├── adot-ecs-integration.tf     # ADOT Collector ECS 통합 예제
 ├── outputs.tf                  # 출력 변수
 ├── configs/
@@ -178,10 +180,11 @@ adot_image_version    = "v0.42.0"
 - [ ] RDS 성능 대시보드
 - [ ] ALB 트래픽 대시보드
 
-### Phase 4: 알림 (선택사항)
-- [ ] Alert Manager 구성
-- [ ] SNS 토픽 연동
-- [ ] Slack 알림 설정
+### Phase 4: 알림 체계 (완료)
+- [x] SNS Topics 생성 (Critical/Warning/Info)
+- [x] AWS Chatbot Slack 연동
+- [x] CloudWatch Alarms 설정 (ECS)
+- [x] Runbook 문서 작성
 
 ## 💰 비용 예상
 
@@ -227,6 +230,42 @@ adot_image_version    = "v0.42.0"
 ## 🤝 기여
 
 질문이나 개선 사항이 있으면 Platform Team에 문의하세요.
+
+## 🚨 알림 체계 (IN-118)
+
+### 개요
+3단계 알림 시스템으로 Critical, Warning, Info 레벨별 SNS Topic과 Slack 연동을 통한 실시간 알림을 제공합니다.
+
+### SNS Topics
+- **prod-monitoring-critical**: P0 즉시 대응 필요
+- **prod-monitoring-warning**: P1 30분 이내 대응
+- **prod-monitoring-info**: P2 정보성 알림
+
+### CloudWatch Alarms (ECS)
+- Critical: Task Count Zero, High Memory (95%)
+- Warning: High CPU (80%), High Memory (80%)
+
+### Slack 연동 (AWS Chatbot)
+1. Slack Workspace에 AWS Chatbot 앱 설치
+2. 채널 생성: `#alerts-critical`, `#alerts-warning`, `#alerts-info`
+3. Chatbot 설정에서 각 채널 ID 확보
+4. `terraform.tfvars`에 Slack workspace ID와 channel IDs 추가
+5. `enable_chatbot = true`로 설정 후 배포
+
+### Runbook
+대응 절차는 `docs/runbooks/` 참조:
+- [ECS High CPU](../../docs/runbooks/ecs-high-cpu.md)
+- [ECS Memory Critical](../../docs/runbooks/ecs-memory-critical.md)
+- [ECS Task Count Zero](../../docs/runbooks/ecs-task-count-zero.md)
+
+### 테스트
+```bash
+# SNS 토픽 테스트
+aws sns publish \
+  --topic-arn $(terraform output -raw sns_topic_critical_arn) \
+  --message "Test critical alert" \
+  --subject "Test Alert"
+```
 
 ## 📄 라이선스
 
