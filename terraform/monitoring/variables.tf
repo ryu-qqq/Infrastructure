@@ -103,7 +103,7 @@ variable "amg_permission_type" {
 variable "amg_data_sources" {
   description = "Data sources to enable in AMG"
   type        = list(string)
-  default     = ["AMAZON_MANAGED_PROMETHEUS", "CLOUDWATCH"]
+  default     = ["PROMETHEUS", "CLOUDWATCH"]
 }
 
 # ADOT Configuration

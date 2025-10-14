@@ -31,7 +31,7 @@ resource "aws_ssm_parameter" "adot-config" {
 resource "aws_cloudwatch_log_group" "adot-collector" {
   name              = "/aws/ecs/adot-collector"
   retention_in_days = 7
-  kms_key_id        = data.terraform_remote_state.kms.outputs.cloudwatch_logs_key_arn
+  kms_key_id        = aws_kms_key.monitoring.arn
 
   tags = merge(
     local.required_tags,

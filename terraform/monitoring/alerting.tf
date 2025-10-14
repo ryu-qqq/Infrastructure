@@ -5,10 +5,7 @@
 # Data Sources
 # ============================================================================
 
-# Get existing KMS key for encryption
-data "aws_kms_key" "monitoring" {
-  key_id = "alias/${var.environment}-monitoring"
-}
+# KMS key is created in amp.tf - reference it directly
 
 # Get current account ID for ARNs
 data "aws_caller_identity" "alerting" {}
@@ -31,7 +28,7 @@ data "terraform_remote_state" "atlantis_alerting" {
 resource "aws_sns_topic" "critical" {
   name              = "${local.name_prefix}-critical"
   display_name      = "Critical Alerts - ${var.environment}"
-  kms_master_key_id = data.aws_kms_key.monitoring.id
+  kms_master_key_id = aws_kms_key.monitoring.id
 
   tags = merge(
     local.required_tags,
@@ -48,7 +45,7 @@ resource "aws_sns_topic" "critical" {
 resource "aws_sns_topic" "warning" {
   name              = "${local.name_prefix}-warning"
   display_name      = "Warning Alerts - ${var.environment}"
-  kms_master_key_id = data.aws_kms_key.monitoring.id
+  kms_master_key_id = aws_kms_key.monitoring.id
 
   tags = merge(
     local.required_tags,
@@ -65,7 +62,7 @@ resource "aws_sns_topic" "warning" {
 resource "aws_sns_topic" "info" {
   name              = "${local.name_prefix}-info"
   display_name      = "Info Alerts - ${var.environment}"
-  kms_master_key_id = data.aws_kms_key.monitoring.id
+  kms_master_key_id = aws_kms_key.monitoring.id
 
   tags = merge(
     local.required_tags,
@@ -188,7 +185,7 @@ resource "aws_cloudwatch_metric_alarm" "ecs-task-count-zero" {
   treat_missing_data  = "breaching"
 
   dimensions = {
-    ClusterName = data.terraform_remote_state.atlantis_alerting.outputs.ecs_cluster_name
+    ClusterName = data.terraform_remote_state.atlantis_alerting.outputs.atlantis_ecs_cluster_name
   }
 
   alarm_actions = [aws_sns_topic.critical.arn]
@@ -220,7 +217,7 @@ resource "aws_cloudwatch_metric_alarm" "ecs-high-memory-critical" {
   treat_missing_data  = "notBreaching"
 
   dimensions = {
-    ClusterName = data.terraform_remote_state.atlantis_alerting.outputs.ecs_cluster_name
+    ClusterName = data.terraform_remote_state.atlantis_alerting.outputs.atlantis_ecs_cluster_name
   }
 
   alarm_actions = [aws_sns_topic.critical.arn]
@@ -252,7 +249,7 @@ resource "aws_cloudwatch_metric_alarm" "ecs-high-cpu-warning" {
   treat_missing_data  = "notBreaching"
 
   dimensions = {
-    ClusterName = data.terraform_remote_state.atlantis_alerting.outputs.ecs_cluster_name
+    ClusterName = data.terraform_remote_state.atlantis_alerting.outputs.atlantis_ecs_cluster_name
   }
 
   alarm_actions = [aws_sns_topic.warning.arn]
@@ -284,7 +281,7 @@ resource "aws_cloudwatch_metric_alarm" "ecs-high-memory-warning" {
   treat_missing_data  = "notBreaching"
 
   dimensions = {
-    ClusterName = data.terraform_remote_state.atlantis_alerting.outputs.ecs_cluster_name
+    ClusterName = data.terraform_remote_state.atlantis_alerting.outputs.atlantis_ecs_cluster_name
   }
 
   alarm_actions = [aws_sns_topic.warning.arn]
