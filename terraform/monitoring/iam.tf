@@ -6,7 +6,7 @@
 # ============================================================================
 
 # IAM Role for ECS tasks to write metrics to AMP
-resource "aws_iam_role" "ecs_amp_writer" {
+resource "aws_iam_role" "ecs-amp-writer" {
   name        = "${local.name_prefix}-ecs-amp-writer"
   description = "IAM role for ECS tasks to write metrics to Amazon Managed Prometheus"
 
@@ -34,9 +34,9 @@ resource "aws_iam_role" "ecs_amp_writer" {
 }
 
 # IAM Policy for AMP Remote Write
-resource "aws_iam_role_policy" "amp_remote_write" {
+resource "aws_iam_role_policy" "amp-remote-write" {
   name = "amp-remote-write-policy"
-  role = aws_iam_role.ecs_amp_writer.id
+  role = aws_iam_role.ecs-amp-writer.id
 
   policy = jsonencode({
     Version = "2012-10-17"
@@ -60,7 +60,7 @@ resource "aws_iam_role_policy" "amp_remote_write" {
 # ============================================================================
 
 # IAM Role for Grafana to query AMP
-resource "aws_iam_role" "grafana_amp_reader" {
+resource "aws_iam_role" "grafana-amp-reader" {
   name        = "${local.name_prefix}-grafana-amp-reader"
   description = "IAM role for Grafana to query Amazon Managed Prometheus"
 
@@ -96,9 +96,9 @@ resource "aws_iam_role" "grafana_amp_reader" {
 }
 
 # IAM Policy for AMP Query Access
-resource "aws_iam_role_policy" "amp_query" {
+resource "aws_iam_role_policy" "amp-query" {
   name = "amp-query-policy"
-  role = aws_iam_role.grafana_amp_reader.id
+  role = aws_iam_role.grafana-amp-reader.id
 
   policy = jsonencode({
     Version = "2012-10-17"
@@ -132,9 +132,9 @@ resource "aws_iam_role_policy" "amp_query" {
 # ============================================================================
 
 # IAM Policy for CloudWatch Read Access
-resource "aws_iam_role_policy" "cloudwatch_read" {
+resource "aws_iam_role_policy" "cloudwatch-read" {
   name = "cloudwatch-read-policy"
-  role = aws_iam_role.grafana_amp_reader.id
+  role = aws_iam_role.grafana-amp-reader.id
 
   policy = jsonencode({
     Version = "2012-10-17"
@@ -214,9 +214,9 @@ resource "aws_iam_role_policy" "cloudwatch_read" {
 # ============================================================================
 
 # Additional policy for ADOT Collector to collect ECS metrics
-resource "aws_iam_role_policy" "adot_ecs_metrics" {
+resource "aws_iam_role_policy" "adot-ecs-metrics" {
   name = "adot-ecs-metrics-policy"
-  role = aws_iam_role.ecs_amp_writer.id
+  role = aws_iam_role.ecs-amp-writer.id
 
   policy = jsonencode({
     Version = "2012-10-17"

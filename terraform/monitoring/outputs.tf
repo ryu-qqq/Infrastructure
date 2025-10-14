@@ -59,22 +59,22 @@ output "amg_workspace_grafana_version" {
 
 output "ecs_amp_writer_role_arn" {
   description = "IAM role ARN for ECS tasks to write to AMP"
-  value       = aws_iam_role.ecs_amp_writer.arn
+  value       = aws_iam_role.ecs-amp-writer.arn
 }
 
 output "ecs_amp_writer_role_name" {
   description = "IAM role name for ECS tasks to write to AMP"
-  value       = aws_iam_role.ecs_amp_writer.name
+  value       = aws_iam_role.ecs-amp-writer.name
 }
 
 output "grafana_amp_reader_role_arn" {
   description = "IAM role ARN for Grafana to read from AMP"
-  value       = aws_iam_role.grafana_amp_reader.arn
+  value       = aws_iam_role.grafana-amp-reader.arn
 }
 
 output "grafana_amp_reader_role_name" {
   description = "IAM role name for Grafana to read from AMP"
-  value       = aws_iam_role.grafana_amp_reader.name
+  value       = aws_iam_role.grafana-amp-reader.name
 }
 
 # ============================================================================
@@ -83,12 +83,12 @@ output "grafana_amp_reader_role_name" {
 
 output "amp_query_logs_name" {
   description = "CloudWatch Log Group name for AMP query logs"
-  value       = var.amp_enable_logging ? aws_cloudwatch_log_group.amp_query_logs[0].name : null
+  value       = var.amp_enable_logging ? aws_cloudwatch_log_group.amp-query-logs[0].name : null
 }
 
 output "amp_query_logs_arn" {
   description = "CloudWatch Log Group ARN for AMP query logs"
-  value       = var.amp_enable_logging ? aws_cloudwatch_log_group.amp_query_logs[0].arn : null
+  value       = var.amp_enable_logging ? aws_cloudwatch_log_group.amp-query-logs[0].arn : null
 }
 
 # ============================================================================
@@ -100,7 +100,7 @@ output "adot_collector_config_template" {
   value = jsonencode({
     amp_endpoint    = "${aws_prometheus_workspace.main.prometheus_endpoint}api/v1/remote_write"
     aws_region      = var.aws_region
-    iam_role_arn    = aws_iam_role.ecs_amp_writer.arn
+    iam_role_arn    = aws_iam_role.ecs-amp-writer.arn
     workspace_id    = aws_prometheus_workspace.main.id
     scrape_interval = "30s"
   })
@@ -110,7 +110,7 @@ output "grafana_setup_info" {
   description = "Information for setting up Grafana data sources"
   value = {
     amp_data_source_url  = aws_prometheus_workspace.main.prometheus_endpoint
-    amp_reader_role_arn  = aws_iam_role.grafana_amp_reader.arn
+    amp_reader_role_arn  = aws_iam_role.grafana-amp-reader.arn
     grafana_endpoint     = aws_grafana_workspace.main.endpoint
     supported_data_types = var.amg_data_sources
   }

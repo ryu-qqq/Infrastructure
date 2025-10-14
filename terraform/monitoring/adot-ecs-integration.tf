@@ -8,7 +8,7 @@
 # ============================================================================
 
 # Store ADOT configuration in SSM Parameter Store
-resource "aws_ssm_parameter" "adot_config" {
+resource "aws_ssm_parameter" "adot-config" {
   name        = "/${var.environment}/monitoring/adot-config"
   description = "ADOT Collector configuration for ECS tasks"
   type        = "String"
@@ -28,7 +28,7 @@ resource "aws_ssm_parameter" "adot_config" {
 # CloudWatch Log Group for ADOT Collector
 # ============================================================================
 
-resource "aws_cloudwatch_log_group" "adot_collector" {
+resource "aws_cloudwatch_log_group" "adot-collector" {
   name              = "/aws/ecs/adot-collector"
   retention_in_days = 7
   kms_key_id        = data.terraform_remote_state.kms.outputs.cloudwatch_logs_key_arn
@@ -114,7 +114,7 @@ locals {
     logConfiguration = {
       logDriver = "awslogs"
       options = {
-        "awslogs-group"         = aws_cloudwatch_log_group.adot_collector.name
+        "awslogs-group"         = aws_cloudwatch_log_group.adot-collector.name
         "awslogs-region"        = var.aws_region
         "awslogs-stream-prefix" = "adot"
       }
@@ -136,7 +136,7 @@ locals {
 # This is a reference - adapt to your actual task definition file
 
 /*
-resource "aws_ecs_task_definition" "example_with_adot" {
+resource "aws_ecs_task_definition" "example-with-adot" {
   family                   = "example-service-with-monitoring"
   network_mode             = "awsvpc"
   requires_compatibilities = ["FARGATE"]
@@ -144,8 +144,8 @@ resource "aws_ecs_task_definition" "example_with_adot" {
   memory                   = 1536 # 1024 (app) + 512 (adot)
 
   # Use the ECS task role with AMP write permissions
-  task_role_arn      = aws_iam_role.ecs_amp_writer.arn
-  execution_role_arn = aws_iam_role.ecs_task_execution.arn  # Your existing execution role
+  task_role_arn      = aws_iam_role.ecs-amp-writer.arn
+  execution_role_arn = aws_iam_role.ecs-task-execution.arn  # Your existing execution role
 
   container_definitions = jsonencode([
     {

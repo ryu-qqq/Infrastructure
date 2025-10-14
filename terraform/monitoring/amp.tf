@@ -33,7 +33,7 @@ resource "aws_prometheus_workspace" "main" {
 
   # Enable CloudWatch Logs for AMP query logs
   logging_configuration {
-    log_group_arn = var.amp_enable_logging ? "${aws_cloudwatch_log_group.amp_query_logs[0].arn}:*" : null
+    log_group_arn = var.amp_enable_logging ? "${aws_cloudwatch_log_group.amp-query-logs[0].arn}:*" : null
   }
 
   tags = merge(
@@ -50,7 +50,7 @@ resource "aws_prometheus_workspace" "main" {
 # CloudWatch Log Group for AMP Query Logs
 # ============================================================================
 
-resource "aws_cloudwatch_log_group" "amp_query_logs" {
+resource "aws_cloudwatch_log_group" "amp-query-logs" {
   count = var.amp_enable_logging ? 1 : 0
 
   name              = "/aws/prometheus/${var.amp_workspace_alias}/query-logs"
