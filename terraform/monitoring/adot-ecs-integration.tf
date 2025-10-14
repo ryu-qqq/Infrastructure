@@ -181,7 +181,14 @@ resource "aws_ecs_task_definition" "example_with_adot" {
     local.adot_collector_container_definition
   ])
 
-  tags = local.required_tags
+  tags = merge(
+    local.required_tags,
+    {
+      Name        = "example-service-with-monitoring"
+      Component   = "ecs"
+      Description = "Example ECS task definition with ADOT monitoring"
+    }
+  )
 }
 */
 

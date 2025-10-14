@@ -43,6 +43,12 @@ variable "service" {
   default     = "monitoring"
 }
 
+variable "team" {
+  description = "Team responsible for the resource"
+  type        = string
+  default     = "platform-team"
+}
+
 # Terraform State Configuration
 variable "terraform_state_bucket" {
   description = "S3 bucket name for Terraform state"
@@ -135,6 +141,7 @@ locals {
     Lifecycle   = var.resource_lifecycle
     DataClass   = var.data_class
     Service     = var.service
+    Team        = var.team
     ManagedBy   = "terraform"
     Project     = "infrastructure"
   }
