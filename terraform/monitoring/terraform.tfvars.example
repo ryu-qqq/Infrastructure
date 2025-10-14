@@ -26,7 +26,7 @@ amg_workspace_name           = "infrastructure-observability"
 amg_account_access_type      = "CURRENT_ACCOUNT"
 amg_authentication_providers = ["AWS_SSO"]
 amg_permission_type          = "SERVICE_MANAGED"
-amg_data_sources             = ["AMAZON_MANAGED_PROMETHEUS", "CLOUDWATCH"]
+amg_data_sources             = ["PROMETHEUS", "CLOUDWATCH"]
 
 # ADOT Collector Configuration
 enable_adot_collector = true

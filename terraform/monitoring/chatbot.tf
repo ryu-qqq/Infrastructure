@@ -120,4 +120,5 @@ output "chatbot_role_arn" {
 output "chatbot_config_arn" {
   description = "ARN of the Chatbot Slack configuration"
   value       = var.enable_chatbot && var.slack_channel_id != "" ? aws_chatbot_slack_channel_configuration.critical[0].chat_configuration_arn : null
+  sensitive   = true
 }
