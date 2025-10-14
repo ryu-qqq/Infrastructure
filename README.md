@@ -440,8 +440,58 @@ This infrastructure follows the organization's governance standards:
 - [AWS ECR Documentation](https://docs.aws.amazon.com/ecr/)
 - [Terraform AWS Provider](https://registry.terraform.io/providers/hashicorp/aws/latest/docs)
 
+## Terraform Modules
+
+This repository includes reusable Terraform modules for standardized infrastructure components.
+
+### Available Modules
+
+| Module | Description | Status |
+|--------|-------------|--------|
+| [common-tags](terraform/modules/common-tags/) | Standard resource tagging | ✅ Active |
+| [cloudwatch-log-group](terraform/modules/cloudwatch-log-group/) | CloudWatch Log Group with encryption | ✅ Active |
+
+### Module Documentation
+
+- [Modules Catalog](terraform/modules/README.md) - Complete module listing
+- [Module Directory Structure](docs/MODULES_DIRECTORY_STRUCTURE.md) - Standard structure guide
+- [Module README Template](docs/MODULE_TEMPLATE.md) - Documentation template
+- [Module Standards Guide](docs/MODULE_STANDARDS_GUIDE.md) - Coding standards and conventions
+- [Module Examples Guide](docs/MODULE_EXAMPLES_GUIDE.md) - Example structure guide
+- [Semantic Versioning Guide](docs/VERSIONING.md) - Version management
+- [CHANGELOG Template](docs/CHANGELOG_TEMPLATE.md) - Change log format
+
+### Quick Start
+
+```hcl
+# Use common tags module
+module "common_tags" {
+  source = "../../modules/common-tags"
+
+  environment = "prod"
+  service     = "api-server"
+  team        = "platform-team"
+  owner       = "platform@example.com"
+  cost_center = "engineering"
+}
+
+# Use CloudWatch log group module
+module "app_logs" {
+  source = "../../modules/cloudwatch-log-group"
+
+  name              = "/aws/ecs/api-server/application"
+  retention_in_days = 30
+  kms_key_id        = aws_kms_key.logs.arn
+  log_type          = "application"
+  common_tags       = module.common_tags.tags
+}
+```
+
+For detailed usage, see individual module README files.
+
 ## Related Jira Issues
 
 - **Epic**: [IN-1 - Phase 1: Atlantis 서버 ECS 배포](https://ryuqqq.atlassian.net/browse/IN-1)
+- **Epic**: [IN-100 - EPIC 4: 재사용 가능한 표준 모듈](https://ryuqqq.atlassian.net/browse/IN-100)
 - **Task**: [IN-10 - ECR 저장소 생성 및 Docker 이미지 푸시](https://ryuqqq.atlassian.net/browse/IN-10)
-# Trigger workflow
+- **Task**: [IN-121 - 모듈 디렉터리 구조 설계](https://ryuqqq.atlassian.net/browse/IN-121)
