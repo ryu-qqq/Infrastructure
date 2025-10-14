@@ -232,7 +232,7 @@ resource "aws_iam_role_policy" "adot-ecs-metrics" {
         Resource = "*"
         Condition = {
           StringEquals = {
-            "ecs:cluster" = data.terraform_remote_state.atlantis.outputs.ecs_cluster_arn
+            "ecs:cluster" = data.terraform_remote_state.atlantis.outputs.atlantis_ecs_cluster_arn
           }
         }
       },
