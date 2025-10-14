@@ -276,15 +276,18 @@ data "aws_caller_identity" "current" {}
 # ============================================================================
 
 # Associate IAM role with Grafana workspace for AMP data source
-resource "aws_grafana_role_association" "amp" {
-  role         = "ADMIN"
-  workspace_id = aws_grafana_workspace.main.id
-  user_ids     = [] # Add user IDs if using AWS SSO
-
-  # This is managed through AMG console or API after workspace creation
-  depends_on = [aws_grafana_workspace.main]
-
-  lifecycle {
-    ignore_changes = [user_ids]
-  }
-}
+# NOTE: This resource requires extensive SSO permissions and is better managed
+# through the AMG console after workspace creation. Commenting out to avoid
+# complex SSO permission requirements during initial deployment.
+# resource "aws_grafana_role_association" "amp" {
+#   role         = "ADMIN"
+#   workspace_id = aws_grafana_workspace.main.id
+#   user_ids     = [] # Add user IDs if using AWS SSO
+#
+#   # This is managed through AMG console or API after workspace creation
+#   depends_on = [aws_grafana_workspace.main]
+#
+#   lifecycle {
+#     ignore_changes = [user_ids]
+#   }
+# }
