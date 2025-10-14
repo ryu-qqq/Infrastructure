@@ -109,9 +109,10 @@ resource "aws_prometheus_workspace" "main" {
   alias = "${local.name_prefix}-${var.amp_workspace_alias}"
 
   # Enable CloudWatch Logs for AMP query logs
-  logging_configuration {
-    log_group_arn = var.amp_enable_logging ? "${aws_cloudwatch_log_group.amp-query-logs[0].arn}:*" : null
-  }
+  # Temporarily disabled due to permission issues
+  # logging_configuration {
+  #   log_group_arn = var.amp_enable_logging ? "${aws_cloudwatch_log_group.amp-query-logs[0].arn}:*" : null
+  # }
 
   tags = merge(
     local.required_tags,
