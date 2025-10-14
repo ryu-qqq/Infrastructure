@@ -49,11 +49,21 @@ jobs:
           role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
           aws-region: ${{ env.AWS_REGION }}
 
-      - name: Terraform Init
+      # Monitoring Infrastructure (IN-118)
+      - name: Terraform Init - Monitoring
+        working-directory: terraform/monitoring
+        run: terraform init -backend-config=backend.conf
+
+      - name: Terraform Apply - Monitoring
+        working-directory: terraform/monitoring
+        run: terraform apply -auto-approve
+
+      # Atlantis Infrastructure
+      - name: Terraform Init - Atlantis
         working-directory: terraform/atlantis
         run: terraform init
 
-      - name: Terraform Apply
+      - name: Terraform Apply - Atlantis
         working-directory: terraform/atlantis
         env:
           TF_VAR_github_app_id: ${{ secrets.TF_VAR_GITHUB_APP_ID }}

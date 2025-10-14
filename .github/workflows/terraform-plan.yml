@@ -51,19 +51,44 @@ jobs:
 
           echo "✅ All governance checks passed!"
 
-      - name: Terraform Format Check
+      # Monitoring Module
+      - name: Terraform Format Check - Monitoring
+        working-directory: terraform/monitoring
+        run: terraform fmt -check -recursive
+
+      - name: Terraform Init - Monitoring
+        working-directory: terraform/monitoring
+        run: terraform init -backend-config=backend.conf
+
+      - name: Terraform Validate - Monitoring
+        working-directory: terraform/monitoring
+        run: terraform validate
+
+      - name: Terraform Plan - Monitoring
+        id: plan-monitoring
+        working-directory: terraform/monitoring
+        run: |
+          set +e
+          terraform plan -no-color -out=tfplan
+          PLAN_EXIT_CODE=$?
+          terraform show -no-color tfplan > plan-monitoring.txt
+          exit $PLAN_EXIT_CODE
+        continue-on-error: true
+
+      # Atlantis Module
+      - name: Terraform Format Check - Atlantis
         working-directory: terraform/atlantis
         run: terraform fmt -check -recursive
 
-      - name: Terraform Init
+      - name: Terraform Init - Atlantis
         working-directory: terraform/atlantis
         run: terraform init
 
-      - name: Terraform Validate
+      - name: Terraform Validate - Atlantis
         working-directory: terraform/atlantis
         run: terraform validate
 
-      - name: Terraform Plan
+      - name: Terraform Plan - Atlantis
         id: plan
         working-directory: terraform/atlantis
         run: |
@@ -77,26 +102,41 @@ jobs:
       - name: Comment Plan on PR
         uses: actions/github-script@v7
         if: github.event_name == 'pull_request'
-        env:
-          PLAN: ${{ steps.plan.outputs.stdout }}
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
             const fs = require('fs');
-            const planFile = 'terraform/atlantis/plan.txt';
-            let plan = '';
+
+            // Read monitoring plan
+            let monitoringPlan = '';
             try {
-              plan = fs.readFileSync(planFile, 'utf8');
+              monitoringPlan = fs.readFileSync('terraform/monitoring/plan-monitoring.txt', 'utf8');
             } catch (error) {
-              plan = 'Error reading plan file. Check workflow logs for details.';
+              monitoringPlan = 'No changes or error reading plan file.';
+            }
+
+            // Read atlantis plan
+            let atlantisPlan = '';
+            try {
+              atlantisPlan = fs.readFileSync('terraform/atlantis/plan.txt', 'utf8');
+            } catch (error) {
+              atlantisPlan = 'No changes or error reading plan file.';
             }
 
             const output = `#### Terraform Plan 📋
 
-            <details><summary>Show Plan</summary>
+            <details><summary>Monitoring Module Plan</summary>
 
             \`\`\`terraform
-            ${plan}
+            ${monitoringPlan}
+            \`\`\`
+
+            </details>
+
+            <details><summary>Atlantis Module Plan</summary>
+
+            \`\`\`terraform
+            ${atlantisPlan}
             \`\`\`
 
             </details>
@@ -111,5 +151,13 @@ jobs:
             });
 
       - name: Terraform Plan Status
-        if: steps.plan.outcome == 'failure'
-        run: exit 1
+        if: steps.plan-monitoring.outcome == 'failure' || steps.plan.outcome == 'failure'
+        run: |
+          echo "❌ Terraform plan failed"
+          if [ "${{ steps.plan-monitoring.outcome }}" == "failure" ]; then
+            echo "Monitoring module plan failed"
+          fi
+          if [ "${{ steps.plan.outcome }}" == "failure" ]; then
+            echo "Atlantis module plan failed"
+          fi
+          exit 1
