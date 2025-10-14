@@ -52,7 +52,11 @@ jobs:
       # Monitoring Infrastructure (IN-118)
       - name: Terraform Init - Monitoring
         working-directory: terraform/monitoring
-        run: terraform init -backend-config=backend.conf
+        run: |
+          terraform init \
+            -backend-config="bucket=prod-connectly" \
+            -backend-config="region=ap-northeast-2" \
+            -backend-config="dynamodb_table=prod-connectly-tf-lock"
 
       - name: Terraform Apply - Monitoring
         working-directory: terraform/monitoring
