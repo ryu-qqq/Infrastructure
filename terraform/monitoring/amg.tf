@@ -2,6 +2,17 @@
 # IN-117: Monitoring system setup
 
 # ============================================================================
+# State Migration for Resource Rename
+# ============================================================================
+
+# Safely migrate state for IAM role resource rename from underscore to kebab-case
+# This ensures no resource recreation when applying the naming convention change
+moved {
+  from = aws_iam_role.grafana_workspace
+  to   = aws_iam_role.grafana-workspace
+}
+
+# ============================================================================
 # AMG Workspace
 # ============================================================================
 
