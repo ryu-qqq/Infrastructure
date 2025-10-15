@@ -250,22 +250,29 @@ module "ecs_service" {
 
 ## Outputs
 
+### Primary Identifiers
+
 | Name | Description |
 |------|-------------|
-| `task_definition_arn` | ECS Task Definition의 전체 ARN |
-| `task_definition_family` | ECS Task Definition Family |
-| `task_definition_revision` | ECS Task Definition Revision 번호 |
 | `service_id` | ECS Service ID |
 | `service_name` | ECS Service 이름 |
-| `service_cluster` | ECS Service가 실행 중인 클러스터 |
-| `service_desired_count` | Service의 Desired Count |
-| `cloudwatch_log_group_name` | CloudWatch Log Group 이름 |
-| `cloudwatch_log_group_arn` | CloudWatch Log Group ARN |
-| `autoscaling_target_id` | Auto Scaling Target ID |
+| `task_definition_arn` | ECS Task Definition의 전체 ARN |
+
+### Additional Outputs (Alphabetical)
+
+| Name | Description |
+|------|-------------|
 | `autoscaling_cpu_policy_arn` | CPU Auto Scaling Policy ARN |
 | `autoscaling_memory_policy_arn` | Memory Auto Scaling Policy ARN |
+| `autoscaling_target_id` | Auto Scaling Target ID |
+| `cloudwatch_log_group_arn` | CloudWatch Log Group ARN |
+| `cloudwatch_log_group_name` | CloudWatch Log Group 이름 |
 | `container_name` | 컨테이너 이름 |
 | `container_port` | 컨테이너 포트 |
+| `service_cluster` | ECS Service가 실행 중인 클러스터 |
+| `service_desired_count` | Service의 Desired Count |
+| `task_definition_family` | ECS Task Definition Family |
+| `task_definition_revision` | ECS Task Definition Revision 번호 |
 
 ## Resource Types
 

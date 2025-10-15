@@ -1,21 +1,6 @@
-# Task Definition Outputs
-
-output "task_definition_arn" {
-  description = "The full ARN of the ECS task definition"
-  value       = aws_ecs_task_definition.this.arn
-}
-
-output "task_definition_family" {
-  description = "The family of the ECS task definition"
-  value       = aws_ecs_task_definition.this.family
-}
-
-output "task_definition_revision" {
-  description = "The revision number of the ECS task definition"
-  value       = aws_ecs_task_definition.this.revision
-}
-
-# Service Outputs
+# ==============================================================================
+# Primary Identifiers (ID, ARN, Name)
+# ==============================================================================
 
 output "service_id" {
   description = "The ID of the ECS service"
@@ -25,6 +10,50 @@ output "service_id" {
 output "service_name" {
   description = "The name of the ECS service"
   value       = aws_ecs_service.this.name
+}
+
+output "task_definition_arn" {
+  description = "The full ARN of the ECS task definition"
+  value       = aws_ecs_task_definition.this.arn
+}
+
+# ==============================================================================
+# Additional Outputs (Alphabetical Order)
+# ==============================================================================
+
+output "autoscaling_cpu_policy_arn" {
+  description = "The ARN of the CPU auto scaling policy (if auto scaling is enabled)"
+  value       = var.enable_autoscaling ? aws_appautoscaling_policy.cpu[0].arn : null
+}
+
+output "autoscaling_memory_policy_arn" {
+  description = "The ARN of the memory auto scaling policy (if auto scaling is enabled)"
+  value       = var.enable_autoscaling ? aws_appautoscaling_policy.memory[0].arn : null
+}
+
+output "autoscaling_target_id" {
+  description = "The resource ID of the auto scaling target (if auto scaling is enabled)"
+  value       = var.enable_autoscaling ? aws_appautoscaling_target.this[0].id : null
+}
+
+output "cloudwatch_log_group_arn" {
+  description = "The ARN of the CloudWatch log group (if created by this module)"
+  value       = var.log_configuration == null ? aws_cloudwatch_log_group.this[0].arn : null
+}
+
+output "cloudwatch_log_group_name" {
+  description = "The name of the CloudWatch log group (if created by this module)"
+  value       = var.log_configuration == null ? aws_cloudwatch_log_group.this[0].name : null
+}
+
+output "container_name" {
+  description = "The name of the container"
+  value       = var.container_name
+}
+
+output "container_port" {
+  description = "The port on which the container listens"
+  value       = var.container_port
 }
 
 output "service_cluster" {
@@ -37,43 +66,12 @@ output "service_desired_count" {
   value       = aws_ecs_service.this.desired_count
 }
 
-# Log Group Output
-
-output "cloudwatch_log_group_name" {
-  description = "The name of the CloudWatch log group (if created by this module)"
-  value       = var.log_configuration == null ? aws_cloudwatch_log_group.this[0].name : null
+output "task_definition_family" {
+  description = "The family of the ECS task definition"
+  value       = aws_ecs_task_definition.this.family
 }
 
-output "cloudwatch_log_group_arn" {
-  description = "The ARN of the CloudWatch log group (if created by this module)"
-  value       = var.log_configuration == null ? aws_cloudwatch_log_group.this[0].arn : null
-}
-
-# Auto Scaling Outputs
-
-output "autoscaling_target_id" {
-  description = "The resource ID of the auto scaling target (if auto scaling is enabled)"
-  value       = var.enable_autoscaling ? aws_appautoscaling_target.this[0].id : null
-}
-
-output "autoscaling_cpu_policy_arn" {
-  description = "The ARN of the CPU auto scaling policy (if auto scaling is enabled)"
-  value       = var.enable_autoscaling ? aws_appautoscaling_policy.cpu[0].arn : null
-}
-
-output "autoscaling_memory_policy_arn" {
-  description = "The ARN of the memory auto scaling policy (if auto scaling is enabled)"
-  value       = var.enable_autoscaling ? aws_appautoscaling_policy.memory[0].arn : null
-}
-
-# Container Information
-
-output "container_name" {
-  description = "The name of the container"
-  value       = var.container_name
-}
-
-output "container_port" {
-  description = "The port on which the container listens"
-  value       = var.container_port
+output "task_definition_revision" {
+  description = "The revision number of the ECS task definition"
+  value       = aws_ecs_task_definition.this.revision
 }
