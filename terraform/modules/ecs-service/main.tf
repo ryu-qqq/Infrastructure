@@ -57,7 +57,7 @@ resource "aws_ecs_task_definition" "this" {
         logDriver = "awslogs"
         options = {
           "awslogs-group"         = aws_cloudwatch_log_group.this[0].name
-          "awslogs-region"        = data.aws_region.current.id
+          "awslogs-region"        = data.aws_region.current.name
           "awslogs-stream-prefix" = var.container_name
         }
       }
@@ -133,7 +133,7 @@ resource "aws_appautoscaling_target" "this" {
 
   max_capacity       = var.autoscaling_max_capacity
   min_capacity       = var.autoscaling_min_capacity
-  resource_id        = "service/${element(split("/", var.cluster_id), length(split("/", var.cluster_id)) - 1)}/${aws_ecs_service.this.name}"
+  resource_id        = "service/${basename(var.cluster_id)}/${aws_ecs_service.this.name}"
   scalable_dimension = "ecs:service:DesiredCount"
   service_namespace  = "ecs"
 
