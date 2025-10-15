@@ -2,17 +2,6 @@
 # IN-117: Monitoring system setup
 
 # ============================================================================
-# State Migration for Resource Rename
-# ============================================================================
-
-# Safely migrate state for IAM role resource rename from underscore to kebab-case
-# This ensures no resource recreation when applying the naming convention change
-moved {
-  from = aws_iam_role.grafana_workspace
-  to   = aws_iam_role.grafana-workspace
-}
-
-# ============================================================================
 # AMG Workspace
 # ============================================================================
 
@@ -22,7 +11,7 @@ resource "aws_grafana_workspace" "main" {
   authentication_providers = var.amg_authentication_providers
   permission_type          = var.amg_permission_type
   data_sources             = var.amg_data_sources
-  role_arn                 = aws_iam_role.grafana-workspace.arn
+  role_arn                 = aws_iam_role.grafana_workspace.arn
 
   # Network access configuration (optional - for VPC access)
   # network_access_control {
@@ -55,7 +44,7 @@ resource "aws_grafana_workspace" "main" {
 # AMG IAM Role (Required for CURRENT_ACCOUNT access type)
 # ============================================================================
 
-resource "aws_iam_role" "grafana-workspace" {
+resource "aws_iam_role" "grafana_workspace" {
   name = "${local.name_prefix}-grafana-workspace-role"
 
   assume_role_policy = jsonencode({
