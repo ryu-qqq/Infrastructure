@@ -136,6 +136,13 @@ resource "aws_appautoscaling_target" "this" {
   resource_id        = "service/${element(split("/", var.cluster_id), length(split("/", var.cluster_id)) - 1)}/${aws_ecs_service.this.name}"
   scalable_dimension = "ecs:service:DesiredCount"
   service_namespace  = "ecs"
+
+  lifecycle {
+    precondition {
+      condition     = var.autoscaling_max_capacity >= var.autoscaling_min_capacity
+      error_message = "Auto scaling max_capacity (${var.autoscaling_max_capacity}) must be greater than or equal to min_capacity (${var.autoscaling_min_capacity})"
+    }
+  }
 }
 
 # Auto Scaling Policy - CPU
