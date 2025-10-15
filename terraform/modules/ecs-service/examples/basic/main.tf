@@ -63,6 +63,10 @@ resource "aws_security_group" "ecs_tasks" {
   description = "Security group for ECS tasks"
   vpc_id      = var.vpc_id
 
+  # NOTE: For production environments, restrict egress to specific services
+  # using VPC endpoints (ECR, S3, CloudWatch Logs, Secrets Manager)
+  # instead of allowing all outbound traffic.
+  # See: https://docs.aws.amazon.com/vpc/latest/privatelink/vpc-endpoints.html
   egress {
     description = "Allow all outbound traffic"
     from_port   = 0
