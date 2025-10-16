@@ -25,17 +25,19 @@ resource "aws_security_group" "alb" {
   vpc_id      = data.aws_vpc.selected.id
 
   ingress {
-    from_port   = 80
-    to_port     = 80
-    protocol    = "tcp"
+    from_port = 80
+    to_port   = 80
+    protocol  = "tcp"
+    # WARNING: In production, restrict CIDR blocks to known IP ranges or CloudFront IPs
     cidr_blocks = ["0.0.0.0/0"]
     description = "Allow HTTP traffic"
   }
 
   ingress {
-    from_port   = 443
-    to_port     = 443
-    protocol    = "tcp"
+    from_port = 443
+    to_port   = 443
+    protocol  = "tcp"
+    # WARNING: In production, restrict CIDR blocks to known IP ranges or CloudFront IPs
     cidr_blocks = ["0.0.0.0/0"]
     description = "Allow HTTPS traffic"
   }
@@ -44,8 +46,8 @@ resource "aws_security_group" "alb" {
     from_port   = 0
     to_port     = 0
     protocol    = "-1"
-    cidr_blocks = ["0.0.0.0/0"]
-    description = "Allow all outbound traffic"
+    cidr_blocks = [data.aws_vpc.selected.cidr_block]
+    description = "Allow all outbound traffic within the VPC"
   }
 
   tags = merge(

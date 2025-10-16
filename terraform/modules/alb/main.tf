@@ -183,10 +183,9 @@ resource "aws_lb_listener" "https" {
 resource "aws_lb_listener_rule" "this" {
   for_each = var.listener_rules
 
-  listener_arn = each.value.listener_key == "http" ? (
-    aws_lb_listener.http[each.value.listener_key].arn
-    ) : (
-    aws_lb_listener.https[each.value.listener_key].arn
+  listener_arn = try(
+    aws_lb_listener.http[each.value.listener_key].arn,
+    aws_lb_listener.https[each.value.listener_key].arn,
   )
 
   priority = each.value.priority
