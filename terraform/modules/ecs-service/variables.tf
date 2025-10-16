@@ -270,6 +270,11 @@ variable "autoscaling_max_capacity" {
     condition     = var.autoscaling_max_capacity > 0
     error_message = "Auto scaling max capacity must be greater than 0"
   }
+
+  validation {
+    condition     = !var.enable_autoscaling || (var.autoscaling_max_capacity >= var.autoscaling_min_capacity)
+    error_message = "When auto scaling is enabled, autoscaling_max_capacity must be greater than or equal to autoscaling_min_capacity"
+  }
 }
 
 variable "autoscaling_min_capacity" {
