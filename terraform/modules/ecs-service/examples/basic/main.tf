@@ -34,15 +34,17 @@ data "aws_subnets" "private" {
   }
 }
 
-# Common Tags Module
-module "common_tags" {
-  source = "../../common-tags"
-
-  environment = var.environment
-  service     = var.service_name
-  team        = "platform-team"
-  owner       = "platform@example.com"
-  cost_center = "engineering"
+# Common Tags
+locals {
+  common_tags = {
+    Environment = var.environment
+    Service     = var.service_name
+    Team        = "platform-team"
+    Owner       = "platform@example.com"
+    CostCenter  = "engineering"
+    ManagedBy   = "terraform"
+    Project     = "ecs-service-example"
+  }
 }
 
 # ECS Cluster
@@ -54,11 +56,16 @@ resource "aws_ecs_cluster" "main" {
     value = "enabled"
   }
 
-  tags = module.common_tags.tags
+  tags = merge(
+    local.common_tags,
+    {
+      Name = "${var.service_name}-${var.environment}"
+    }
+  )
 }
 
 # Security Group for ECS Tasks
-resource "aws_security_group" "ecs_tasks" {
+resource "aws_security_group" "ecs-tasks" {
   name        = "${var.service_name}-ecs-tasks-${var.environment}"
   description = "Security group for ECS tasks"
   vpc_id      = var.vpc_id
@@ -76,7 +83,7 @@ resource "aws_security_group" "ecs_tasks" {
   }
 
   tags = merge(
-    module.common_tags.tags,
+    local.common_tags,
     {
       Name = "${var.service_name}-ecs-tasks-${var.environment}"
     }
@@ -84,7 +91,7 @@ resource "aws_security_group" "ecs_tasks" {
 }
 
 # IAM Role for ECS Task Execution
-resource "aws_iam_role" "ecs_execution_role" {
+resource "aws_iam_role" "ecs-execution-role" {
   name = "${var.service_name}-ecs-execution-${var.environment}"
 
   assume_role_policy = jsonencode({
@@ -98,16 +105,21 @@ resource "aws_iam_role" "ecs_execution_role" {
     }]
   })
 
-  tags = module.common_tags.tags
+  tags = merge(
+    local.common_tags,
+    {
+      Name = "${var.service_name}-ecs-execution-${var.environment}"
+    }
+  )
 }
 
-resource "aws_iam_role_policy_attachment" "ecs_execution_role_policy" {
-  role       = aws_iam_role.ecs_execution_role.name
+resource "aws_iam_role_policy_attachment" "ecs-execution-role-policy" {
+  role       = aws_iam_role.ecs-execution-role.name
   policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy"
 }
 
 # IAM Role for ECS Task
-resource "aws_iam_role" "ecs_task_role" {
+resource "aws_iam_role" "ecs-task-role" {
   name = "${var.service_name}-ecs-task-${var.environment}"
 
   assume_role_policy = jsonencode({
@@ -121,7 +133,12 @@ resource "aws_iam_role" "ecs_task_role" {
     }]
   })
 
-  tags = module.common_tags.tags
+  tags = merge(
+    local.common_tags,
+    {
+      Name = "${var.service_name}-ecs-task-${var.environment}"
+    }
+  )
 }
 
 # ECS Service Module - Basic Configuration
@@ -138,12 +155,12 @@ module "ecs_service" {
   memory             = 512
   desired_count      = 1
   subnet_ids         = data.aws_subnets.private.ids
-  security_group_ids = [aws_security_group.ecs_tasks.id]
-  execution_role_arn = aws_iam_role.ecs_execution_role.arn
-  task_role_arn      = aws_iam_role.ecs_task_role.arn
+  security_group_ids = [aws_security_group.ecs-tasks.id]
+  execution_role_arn = aws_iam_role.ecs-execution-role.arn
+  task_role_arn      = aws_iam_role.ecs-task-role.arn
 
   # Tags
-  common_tags = module.common_tags.tags
+  common_tags = local.common_tags
 }
 
 # Outputs
