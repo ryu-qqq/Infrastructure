@@ -14,6 +14,19 @@ data "aws_subnets" "default" {
   }
 }
 
+# Required Tags for Governance
+locals {
+  required_tags = {
+    Environment = "dev"
+    Service     = "alb-example"
+    Team        = "platform-team"
+    Owner       = "platform@example.com"
+    CostCenter  = "engineering"
+    ManagedBy   = "Terraform"
+    Project     = "alb-module-example"
+  }
+}
+
 # Security Group for ALB
 resource "aws_security_group" "alb" {
   name        = "example-alb-sg"
@@ -37,9 +50,12 @@ resource "aws_security_group" "alb" {
     description = "Allow all outbound traffic within the VPC"
   }
 
-  tags = {
-    Name = "alb-example-sg"
-  }
+  tags = merge(
+    local.required_tags,
+    {
+      Name = "alb-example-sg"
+    }
+  )
 }
 
 # ALB Module
@@ -86,11 +102,7 @@ module "alb" {
     }
   }
 
-  common_tags = {
-    Environment = "dev"
-    Project     = "example"
-    ManagedBy   = "Terraform"
-  }
+  common_tags = local.required_tags
 }
 
 # Outputs

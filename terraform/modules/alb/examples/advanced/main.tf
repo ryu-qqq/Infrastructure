@@ -18,6 +18,19 @@ data "aws_subnets" "public" {
   }
 }
 
+# Required Tags for Governance
+locals {
+  required_tags = {
+    Environment = var.environment
+    Service     = var.name
+    Team        = "platform-team"
+    Owner       = "platform@example.com"
+    CostCenter  = "engineering"
+    ManagedBy   = "Terraform"
+    Project     = "alb-module-advanced-example"
+  }
+}
+
 # Security Group for ALB
 resource "aws_security_group" "alb" {
   name        = "${var.name}-alb-sg"
@@ -51,7 +64,7 @@ resource "aws_security_group" "alb" {
   }
 
   tags = merge(
-    var.common_tags,
+    local.required_tags,
     {
       Name = "${var.name}-alb-sg"
     }
@@ -232,12 +245,7 @@ module "alb" {
     prefix  = "${var.name}/alb"
   } : null
 
-  common_tags = merge(
-    var.common_tags,
-    {
-      Example = "advanced"
-    }
-  )
+  common_tags = local.required_tags
 }
 
 # Outputs
