@@ -94,7 +94,7 @@ resource "aws_security_group" "rds" {
 }
 
 # IAM Role for Enhanced Monitoring
-resource "aws_iam_role" "rds_monitoring" {
+resource "aws_iam_role" "rds-monitoring" {
   name = "${var.service_name}-rds-monitoring-${var.environment}"
 
   assume_role_policy = jsonencode({
@@ -116,8 +116,8 @@ resource "aws_iam_role" "rds_monitoring" {
   )
 }
 
-resource "aws_iam_role_policy_attachment" "rds_monitoring" {
-  role       = aws_iam_role.rds_monitoring.name
+resource "aws_iam_role_policy_attachment" "rds-monitoring" {
+  role       = aws_iam_role.rds-monitoring.name
   policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonRDSEnhancedMonitoringRole"
 }
 
@@ -212,7 +212,7 @@ module "rds_postgres" {
   performance_insights_retention_period = 7
   enabled_cloudwatch_logs_exports       = ["postgresql", "upgrade"]
   monitoring_interval                   = 60
-  monitoring_role_arn                   = aws_iam_role.rds_monitoring.arn
+  monitoring_role_arn                   = aws_iam_role.rds-monitoring.arn
 
   # Deletion Protection
   deletion_protection = var.deletion_protection
@@ -264,5 +264,5 @@ output "kms_key_arn" {
 
 output "monitoring_role_arn" {
   description = "The ARN of the monitoring IAM role"
-  value       = aws_iam_role.rds_monitoring.arn
+  value       = aws_iam_role.rds-monitoring.arn
 }
