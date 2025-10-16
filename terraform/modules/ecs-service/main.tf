@@ -25,43 +25,46 @@ resource "aws_ecs_task_definition" "this" {
   task_role_arn            = var.task_role_arn
 
   container_definitions = jsonencode([
-    {
-      name      = var.container_name
-      image     = var.container_image
-      essential = true
+    merge(
+      {
+        name      = var.container_name
+        image     = var.container_image
+        essential = true
 
-      portMappings = [
-        {
-          containerPort = var.container_port
-          protocol      = "tcp"
+        portMappings = [
+          {
+            containerPort = var.container_port
+            protocol      = "tcp"
+          }
+        ]
+
+        environment = var.container_environment
+        secrets     = var.container_secrets
+
+        # Log configuration
+        logConfiguration = var.log_configuration != null ? {
+          logDriver = var.log_configuration.log_driver
+          options   = var.log_configuration.options
+          } : {
+          logDriver = "awslogs"
+          options = {
+            "awslogs-group"         = aws_cloudwatch_log_group.this[0].name
+            "awslogs-region"        = data.aws_region.current.name
+            "awslogs-stream-prefix" = var.container_name
+          }
         }
-      ]
-
-      environment = var.container_environment
-      secrets     = var.container_secrets
-
-      # Health check configuration (if provided)
-      healthCheck = var.health_check_command != null ? {
-        command     = var.health_check_command
-        interval    = var.health_check_interval
-        timeout     = var.health_check_timeout
-        retries     = var.health_check_retries
-        startPeriod = var.health_check_start_period
-      } : null
-
-      # Log configuration
-      logConfiguration = var.log_configuration != null ? {
-        logDriver = var.log_configuration.log_driver
-        options   = var.log_configuration.options
-        } : {
-        logDriver = "awslogs"
-        options = {
-          "awslogs-group"         = aws_cloudwatch_log_group.this[0].name
-          "awslogs-region"        = data.aws_region.current.name
-          "awslogs-stream-prefix" = var.container_name
+      },
+      # Health check configuration (only included when command is provided)
+      var.health_check_command != null ? {
+        healthCheck = {
+          command     = var.health_check_command
+          interval    = var.health_check_interval
+          timeout     = var.health_check_timeout
+          retries     = var.health_check_retries
+          startPeriod = var.health_check_start_period
         }
-      }
-    }
+      } : {}
+    )
   ])
 
   tags = merge(

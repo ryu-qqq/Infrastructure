@@ -36,12 +36,12 @@ variable "container_port" {
 }
 
 variable "cpu" {
-  description = "The number of CPU units to reserve for the container (256, 512, 1024, 2048, 4096)"
+  description = "The number of CPU units to reserve for the container (256, 512, 1024, 2048, 4096, 8192, 16384)"
   type        = number
 
   validation {
-    condition     = contains([256, 512, 1024, 2048, 4096], var.cpu)
-    error_message = "CPU must be one of: 256, 512, 1024, 2048, 4096"
+    condition     = contains([256, 512, 1024, 2048, 4096, 8192, 16384], var.cpu)
+    error_message = "CPU must be one of: 256, 512, 1024, 2048, 4096, 8192, 16384"
   }
 }
 
