@@ -34,9 +34,9 @@ data "aws_subnets" "private" {
   }
 }
 
-# Common Tags
+# Required Tags for Governance
 locals {
-  common_tags = {
+  required_tags = {
     Environment = var.environment
     Service     = var.service_name
     Team        = "platform-team"
@@ -57,7 +57,7 @@ resource "aws_ecs_cluster" "main" {
   }
 
   tags = merge(
-    local.common_tags,
+    local.required_tags,
     {
       Name = "${var.service_name}-${var.environment}"
     }
@@ -83,7 +83,7 @@ resource "aws_security_group" "ecs-tasks" {
   }
 
   tags = merge(
-    local.common_tags,
+    local.required_tags,
     {
       Name = "${var.service_name}-ecs-tasks-${var.environment}"
     }
@@ -106,7 +106,7 @@ resource "aws_iam_role" "ecs-execution-role" {
   })
 
   tags = merge(
-    local.common_tags,
+    local.required_tags,
     {
       Name = "${var.service_name}-ecs-execution-${var.environment}"
     }
@@ -134,7 +134,7 @@ resource "aws_iam_role" "ecs-task-role" {
   })
 
   tags = merge(
-    local.common_tags,
+    local.required_tags,
     {
       Name = "${var.service_name}-ecs-task-${var.environment}"
     }
@@ -160,7 +160,7 @@ module "ecs_service" {
   task_role_arn      = aws_iam_role.ecs-task-role.arn
 
   # Tags
-  common_tags = local.common_tags
+  common_tags = local.required_tags
 }
 
 # Outputs
