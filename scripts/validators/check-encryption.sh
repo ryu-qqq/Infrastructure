@@ -151,9 +151,9 @@ check_rds_encryption() {
 
     local resource_block=$(extract_resource_block "$file" "$line_number")
 
-    # Check storage_encrypted
-    if ! echo "$resource_block" | grep -q "storage_encrypted\s*=\s*true"; then
-        echo -e "${RED}✗ Error: RDS instance not encrypted${NC}"
+    # Check storage_encrypted (allow both hardcoded true and variable usage)
+    if ! echo "$resource_block" | grep -q "storage_encrypted\s*="; then
+        echo -e "${RED}✗ Error: RDS instance missing storage_encrypted attribute${NC}"
         echo -e "  ${YELLOW}Resource: aws_db_instance.$resource_name${NC}"
         echo -e "  ${YELLOW}File: $file:$line_number${NC}"
         echo -e "  ${YELLOW}💡 Add: storage_encrypted = true; kms_key_id = ...${NC}"
@@ -161,16 +161,55 @@ check_rds_encryption() {
         return
     fi
 
+    # Check if explicitly set to false
+    if echo "$resource_block" | grep -q "storage_encrypted\s*=\s*false"; then
+        echo -e "${RED}✗ Error: RDS instance encryption explicitly disabled${NC}"
+        echo -e "  ${YELLOW}Resource: aws_db_instance.$resource_name${NC}"
+        echo -e "  ${YELLOW}File: $file:$line_number${NC}"
+        echo -e "  ${YELLOW}💡 Change to: storage_encrypted = true${NC}"
+        ((ERRORS++))
+        return
+    fi
+
+    # If using a variable, check if variable default is true
+    if echo "$resource_block" | grep -q "storage_encrypted\s*=\s*var\."; then
+        # Extract variable name
+        var_name=$(echo "$resource_block" | grep -o "storage_encrypted\s*=\s*var\.[a-zA-Z0-9_]*" | sed 's/.*var\.//')
+
+        # Look for variable definition in the same directory
+        var_dir=$(dirname "$file")
+        var_file="$var_dir/variables.tf"
+
+        if [[ -f "$var_file" ]]; then
+            # Check if variable default is true
+            var_block=$(awk "/variable \"$var_name\"/,/^}/" "$var_file")
+            if echo "$var_block" | grep -q "default\s*=\s*true"; then
+                echo -e "${GREEN}✓ aws_db_instance.$resource_name uses encryption (via variable with default=true)${NC}"
+            else
+                echo -e "${YELLOW}⚠ Warning: RDS uses variable for encryption, ensure default is true${NC}"
+                echo -e "  ${YELLOW}Resource: aws_db_instance.$resource_name${NC}"
+                echo -e "  ${YELLOW}File: $file:$line_number${NC}"
+                echo -e "  ${YELLOW}Variable: $var_name (check $var_file)${NC}"
+                ((WARNINGS++))
+            fi
+        else
+            echo -e "${YELLOW}⚠ Info: RDS uses variable for encryption${NC}"
+            echo -e "  ${YELLOW}Resource: aws_db_instance.$resource_name${NC}"
+            echo -e "  ${YELLOW}File: $file:$line_number${NC}"
+        fi
+    else
+        # Hardcoded true value
+        echo -e "${GREEN}✓ aws_db_instance.$resource_name uses KMS encryption${NC}"
+    fi
+
     # Check kms_key_id
     if ! echo "$resource_block" | grep -q "kms_key_id\s*="; then
-        echo -e "${YELLOW}⚠ Warning: RDS encrypted but kms_key_id not specified${NC}"
+        echo -e "${YELLOW}⚠ Warning: RDS encrypted but kms_key_id not specified (will use default)${NC}"
         echo -e "  ${YELLOW}Resource: aws_db_instance.$resource_name${NC}"
         echo -e "  ${YELLOW}File: $file:$line_number${NC}"
         ((WARNINGS++))
         return
     fi
-
-    echo -e "${GREEN}✓ aws_db_instance.$resource_name uses KMS encryption${NC}"
 }
 
 # Function to check EBS encryption
