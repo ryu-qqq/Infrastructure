@@ -234,7 +234,22 @@ For detailed setup instructions, see [GitHub Actions Setup Guide](docs/github_ac
 - AWS CLI configured with appropriate credentials
 - Docker installed and running (for local builds)
 - Terraform >= 1.5.0
-- AWS account with ECR permissions
+- AWS account with ECR permissions:
+  - `ecr:CreateRepository`
+  - `ecr:GetAuthorizationToken`
+  - `ecr:BatchCheckLayerAvailability`
+  - `ecr:PutImage`
+  - `ecr:InitiateLayerUpload`
+  - `ecr:UploadLayerPart`
+  - `ecr:CompleteLayerUpload`
+  - `ecr:DescribeRepositories`
+  - `kms:CreateKey` (for KMS encryption)
+  - `kms:DescribeKey`
+  - `kms:CreateAlias`
+- Additional recommended permissions for production use:
+  - S3 access (for Terraform state): `s3:GetObject`, `s3:PutObject`, `s3:ListBucket`
+  - CloudWatch Logs: `logs:CreateLogGroup`, `logs:CreateLogStream`, `logs:PutLogEvents`
+  - Secrets Manager: `secretsmanager:GetSecretValue` (if using secrets)
 - Git hooks installed (see Development Setup above)
 
 **Note**: With GitHub Actions configured, manual build/push is optional. CI/CD handles deployment automatically.
