@@ -24,7 +24,7 @@ resource "aws_iam_role" "this" {
 # AWS Managed Policy Attachments
 # ============================================================================
 
-resource "aws_iam_role_policy_attachment" "aws_managed" {
+resource "aws_iam_role_policy_attachment" "aws-managed" {
   for_each = toset(var.attach_aws_managed_policies)
 
   role       = aws_iam_role.this.name
@@ -36,7 +36,7 @@ resource "aws_iam_role_policy_attachment" "aws_managed" {
 # ============================================================================
 
 # Standard ECS task execution policy for pulling images and publishing logs
-resource "aws_iam_role_policy" "ecs_task_execution" {
+resource "aws_iam_role_policy" "ecs-task-execution" {
   count = var.enable_ecs_task_execution_policy ? 1 : 0
 
   name = "${var.role_name}-ecs-task-execution"
@@ -88,7 +88,7 @@ resource "aws_iam_role_policy" "ecs_task_execution" {
 # ============================================================================
 
 # Basic ECS task role policy for container runtime
-resource "aws_iam_role_policy" "ecs_task" {
+resource "aws_iam_role_policy" "ecs-task" {
   count = var.enable_ecs_task_policy ? 1 : 0
 
   name = "${var.role_name}-ecs-task"
@@ -158,7 +158,7 @@ resource "aws_iam_role_policy" "rds" {
 # Secrets Manager Access Policy
 # ============================================================================
 
-resource "aws_iam_role_policy" "secrets_manager" {
+resource "aws_iam_role_policy" "secrets-manager" {
   count = var.enable_secrets_manager_policy ? 1 : 0
 
   name = "${var.role_name}-secrets-manager"
@@ -275,7 +275,7 @@ resource "aws_iam_role_policy" "s3" {
 # CloudWatch Logs Access Policy
 # ============================================================================
 
-resource "aws_iam_role_policy" "cloudwatch_logs" {
+resource "aws_iam_role_policy" "cloudwatch-logs" {
   count = var.enable_cloudwatch_logs_policy ? 1 : 0
 
   name = "${var.role_name}-cloudwatch-logs"
