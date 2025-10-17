@@ -96,16 +96,31 @@ resource "aws_iam_role_policy" "ecs-task" {
 
   policy = jsonencode({
     Version = "2012-10-17"
-    Statement = [
-      {
+    Statement = concat(
+      # ECS task operations with cluster restriction
+      length(var.ecs_cluster_arns) > 0 ? [{
         Effect = "Allow"
         Action = [
           "ecs:DescribeTasks",
           "ecs:ListTasks"
         ]
         Resource = "*"
-      }
-    ]
+        Condition = {
+          ArnEquals = {
+            "ecs:cluster" = var.ecs_cluster_arns
+          }
+        }
+      }] : [],
+      # ECS task operations without restriction (backwards compatibility)
+      length(var.ecs_cluster_arns) == 0 ? [{
+        Effect = "Allow"
+        Action = [
+          "ecs:DescribeTasks",
+          "ecs:ListTasks"
+        ]
+        Resource = "*"
+      }] : []
+    )
   })
 }
 
@@ -140,15 +155,14 @@ resource "aws_iam_role_policy" "rds" {
         Resource = var.rds_db_instance_arns
       }] : [],
       # RDS IAM authentication (if using IAM database authentication)
-      (length(var.rds_cluster_arns) > 0 || length(var.rds_db_instance_arns) > 0) ? [{
+      # Users must provide explicit rds-db ARNs in the format:
+      # arn:aws:rds-db:region:account:dbuser:db-resource-id/db-username
+      length(var.rds_iam_db_user_arns) > 0 ? [{
         Effect = "Allow"
         Action = [
           "rds-db:connect"
         ]
-        Resource = concat(
-          [for arn in var.rds_cluster_arns : "${arn}/*"],
-          [for arn in var.rds_db_instance_arns : "${arn}/*"]
-        )
+        Resource = var.rds_iam_db_user_arns
       }] : []
     )
   })
@@ -292,13 +306,20 @@ resource "aws_iam_role_policy" "cloudwatch-logs" {
         ]
         Resource = "arn:aws:logs:${data.aws_region.current.id}:${data.aws_caller_identity.current.account_id}:log-group:*"
       }] : [],
-      # Write to log streams
+      # Log stream operations (requires log group ARN)
       length(var.cloudwatch_log_group_arns) > 0 ? [{
         Effect = "Allow"
         Action = [
           "logs:CreateLogStream",
-          "logs:PutLogEvents",
           "logs:DescribeLogStreams"
+        ]
+        Resource = var.cloudwatch_log_group_arns
+      }] : [],
+      # Put log events (requires log stream ARN)
+      length(var.cloudwatch_log_group_arns) > 0 ? [{
+        Effect = "Allow"
+        Action = [
+          "logs:PutLogEvents"
         ]
         Resource = [
           for arn in var.cloudwatch_log_group_arns : "${arn}:*"

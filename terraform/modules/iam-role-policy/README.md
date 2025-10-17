@@ -21,7 +21,7 @@
 
 ```hcl
 module "basic_role" {
-  source = "../../modules/iam-role-policy"
+  source = "../../"
 
   role_name          = "my-application-role"
   description        = "IAM role for my application"
@@ -47,7 +47,7 @@ module "basic_role" {
 
 ```hcl
 module "ecs_task_execution_role" {
-  source = "../../modules/iam-role-policy"
+  source = "../../"
 
   role_name          = "my-ecs-task-execution-role"
   assume_role_policy = jsonencode({
@@ -73,7 +73,7 @@ module "ecs_task_execution_role" {
 
 ```hcl
 module "ecs_task_role" {
-  source = "../../modules/iam-role-policy"
+  source = "../../"
 
   role_name          = "my-ecs-task-role"
   assume_role_policy = jsonencode({
@@ -109,7 +109,7 @@ module "ecs_task_role" {
 
 ```hcl
 module "s3_access_role" {
-  source = "../../modules/iam-role-policy"
+  source = "../../"
 
   role_name          = "my-s3-access-role"
   assume_role_policy = jsonencode({
@@ -139,7 +139,7 @@ module "s3_access_role" {
 
 ```hcl
 module "minimal_role" {
-  source = "../../modules/iam-role-policy"
+  source = "../../"
 
   role_name          = "my-minimal-role"
   assume_role_policy = jsonencode({
@@ -175,7 +175,7 @@ module "minimal_role" {
 
 ```hcl
 module "custom_role" {
-  source = "../../modules/iam-role-policy"
+  source = "../../"
 
   role_name          = "my-custom-role"
   assume_role_policy = jsonencode({

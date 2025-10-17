@@ -68,6 +68,12 @@ variable "enable_ecs_task_policy" {
   default     = false
 }
 
+variable "ecs_cluster_arns" {
+  description = "List of ECS cluster ARNs to restrict DescribeTasks and ListTasks permissions"
+  type        = list(string)
+  default     = []
+}
+
 variable "ecr_repository_arns" {
   description = "List of ECR repository ARNs for image pull permissions"
   type        = list(string)
@@ -96,6 +102,12 @@ variable "rds_cluster_arns" {
 
 variable "rds_db_instance_arns" {
   description = "List of RDS DB instance ARNs for database access"
+  type        = list(string)
+  default     = []
+}
+
+variable "rds_iam_db_user_arns" {
+  description = "List of RDS DB user ARNs for IAM database authentication (format: arn:aws:rds-db:region:account:dbuser:db-resource-id/db-username)"
   type        = list(string)
   default     = []
 }
