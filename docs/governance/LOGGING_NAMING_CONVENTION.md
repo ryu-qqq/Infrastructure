@@ -325,5 +325,5 @@ tags = merge(
 
 - [AWS CloudWatch Logs Naming Best Practices](https://docs.aws.amazon.com/AmazonCloudWatch/latest/logs/Working-with-log-groups-and-streams.html)
 - [프로젝트 Naming Convention](./NAMING_CONVENTION.md)
-- [Tagging Standards](./TAGGING_STANDARDS.md)
+- [Tagging Standards](./governance/TAGGING_STANDARDS.md)
 - [IN-116 설계 문서](../claudedocs/IN-116-logging-system-design.md)

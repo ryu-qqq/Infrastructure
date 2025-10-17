@@ -30,6 +30,12 @@ jobs:
         with:
           terraform_version: 1.6.0
 
+      - name: Setup tfsec
+        uses: aquasecurity/tfsec-action@v1.0.3
+        with:
+          version: latest
+          soft_fail: true  # Don't fail workflow, let validator script handle it
+
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
         timeout-minutes: 2  # OIDC should complete quickly
@@ -48,6 +54,7 @@ jobs:
           ./scripts/validators/check-tags.sh
           ./scripts/validators/check-encryption.sh
           ./scripts/validators/check-naming.sh
+          ./scripts/validators/check-tfsec.sh
 
           echo "✅ All governance checks passed!"
 
@@ -127,7 +134,41 @@ jobs:
               atlantisPlan = 'No changes or error reading plan file.';
             }
 
+            // Read tfsec results
+            let tfsecResults = '';
+            try {
+              const tfsecJson = JSON.parse(fs.readFileSync('tfsec-results.json', 'utf8'));
+              const results = tfsecJson.results || [];
+
+              if (results.length === 0) {
+                tfsecResults = '✅ No security issues found!';
+              } else {
+                const critical = results.filter(r => r.severity === 'CRITICAL').length;
+                const high = results.filter(r => r.severity === 'HIGH').length;
+                const medium = results.filter(r => r.severity === 'MEDIUM').length;
+                const low = results.filter(r => r.severity === 'LOW').length;
+
+                tfsecResults = `**Security Scan Summary:**\n`;
+                if (critical > 0) tfsecResults += `🚨 Critical: ${critical}\n`;
+                if (high > 0) tfsecResults += `❌ High: ${high}\n`;
+                if (medium > 0) tfsecResults += `⚠️ Medium: ${medium}\n`;
+                if (low > 0) tfsecResults += `ℹ️ Low: ${low}\n`;
+
+                if (critical + high > 0) {
+                  tfsecResults += `\n⚠️ **Action Required:** Security issues must be resolved before merging.\n`;
+                }
+              }
+            } catch (error) {
+              tfsecResults = 'Security scan results not available.';
+            }
+
             const output = `#### Terraform Plan 📋
+
+            <details><summary>🛡️ Security Scan (tfsec)</summary>
+
+            ${tfsecResults}
+
+            </details>
 
             <details><summary>Monitoring Module Plan</summary>
 

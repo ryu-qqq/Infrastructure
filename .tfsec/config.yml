@@ -1,0 +1,135 @@
+#
+# tfsec Security Scan Configuration
+#
+# This configuration file defines security baselines and rules for Terraform code scanning.
+# Based on infrastructure governance standards (docs/governance/infrastructure_governance.md)
+#
+# Usage:
+#   tfsec --config-file .tfsec/config.yml terraform/
+#
+# Documentation:
+#   https://aquasecurity.github.io/tfsec/latest/guides/configuration/
+#
+
+# Minimum severity level to report (CRITICAL, HIGH, MEDIUM, LOW)
+# Set to MEDIUM to catch most security issues while avoiding noise
+minimum_severity: MEDIUM
+
+# Exclude specific checks by rule ID
+# Use sparingly - document why each exclusion is necessary
+exclude:
+  # Example: Exclude S3 bucket versioning check for temporary buckets
+  # - aws-s3-enable-versioning
+
+  # Add exclusions only with proper justification
+  # Format: - aws-{service}-{check-name}
+
+# Severity overrides - customize severity levels for specific checks
+severity_overrides:
+  # Encryption-related checks are CRITICAL for our infrastructure
+  aws-s3-encryption-customer-key: CRITICAL
+  aws-rds-encrypt-instance-storage-data: CRITICAL
+  aws-ecr-enforce-immutable-tags: HIGH
+
+  # Public access checks
+  aws-s3-block-public-acls: CRITICAL
+  aws-s3-block-public-policy: CRITICAL
+  aws-ec2-no-public-ingress-sgr: HIGH
+  aws-rds-no-public-db-access: CRITICAL
+
+# Custom checks directory (if using custom tfsec checks)
+# custom_check_dir: .tfsec/custom_checks
+
+# Include specific paths only (relative to terraform root)
+# Useful for excluding test fixtures or examples
+include:
+  - terraform/atlantis/**
+  - terraform/logging/**
+  - terraform/monitoring/**
+  - terraform/modules/**
+
+# Exclude specific paths from scanning
+exclude_paths:
+  - terraform/.terraform/**
+  - terraform/**/.terraform/**
+  - terraform/**/test/**
+  - terraform/**/examples/**
+
+# Terraform version constraints
+terraform_version:
+  minimum: "1.5.0"
+
+# AWS-specific security rules
+# Align with governance standards
+rules:
+  # Encryption Standards (KMS required - not AES256)
+  encryption:
+    - aws-s3-encryption-customer-key
+    - aws-rds-encrypt-instance-storage-data
+    - aws-ecr-enable-image-scans
+    - aws-ebs-encryption-by-default
+
+  # Tagging Requirements (align with TAGGING_STANDARDS.md)
+  tagging:
+    required_tags:
+      - Environment
+      - Service
+      - Team
+      - Owner
+      - CostCenter
+      - ManagedBy
+      - Project
+
+  # Network Security
+  network:
+    - aws-ec2-no-public-ingress-sgr
+    - aws-ec2-no-default-vpc
+    - aws-ec2-require-vpc-flow-logs-for-all-vpcs
+
+  # IAM Security
+  iam:
+    - aws-iam-no-policy-wildcards
+    - aws-iam-no-user-attached-policies
+    - aws-iam-enforce-mfa
+
+  # Logging & Monitoring
+  logging:
+    - aws-cloudtrail-enable-log-validation
+    - aws-cloudtrail-enable-all-regions
+    - aws-s3-enable-bucket-logging
+    - aws-rds-enable-performance-insights
+
+# Report formatting options
+output:
+  format: default  # Options: default, json, csv, sarif, junit
+  include_passed: false  # Only show failures to reduce noise
+  include_ignored: true  # Show explicitly ignored checks
+
+# Exit codes
+# 0 = no issues found
+# 1 = issues found at or above minimum_severity
+fail_on_severity: MEDIUM
+
+# Soft fail mode for initial rollout
+# Set to true to report issues but not fail CI/CD pipeline
+# WARNING: Should be set to false in production
+soft_fail: false
+
+# GitHub integration options
+github:
+  enabled: true
+  # API token should be provided via GITHUB_TOKEN env var
+  # Used for PR comments and annotations
+
+# Performance options
+performance:
+  max_workers: 4  # Parallel scanning threads
+  timeout: 300    # Maximum scan duration in seconds
+
+# Custom metadata for reports
+metadata:
+  project: infrastructure
+  team: platform-team
+  governance_doc: docs/governance/infrastructure_governance.md
+  security_baseline: MEDIUM
+  last_updated: 2024-10-17

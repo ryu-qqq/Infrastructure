@@ -64,13 +64,6 @@ GitHub 저장소 설정에서 다음 Secrets를 추가해야 합니다:
 
 사용하지 않을 워크플로우 파일을 삭제하세요:
 
-```bash
-# Atlassian Actions 버전 사용 시 (권장)
-rm .github/workflows/sync-issue-to-jira-simple.yml
-
-# 또는 Simple 버전 사용 시
-rm .github/workflows/sync-issue-to-jira.yml
-```
 
 ### 2단계: GitHub Secrets 설정
 

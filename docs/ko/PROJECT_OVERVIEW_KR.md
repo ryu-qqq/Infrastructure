@@ -232,8 +232,8 @@ git push origin feature/your-feature
 - [Infrastructure PR Workflow](./infrastructure_pr.md) - PR 프로세스
 
 ### 표준 및 정책
-- [Infrastructure Governance](./infrastructure_governance.md) - 거버넌스 정책
-- [Tagging Standards](./TAGGING_STANDARDS.md) - 태깅 표준
+- [Infrastructure Governance](./governance/infrastructure_governance.md) - 거버넌스 정책
+- [Tagging Standards](./governance/TAGGING_STANDARDS.md) - 태깅 표준
 - [Naming Convention](./NAMING_CONVENTION.md) - 네이밍 규칙
 
 ### 모듈 개발

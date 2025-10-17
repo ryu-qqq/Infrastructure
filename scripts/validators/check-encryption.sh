@@ -3,7 +3,7 @@
 # check-encryption.sh - Terraform KMS Encryption Validator
 #
 # Validates that sensitive AWS resources use KMS encryption (not AES256).
-# Based on docs/infrastructure_governance.md standards.
+# Based on docs/governance/infrastructure_governance.md standards.
 #
 # Checked Resources:
 #   - ECR: encryption_type = "KMS"
@@ -304,11 +304,11 @@ if [[ $ERRORS -eq 0 && $WARNINGS -eq 0 ]]; then
     exit 0
 elif [[ $ERRORS -eq 0 ]]; then
     echo -e "${YELLOW}⚠ Warnings: $WARNINGS${NC}"
-    echo -e "${YELLOW}💡 See: docs/infrastructure_governance.md${NC}"
+    echo -e "${YELLOW}💡 See: docs/governance/infrastructure_governance.md${NC}"
     exit 0
 else
     echo -e "${RED}✗ Errors: $ERRORS${NC}"
     echo -e "${YELLOW}⚠ Warnings: $WARNINGS${NC}"
-    echo -e "${YELLOW}💡 See: docs/infrastructure_governance.md${NC}"
+    echo -e "${YELLOW}💡 See: docs/governance/infrastructure_governance.md${NC}"
     exit 1
 fi
