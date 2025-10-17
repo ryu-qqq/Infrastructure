@@ -255,6 +255,71 @@ Every deployment creates 3 tags:
 
 For detailed setup instructions, see [GitHub Actions Setup Guide](docs/guides/setup/github_actions_setup.md).
 
+### Cost Validation with Infracost
+
+Infrastructure cost changes are automatically validated during PR workflows:
+
+**Cost Policy Thresholds:**
+- 📊 **+10% Warning**: Cost increases of 10% or more trigger warnings
+- 🚫 **+30% Blocking**: Cost increases of 30% or more block the PR
+
+**What Gets Validated:**
+- Monthly cost impact for each Terraform module
+- Resource-level cost breakdown
+- Cost comparison against previous infrastructure state
+- Compliance with organizational cost policies
+
+**PR Comment Integration:**
+The Terraform Plan workflow automatically comments on PRs with:
+- 💰 Total monthly cost (current vs previous)
+- 📈 Cost increase/decrease with percentage
+- 📋 Module-level cost breakdown (monitoring, atlantis, etc.)
+- ⚠️ Policy status (OK/Warning/Blocked)
+
+**Configuration:**
+- Policy configuration: `.infracost.yml`
+- API key: `INFRACOST_API_KEY` secret (required)
+- Workflow: `.github/workflows/terraform-plan.yml`
+
+**Setup Infracost API Key:**
+1. Sign up at [Infracost](https://www.infracost.io/)
+2. Get your API key from dashboard
+3. Add to GitHub Secrets: `INFRACOST_API_KEY`
+
+**Cost Policy Example:**
+```yaml
+# .infracost.yml
+cost_policy:
+  warning_threshold_percent: 10   # Warn at +10%
+  blocking_threshold_percent: 30  # Block at +30%
+```
+
+**Manual Cost Estimation:**
+```bash
+# Install infracost (if not installed)
+brew install infracost
+
+# Set API key
+export INFRACOST_API_KEY=your_key_here
+
+# Generate cost estimate for a module
+cd terraform/monitoring
+terraform init
+terraform plan -out=tfplan
+infracost breakdown --path tfplan
+
+# Compare with previous state
+infracost diff --path tfplan
+```
+
+**Cost Report Features:**
+- Resource-level monthly cost breakdown
+- Service grouping (EC2, RDS, S3, etc.)
+- Hourly cost estimates
+- Cost change detection (+/-/unchanged)
+
+For more details, see [Infracost Documentation](https://www.infracost.io/docs/).
+
 ## Atlantis ECR Setup
 
 ### Prerequisites
