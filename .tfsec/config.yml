@@ -59,46 +59,6 @@ exclude_paths:
 terraform_version:
   minimum: "1.5.0"
 
-# AWS-specific security rules
-# Align with governance standards
-rules:
-  # Encryption Standards (KMS required - not AES256)
-  encryption:
-    - aws-s3-encryption-customer-key
-    - aws-rds-encrypt-instance-storage-data
-    - aws-ecr-enable-image-scans
-    - aws-ebs-encryption-by-default
-
-  # Tagging Requirements (align with TAGGING_STANDARDS.md)
-  tagging:
-    required_tags:
-      - Environment
-      - Service
-      - Team
-      - Owner
-      - CostCenter
-      - ManagedBy
-      - Project
-
-  # Network Security
-  network:
-    - aws-ec2-no-public-ingress-sgr
-    - aws-ec2-no-default-vpc
-    - aws-ec2-require-vpc-flow-logs-for-all-vpcs
-
-  # IAM Security
-  iam:
-    - aws-iam-no-policy-wildcards
-    - aws-iam-no-user-attached-policies
-    - aws-iam-enforce-mfa
-
-  # Logging & Monitoring
-  logging:
-    - aws-cloudtrail-enable-log-validation
-    - aws-cloudtrail-enable-all-regions
-    - aws-s3-enable-bucket-logging
-    - aws-rds-enable-performance-insights
-
 # Report formatting options
 output:
   format: default  # Options: default, json, csv, sarif, junit
