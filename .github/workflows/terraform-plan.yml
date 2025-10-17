@@ -301,9 +301,10 @@ jobs:
             try {
               const infracostJson = JSON.parse(fs.readFileSync('infracost-combined.json', 'utf8'));
 
-              const totalMonthlyCost = infracostJson.totalMonthlyCost || 0;
-              const pastMonthlyCost = infracostJson.pastTotalMonthlyCost || 0;
-              const diffMonthlyCost = infracostJson.diffTotalMonthlyCost || 0;
+              // Parse cost values as numbers (they may be strings from JSON)
+              const totalMonthlyCost = parseFloat(infracostJson.totalMonthlyCost) || 0;
+              const pastMonthlyCost = parseFloat(infracostJson.pastTotalMonthlyCost) || 0;
+              const diffMonthlyCost = parseFloat(infracostJson.diffTotalMonthlyCost) || 0;
 
               // Check if there are any projects with cost data
               const hasProjects = infracostJson.projects && infracostJson.projects.length > 0;
