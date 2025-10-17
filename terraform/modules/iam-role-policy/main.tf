@@ -14,8 +14,7 @@ resource "aws_iam_role" "this" {
   tags = merge(
     var.common_tags,
     {
-      Name        = var.role_name
-      Description = var.description != "" ? var.description : "IAM role for ${var.role_name}"
+      Name = var.role_name
     }
   )
 }
@@ -97,7 +96,7 @@ resource "aws_iam_role_policy" "ecs-task" {
   policy = jsonencode({
     Version = "2012-10-17"
     Statement = concat(
-      # ECS task operations with cluster restriction
+      # ECS task operations - restricted to specific clusters (required for security)
       length(var.ecs_cluster_arns) > 0 ? [{
         Effect = "Allow"
         Action = [
@@ -110,15 +109,6 @@ resource "aws_iam_role_policy" "ecs-task" {
             "ecs:cluster" = var.ecs_cluster_arns
           }
         }
-      }] : [],
-      # ECS task operations without restriction (backwards compatibility)
-      length(var.ecs_cluster_arns) == 0 ? [{
-        Effect = "Allow"
-        Action = [
-          "ecs:DescribeTasks",
-          "ecs:ListTasks"
-        ]
-        Resource = "*"
       }] : []
     )
   })
@@ -190,7 +180,7 @@ resource "aws_iam_role_policy" "secrets-manager" {
         ]
         Resource = var.secrets_manager_secret_arns
       }] : [],
-      # Create secret permissions
+      # Create secret permissions (with tag enforcement for security)
       var.secrets_manager_allow_create ? [{
         Effect = "Allow"
         Action = [
@@ -198,6 +188,11 @@ resource "aws_iam_role_policy" "secrets-manager" {
           "secretsmanager:TagResource"
         ]
         Resource = "*"
+        Condition = {
+          StringEquals = {
+            "aws:RequestTag/ManagedBy" = "terraform"
+          }
+        }
       }] : [],
       # Update secret permissions
       var.secrets_manager_allow_update && length(var.secrets_manager_secret_arns) > 0 ? [{
@@ -298,13 +293,13 @@ resource "aws_iam_role_policy" "cloudwatch-logs" {
   policy = jsonencode({
     Version = "2012-10-17"
     Statement = concat(
-      # Create log group permission
+      # Create log group permission (restricted to /aws/* prefix per NAMING_CONVENTION.md)
       var.cloudwatch_allow_create_log_group ? [{
         Effect = "Allow"
         Action = [
           "logs:CreateLogGroup"
         ]
-        Resource = "arn:aws:logs:${data.aws_region.current.id}:${data.aws_caller_identity.current.account_id}:log-group:*"
+        Resource = "arn:aws:logs:${data.aws_region.current.id}:${data.aws_caller_identity.current.account_id}:log-group:/aws/*"
       }] : [],
       # Log stream operations (requires log group ARN)
       length(var.cloudwatch_log_group_arns) > 0 ? [{

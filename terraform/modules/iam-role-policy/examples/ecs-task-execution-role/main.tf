@@ -29,7 +29,7 @@ module "ecs_task_execution_role" {
 
   # CloudWatch Logs 그룹
   cloudwatch_log_group_arns = [
-    "arn:aws:logs:ap-northeast-2:123456789012:log-group:/ecs/example-app"
+    "arn:aws:logs:ap-northeast-2:123456789012:log-group:/aws/ecs/production/example-app"
   ]
 
   # KMS 키 (ECR 이미지 및 로그 암호화)

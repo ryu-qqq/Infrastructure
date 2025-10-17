@@ -51,7 +51,7 @@ module "ecs_task_role" {
   # CloudWatch Logs 권한
   enable_cloudwatch_logs_policy = true
   cloudwatch_log_group_arns = [
-    "arn:aws:logs:ap-northeast-2:123456789012:log-group:/ecs/example-app"
+    "arn:aws:logs:ap-northeast-2:123456789012:log-group:/aws/ecs/production/example-app"
   ]
 
   # KMS 암호화 키

@@ -1,18 +1,18 @@
 # --- Required Variables ---
 
+variable "assume_role_policy" {
+  description = "JSON policy document for the assume role policy"
+  type        = string
+}
+
 variable "role_name" {
   description = "Name of the IAM role to create"
   type        = string
 
   validation {
-    condition     = can(regex("^[a-zA-Z0-9-_+=,.@]+$", var.role_name)) && length(var.role_name) <= 64
-    error_message = "Role name must contain only valid IAM characters and be 64 characters or less."
+    condition     = can(regex("^[a-z0-9-]+$", var.role_name)) && length(var.role_name) <= 64
+    error_message = "Role name must be kebab-case (lowercase letters, numbers, hyphens) and 64 characters or less."
   }
-}
-
-variable "assume_role_policy" {
-  description = "JSON policy document for the assume role policy"
-  type        = string
 }
 
 # --- Optional Variables (Role Configuration) ---
@@ -56,6 +56,18 @@ variable "attach_aws_managed_policies" {
 
 # --- ECS Task Policy Variables ---
 
+variable "ecr_repository_arns" {
+  description = "List of ECR repository ARNs for image pull permissions"
+  type        = list(string)
+  default     = []
+}
+
+variable "ecs_cluster_arns" {
+  description = "List of ECS cluster ARNs to restrict DescribeTasks and ListTasks permissions"
+  type        = list(string)
+  default     = []
+}
+
 variable "enable_ecs_task_execution_policy" {
   description = "Enable standard ECS task execution policy (ECR, CloudWatch Logs)"
   type        = bool
@@ -66,18 +78,6 @@ variable "enable_ecs_task_policy" {
   description = "Enable ECS task role policy with basic permissions"
   type        = bool
   default     = false
-}
-
-variable "ecs_cluster_arns" {
-  description = "List of ECS cluster ARNs to restrict DescribeTasks and ListTasks permissions"
-  type        = list(string)
-  default     = []
-}
-
-variable "ecr_repository_arns" {
-  description = "List of ECR repository ARNs for image pull permissions"
-  type        = list(string)
-  default     = []
 }
 
 variable "kms_key_arns" {
@@ -120,20 +120,8 @@ variable "enable_secrets_manager_policy" {
   default     = false
 }
 
-variable "secrets_manager_secret_arns" {
-  description = "List of Secrets Manager secret ARNs for read access"
-  type        = list(string)
-  default     = []
-}
-
 variable "secrets_manager_allow_create" {
   description = "Allow creating new secrets"
-  type        = bool
-  default     = false
-}
-
-variable "secrets_manager_allow_update" {
-  description = "Allow updating existing secrets"
   type        = bool
   default     = false
 }
@@ -144,10 +132,34 @@ variable "secrets_manager_allow_delete" {
   default     = false
 }
 
+variable "secrets_manager_allow_update" {
+  description = "Allow updating existing secrets"
+  type        = bool
+  default     = false
+}
+
+variable "secrets_manager_secret_arns" {
+  description = "List of Secrets Manager secret ARNs for read access"
+  type        = list(string)
+  default     = []
+}
+
 # --- S3 Policy Variables ---
 
 variable "enable_s3_policy" {
   description = "Enable S3 access policy"
+  type        = bool
+  default     = false
+}
+
+variable "s3_allow_list" {
+  description = "Allow listing objects in S3 buckets"
+  type        = bool
+  default     = false
+}
+
+variable "s3_allow_write" {
+  description = "Allow write operations to S3 (PutObject, DeleteObject)"
   type        = bool
   default     = false
 }
@@ -164,22 +176,10 @@ variable "s3_object_arns" {
   default     = []
 }
 
-variable "s3_allow_write" {
-  description = "Allow write operations to S3 (PutObject, DeleteObject)"
-  type        = bool
-  default     = false
-}
-
-variable "s3_allow_list" {
-  description = "Allow listing objects in S3 buckets"
-  type        = bool
-  default     = true
-}
-
 # --- CloudWatch Logs Policy Variables ---
 
-variable "enable_cloudwatch_logs_policy" {
-  description = "Enable CloudWatch Logs access policy"
+variable "cloudwatch_allow_create_log_group" {
+  description = "Allow creating new log groups"
   type        = bool
   default     = false
 }
@@ -190,10 +190,10 @@ variable "cloudwatch_log_group_arns" {
   default     = []
 }
 
-variable "cloudwatch_allow_create_log_group" {
-  description = "Allow creating new log groups"
+variable "enable_cloudwatch_logs_policy" {
+  description = "Enable CloudWatch Logs access policy"
   type        = bool
-  default     = true
+  default     = false
 }
 
 # --- Custom Inline Policy Variables ---

@@ -250,9 +250,11 @@ module "custom_role" {
 
 | Name | Description | Type | Default |
 |------|-------------|------|---------|
+| ecr_repository_arns | List of ECR repository ARNs for image pull permissions | `list(string)` | `[]` |
+| ecs_cluster_arns | List of ECS cluster ARNs to restrict DescribeTasks and ListTasks permissions | `list(string)` | `[]` |
 | enable_ecs_task_execution_policy | Enable standard ECS task execution policy (ECR, CloudWatch Logs) | `bool` | `false` |
 | enable_ecs_task_policy | Enable ECS task role policy with basic permissions | `bool` | `false` |
-| ecr_repository_arns | List of ECR repository ARNs for image pull permissions | `list(string)` | `[]` |
+| kms_key_arns | List of KMS key ARNs for decryption permissions | `list(string)` | `[]` |
 
 ### Optional Variables - RDS Policy
 
@@ -261,6 +263,7 @@ module "custom_role" {
 | enable_rds_policy | Enable RDS access policy | `bool` | `false` |
 | rds_cluster_arns | List of RDS cluster ARNs for database access | `list(string)` | `[]` |
 | rds_db_instance_arns | List of RDS DB instance ARNs for database access | `list(string)` | `[]` |
+| rds_iam_db_user_arns | List of RDS DB user ARNs for IAM database authentication | `list(string)` | `[]` |
 
 ### Optional Variables - Secrets Manager Policy
 
@@ -277,24 +280,23 @@ module "custom_role" {
 | Name | Description | Type | Default |
 |------|-------------|------|---------|
 | enable_s3_policy | Enable S3 access policy | `bool` | `false` |
+| s3_allow_list | Allow listing objects in S3 buckets | `bool` | `false` |
+| s3_allow_write | Allow write operations to S3 (PutObject, DeleteObject) | `bool` | `false` |
 | s3_bucket_arns | List of S3 bucket ARNs for access (bucket level) | `list(string)` | `[]` |
 | s3_object_arns | List of S3 object ARNs for access (object level, typically bucket_arn/*) | `list(string)` | `[]` |
-| s3_allow_write | Allow write operations to S3 (PutObject, DeleteObject) | `bool` | `false` |
-| s3_allow_list | Allow listing objects in S3 buckets | `bool` | `true` |
 
 ### Optional Variables - CloudWatch Logs Policy
 
 | Name | Description | Type | Default |
 |------|-------------|------|---------|
-| enable_cloudwatch_logs_policy | Enable CloudWatch Logs access policy | `bool` | `false` |
+| cloudwatch_allow_create_log_group | Allow creating new log groups | `bool` | `false` |
 | cloudwatch_log_group_arns | List of CloudWatch Log Group ARNs for write access | `list(string)` | `[]` |
-| cloudwatch_allow_create_log_group | Allow creating new log groups | `bool` | `true` |
+| enable_cloudwatch_logs_policy | Enable CloudWatch Logs access policy | `bool` | `false` |
 
-### Optional Variables - KMS and Custom Policies
+### Optional Variables - Custom Policies
 
 | Name | Description | Type | Default |
 |------|-------------|------|---------|
-| kms_key_arns | List of KMS key ARNs for decryption permissions | `list(string)` | `[]` |
 | custom_inline_policies | Map of custom inline policies to attach to the role | `map(object({ policy = string }))` | `{}` |
 
 ## Outputs
