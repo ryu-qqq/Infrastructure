@@ -52,6 +52,13 @@ skip-path:
 # Checks to skip (use sparingly - document justification)
 # Format: CKV_AWS_<number> for AWS checks
 skip-check:
+  # ALB HTTPS Protocol Check - Checkov dynamic block parsing bug
+  # Justification: CKV_AWS_2 fails to parse dynamic redirect blocks in ALB listeners
+  # Issue: Checkov tries to access redirect[0] but dynamic blocks use for_each
+  # Impact: False positive - actual code properly configures HTTPS redirects
+  # Reference: docs/governance/CHECKOV_POLICY_GUIDE.md - Troubleshooting section
+  - CKV_AWS_2  # ALB listener protocol HTTPS
+
   # S3 Bucket Versioning - Not required for temporary/transient buckets
   # Justification: Log aggregation buckets don't require versioning
   # - CKV_AWS_21  # S3 bucket versioning
