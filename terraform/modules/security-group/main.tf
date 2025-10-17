@@ -212,6 +212,17 @@ resource "aws_vpc_security_group_ingress_rule" "custom" {
       Name = "${var.name}-custom-ingress-${each.key}"
     }
   )
+
+  lifecycle {
+    precondition {
+      condition = (
+        (each.value.cidr_block != null ? 1 : 0) +
+        (each.value.ipv6_cidr_block != null ? 1 : 0) +
+        (each.value.source_security_group_id != null ? 1 : 0)
+      ) == 1
+      error_message = "Exactly one of cidr_block, ipv6_cidr_block, or source_security_group_id must be specified for custom ingress rule ${each.key}."
+    }
+  }
 }
 
 # --- Default Egress Rule ---
@@ -242,8 +253,9 @@ resource "aws_vpc_security_group_egress_rule" "custom" {
   to_port           = each.value.to_port
   ip_protocol       = each.value.protocol
 
-  cidr_ipv4 = each.value.cidr_block
-  cidr_ipv6 = each.value.ipv6_cidr_block
+  cidr_ipv4                    = each.value.cidr_block
+  cidr_ipv6                    = each.value.ipv6_cidr_block
+  referenced_security_group_id = each.value.destination_security_group_id
 
   description = coalesce(each.value.description, "Custom egress rule ${each.key}")
 
@@ -253,4 +265,15 @@ resource "aws_vpc_security_group_egress_rule" "custom" {
       Name = "${var.name}-custom-egress-${each.key}"
     }
   )
+
+  lifecycle {
+    precondition {
+      condition = (
+        (each.value.cidr_block != null ? 1 : 0) +
+        (each.value.ipv6_cidr_block != null ? 1 : 0) +
+        (each.value.destination_security_group_id != null ? 1 : 0)
+      ) == 1
+      error_message = "Exactly one of cidr_block, ipv6_cidr_block, or destination_security_group_id must be specified for custom egress rule ${each.key}."
+    }
+  }
 }
