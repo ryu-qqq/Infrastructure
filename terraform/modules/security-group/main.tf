@@ -23,37 +23,37 @@ resource "aws_security_group" "this" {
 # --- ALB Security Group Rules ---
 
 resource "aws_vpc_security_group_ingress_rule" "alb-http" {
-  count = var.type == "alb" && var.alb_enable_http ? 1 : 0
+  for_each = var.type == "alb" && var.alb_enable_http ? toset(var.alb_ingress_cidr_blocks) : []
 
   security_group_id = aws_security_group.this.id
   from_port         = var.alb_http_port
   to_port           = var.alb_http_port
   ip_protocol       = "tcp"
-  cidr_ipv4         = var.alb_ingress_cidr_blocks[0]
+  cidr_ipv4         = each.value
   description       = "Allow HTTP traffic from internet"
 
   tags = merge(
     var.common_tags,
     {
-      Name = "${var.name}-http-ingress"
+      Name = "${var.name}-http-ingress-${replace(each.value, "/", "-")}"
     }
   )
 }
 
 resource "aws_vpc_security_group_ingress_rule" "alb-https" {
-  count = var.type == "alb" && var.alb_enable_https ? 1 : 0
+  for_each = var.type == "alb" && var.alb_enable_https ? toset(var.alb_ingress_cidr_blocks) : []
 
   security_group_id = aws_security_group.this.id
   from_port         = var.alb_https_port
   to_port           = var.alb_https_port
   ip_protocol       = "tcp"
-  cidr_ipv4         = var.alb_ingress_cidr_blocks[0]
+  cidr_ipv4         = each.value
   description       = "Allow HTTPS traffic from internet"
 
   tags = merge(
     var.common_tags,
     {
-      Name = "${var.name}-https-ingress"
+      Name = "${var.name}-https-ingress-${replace(each.value, "/", "-")}"
     }
   )
 }
@@ -200,8 +200,8 @@ resource "aws_vpc_security_group_ingress_rule" "custom" {
   to_port           = each.value.to_port
   ip_protocol       = each.value.protocol
 
-  cidr_ipv4                    = try(each.value.cidr_blocks[0], null)
-  cidr_ipv6                    = try(each.value.ipv6_cidr_blocks[0], null)
+  cidr_ipv4                    = each.value.cidr_block
+  cidr_ipv6                    = each.value.ipv6_cidr_block
   referenced_security_group_id = each.value.source_security_group_id
 
   description = coalesce(each.value.description, "Custom ingress rule ${each.key}")
@@ -242,8 +242,8 @@ resource "aws_vpc_security_group_egress_rule" "custom" {
   to_port           = each.value.to_port
   ip_protocol       = each.value.protocol
 
-  cidr_ipv4 = try(each.value.cidr_blocks[0], null)
-  cidr_ipv6 = try(each.value.ipv6_cidr_blocks[0], null)
+  cidr_ipv4 = each.value.cidr_block
+  cidr_ipv6 = each.value.ipv6_cidr_block
 
   description = coalesce(each.value.description, "Custom egress rule ${each.key}")
 
