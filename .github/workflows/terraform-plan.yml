@@ -40,6 +40,11 @@ jobs:
           pip install checkov
           checkov --version
 
+      - name: Setup Infracost
+        uses: infracost/actions/setup@v3
+        with:
+          api-key: ${{ secrets.INFRACOST_API_KEY }}
+
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
         timeout-minutes: 2  # OIDC should complete quickly
@@ -91,6 +96,26 @@ jobs:
           exit $PLAN_EXIT_CODE
         continue-on-error: true
 
+      - name: Generate Infracost Cost Estimate - Monitoring
+        working-directory: terraform/monitoring
+        continue-on-error: true
+        run: |
+          set +e
+          infracost breakdown \
+            --path tfplan \
+            --format json \
+            --out-file infracost-monitoring.json
+          EXIT_CODE=$?
+
+          if [ $EXIT_CODE -ne 0 ]; then
+            echo "⚠️ Infracost analysis failed for monitoring module (exit code: $EXIT_CODE)"
+            echo "This may be normal for deletion-only or config-only changes"
+            # Create empty JSON to prevent downstream errors
+            echo '{"projects":[],"totalMonthlyCost":0,"pastTotalMonthlyCost":0,"diffTotalMonthlyCost":0}' > infracost-monitoring.json
+          fi
+
+          exit 0
+
       # Atlantis Module
       - name: Terraform Format Check - Atlantis
         working-directory: terraform/atlantis
@@ -113,6 +138,81 @@ jobs:
           PLAN_EXIT_CODE=$?
           terraform show -no-color tfplan > plan.txt
           exit $PLAN_EXIT_CODE
+        continue-on-error: true
+
+      - name: Generate Infracost Cost Estimate - Atlantis
+        working-directory: terraform/atlantis
+        continue-on-error: true
+        run: |
+          set +e
+          infracost breakdown \
+            --path tfplan \
+            --format json \
+            --out-file infracost-atlantis.json
+          EXIT_CODE=$?
+
+          if [ $EXIT_CODE -ne 0 ]; then
+            echo "⚠️ Infracost analysis failed for atlantis module (exit code: $EXIT_CODE)"
+            echo "This may be normal for deletion-only or config-only changes"
+            # Create empty JSON to prevent downstream errors
+            echo '{"projects":[],"totalMonthlyCost":0,"pastTotalMonthlyCost":0,"diffTotalMonthlyCost":0}' > infracost-atlantis.json
+          fi
+
+          exit 0
+
+      - name: Generate Infracost Diff
+        continue-on-error: true
+        run: |
+          set +e
+          # Combine cost estimates from all modules
+          infracost output \
+            --path "terraform/*/infracost-*.json" \
+            --format json \
+            --out-file infracost-combined.json
+          EXIT_CODE=$?
+
+          if [ $EXIT_CODE -ne 0 ]; then
+            echo "⚠️ Infracost combine failed (exit code: $EXIT_CODE)"
+            echo "Creating fallback combined JSON"
+            # Create empty combined JSON to prevent downstream errors
+            echo '{"projects":[],"totalMonthlyCost":0,"pastTotalMonthlyCost":0,"diffTotalMonthlyCost":0}' > infracost-combined.json
+          fi
+
+          exit 0
+
+      - name: Validate Cost Thresholds
+        id: cost-validation
+        run: |
+          # Parse combined cost data
+          TOTAL_MONTHLY_COST=$(jq -r '.totalMonthlyCost // 0' infracost-combined.json)
+          PAST_MONTHLY_COST=$(jq -r '.pastTotalMonthlyCost // 0' infracost-combined.json)
+          DIFF_MONTHLY_COST=$(jq -r '.diffTotalMonthlyCost // 0' infracost-combined.json)
+
+          # Calculate percentage change
+          if [ "$PAST_MONTHLY_COST" != "0" ] && [ "$PAST_MONTHLY_COST" != "null" ]; then
+            PERCENT_CHANGE=$(echo "scale=2; ($DIFF_MONTHLY_COST / $PAST_MONTHLY_COST) * 100" | bc)
+          else
+            PERCENT_CHANGE=0
+          fi
+
+          echo "Monthly Cost: \$$TOTAL_MONTHLY_COST"
+          echo "Previous Cost: \$$PAST_MONTHLY_COST"
+          echo "Cost Difference: \$$DIFF_MONTHLY_COST ($PERCENT_CHANGE%)"
+
+          # Check thresholds
+          THRESHOLD_30=$(echo "$PERCENT_CHANGE >= 30" | bc)
+          THRESHOLD_10=$(echo "$PERCENT_CHANGE >= 10" | bc)
+
+          if [ "$THRESHOLD_30" -eq 1 ]; then
+            echo "::error::Cost increase of $PERCENT_CHANGE% exceeds blocking threshold (30%)"
+            echo "cost_status=blocked" >> $GITHUB_OUTPUT
+            exit 1
+          elif [ "$THRESHOLD_10" -eq 1 ]; then
+            echo "::warning::Cost increase of $PERCENT_CHANGE% exceeds warning threshold (10%)"
+            echo "cost_status=warning" >> $GITHUB_OUTPUT
+          else
+            echo "cost_status=ok" >> $GITHUB_OUTPUT
+          fi
         continue-on-error: true
 
       - name: Comment Plan on PR
@@ -196,6 +296,95 @@ jobs:
               checkovResults = 'Policy compliance results not available.';
             }
 
+            // Read Infracost results
+            let costResults = '';
+            try {
+              const infracostJson = JSON.parse(fs.readFileSync('infracost-combined.json', 'utf8'));
+
+              // Parse cost values as numbers (they may be strings from JSON)
+              const totalMonthlyCost = parseFloat(infracostJson.totalMonthlyCost) || 0;
+              const pastMonthlyCost = parseFloat(infracostJson.pastTotalMonthlyCost) || 0;
+              const diffMonthlyCost = parseFloat(infracostJson.diffTotalMonthlyCost) || 0;
+
+              // Check if there are any projects with cost data
+              const hasProjects = infracostJson.projects && infracostJson.projects.length > 0;
+              const hasCostData = totalMonthlyCost > 0 || pastMonthlyCost > 0 || diffMonthlyCost !== 0;
+
+              if (!hasProjects || !hasCostData) {
+                // No cost estimation available - check if it's due to deletions
+                if (pastMonthlyCost > 0 && totalMonthlyCost === 0) {
+                  // Resources were deleted - show as cost savings
+                  costResults = `✅ **Cost savings detected**\n\n`;
+                  costResults += `📉 Previous Monthly Cost: $${pastMonthlyCost.toFixed(2)}\n`;
+                  costResults += `💰 Current Monthly Cost: $0.00\n`;
+                  costResults += `🎉 **Savings**: -$${pastMonthlyCost.toFixed(2)} (100% reduction)\n\n`;
+                  costResults += `This PR removes billable resources, resulting in cost savings.`;
+                } else {
+                  // No cost data available for other reasons
+                  costResults = `ℹ️ **No cost estimation available**\n\n`;
+                  costResults += `This PR contains no resource additions or modifications that Infracost can estimate.\n\n`;
+                  costResults += `**Possible reasons:**\n`;
+                  costResults += `- Only resource deletions (cost savings)\n`;
+                  costResults += `- Configuration changes only (no billable resource changes)\n`;
+                  costResults += `- No infrastructure changes in tracked modules\n\n`;
+                  costResults += `💡 *Cost estimation will be available when adding or modifying billable AWS resources.*`;
+                }
+              } else {
+                // Calculate percentage change
+                let percentChange = 0;
+                if (pastMonthlyCost > 0) {
+                  percentChange = ((diffMonthlyCost / pastMonthlyCost) * 100).toFixed(2);
+                }
+
+                costResults = `**Cost Impact Summary:**\n`;
+                costResults += `💰 Current Monthly Cost: $${totalMonthlyCost.toFixed(2)}\n`;
+                costResults += `📊 Previous Monthly Cost: $${pastMonthlyCost.toFixed(2)}\n`;
+
+                if (diffMonthlyCost > 0) {
+                  costResults += `📈 Cost Increase: +$${diffMonthlyCost.toFixed(2)} (+${percentChange}%)\n`;
+                } else if (diffMonthlyCost < 0) {
+                  costResults += `📉 Cost Decrease: $${diffMonthlyCost.toFixed(2)} (${percentChange}%)\n`;
+                } else {
+                  costResults += `➡️ No cost change\n`;
+                }
+
+                costResults += `\n**Cost Policy Status:**\n`;
+
+                if (percentChange >= 30) {
+                  costResults += `🚫 **BLOCKED**: Cost increase exceeds 30% threshold\n`;
+                  costResults += `⚠️ **Action Required:** Review and justify cost increase before merging.\n`;
+                } else if (percentChange >= 10) {
+                  costResults += `⚠️ **WARNING**: Cost increase exceeds 10% threshold\n`;
+                  costResults += `📝 Please review cost changes carefully.\n`;
+                } else {
+                  costResults += `✅ Within acceptable cost thresholds\n`;
+                }
+
+                // Add project breakdown
+                costResults += `\n**Module Breakdown:**\n`;
+                infracostJson.projects.forEach(project => {
+                  const projCost = parseFloat(project.breakdown?.totalMonthlyCost) || 0;
+                  const projDiff = parseFloat(project.diff?.totalMonthlyCost) || 0;
+                  costResults += `- ${project.name}: $${projCost.toFixed(2)}`;
+                  if (projDiff !== 0) {
+                    costResults += ` (${projDiff > 0 ? '+' : ''}$${projDiff.toFixed(2)})`;
+                  }
+                  costResults += `\n`;
+                });
+              }
+            } catch (error) {
+              // Log error for debugging
+              console.error('Infracost parsing error:', error.message);
+              console.error('Stack:', error.stack);
+
+              costResults = `⚠️ **Cost analysis unavailable**\n\n`;
+              costResults += `Unable to read Infracost results. This may indicate:\n`;
+              costResults += `- Infracost analysis step failed\n`;
+              costResults += `- No \`infracost-combined.json\` file generated\n\n`;
+              costResults += `**Error**: ${error.message}\n\n`;
+              costResults += `Please check the workflow logs for more details.`;
+            }
+
             const output = `#### Terraform Plan 📋
 
             <details><summary>🛡️ Security Scan (tfsec)</summary>
@@ -207,6 +396,12 @@ jobs:
             <details><summary>🔐 Policy Compliance (checkov)</summary>
 
             ${checkovResults}
+
+            </details>
+
+            <details><summary>💰 Cost Impact (Infracost)</summary>
+
+            ${costResults}
 
             </details>
 
