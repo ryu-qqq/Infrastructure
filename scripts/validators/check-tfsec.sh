@@ -88,8 +88,6 @@ tfsec "$TERRAFORM_DIR" \
     --soft-fail \
     --minimum-severity MEDIUM \
     2>&1
-
-TFSEC_EXIT_CODE=$?
 set -e
 
 # Check if output file was created
@@ -122,7 +120,7 @@ if command -v jq >/dev/null 2>&1; then
     if [[ $MEDIUM_COUNT -gt 0 ]]; then
         echo -e "${YELLOW}⚠️  MEDIUM Issues: $MEDIUM_COUNT${NC}"
         jq -r '.results[] | select(.severity == "MEDIUM") | "  [\(.rule_id)] \(.description)\n  File: \(.location.filename):\(.location.start_line)\n"' "$OUTPUT_FILE"
-        ((WARNINGS += MEDIUM_COUNT))
+        ((ERRORS += MEDIUM_COUNT))
     fi
 
     if [[ $LOW_COUNT -gt 0 ]]; then
@@ -136,8 +134,8 @@ else
 
     # Fallback: just check if there are any results
     if grep -q '"results":\s*\[\s*{' "$OUTPUT_FILE"; then
-        echo -e "${YELLOW}Security issues found - check $OUTPUT_FILE for details${NC}"
-        WARNINGS=1
+        echo -e "${RED}Security issues found - check $OUTPUT_FILE for details${NC}"
+        ERRORS=1
     fi
 fi
 
@@ -162,18 +160,13 @@ echo -e "\n${CYAN}📄 Detailed results: $OUTPUT_FILE${NC}"
 
 # Final result
 echo ""
-if [[ $ERRORS -eq 0 && $WARNINGS -eq 0 ]]; then
+if [[ $ERRORS -eq 0 ]]; then
     echo -e "${GREEN}✓ No security issues found!${NC}"
     echo -e "${GREEN}✓ Terraform code meets security standards${NC}"
-    exit 0
-elif [[ $ERRORS -eq 0 ]]; then
-    echo -e "${YELLOW}⚠ Warnings: $WARNINGS${NC}"
-    echo -e "${YELLOW}💡 See: .tfsec/config.yml for security baseline${NC}"
-    echo -e "${YELLOW}📖 Docs: docs/governance/infrastructure_governance.md${NC}"
+    [[ $LOW_COUNT -gt 0 ]] && echo -e "${CYAN}ℹ️  Note: $LOW_COUNT low severity issues found (non-blocking)${NC}"
     exit 0
 else
-    echo -e "${RED}✗ Errors: $ERRORS (Critical: $CRITICAL_COUNT, High: $HIGH_COUNT)${NC}"
-    echo -e "${YELLOW}⚠ Warnings: $WARNINGS (Medium: $MEDIUM_COUNT)${NC}"
+    echo -e "${RED}✗ Errors: $ERRORS (Critical: $CRITICAL_COUNT, High: $HIGH_COUNT, Medium: $MEDIUM_COUNT)${NC}"
     echo -e "\n${RED}❌ Security issues must be resolved${NC}"
     echo -e "${YELLOW}💡 Review: $OUTPUT_FILE${NC}"
     echo -e "${YELLOW}📖 Security Standards: docs/governance/infrastructure_governance.md${NC}"
