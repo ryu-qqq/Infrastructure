@@ -22,7 +22,7 @@ resource "aws_security_group" "this" {
 
 # --- ALB Security Group Rules ---
 
-resource "aws_vpc_security_group_ingress_rule" "alb_http" {
+resource "aws_vpc_security_group_ingress_rule" "alb-http" {
   count = var.type == "alb" && var.alb_enable_http ? 1 : 0
 
   security_group_id = aws_security_group.this.id
@@ -40,7 +40,7 @@ resource "aws_vpc_security_group_ingress_rule" "alb_http" {
   )
 }
 
-resource "aws_vpc_security_group_ingress_rule" "alb_https" {
+resource "aws_vpc_security_group_ingress_rule" "alb-https" {
   count = var.type == "alb" && var.alb_enable_https ? 1 : 0
 
   security_group_id = aws_security_group.this.id
@@ -60,7 +60,7 @@ resource "aws_vpc_security_group_ingress_rule" "alb_https" {
 
 # --- ECS Security Group Rules ---
 
-resource "aws_vpc_security_group_ingress_rule" "ecs_from_alb" {
+resource "aws_vpc_security_group_ingress_rule" "ecs-from-alb" {
   count = var.type == "ecs" && var.ecs_ingress_from_alb_sg_id != null ? 1 : 0
 
   security_group_id            = aws_security_group.this.id
@@ -78,7 +78,7 @@ resource "aws_vpc_security_group_ingress_rule" "ecs_from_alb" {
   )
 }
 
-resource "aws_vpc_security_group_ingress_rule" "ecs_additional" {
+resource "aws_vpc_security_group_ingress_rule" "ecs-additional" {
   for_each = var.type == "ecs" ? toset(var.ecs_additional_ingress_sg_ids) : []
 
   security_group_id            = aws_security_group.this.id
@@ -98,7 +98,7 @@ resource "aws_vpc_security_group_ingress_rule" "ecs_additional" {
 
 # --- RDS Security Group Rules ---
 
-resource "aws_vpc_security_group_ingress_rule" "rds_from_ecs" {
+resource "aws_vpc_security_group_ingress_rule" "rds-from-ecs" {
   count = var.type == "rds" && var.rds_ingress_from_ecs_sg_id != null ? 1 : 0
 
   security_group_id            = aws_security_group.this.id
@@ -116,7 +116,7 @@ resource "aws_vpc_security_group_ingress_rule" "rds_from_ecs" {
   )
 }
 
-resource "aws_vpc_security_group_ingress_rule" "rds_additional" {
+resource "aws_vpc_security_group_ingress_rule" "rds-additional" {
   for_each = var.type == "rds" ? toset(var.rds_additional_ingress_sg_ids) : []
 
   security_group_id            = aws_security_group.this.id
@@ -134,7 +134,7 @@ resource "aws_vpc_security_group_ingress_rule" "rds_additional" {
   )
 }
 
-resource "aws_vpc_security_group_ingress_rule" "rds_cidr" {
+resource "aws_vpc_security_group_ingress_rule" "rds-cidr" {
   for_each = var.type == "rds" ? toset(var.rds_ingress_cidr_blocks) : []
 
   security_group_id = aws_security_group.this.id
@@ -154,7 +154,7 @@ resource "aws_vpc_security_group_ingress_rule" "rds_cidr" {
 
 # --- VPC Endpoint Security Group Rules ---
 
-resource "aws_vpc_security_group_ingress_rule" "vpc_endpoint_cidr" {
+resource "aws_vpc_security_group_ingress_rule" "vpc-endpoint-cidr" {
   for_each = var.type == "vpc-endpoint" ? toset(var.vpc_endpoint_ingress_cidr_blocks) : []
 
   security_group_id = aws_security_group.this.id
@@ -172,7 +172,7 @@ resource "aws_vpc_security_group_ingress_rule" "vpc_endpoint_cidr" {
   )
 }
 
-resource "aws_vpc_security_group_ingress_rule" "vpc_endpoint_sg" {
+resource "aws_vpc_security_group_ingress_rule" "vpc-endpoint-sg" {
   for_each = var.type == "vpc-endpoint" ? toset(var.vpc_endpoint_ingress_sg_ids) : []
 
   security_group_id            = aws_security_group.this.id
