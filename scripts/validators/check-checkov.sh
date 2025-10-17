@@ -95,13 +95,12 @@ echo -e "  • PCI-DSS v3.2.1"
 echo -e "  • HIPAA"
 echo -e "  • ISO/IEC 27001\n"
 
-# Run checkov with JSON output directly to file
+# Run checkov with JSON output to file
 set +e
 checkov -d "$TERRAFORM_DIR" \
     $CONFIG_ARG \
     --output json \
-    --soft-fail \
-    2>&1 | tee "$OUTPUT_JSON" > /dev/null
+    --soft-fail > "$OUTPUT_JSON"
 
 CHECKOV_EXIT_CODE=$?
 set -e

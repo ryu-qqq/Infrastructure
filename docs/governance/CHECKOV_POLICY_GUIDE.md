@@ -72,13 +72,14 @@ Checkov를 통해 인프라 코드에 대한 다음을 보장합니다:
 
 ### `.checkov.yml` 구조
 
+> **참고**: 이 프로젝트의 `.checkov.yml` 파일은 CI/CD 유연성을 위해 최소 설정만 포함합니다.
+> 대부분의 옵션(`output`, `severity`, `parallel` 등)은 `scripts/validators/check-checkov.sh` 스크립트에서 CLI 플래그로 관리됩니다.
+
 ```yaml
 # Framework 설정
+# 'terraform' 프레임워크는 CIS AWS, PCI-DSS, HIPAA, ISO27001 등의 주요 규정 준수 검사를 포함합니다.
 framework:
-  - cis_aws    # CIS AWS Foundations Benchmark
-  - pci        # PCI-DSS compliance
-  - hipaa      # HIPAA compliance
-  - iso27001   # ISO 27001 compliance
+  - terraform
 
 # 스캔 대상 디렉토리
 directory:
@@ -95,31 +96,49 @@ skip-path:
   - terraform/.terraform/**
   - terraform/**/test/**
   - terraform/**/examples/**
+  - "**/*.tfvars"  # Variable files may contain sensitive data patterns
 
-# Skip 할 체크
+# Skip 할 체크 (정당한 사유와 함께 신중하게 사용)
 skip-check:
   # 예시: S3 버킷 버저닝 - 임시 버킷에는 불필요
+  # Justification: 로그 수집용 임시 버킷으로 버저닝 불필요
+  # Review Date: 2025-04-01
+  # Approved By: platform-team
   # - CKV_AWS_21
 
-# 심각도 설정
-check-severity: MEDIUM
-skip-severity: LOW
+# Soft fail 설정
+# CI에서는 스크립트가 심각도(CRITICAL/HIGH/MEDIUM)에 따라 실패를 결정합니다.
+soft-fail: false
 
-# 출력 설정
-output: cli
-output-file-path: checkov-results.json
-output-format:
-  - json
-  - sarif
-  - junitxml
+# Compact output
+compact: true
 
-# 성능 설정
-enable-parallel: true
-evaluate-variables: true
+# Quiet mode
+quiet: false
+```
+
+#### CLI 플래그로 관리되는 옵션
+
+다음 옵션들은 `check-checkov.sh` 스크립트에서 CLI 플래그로 제어됩니다:
+
+```bash
+# 출력 형식
+--output json                  # JSON 출력
+
+# 심각도 필터링
+--soft-fail                    # 실패 처리 방식 (스크립트에서 관리)
+
+# 성능 옵션
+--download-external-modules false  # 외부 모듈 다운로드 비활성화
 
 # 시크릿 스캔
-enable-secret-scan: true
+--enable-secret-scan-all-files    # 전체 파일 시크릿 스캔 (필요시)
 ```
+
+**왜 이렇게 분리했나요?**
+- **유연성**: 로컬과 CI에서 다른 옵션 사용 가능
+- **관리 용이성**: 스크립트 수정으로 옵션 변경 가능 (설정 파일 재배포 불필요)
+- **호환성**: Checkov 버전 업데이트 시 호환성 문제 최소화
 
 ---
 
