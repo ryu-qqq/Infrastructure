@@ -691,8 +691,8 @@ GitHub Actions에서 동일한 스크립트 사용:
 ## 참고 문서
 
 ### 거버넌스 관련
-- [Infrastructure Governance](./governance/infrastructure_governance.md) - 거버넌스 정책
-- [Tagging Standards](./governance/TAGGING_STANDARDS.md) - 태깅 표준
+- [Infrastructure Governance](../governance/infrastructure_governance.md) - 거버넌스 정책
+- [Tagging Standards](../governance/TAGGING_STANDARDS.md) - 태깅 표준
 - [Naming Convention](./NAMING_CONVENTION.md) - 네이밍 규칙
 
 ### 개발 관련

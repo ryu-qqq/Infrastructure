@@ -263,7 +263,7 @@ _Optional: List low severity issues for awareness_
 - [Infrastructure Governance](./infrastructure_governance.md)
 - [Tagging Standards](./TAGGING_STANDARDS.md)
 - [Naming Conventions](./NAMING_CONVENTION.md)
-- [Security Baseline](./.tfsec/config.yml)
+- [Security Baseline](../../.tfsec/config.yml)
 
 ---
 

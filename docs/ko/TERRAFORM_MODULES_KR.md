@@ -608,8 +608,8 @@ module "log_group" {
 - [버전 관리 가이드](./VERSIONING.md) - 버전 관리 규칙
 
 ### 거버넌스 관련
-- [Infrastructure Governance](./governance/infrastructure_governance.md) - 거버넌스 정책
-- [Tagging Standards](./governance/TAGGING_STANDARDS.md) - 태깅 표준
+- [Infrastructure Governance](../governance/infrastructure_governance.md) - 거버넌스 정책
+- [Tagging Standards](../governance/TAGGING_STANDARDS.md) - 태깅 표준
 - [Naming Convention](./NAMING_CONVENTION.md) - 네이밍 규칙
 
 ### Terraform 공식 문서

@@ -254,9 +254,9 @@ adot_image_version    = "v0.42.0"
 
 ### Runbook
 대응 절차는 `docs/runbooks/` 참조:
-- [ECS High CPU](../../../docs/runbooks/ecs-high-cpu.md)
-- [ECS Memory Critical](../../../docs/runbooks/ecs-memory-critical.md)
-- [ECS Task Count Zero](../../../docs/runbooks/ecs-task-count-zero.md)
+- [ECS High CPU](../../docs/runbooks/ecs-high-cpu.md)
+- [ECS Memory Critical](../../docs/runbooks/ecs-memory-critical.md)
+- [ECS Task Count Zero](../../docs/runbooks/ecs-task-count-zero.md)
 
 ### 테스트
 ```bash

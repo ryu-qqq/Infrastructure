@@ -136,8 +136,8 @@ module "{module_name}" {
 ## Related Documentation
 
 <!-- 관련 문서 링크 -->
-- [모듈 디렉터리 구조](../../../docs/MODULES_DIRECTORY_STRUCTURE.md)
-- [태그 표준](../../../governance/TAGGING_STANDARDS.md)
+- [모듈 디렉터리 구조](../../docs/MODULES_DIRECTORY_STRUCTURE.md)
+- [태그 표준](../../docs/governance/TAGGING_STANDARDS.md)
 - [{관련 문서 1}](링크)
 - [{관련 문서 2}](링크)
 
