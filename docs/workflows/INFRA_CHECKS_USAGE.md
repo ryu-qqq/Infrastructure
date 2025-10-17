@@ -193,6 +193,8 @@ jobs:
       run_conftest: true
       run_infracost: false  # Skip cost analysis
       fail_on_security_issues: true
+    secrets:
+      AWS_ROLE_ARN: ${{ secrets.AWS_ROLE_ARN }}
 ```
 
 ### Example 4: Cost Analysis Only
@@ -380,27 +382,22 @@ The workflow posts a comprehensive report as a PR comment:
 
 Enable detailed logging for troubleshooting:
 
-**Step-level debug logs** (single workflow run):
-```yaml
-jobs:
-  infrastructure-checks:
-    uses: ryu-qqq/Infrastructure/.github/workflows/infra-checks.yml@main
-    with:
-      # ... other inputs
-    secrets:
-      # ... secrets
-    env:
-      ACTIONS_STEP_DEBUG: true
-```
+**Step-level debug logs**:
 
-**Runner diagnostic logs** (repository-level):
+To enable step-level debug logs, you must set the following secret in the repository that contains the workflow: `ACTIONS_STEP_DEBUG` to `true`.
+
+1. Go to repository **Settings** → **Secrets and variables** → **Actions**.
+2. Create a new repository secret named `ACTIONS_STEP_DEBUG` with the value `true`.
+3. Re-run the workflow to see the debug logs.
+
+**Runner diagnostic logs**:
 
 Set the `ACTIONS_RUNNER_DEBUG` repository secret to `true`:
-1. Go to repository Settings → Secrets and variables → Actions
+1. Go to repository **Settings** → **Secrets and variables** → **Actions**
 2. Create new repository secret: `ACTIONS_RUNNER_DEBUG` = `true`
 3. Re-run the workflow
 
-**Note**: Runner diagnostic logging must be enabled via repository secrets, not environment variables in the workflow file.
+**Note**: Both debug modes must be enabled via repository secrets, not environment variables in the workflow file. This is because the `env` context from the calling workflow is not passed down to reusable workflows.
 
 ## Best Practices
 
