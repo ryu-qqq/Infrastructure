@@ -1,24 +1,45 @@
 # OPA (Open Policy Agent) Policies
 
-Terraform 인프라 코드의 태그 및 네이밍 규약 준수를 검증하는 OPA 정책입니다.
+Terraform 인프라 코드의 보안, 규정 준수, 네이밍 규약을 검증하는 OPA/Conftest 정책입니다.
 
 ## 설치
 
-### macOS (Homebrew)
+### OPA (Open Policy Agent)
+
+#### macOS (Homebrew)
 ```bash
 brew install opa
 ```
 
-### Linux
+#### Linux
 ```bash
 curl -L -o opa https://openpolicyagent.org/downloads/latest/opa_linux_amd64
 chmod +x opa
 sudo mv opa /usr/local/bin/
 ```
 
-### Windows (Chocolatey)
+#### Windows (Chocolatey)
 ```powershell
 choco install opa
+```
+
+### Conftest
+
+#### macOS (Homebrew)
+```bash
+brew install conftest
+```
+
+#### Linux
+```bash
+CONFTEST_VERSION=0.49.1
+curl -L "https://github.com/open-policy-agent/conftest/releases/download/v${CONFTEST_VERSION}/conftest_${CONFTEST_VERSION}_Linux_x86_64.tar.gz" | tar xz
+sudo mv conftest /usr/local/bin/
+```
+
+#### Windows (Scoop)
+```powershell
+scoop install conftest
 ```
 
 ## 정책 구조
@@ -26,17 +47,42 @@ choco install opa
 ```
 policies/
 ├── tagging/
-│   ├── required_tags.rego       # 필수 태그 검증 정책
-│   └── required_tags_test.rego  # 태그 정책 테스트
+│   ├── required_tags.rego            # 필수 태그 검증 정책
+│   └── required_tags_test.rego       # 태그 정책 테스트
 ├── naming/
-│   ├── resource_naming.rego     # 네이밍 규약 검증 정책
-│   └── resource_naming_test.rego # 네이밍 정책 테스트
-└── README.md                     # 이 파일
+│   ├── resource_naming.rego          # 네이밍 규약 검증 정책
+│   └── resource_naming_test.rego     # 네이밍 정책 테스트
+├── security_groups/
+│   ├── security_group_rules.rego     # 보안 그룹 규칙 검증 정책
+│   └── security_group_rules_test.rego # 보안 그룹 정책 테스트
+├── public_resources/
+│   ├── public_access.rego            # 공개 리소스 접근 검증 정책
+│   └── public_access_test.rego       # 공개 리소스 정책 테스트
+└── README.md                          # 이 파일
 ```
 
 ## 사용 방법
 
-### 1. Terraform Plan 생성
+### 빠른 시작 (Conftest 사용)
+
+```bash
+# 1. Terraform Plan 생성
+cd terraform/your-module
+terraform init
+terraform plan -out=tfplan.binary
+terraform show -json tfplan.binary > tfplan.json
+
+# 2. Conftest로 정책 검증
+cd ../../  # 프로젝트 루트로 이동
+conftest test tfplan.json --config conftest.toml
+
+# 또는 자동화 스크립트 사용
+./scripts/policy/run-conftest.sh terraform
+```
+
+### 수동 검증 (OPA 사용)
+
+#### 1. Terraform Plan 생성
 
 ```bash
 cd terraform/kms  # 또는 다른 모듈
@@ -44,7 +90,7 @@ terraform plan -out=tfplan.binary
 terraform show -json tfplan.binary > tfplan.json
 ```
 
-### 2. OPA 정책 검증
+#### 2. OPA 정책 검증
 
 ```bash
 # 모든 정책 평가
@@ -53,12 +99,14 @@ opa eval --data policies/ --input tfplan.json "data.terraform"
 # 위반 사항만 확인
 opa eval --data policies/ --input tfplan.json "data.terraform.tagging.required_tags.deny"
 opa eval --data policies/ --input tfplan.json "data.terraform.naming.resource_naming.deny"
+opa eval --data policies/ --input tfplan.json "data.terraform.security.security_groups.deny"
+opa eval --data policies/ --input tfplan.json "data.terraform.security.public_resources.deny"
 
 # JSON 출력
 opa eval --format pretty --data policies/ --input tfplan.json "data.terraform" > opa-result.json
 ```
 
-### 3. 정책 테스트
+#### 3. 정책 테스트
 
 ```bash
 # 모든 테스트 실행
@@ -67,6 +115,8 @@ opa test policies/
 # 특정 패키지 테스트
 opa test policies/tagging/
 opa test policies/naming/
+opa test policies/security_groups/
+opa test policies/public_resources/
 
 # 상세 출력
 opa test -v policies/
@@ -144,12 +194,133 @@ resource "aws_instance" "api" {
 }
 ```
 
+### Security Group Policy (policies/security_groups/security_group_rules.rego)
+
+AWS Security Group이 보안 모범 사례를 준수하는지 검증합니다.
+
+**검증 항목**:
+- 🚫 **Critical**: 모든 트래픽 허용 (0.0.0.0/0, all ports) 금지
+- 🚫 **Critical**: 위험한 포트(SSH, RDP, DB 등) 인터넷 노출 금지
+- 🚫 **Critical**: IPv6 인터넷(::/0)에 위험한 포트 노출 금지
+- ⚠️  **Warning**: Security Group 설명 누락
+- ⚠️  **Warning**: 일반적인 설명 사용 (예: "Managed by Terraform")
+- ⚠️  **Warning**: 무제한 Egress 트래픽
+
+**위험한 포트 목록**:
+- 22 (SSH)
+- 3389 (RDP)
+- 3306 (MySQL)
+- 5432 (PostgreSQL)
+- 6379 (Redis)
+- 27017 (MongoDB)
+- 9200 (Elasticsearch)
+- 5601 (Kibana)
+
+**예시**:
+```hcl
+# ✅ Valid - 제한된 접근
+resource "aws_security_group" "api" {
+  name        = "api-security-group"
+  description = "Security group for API servers in the application tier"
+
+  ingress {
+    from_port   = 443
+    to_port     = 443
+    protocol    = "tcp"
+    cidr_blocks = ["10.0.0.0/8"]  # Private network only
+  }
+
+  egress {
+    from_port   = 443
+    to_port     = 443
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+}
+
+# ❌ Invalid - SSH 인터넷 노출
+resource "aws_security_group" "bad" {
+  name        = "bad-sg"
+  description = "Security group"  # Generic description
+
+  ingress {
+    from_port   = 22
+    to_port     = 22
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]  # Internet accessible
+  }
+}
+```
+
+### Public Resources Policy (policies/public_resources/public_access.rego)
+
+AWS 리소스가 불필요하게 인터넷에 노출되지 않도록 검증합니다.
+
+**검증 항목**:
+- 🚫 **Critical**: RDS 인스턴스 publicly_accessible 금지
+- 🚫 **Critical**: 프로덕션 RDS publicly_accessible 절대 금지
+- 🚫 **Critical**: S3 버킷 public access 활성화 금지
+- ⚠️  **Warning**: S3 버킷 public access block 설정 누락
+- ⚠️  **Warning**: 프로덕션 EC2 인스턴스 public IP 할당
+- ⚠️  **Warning**: 프로덕션 ALB/ELB internet-facing (justification 필요)
+- ⚠️  **Warning**: Lambda Function URL 인증 없음
+
+**예시**:
+```hcl
+# ✅ Valid - Private RDS with public access block
+resource "aws_db_instance" "main" {
+  identifier          = "prod-database"
+  publicly_accessible = false
+
+  tags = {
+    Environment = "prod"
+  }
+}
+
+resource "aws_s3_bucket_public_access_block" "secure" {
+  bucket = aws_s3_bucket.main.id
+
+  block_public_acls       = true
+  block_public_policy     = true
+  ignore_public_acls      = true
+  restrict_public_buckets = true
+}
+
+# ✅ Valid - Public ALB with justification
+resource "aws_lb" "public" {
+  name            = "public-alb"
+  internal        = false
+  load_balancer_type = "application"
+
+  tags = {
+    Environment  = "prod"
+    PublicAccess = "Web application frontend - required for external users"
+  }
+}
+
+# ❌ Invalid - Public RDS in production
+resource "aws_db_instance" "bad" {
+  identifier          = "prod-db"
+  publicly_accessible = true
+
+  tags = {
+    Environment = "prod"
+  }
+}
+
+# ❌ Invalid - S3 without public access block
+resource "aws_s3_bucket" "bad" {
+  bucket = "my-bucket"
+  # Missing aws_s3_bucket_public_access_block
+}
+```
+
 ## CI/CD 통합
 
-### GitHub Actions
+### GitHub Actions (Conftest 사용)
 
 ```yaml
-name: OPA Policy Check
+name: Policy Validation
 
 on: [pull_request]
 
@@ -159,7 +330,13 @@ jobs:
     steps:
       - uses: actions/checkout@v3
 
-      - name: Setup OPA
+      - name: Setup Conftest
+        run: |
+          CONFTEST_VERSION=0.49.1
+          curl -L "https://github.com/open-policy-agent/conftest/releases/download/v${CONFTEST_VERSION}/conftest_${CONFTEST_VERSION}_Linux_x86_64.tar.gz" | tar xz
+          sudo mv conftest /usr/local/bin/
+
+      - name: Setup OPA (for testing)
         uses: open-policy-agent/setup-opa@v2
         with:
           version: latest
@@ -167,19 +344,37 @@ jobs:
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v2
 
+      - name: Run Policy Tests
+        run: opa test policies/ -v
+
       - name: Generate Terraform Plan
         run: |
+          cd terraform/your-module
           terraform init
           terraform plan -out=tfplan.binary
           terraform show -json tfplan.binary > tfplan.json
 
-      - name: Run OPA Tests
-        run: opa test policies/
-
-      - name: Validate Policy Compliance
+      - name: Validate with Conftest
         run: |
-          opa eval --fail-defined --data policies/ --input tfplan.json "data.terraform.tagging.required_tags.deny"
-          opa eval --fail-defined --data policies/ --input tfplan.json "data.terraform.naming.resource_naming.deny"
+          conftest test terraform/your-module/tfplan.json --config conftest.toml
+```
+
+### Atlantis 통합
+
+```yaml
+# atlantis.yaml
+workflows:
+  default:
+    plan:
+      steps:
+        - init
+        - plan
+        - run: |
+            terraform show -json $PLANFILE > ${PLANFILE}.json
+            conftest test ${PLANFILE}.json --config ${REPO_ROOT}/conftest.toml
+    apply:
+      steps:
+        - apply
 ```
 
 ### Pre-commit Hook
