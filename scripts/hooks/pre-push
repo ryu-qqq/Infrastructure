@@ -94,6 +94,20 @@ else
     ((WARNINGS++))
 fi
 
+# 4. Check tfsec security scan
+if [[ -x "./scripts/validators/check-tfsec.sh" ]]; then
+    echo -e "${BLUE}🛡️  Checking security with tfsec...${NC}"
+    if ./scripts/validators/check-tfsec.sh; then
+        echo -e "${GREEN}✓ Security scan passed${NC}\n"
+    else
+        echo -e "${RED}✗ Security scan failed${NC}\n"
+        ((ERRORS++))
+    fi
+else
+    echo -e "${YELLOW}⚠ check-tfsec.sh not found or not executable${NC}\n"
+    ((WARNINGS++))
+fi
+
 # Terraform validate for all directories
 echo -e "${BLUE}✅ Running terraform validate...${NC}\n"
 
@@ -178,6 +192,6 @@ else
     echo -e "\n${RED}❌ Push blocked due to validation errors${NC}"
     echo -e "${YELLOW}💡 Fix errors above or use: git push --no-verify${NC}"
     echo -e "${YELLOW}⚠  Using --no-verify bypasses governance checks${NC}"
-    echo -e "${YELLOW}📖 See: docs/infrastructure_governance.md${NC}"
+    echo -e "${YELLOW}📖 See: docs/governance/infrastructure_governance.md${NC}"
     exit 1
 fi

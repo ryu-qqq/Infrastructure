@@ -167,8 +167,8 @@ if [[ $VALIDATORS_OK -eq ${#VALIDATORS[@]} ]]; then
     echo -e "\n${BLUE}💡 Tips:${NC}"
     echo -e "  ${YELLOW}• Bypass (emergency): git commit/push --no-verify${NC}"
     echo -e "  ${YELLOW}• Test validators: ./scripts/validators/check-*.sh${NC}"
-    echo -e "  ${YELLOW}• Documentation: docs/infrastructure_governance.md${NC}"
-    echo -e "  ${YELLOW}• PR workflow: docs/infrastructure_pr.md${NC}"
+    echo -e "  ${YELLOW}• Documentation: docs/governance/infrastructure_governance.md${NC}"
+    echo -e "  ${YELLOW}• PR workflow: docs/governance/infrastructure_pr.md${NC}"
 
     echo -e "\n${GREEN}🎉 Ready to develop with governance!${NC}\n"
 else
