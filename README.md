@@ -8,8 +8,10 @@ Infrastructure as Code (IaC) repository for managing cloud infrastructure with T
 infrastructure/
 ├── .github/           # GitHub Actions workflows
 │   └── workflows/
-│       ├── terraform-plan.yml           # Terraform plan on PR
+│       ├── terraform-plan.yml           # Terraform plan on PR (includes tfsec scan)
 │       └── terraform-apply-and-deploy.yml # Apply & deploy on merge
+├── .tfsec/            # tfsec security scanner configuration
+│   └── config.yml     # Security baseline and scan rules
 ├── .claude/           # Claude Code session configuration
 │   ├── hooks.json              # Session hooks for automatic validation
 │   └── INFRASTRUCTURE_RULES.md # Governance rules documentation
@@ -26,17 +28,20 @@ infrastructure/
 │   │   ├── check-tags.sh       # Required tags validator
 │   │   ├── check-encryption.sh # KMS encryption validator
 │   │   ├── check-naming.sh     # Naming conventions validator
+│   │   ├── check-tfsec.sh      # Security scan validator (tfsec)
 │   │   └── validate-terraform-file.sh # Single file validator for Claude hooks
 │   ├── hooks/         # Git hooks templates
 │   │   ├── pre-commit  # Pre-commit validation
-│   │   └── pre-push    # Pre-push validation
+│   │   └── pre-push    # Pre-push validation (includes tfsec)
 │   ├── build-and-push.sh # ECR build and push script (manual/local)
 │   └── setup-hooks.sh    # Git hooks installer
 ├── docs/              # Documentation
-│   ├── github_actions_setup.md    # CI/CD setup guide
-│   ├── infrastructure_governance.md
-│   ├── infrastructure_notion.md
-│   └── infrastructure_pr.md
+│   ├── governance/    # Governance standards
+│   │   ├── infrastructure_governance.md
+│   │   ├── TAGGING_STANDARDS.md
+│   │   ├── NAMING_CONVENTION.md
+│   │   └── SECURITY_SCAN_REPORT_TEMPLATE.md # tfsec report template
+│   └── ...
 └── README.md         # This file
 ```
 
@@ -58,6 +63,7 @@ This installs:
 - ✅ Required tags (Owner, CostCenter, Environment, Lifecycle, DataClass, Service)
 - ✅ KMS encryption (no AES256, customer-managed keys only)
 - ✅ Naming conventions (kebab-case for resources, snake_case for variables)
+- ✅ Security scan with tfsec (AWS security best practices)
 - ✅ Terraform formatting and validation
 - ✅ Sensitive information detection
 
@@ -81,8 +87,30 @@ Run validators manually anytime:
 # Check naming conventions
 ./scripts/validators/check-naming.sh
 
+# Check security with tfsec
+./scripts/validators/check-tfsec.sh
+
 # Run all validations (same as pre-push)
 ./scripts/validators/check-*.sh
+```
+
+**tfsec Security Scan**:
+- Validates Terraform code against AWS security best practices
+- Checks encryption standards, public access controls, IAM policies
+- Generates detailed security reports (`tfsec-results.json`)
+- Configuration: `.tfsec/config.yml`
+- Minimum severity: MEDIUM
+
+**Installation** (if tfsec not installed):
+```bash
+# macOS
+brew install tfsec
+
+# Linux
+curl -s https://raw.githubusercontent.com/aquasecurity/tfsec/master/scripts/install_linux.sh | bash
+
+# Or use Docker
+docker run --rm -it -v "$(pwd):/src" aquasec/tfsec /src
 ```
 
 ### 3. Claude Session Hooks (For AI Development)
@@ -113,10 +141,10 @@ This creates **two-layer defense**:
 
 All infrastructure code must follow the governance standards defined in:
 - `.claude/INFRASTRUCTURE_RULES.md` - Claude session enforcement rules
-- `docs/infrastructure_governance.md` - Required tags, KMS strategy, naming rules
-- `docs/TAGGING_STANDARDS.md` - AWS resource tagging standards (NEW)
-- `docs/NAMING_CONVENTION.md` - AWS resource naming conventions (NEW)
-- `docs/infrastructure_pr.md` - PR workflow and gate checklist
+- `docs/governance/infrastructure_governance.md` - Required tags, KMS strategy, naming rules
+- `docs/governance/TAGGING_STANDARDS.md` - AWS resource tagging standards (NEW)
+- `docs/governance/NAMING_CONVENTION.md` - AWS resource naming conventions (NEW)
+- `docs/governance/infrastructure_pr.md` - PR workflow and gate checklist
 
 #### Tagging Standards
 
@@ -149,7 +177,7 @@ resource "aws_instance" "api" {
 }
 ```
 
-For detailed tagging guidelines, see [docs/TAGGING_STANDARDS.md](docs/TAGGING_STANDARDS.md).
+For detailed tagging guidelines, see [docs/governance/TAGGING_STANDARDS.md](docs/governance/TAGGING_STANDARDS.md).
 
 #### Naming Conventions
 
@@ -164,7 +192,7 @@ All resource names must follow kebab-case format:
 | S3 Bucket | `{org}-{env}-{service}-{purpose}-{account}` | `myorg-prod-logs-cloudtrail-123456789012` |
 | IAM Role | `{service}-{purpose}-role` | `ecs-task-execution-role` |
 
-For complete naming guidelines, see [docs/NAMING_CONVENTION.md](docs/NAMING_CONVENTION.md).
+For complete naming guidelines, see [docs/governance/NAMING_CONVENTION.md](docs/governance/NAMING_CONVENTION.md).
 
 #### OPA Policy Validation
 
@@ -197,7 +225,7 @@ This project uses GitHub Actions for automated Terraform deployment and Docker i
 
 ### Setup
 
-1. **AWS OIDC Configuration**: See [GitHub Actions Setup Guide](docs/github_actions_setup.md)
+1. **AWS OIDC Configuration**: See [GitHub Actions Setup Guide](docs/guides/setup/github_actions_setup.md)
 2. **GitHub Secrets**: Configure `AWS_ROLE_ARN` in repository settings
 3. **Workflow Files**:
    - `.github/workflows/terraform-plan.yml` - Plan on PR
@@ -207,9 +235,9 @@ This project uses GitHub Actions for automated Terraform deployment and Docker i
 
 #### Terraform Plan (PR)
 Triggers on PR to `main`:
-1. ✅ Run governance validators
+1. ✅ Run governance validators (tags, encryption, naming, tfsec security scan)
 2. ✅ Terraform format, init, validate
-3. ✅ Generate plan and comment on PR
+3. ✅ Generate plan and comment on PR with security scan results
 
 #### Terraform Apply & Deploy (Merge)
 Triggers on push to `main`:
@@ -225,7 +253,7 @@ Every deployment creates 3 tags:
 - **Latest**: `{account}.dkr.ecr.{region}.amazonaws.com/atlantis:latest` (mutable, for dev/staging)
 - **Timestamp**: `{account}.dkr.ecr.{region}.amazonaws.com/atlantis:20250110-143022` (immutable, for rollback)
 
-For detailed setup instructions, see [GitHub Actions Setup Guide](docs/github_actions_setup.md).
+For detailed setup instructions, see [GitHub Actions Setup Guide](docs/guides/setup/github_actions_setup.md).
 
 ## Atlantis ECR Setup
 
@@ -438,6 +466,13 @@ terraform init -upgrade
 - **Non-root User**: Container runs as `atlantis` user
 - **Lifecycle Policies**: Automatic cleanup of old images
 - **Governance Tags**: All resources tagged according to organizational standards
+- **Security Scanning**: Automated tfsec security analysis on every PR
+  - Validates AWS security best practices
+  - Enforces encryption standards (KMS required)
+  - Checks public access controls and IAM policies
+  - Reports security issues by severity (Critical, High, Medium, Low)
+  - Configuration: `.tfsec/config.yml`
+  - Results template: `docs/governance/SECURITY_SCAN_REPORT_TEMPLATE.md`
 
 ## Governance Compliance
 
@@ -470,17 +505,17 @@ This repository includes reusable Terraform modules for standardized infrastruct
 
 **English Documentation:**
 - [Modules Catalog](terraform/modules/README.md) - Complete module listing
-- [Module Directory Structure](docs/MODULES_DIRECTORY_STRUCTURE.md) - Standard structure guide
-- [Module README Template](docs/MODULE_TEMPLATE.md) - Documentation template
-- [Module Standards Guide](docs/MODULE_STANDARDS_GUIDE.md) - Coding standards and conventions
-- [Module Examples Guide](docs/MODULE_EXAMPLES_GUIDE.md) - Example structure guide
-- [Semantic Versioning Guide](docs/VERSIONING.md) - Version management
-- [CHANGELOG Template](docs/CHANGELOG_TEMPLATE.md) - Change log format
+- [Module Directory Structure](docs/modules/MODULES_DIRECTORY_STRUCTURE.md) - Standard structure guide
+- [Module README Template](docs/modules/MODULE_TEMPLATE.md) - Documentation template
+- [Module Standards Guide](docs/modules/MODULE_STANDARDS_GUIDE.md) - Coding standards and conventions
+- [Module Examples Guide](docs/modules/MODULE_EXAMPLES_GUIDE.md) - Example structure guide
+- [Semantic Versioning Guide](docs/modules/VERSIONING.md) - Version management
+- [CHANGELOG Template](docs/changelogs/CHANGELOG_TEMPLATE.md) - Change log format
 
 **한글 문서 (Korean Documentation):**
-- [프로젝트 개요 (Project Overview)](docs/PROJECT_OVERVIEW_KR.md) - 프로젝트 전체 구조 및 워크플로우
-- [Terraform 모듈 가이드 (Modules Guide)](docs/TERRAFORM_MODULES_KR.md) - 모듈 사용 및 개발 가이드
-- [스크립트 사용 가이드 (Scripts Guide)](docs/SCRIPTS_GUIDE_KR.md) - 검증 스크립트 및 자동화 도구 사용법
+- [프로젝트 개요 (Project Overview)](docs/ko/PROJECT_OVERVIEW_KR.md) - 프로젝트 전체 구조 및 워크플로우
+- [Terraform 모듈 가이드 (Modules Guide)](docs/ko/TERRAFORM_MODULES_KR.md) - 모듈 사용 및 개발 가이드
+- [스크립트 사용 가이드 (Scripts Guide)](docs/ko/SCRIPTS_GUIDE_KR.md) - 검증 스크립트 및 자동화 도구 사용법
 
 ### Quick Start
 
@@ -512,12 +547,12 @@ For detailed usage, see individual module README files.
 
 ## Deprecated Scripts
 
-The following utility scripts have been removed from this repository. See [CHANGELOG_INFRASTRUCTURE.md](docs/CHANGELOG_INFRASTRUCTURE.md) for detailed migration guidance.
+The following utility scripts have been removed from this repository. See [CHANGELOG_INFRASTRUCTURE.md](docs/changelogs/CHANGELOG_INFRASTRUCTURE.md) for detailed migration guidance.
 
 | Script | Removed Date | Replacement | Migration Guide |
 |--------|--------------|-------------|-----------------|
 | `cleanup-kms.sh` | 2025-10-14 | AWS Console manual cleanup | Use `aws kms list-keys` and Console for safety |
-| `setup-github-actions-role.sh` | 2025-10-14 | Terraform IAM configuration | See [GitHub Actions Setup Guide](docs/github_actions_setup.md) |
+| `setup-github-actions-role.sh` | 2025-10-14 | Terraform IAM configuration | See [GitHub Actions Setup Guide](docs/guides/setup/github_actions_setup.md) |
 | `update-iam-policy.sh` | 2025-10-14 | GitHub Actions automation | Policies auto-updated by CI/CD workflows |
 
 **Why removed?**
@@ -527,7 +562,7 @@ The following utility scripts have been removed from this repository. See [CHANG
 
 **Impact**: None - these were optional utilities, not required for core workflows.
 
-For complete migration instructions and CLI alternatives, see [docs/CHANGELOG_INFRASTRUCTURE.md](docs/CHANGELOG_INFRASTRUCTURE.md).
+For complete migration instructions and CLI alternatives, see [docs/changelogs/CHANGELOG_INFRASTRUCTURE.md](docs/changelogs/CHANGELOG_INFRASTRUCTURE.md).
 
 ## Related Jira Issues
 

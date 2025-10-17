@@ -3,7 +3,7 @@
 # check-tags.sh - Terraform Required Tags Validator
 #
 # Validates that all Terraform resources include required governance tags.
-# Based on docs/TAGGING_STANDARDS.md standards.
+# Based on docs/governance/TAGGING_STANDARDS.md standards.
 #
 # Required Tags:
 #   - Environment, Service, Team, Owner, CostCenter, ManagedBy, Project
@@ -29,7 +29,7 @@ YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
 NC='\033[0m' # No Color
 
-# Required tags based on new governance standards (docs/TAGGING_STANDARDS.md)
+# Required tags based on new governance standards (docs/governance/TAGGING_STANDARDS.md)
 REQUIRED_TAGS=("Environment" "Service" "Team" "Owner" "CostCenter" "ManagedBy" "Project")
 
 # Configuration
@@ -194,11 +194,11 @@ if [[ $ERRORS -eq 0 && $WARNINGS -eq 0 ]]; then
     exit 0
 elif [[ $ERRORS -eq 0 ]]; then
     echo -e "${YELLOW}⚠ Warnings: $WARNINGS${NC}"
-    echo -e "${YELLOW}💡 See: docs/infrastructure_governance.md${NC}"
+    echo -e "${YELLOW}💡 See: docs/governance/infrastructure_governance.md${NC}"
     exit 0
 else
     echo -e "${RED}✗ Errors: $ERRORS${NC}"
     echo -e "${YELLOW}⚠ Warnings: $WARNINGS${NC}"
-    echo -e "${YELLOW}💡 See: docs/infrastructure_governance.md${NC}"
+    echo -e "${YELLOW}💡 See: docs/governance/infrastructure_governance.md${NC}"
     exit 1
 fi

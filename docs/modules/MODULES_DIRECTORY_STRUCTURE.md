@@ -236,7 +236,7 @@ resource "aws_resource" "this" {
 }
 ```
 
-자세한 내용은 [TAGGING_STANDARDS.md](./TAGGING_STANDARDS.md) 참조
+자세한 내용은 [TAGGING_STANDARDS.md](../governance/TAGGING_STANDARDS.md) 참조
 
 ## 검증 체크리스트
 
@@ -258,7 +258,7 @@ resource "aws_resource" "this" {
 - [MODULE_TEMPLATE.md](./MODULE_TEMPLATE.md) - 표준 README 템플릿
 - [VERSIONING.md](./VERSIONING.md) - Semantic Versioning 가이드
 - [CHANGELOG_TEMPLATE.md](./CHANGELOG_TEMPLATE.md) - CHANGELOG 작성 가이드
-- [TAGGING_STANDARDS.md](./TAGGING_STANDARDS.md) - 태그 표준
+- [TAGGING_STANDARDS.md](../governance/TAGGING_STANDARDS.md) - 태그 표준
 - [LOGGING_NAMING_CONVENTION.md](./LOGGING_NAMING_CONVENTION.md) - 로깅 네이밍 규칙
 
 ## Epic 및 Task 참조
