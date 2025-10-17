@@ -269,38 +269,51 @@ jobs:
               const pastMonthlyCost = infracostJson.pastTotalMonthlyCost || 0;
               const diffMonthlyCost = infracostJson.diffTotalMonthlyCost || 0;
 
-              // Calculate percentage change
-              let percentChange = 0;
-              if (pastMonthlyCost > 0) {
-                percentChange = ((diffMonthlyCost / pastMonthlyCost) * 100).toFixed(2);
-              }
+              // Check if there are any projects with cost data
+              const hasProjects = infracostJson.projects && infracostJson.projects.length > 0;
+              const hasCostData = totalMonthlyCost > 0 || pastMonthlyCost > 0 || diffMonthlyCost !== 0;
 
-              costResults = `**Cost Impact Summary:**\n`;
-              costResults += `💰 Current Monthly Cost: $${totalMonthlyCost.toFixed(2)}\n`;
-              costResults += `📊 Previous Monthly Cost: $${pastMonthlyCost.toFixed(2)}\n`;
-
-              if (diffMonthlyCost > 0) {
-                costResults += `📈 Cost Increase: +$${diffMonthlyCost.toFixed(2)} (+${percentChange}%)\n`;
-              } else if (diffMonthlyCost < 0) {
-                costResults += `📉 Cost Decrease: $${diffMonthlyCost.toFixed(2)} (${percentChange}%)\n`;
+              if (!hasProjects || !hasCostData) {
+                // No cost estimation available - likely only resource deletions or no changes
+                costResults = `ℹ️ **No cost estimation available**\n\n`;
+                costResults += `This PR contains no resource additions or modifications that Infracost can estimate.\n\n`;
+                costResults += `**Possible reasons:**\n`;
+                costResults += `- Only resource deletions (cost savings)\n`;
+                costResults += `- Configuration changes only (no billable resource changes)\n`;
+                costResults += `- No infrastructure changes in tracked modules\n\n`;
+                costResults += `💡 *Cost estimation will be available when adding or modifying billable AWS resources.*`;
               } else {
-                costResults += `➡️ No cost change\n`;
-              }
+                // Calculate percentage change
+                let percentChange = 0;
+                if (pastMonthlyCost > 0) {
+                  percentChange = ((diffMonthlyCost / pastMonthlyCost) * 100).toFixed(2);
+                }
 
-              costResults += `\n**Cost Policy Status:**\n`;
+                costResults = `**Cost Impact Summary:**\n`;
+                costResults += `💰 Current Monthly Cost: $${totalMonthlyCost.toFixed(2)}\n`;
+                costResults += `📊 Previous Monthly Cost: $${pastMonthlyCost.toFixed(2)}\n`;
 
-              if (percentChange >= 30) {
-                costResults += `🚫 **BLOCKED**: Cost increase exceeds 30% threshold\n`;
-                costResults += `⚠️ **Action Required:** Review and justify cost increase before merging.\n`;
-              } else if (percentChange >= 10) {
-                costResults += `⚠️ **WARNING**: Cost increase exceeds 10% threshold\n`;
-                costResults += `📝 Please review cost changes carefully.\n`;
-              } else {
-                costResults += `✅ Within acceptable cost thresholds\n`;
-              }
+                if (diffMonthlyCost > 0) {
+                  costResults += `📈 Cost Increase: +$${diffMonthlyCost.toFixed(2)} (+${percentChange}%)\n`;
+                } else if (diffMonthlyCost < 0) {
+                  costResults += `📉 Cost Decrease: $${diffMonthlyCost.toFixed(2)} (${percentChange}%)\n`;
+                } else {
+                  costResults += `➡️ No cost change\n`;
+                }
 
-              // Add project breakdown if available
-              if (infracostJson.projects && infracostJson.projects.length > 0) {
+                costResults += `\n**Cost Policy Status:**\n`;
+
+                if (percentChange >= 30) {
+                  costResults += `🚫 **BLOCKED**: Cost increase exceeds 30% threshold\n`;
+                  costResults += `⚠️ **Action Required:** Review and justify cost increase before merging.\n`;
+                } else if (percentChange >= 10) {
+                  costResults += `⚠️ **WARNING**: Cost increase exceeds 10% threshold\n`;
+                  costResults += `📝 Please review cost changes carefully.\n`;
+                } else {
+                  costResults += `✅ Within acceptable cost thresholds\n`;
+                }
+
+                // Add project breakdown
                 costResults += `\n**Module Breakdown:**\n`;
                 infracostJson.projects.forEach(project => {
                   const projCost = project.breakdown?.totalMonthlyCost || 0;
@@ -313,7 +326,11 @@ jobs:
                 });
               }
             } catch (error) {
-              costResults = 'Cost analysis results not available.';
+              costResults = `⚠️ **Cost analysis unavailable**\n\n`;
+              costResults += `Unable to read Infracost results. This may indicate:\n`;
+              costResults += `- Infracost analysis step failed\n`;
+              costResults += `- No \`infracost-combined.json\` file generated\n\n`;
+              costResults += `Please check the workflow logs for more details.`;
             }
 
             const output = `#### Terraform Plan 📋
