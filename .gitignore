@@ -39,3 +39,9 @@ temp/
 *.tmp
 *.conf
 backend.conf
+
+# Security scan results
+tfsec-results.json
+checkov-results.json
+checkov-results.sarif
+checkov-results.xml

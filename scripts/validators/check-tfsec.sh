@@ -37,7 +37,6 @@ TERRAFORM_DIR="${1:-terraform}"
 CONFIG_FILE=".tfsec/config.yml"
 OUTPUT_FILE="tfsec-results.json"
 ERRORS=0
-WARNINGS=0
 CRITICAL_COUNT=0
 HIGH_COUNT=0
 MEDIUM_COUNT=0
