@@ -1,0 +1,160 @@
+#
+# Checkov Security Policy Configuration
+#
+# This configuration file defines security policies for Terraform code scanning using Checkov.
+# Based on CIS AWS Foundations Benchmark and infrastructure governance standards.
+# Complements existing tfsec configuration (.tfsec/config.yml)
+#
+# Usage:
+#   checkov -d terraform/ --config-file .checkov.yml
+#
+# Documentation:
+#   https://www.checkov.io/2.Basics/CLI%20Command%20Reference.html
+#   https://www.checkov.io/5.Policy%20Index/terraform.html
+#
+
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+# Framework and Compliance Standards
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+# Scan Terraform files
+# CIS AWS, PCI-DSS, HIPAA, ISO27001 checks are included in Terraform framework
+framework:
+  - terraform
+
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+# Directory Configuration
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+# Directories to scan
+directory:
+  - terraform/atlantis
+  - terraform/logging
+  - terraform/monitoring
+  - terraform/network
+  - terraform/kms
+  - terraform/secrets
+  - terraform/modules
+
+# Exclude specific paths from scanning
+skip-path:
+  - terraform/.terraform/**
+  - terraform/**/.terraform/**
+  - terraform/**/test/**
+  - terraform/**/examples/**
+  - terraform/**/.terraform.lock.hcl
+  - "**/*.tfvars"  # Variable files may contain sensitive data patterns that trigger false positives
+
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+# Check Configuration
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+# Checks to skip (use sparingly - document justification)
+# Format: CKV_AWS_<number> for AWS checks
+skip-check:
+  # S3 Bucket Versioning - Not required for temporary/transient buckets
+  # Justification: Log aggregation buckets don't require versioning
+  # - CKV_AWS_21  # S3 bucket versioning
+
+  # Add skips only with proper justification in comments
+  # Review skip rules quarterly to ensure they're still valid
+
+# Soft fail mode - report issues but don't fail pipeline
+# Set to false for production enforcement
+soft-fail: false
+
+# Compact output format
+compact: true
+
+# Quiet mode - reduce verbose output
+quiet: false
+
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+# Severity and Filtering
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+# Check severity threshold managed via soft-fail
+# Use soft-fail flag with MEDIUM severity in CLI instead
+# soft-fail-on: "HIGH,CRITICAL"
+
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+# Output Configuration
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+# Output format: Use CLI flag --output json instead
+# output-file-path managed via CLI --output-file-path flag
+
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+# Performance and Behavior
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+# Performance options managed via CLI flags:
+# --download-external-modules false (faster scans)
+# Use checkov CLI directly for these options
+
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+# External Checks and Plugins
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+# External check directories (for custom policies)
+# external-checks-dir:
+#   - .checkov/custom_checks
+
+# External modules directory
+# external-modules-download-path: .external_modules
+
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+# Secrets Detection
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+# Enable secrets scanning (boolean flag, no value needed)
+# Note: Use --enable-secret-scan-all-files as CLI flag, not in config
+
+# Secrets scan patterns to skip (reduce false positives)
+# skip-secrets-scan:
+#   - BC_GIT_1  # Generic Git secrets
+#   - BC_GIT_2  # AWS keys
+
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+# Metadata and Reporting
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+# Repo metadata for tracking and reporting
+# repo-id: infrastructure
+# branch: main
+
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+# Policy Enforcement Guidelines
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+#
+# CRITICAL/HIGH Issues:
+#   - Encryption not enabled (S3, RDS, EBS)
+#   - Public access exposed (S3, RDS, Security Groups)
+#   - Weak IAM policies (overly permissive)
+#   - Missing security groups or network controls
+#   - Secrets in code or unencrypted
+#
+# MEDIUM Issues:
+#   - Logging not enabled
+#   - Versioning not configured
+#   - Missing tags
+#   - Non-compliant naming
+#   - Missing monitoring/alarms
+#
+# LOW Issues:
+#   - Documentation gaps
+#   - Best practice recommendations
+#   - Optimization suggestions
+#
+# Alignment with Infrastructure Governance:
+#   - Follows docs/governance/infrastructure_governance.md
+#   - Complements tfsec checks (.tfsec/config.yml)
+#   - Integrates with GitHub Actions governance validators
+#
+# Related Documentation:
+#   - Governance: docs/governance/infrastructure_governance.md
+#   - Security Standards: docs/governance/SECURITY_SCAN_REPORT_TEMPLATE.md
+#   - Naming Convention: docs/governance/NAMING_CONVENTION.md
+#   - Tagging Standards: docs/governance/TAGGING_STANDARDS.md
+#
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━

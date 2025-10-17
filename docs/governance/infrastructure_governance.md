@@ -389,3 +389,166 @@ resource "aws_db_instance" "main" {
 - 서비스당 최대 연결 수 정의
 - RDS Proxy 사용 권장
 - 부하 테스트로 적정 커넥션 수 검증
+
+---
+
+## 11. 보안 스캔 및 정책 검증
+
+### 개요
+
+인프라 코드 보안과 규정 준수를 위해 다중 보안 스캔 도구를 활용합니다.
+
+### 보안 스캔 도구
+
+#### tfsec (보안 취약점 탐지)
+
+**목적**: Terraform 코드의 보안 취약점 식별
+
+**주요 검증 항목**:
+- 암호화 표준 (KMS at-rest/in-transit)
+- 퍼블릭 접근 제어
+- IAM 보안 정책
+- 네트워크 보안 설정
+- 로깅 및 모니터링 요구사항
+
+**설정 파일**: `.tfsec/config.yml`
+
+**최소 심각도**: MEDIUM (CRITICAL, HIGH, MEDIUM 보고)
+
+**실행 방법**:
+```bash
+# 로컬 실행
+./scripts/validators/check-tfsec.sh [terraform_directory]
+
+# 전체 스캔
+tfsec terraform/ --config-file .tfsec/config.yml
+```
+
+#### Checkov (정책 준수 검증)
+
+**목적**: 컴플라이언스 프레임워크 및 정책 준수 검증
+
+**지원 프레임워크**:
+- CIS AWS Foundations Benchmark v1.4.0
+- PCI-DSS v3.2.1
+- HIPAA
+- ISO/IEC 27001
+
+**설정 파일**: `.checkov.yml`
+
+**실행 방법**:
+```bash
+# 로컬 실행
+./scripts/validators/check-checkov.sh [terraform_directory]
+
+# 전체 스캔
+checkov -d terraform/ --config-file .checkov.yml
+```
+
+**Skip 규칙 관리**: `docs/governance/CHECKOV_POLICY_GUIDE.md` 참고
+
+### CI/CD 통합
+
+#### GitHub Actions Workflow
+
+모든 PR에서 자동으로 보안 스캔이 실행됩니다:
+
+```yaml
+- name: Run Governance Validators
+  run: |
+    ./scripts/validators/check-tags.sh
+    ./scripts/validators/check-encryption.sh
+    ./scripts/validators/check-naming.sh
+    ./scripts/validators/check-tfsec.sh
+    ./scripts/validators/check-checkov.sh
+```
+
+#### PR 코멘트
+
+보안 스캔 결과는 PR 코멘트로 자동 게시:
+
+```markdown
+#### 🛡️ Security Scan (tfsec)
+**Security Scan Summary:**
+🚨 Critical: 0
+❌ High: 0
+⚠️ Medium: 2
+
+#### 🔐 Policy Compliance (checkov)
+**Policy Compliance Summary:**
+✅ Passed: 15
+❌ Failed: 2
+⊘ Skipped: 0
+
+**Compliance Frameworks:**
+✅ CIS AWS Benchmark
+⚠️ CIS AWS: 2 issues
+```
+
+### 보안 스캔 실패 시 대응 프로세스
+
+1. **결과 파일 확인**
+   ```bash
+   # tfsec 결과
+   cat tfsec-results.json | jq
+
+   # checkov 결과
+   cat checkov-results.json | jq
+   ```
+
+2. **이슈 상세 분석**
+   - 이슈 설명 및 심각도 확인
+   - 영향받는 리소스 파악
+   - 수정 가이드라인 검토
+
+3. **수정 방법 결정**
+   - **코드 수정** (권장): 보안 설정을 코드로 수정
+   - **Skip 규칙 추가**: 정당한 사유가 있는 경우만
+
+4. **Skip 규칙 추가 절차**
+   - 사유 문서화
+   - 보안팀 또는 플랫폼팀 승인
+   - 정기 검토 일정 설정
+
+### 심각도 기준
+
+| 심각도 | 처리 방침 | 예시 |
+|--------|----------|------|
+| **CRITICAL** | 즉시 수정 필수, 배포 차단 | 암호화 미적용, 퍼블릭 접근 허용 |
+| **HIGH** | PR 승인 전 수정 필수 | IAM 과도한 권한, 보안 그룹 과도한 오픈 |
+| **MEDIUM** | PR 승인 전 수정 권장 | 로깅 미활성화, 버저닝 미설정 |
+| **LOW** | 수정 권장 (non-blocking) | 문서화 누락, 최적화 기회 |
+
+### Pre-commit Hook 설정
+
+로컬 커밋 전 자동 검증:
+
+```bash
+# Pre-commit 설치
+pip install pre-commit
+
+# Hook 활성화
+pre-commit install
+
+# 수동 실행
+pre-commit run --all-files
+```
+
+### 관련 문서
+
+- [Checkov Policy Guide](./CHECKOV_POLICY_GUIDE.md) - Checkov 정책 가이드 및 Skip 규칙
+- [Security Scan Report Template](./SECURITY_SCAN_REPORT_TEMPLATE.md) - 보안 스캔 리포트 템플릿
+- [Naming Convention](./NAMING_CONVENTION.md) - 리소스 네이밍 규칙
+- [Tagging Standards](./TAGGING_STANDARDS.md) - 태그 표준
+
+### 주의사항
+
+**금지 사항**:
+- 프로덕션 환경에서 Critical/High 이슈 Skip
+- 정당한 사유 없는 Skip 규칙 추가
+- 보안 스캔 결과 무시 또는 우회
+
+**권장 사항**:
+- 분기별 Skip 규칙 재검토
+- 신규 규칙 업데이트 주기적 확인
+- 보안 스캔 실패 패턴 분석 및 개선

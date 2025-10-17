@@ -30,12 +30,15 @@ jobs:
         with:
           terraform_version: 1.6.0
 
-      - name: Install tfsec
+      - name: Install Security Scanners
         run: |
           # Install tfsec via official installation script
           curl -s https://raw.githubusercontent.com/aquasecurity/tfsec/master/scripts/install_linux.sh | bash
-          # Verify installation
           tfsec --version
+
+          # Install checkov via pip
+          pip install checkov
+          checkov --version
 
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
@@ -56,6 +59,7 @@ jobs:
           ./scripts/validators/check-encryption.sh
           ./scripts/validators/check-naming.sh
           ./scripts/validators/check-tfsec.sh
+          ./scripts/validators/check-checkov.sh
 
           echo "✅ All governance checks passed!"
 
@@ -163,11 +167,46 @@ jobs:
               tfsecResults = 'Security scan results not available.';
             }
 
+            // Read checkov results
+            let checkovResults = '';
+            try {
+              const checkovJson = JSON.parse(fs.readFileSync('checkov-results.json', 'utf8'));
+              const summary = checkovJson.summary || {};
+
+              const passed = summary.passed || 0;
+              const failed = summary.failed || 0;
+              const skipped = summary.skipped || 0;
+
+              checkovResults = `**Policy Compliance Summary:**\n`;
+              checkovResults += `✅ Passed: ${passed}\n`;
+              if (failed > 0) checkovResults += `❌ Failed: ${failed}\n`;
+              if (skipped > 0) checkovResults += `⊘ Skipped: ${skipped}\n`;
+
+              // Framework compliance
+              const failedChecks = checkovJson.results?.failed_checks || [];
+              const cisCount = failedChecks.filter(c => c.check_id && c.check_id.startsWith('CKV_AWS')).length;
+
+              checkovResults += `\n**Compliance Frameworks:**\n`;
+              checkovResults += cisCount === 0 ? `✅ CIS AWS Benchmark\n` : `⚠️ CIS AWS: ${cisCount} issues\n`;
+
+              if (failed > 0) {
+                checkovResults += `\n⚠️ **Action Required:** Policy violations must be resolved.\n`;
+              }
+            } catch (error) {
+              checkovResults = 'Policy compliance results not available.';
+            }
+
             const output = `#### Terraform Plan 📋
 
             <details><summary>🛡️ Security Scan (tfsec)</summary>
 
             ${tfsecResults}
+
+            </details>
+
+            <details><summary>🔐 Policy Compliance (checkov)</summary>
+
+            ${checkovResults}
 
             </details>
 
