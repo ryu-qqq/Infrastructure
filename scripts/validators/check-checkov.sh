@@ -132,26 +132,26 @@ if command -v jq >/dev/null 2>&1; then
         # Display top critical/high issues
         if [[ $CRITICAL_COUNT -gt 0 ]]; then
             echo -e "\n${RED}🚨 CRITICAL Issues: $CRITICAL_COUNT${NC}"
-            jq -r '.results.failed_checks[] | select(.severity == "CRITICAL") |
-                "  [\(.check_id)] \(.check_name)\n  File: \(.file_path):\(.file_line_range[0])\n  Guideline: \(.guideline // "N/A")\n"' \
-                "$OUTPUT_JSON" | head -n 50
+            jq -r 'limit(50; .results.failed_checks[] | select(.severity == "CRITICAL") |
+                "  [\(.check_id)] \(.check_name)\n  File: \(.file_path):\(.file_line_range[0])\n  Guideline: \(.guideline // "N/A")\n")' \
+                "$OUTPUT_JSON"
             ((ERRORS += CRITICAL_COUNT))
         fi
 
         if [[ $HIGH_COUNT -gt 0 ]]; then
             echo -e "\n${RED}❌ HIGH Issues: $HIGH_COUNT${NC}"
-            jq -r '.results.failed_checks[] | select(.severity == "HIGH") |
-                "  [\(.check_id)] \(.check_name)\n  File: \(.file_path):\(.file_line_range[0])\n  Guideline: \(.guideline // "N/A")\n"' \
-                "$OUTPUT_JSON" | head -n 50
+            jq -r 'limit(50; .results.failed_checks[] | select(.severity == "HIGH") |
+                "  [\(.check_id)] \(.check_name)\n  File: \(.file_path):\(.file_line_range[0])\n  Guideline: \(.guideline // "N/A")\n")' \
+                "$OUTPUT_JSON"
             ((ERRORS += HIGH_COUNT))
         fi
 
         if [[ $MEDIUM_COUNT -gt 0 ]]; then
             echo -e "\n${YELLOW}⚠️  MEDIUM Issues: $MEDIUM_COUNT${NC}"
             # Show first 5 medium issues
-            jq -r '.results.failed_checks[] | select(.severity == "MEDIUM") |
-                "  [\(.check_id)] \(.check_name)\n  File: \(.file_path):\(.file_line_range[0])\n"' \
-                "$OUTPUT_JSON" | head -n 20
+            jq -r 'limit(20; .results.failed_checks[] | select(.severity == "MEDIUM") |
+                "  [\(.check_id)] \(.check_name)\n  File: \(.file_path):\(.file_line_range[0])\n")' \
+                "$OUTPUT_JSON"
             ((ERRORS += MEDIUM_COUNT))
         fi
 
@@ -171,8 +171,8 @@ if command -v jq >/dev/null 2>&1; then
     # Check for specific critical compliance violations
     if [[ $CIS_FAILED -gt 0 ]]; then
         echo -e "${YELLOW}    Top CIS violations:${NC}"
-        jq -r '.results.failed_checks[] | select(.check_id | startswith("CKV_AWS")) |
-            "      [\(.check_id)] \(.check_name)"' "$OUTPUT_JSON" | head -n 5
+        jq -r 'limit(5; .results.failed_checks[] | select(.check_id | startswith("CKV_AWS")) |
+            "      [\(.check_id)] \(.check_name)")' "$OUTPUT_JSON"
     fi
 
 else
