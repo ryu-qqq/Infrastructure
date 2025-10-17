@@ -378,8 +378,9 @@ The workflow posts a comprehensive report as a PR comment:
 
 ### Debug Mode
 
-Enable detailed logging by adding to your workflow:
+Enable detailed logging for troubleshooting:
 
+**Step-level debug logs** (single workflow run):
 ```yaml
 jobs:
   infrastructure-checks:
@@ -390,8 +391,16 @@ jobs:
       # ... secrets
     env:
       ACTIONS_STEP_DEBUG: true
-      ACTIONS_RUNNER_DEBUG: true
 ```
+
+**Runner diagnostic logs** (repository-level):
+
+Set the `ACTIONS_RUNNER_DEBUG` repository secret to `true`:
+1. Go to repository Settings → Secrets and variables → Actions
+2. Create new repository secret: `ACTIONS_RUNNER_DEBUG` = `true`
+3. Re-run the workflow
+
+**Note**: Runner diagnostic logging must be enabled via repository secrets, not environment variables in the workflow file.
 
 ## Best Practices
 
@@ -446,38 +455,97 @@ service-repo/
 └── conftest.toml
 ```
 
-### 6. Regular Updates
+### 6. Version Pinning (Recommended)
 
-Keep the workflow reference up-to-date:
+**Always pin to specific versions for production environments:**
 
 ```yaml
-# Check for updates monthly
-uses: ryu-qqq/Infrastructure/.github/workflows/infra-checks.yml@main
-
-# Or pin to specific version for stability
+# ✅ RECOMMENDED: Pin to specific version for stability and predictable builds
 uses: ryu-qqq/Infrastructure/.github/workflows/infra-checks.yml@v1.0.0
+
+# ✅ ALTERNATIVE: Pin to specific commit SHA for maximum stability
+uses: ryu-qqq/Infrastructure/.github/workflows/infra-checks.yml@a1b2c3d
+
+# ⚠️ NOT RECOMMENDED FOR PRODUCTION: Using @main can pull breaking changes
+# Only use @main for development/testing environments where you want latest features
+uses: ryu-qqq/Infrastructure/.github/workflows/infra-checks.yml@main
 ```
+
+**Why version pinning matters:**
+- **Predictable Builds**: Same workflow version across all runs, no surprise failures
+- **Breaking Change Protection**: Avoid automatic updates that break your pipelines
+- **Change Control**: Review and test updates before adopting them
+- **Rollback Capability**: Easy to revert to previous version if issues arise
+
+**Update Strategy:**
+1. Monitor releases in Infrastructure repository
+2. Test new versions in development environment first
+3. Update version reference after validation
+4. Document version updates in your changelog
 
 ## Integration with Other Workflows
 
 ### Combine with Terraform Apply
 
+For applying changes after validation, use a separate workflow triggered on `push` to `main`:
+
+**Validation Workflow** (`.github/workflows/terraform-validation.yml`):
 ```yaml
+name: Terraform Validation
+
+on:
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+  pull-requests: write
+  id-token: write
+
 jobs:
   validate:
     uses: ryu-qqq/Infrastructure/.github/workflows/infra-checks.yml@main
     secrets:
       INFRACOST_API_KEY: ${{ secrets.INFRACOST_API_KEY }}
       AWS_ROLE_ARN: ${{ secrets.AWS_ROLE_ARN }}
+```
 
+**Apply Workflow** (`.github/workflows/terraform-apply.yml`):
+```yaml
+name: Terraform Apply
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'terraform/**'
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
   terraform-apply:
-    needs: validate
     runs-on: ubuntu-latest
-    if: github.event.pull_request.merged == true
     steps:
       - uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: ap-northeast-2
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.6.0
+
       - name: Terraform Apply
-        run: terraform apply -auto-approve
+        working-directory: terraform
+        run: |
+          terraform init
+          terraform apply -auto-approve
 ```
 
 ### Parallel Execution with Other Checks
