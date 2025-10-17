@@ -363,8 +363,8 @@ jobs:
                 // Add project breakdown
                 costResults += `\n**Module Breakdown:**\n`;
                 infracostJson.projects.forEach(project => {
-                  const projCost = project.breakdown?.totalMonthlyCost || 0;
-                  const projDiff = project.diff?.totalMonthlyCost || 0;
+                  const projCost = parseFloat(project.breakdown?.totalMonthlyCost) || 0;
+                  const projDiff = parseFloat(project.diff?.totalMonthlyCost) || 0;
                   costResults += `- ${project.name}: $${projCost.toFixed(2)}`;
                   if (projDiff !== 0) {
                     costResults += ` (${projDiff > 0 ? '+' : ''}$${projDiff.toFixed(2)})`;
