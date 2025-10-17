@@ -372,10 +372,15 @@ jobs:
                 });
               }
             } catch (error) {
+              // Log error for debugging
+              console.error('Infracost parsing error:', error.message);
+              console.error('Stack:', error.stack);
+
               costResults = `⚠️ **Cost analysis unavailable**\n\n`;
               costResults += `Unable to read Infracost results. This may indicate:\n`;
               costResults += `- Infracost analysis step failed\n`;
               costResults += `- No \`infracost-combined.json\` file generated\n\n`;
+              costResults += `**Error**: ${error.message}\n\n`;
               costResults += `Please check the workflow logs for more details.`;
             }
 
