@@ -127,7 +127,7 @@ module "custom_sg" {
       from_port   = 22
       to_port     = 22
       protocol    = "tcp"
-      cidr_blocks = ["10.0.0.0/16"]
+      cidr_block  = "10.0.0.0/16"
       description = "Allow SSH from VPC"
     },
     {
@@ -145,7 +145,7 @@ module "custom_sg" {
       from_port   = 443
       to_port     = 443
       protocol    = "tcp"
-      cidr_blocks = ["0.0.0.0/0"]
+      cidr_block  = "0.0.0.0/0"
       description = "Allow HTTPS outbound"
     }
   ]
@@ -328,11 +328,18 @@ module "rds" {
 ecs_ingress_from_alb_sg_id = module.alb_sg.security_group_id
 
 # ❌ 나쁜 예: CIDR 블록 사용 (동적 IP 관리 어려움)
-custom_ingress_rules = [{
-  from_port   = 8080
-  cidr_blocks = ["10.0.1.0/24", "10.0.2.0/24"]
-  # ...
-}]
+custom_ingress_rules = [
+  {
+    from_port  = 8080
+    cidr_block = "10.0.1.0/24"
+    # ...
+  },
+  {
+    from_port  = 8080
+    cidr_block = "10.0.2.0/24"
+    # ...
+  }
+]
 ```
 
 ### 2. Least Privilege Principle

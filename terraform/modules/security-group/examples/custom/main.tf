@@ -14,14 +14,14 @@ module "custom_security_group" {
       from_port   = 22
       to_port     = 22
       protocol    = "tcp"
-      cidr_blocks = ["10.0.0.0/16"]
+      cidr_block  = "10.0.0.0/16"
       description = "Allow SSH from VPC"
     },
     {
       from_port   = 3000
       to_port     = 3000
       protocol    = "tcp"
-      cidr_blocks = ["10.0.0.0/16"]
+      cidr_block  = "10.0.0.0/16"
       description = "Allow application port from VPC"
     },
     {
@@ -39,21 +39,21 @@ module "custom_security_group" {
       from_port   = 443
       to_port     = 443
       protocol    = "tcp"
-      cidr_blocks = ["0.0.0.0/0"]
+      cidr_block  = "0.0.0.0/0"
       description = "Allow HTTPS outbound"
     },
     {
       from_port   = 80
       to_port     = 80
       protocol    = "tcp"
-      cidr_blocks = ["0.0.0.0/0"]
+      cidr_block  = "0.0.0.0/0"
       description = "Allow HTTP outbound"
     },
     {
       from_port   = 5432
       to_port     = 5432
       protocol    = "tcp"
-      cidr_blocks = ["10.0.0.0/16"]
+      cidr_block  = "10.0.0.0/16"
       description = "Allow PostgreSQL to VPC"
     }
   ]
