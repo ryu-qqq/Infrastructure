@@ -43,7 +43,6 @@ OUTPUT_JSON="checkov-results.json"
 OUTPUT_SARIF="checkov-results.sarif"
 OUTPUT_JUNIT="checkov-results.xml"
 ERRORS=0
-WARNINGS=0
 CRITICAL_COUNT=0
 HIGH_COUNT=0
 MEDIUM_COUNT=0
@@ -101,8 +100,6 @@ checkov -d "$TERRAFORM_DIR" \
     $CONFIG_ARG \
     --output json \
     --soft-fail > "$OUTPUT_JSON"
-
-CHECKOV_EXIT_CODE=$?
 set -e
 
 # Check if output files were created
