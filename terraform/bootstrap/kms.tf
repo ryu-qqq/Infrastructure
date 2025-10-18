@@ -4,10 +4,10 @@ resource "aws_kms_key" "terraform-state" {
   deletion_window_in_days = 30
   enable_key_rotation     = true
 
-  tags = {
+  tags = merge(local.required_tags, {
     Name      = "terraform-state-encryption"
     Component = "kms"
-  }
+  })
 }
 
 resource "aws_kms_alias" "terraform-state" {

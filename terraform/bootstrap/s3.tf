@@ -2,10 +2,10 @@
 resource "aws_s3_bucket" "terraform-state" {
   bucket = var.tfstate_bucket_name
 
-  tags = {
+  tags = merge(local.required_tags, {
     Name      = var.tfstate_bucket_name
     Component = "s3"
-  }
+  })
 }
 
 # Enable versioning
