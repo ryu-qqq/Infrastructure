@@ -279,7 +279,8 @@ The Terraform Plan workflow automatically comments on PRs with:
 **Configuration:**
 - Policy configuration: `.infracost.yml`
 - API key: `INFRACOST_API_KEY` secret (required)
-- Workflow: `.github/workflows/terraform-plan.yml`
+- Reusable workflow: `.github/workflows/infra-checks.yml` (includes Infracost + tfsec + checkov + Conftest)
+- Current implementation: `.github/workflows/terraform-plan.yml` uses the reusable workflow
 
 **Setup Infracost API Key:**
 1. Sign up at [Infracost](https://www.infracost.io/)
