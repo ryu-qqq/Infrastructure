@@ -35,13 +35,13 @@ resource "aws_route53_query_log" "primary" {
   count = var.enable_query_logging ? 1 : 0
 
   zone_id                  = aws_route53_zone.primary.zone_id
-  cloudwatch_log_group_arn = aws_cloudwatch_log_group.route53_query_logs[0].arn
+  cloudwatch_log_group_arn = aws_cloudwatch_log_group.route53-query-logs[0].arn
 
-  depends_on = [aws_cloudwatch_log_group.route53_query_logs]
+  depends_on = [aws_cloudwatch_log_group.route53-query-logs]
 }
 
 # KMS Key Policy Document for CloudWatch Logs
-data "aws_iam_policy_document" "route53_logs_kms" {
+data "aws_iam_policy_document" "route53-logs-kms" {
   count = var.enable_query_logging ? 1 : 0
 
   # Enable IAM User Permissions
@@ -82,13 +82,13 @@ data "aws_iam_policy_document" "route53_logs_kms" {
 }
 
 # KMS Key for CloudWatch Logs Encryption
-resource "aws_kms_key" "route53_logs" {
+resource "aws_kms_key" "route53-logs" {
   count = var.enable_query_logging ? 1 : 0
 
   description             = "KMS key for Route53 query logs encryption"
   deletion_window_in_days = 30
   enable_key_rotation     = true
-  policy                  = data.aws_iam_policy_document.route53_logs_kms[0].json
+  policy                  = data.aws_iam_policy_document.route53-logs-kms[0].json
 
   tags = merge(
     local.required_tags,
@@ -100,20 +100,20 @@ resource "aws_kms_key" "route53_logs" {
   )
 }
 
-resource "aws_kms_alias" "route53_logs" {
+resource "aws_kms_alias" "route53-logs" {
   count = var.enable_query_logging ? 1 : 0
 
   name          = "alias/route53-logs"
-  target_key_id = aws_kms_key.route53_logs[0].key_id
+  target_key_id = aws_kms_key.route53-logs[0].key_id
 }
 
 # CloudWatch Log Group for Query Logs
-resource "aws_cloudwatch_log_group" "route53_query_logs" {
+resource "aws_cloudwatch_log_group" "route53-query-logs" {
   count = var.enable_query_logging ? 1 : 0
 
   name              = "/aws/route53/${var.domain_name}"
   retention_in_days = 7 # 7 days retention as per logging standards
-  kms_key_id        = aws_kms_key.route53_logs[0].arn
+  kms_key_id        = aws_kms_key.route53-logs[0].arn
 
   tags = merge(
     local.required_tags,
@@ -123,7 +123,7 @@ resource "aws_cloudwatch_log_group" "route53_query_logs" {
     }
   )
 
-  depends_on = [aws_kms_key.route53_logs]
+  depends_on = [aws_kms_key.route53-logs]
 }
 
 # Health Check for Atlantis Server
