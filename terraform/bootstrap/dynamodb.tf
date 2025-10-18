@@ -18,11 +18,8 @@ resource "aws_dynamodb_table" "terraform_lock" {
     enabled = true
   }
 
-  tags = merge(
-    local.required_tags,
-    {
-      Name      = var.dynamodb_table_name
-      Component = "dynamodb"
-    }
-  )
+  tags = {
+    Name      = var.dynamodb_table_name
+    Component = "dynamodb"
+  }
 }

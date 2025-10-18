@@ -2,13 +2,10 @@
 resource "aws_s3_bucket" "terraform_state" {
   bucket = var.tfstate_bucket_name
 
-  tags = merge(
-    local.required_tags,
-    {
-      Name      = var.tfstate_bucket_name
-      Component = "s3"
-    }
-  )
+  tags = {
+    Name      = var.tfstate_bucket_name
+    Component = "s3"
+  }
 }
 
 # Enable versioning
@@ -40,14 +37,6 @@ resource "aws_s3_bucket_public_access_block" "terraform_state" {
   block_public_policy     = true
   ignore_public_acls      = true
   restrict_public_buckets = true
-}
-
-# Enable bucket logging
-resource "aws_s3_bucket_logging" "terraform_state" {
-  bucket = aws_s3_bucket.terraform_state.id
-
-  target_bucket = aws_s3_bucket.terraform_state.id
-  target_prefix = "logs/"
 }
 
 # Lifecycle configuration for old versions

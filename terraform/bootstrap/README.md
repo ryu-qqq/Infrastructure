@@ -172,10 +172,20 @@ aws s3api get-object \
 ### 잠금 해제
 
 비정상 종료로 인한 잠금 수동 해제:
+
+`terraform force-unlock` 명령어를 사용하는 것이 더 안전하고 권장됩니다.
+
 ```bash
-aws dynamodb delete-item \
-  --table-name prod-connectly-tf-lock \
-  --key '{"LockID": {"S": "prod-connectly/network/terraform.tfstate-md5"}}'
+# 1. `terraform plan` 실행 시 표시되는 LOCK_ID를 확인합니다.
+$ terraform plan
+Error: Error acquiring the state lock
+...
+Lock Info:
+  ID:        <LOCK_ID>
+...
+
+# 2. 확인된 LOCK_ID로 잠금을 강제 해제합니다.
+terraform force-unlock <LOCK_ID>
 ```
 
 ## 참고 문서
