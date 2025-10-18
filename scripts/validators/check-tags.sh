@@ -93,7 +93,7 @@ check_resource_tags() {
     local line_number=$4
 
     # Skip certain resource types that don't support tags
-    local skip_types=("aws_kms_alias" "aws_kms_key_policy" "aws_ecr_repository_policy" "aws_ecr_lifecycle_policy" "aws_iam_role_policy_attachment" "aws_iam_role_policy" "aws_ecs_cluster_capacity_providers" "aws_secretsmanager_secret_version" "aws_secretsmanager_secret_rotation" "aws_lambda_permission" "aws_efs_mount_target" "aws_efs_access_point" "aws_route" "aws_route_table_association" "aws_sns_topic_policy" "aws_sns_topic_subscription" "aws_cloudwatch_event_target" "aws_cloudwatch_log_metric_filter" "aws_grafana_role_association" "aws_appautoscaling_target" "aws_appautoscaling_policy" "aws_appautoscaling_scheduled_action" "aws_route53_record" "aws_route53_query_log" "aws_acm_certificate_validation" "data")
+    local skip_types=("aws_kms_alias" "aws_kms_key_policy" "aws_ecr_repository_policy" "aws_ecr_lifecycle_policy" "aws_iam_role_policy_attachment" "aws_iam_role_policy" "aws_ecs_cluster_capacity_providers" "aws_secretsmanager_secret_version" "aws_secretsmanager_secret_rotation" "aws_lambda_permission" "aws_efs_mount_target" "aws_efs_access_point" "aws_route" "aws_route_table_association" "aws_sns_topic_policy" "aws_sns_topic_subscription" "aws_cloudwatch_event_target" "aws_cloudwatch_log_metric_filter" "aws_grafana_role_association" "aws_appautoscaling_target" "aws_appautoscaling_policy" "aws_appautoscaling_scheduled_action" "aws_route53_record" "aws_route53_query_log" "aws_acm_certificate_validation" "aws_wafv2_web_acl_logging_configuration" "aws_wafv2_web_acl_association" "data")
 
     for skip_type in "${skip_types[@]}"; do
         if [[ "$resource_type" == "$skip_type" ]]; then
@@ -137,9 +137,10 @@ check_resource_tags() {
         return
     fi
 
-    # Check if using merge(local.required_tags) or merge(var.common_tags) pattern
+    # Check if using merge(local.required_tags) or merge(var.common_tags) or merge(module.common_tags.tags) pattern
+    # Also accept direct usage: tags = module.common_tags.tags or tags = var.common_tags or tags = local.required_tags
     # Convert to single line for pattern matching
-    if echo "$resource_block" | tr '\n' ' ' | grep -qE "merge.*(local\.required_tags|var\.common_tags)"; then
+    if echo "$resource_block" | tr '\n' ' ' | grep -qE "(merge.*(local\.required_tags|var\.common_tags|module\.common_tags\.tags)|tags\s*=\s*(module\.common_tags\.tags|var\.common_tags|local\.required_tags))"; then
         echo -e "${GREEN}✓ $resource_type.$resource_name uses required_tags pattern${NC}"
         return
     fi

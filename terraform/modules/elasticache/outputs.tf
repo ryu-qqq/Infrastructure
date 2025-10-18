@@ -52,7 +52,7 @@ output "engine_version" {
 
 output "port" {
   description = "The port number on which the cache accepts connections"
-  value       = var.port != null ? var.port : (var.engine == "redis" ? 6379 : 11211)
+  value       = local.port
 }
 
 # ==============================================================================

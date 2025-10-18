@@ -181,6 +181,17 @@ variable "alarm_actions" {
   default     = []
 }
 
+variable "alarm_period" {
+  description = "Period in seconds for CloudWatch alarms (default: 86400 = 24 hours)"
+  type        = number
+  default     = 86400
+
+  validation {
+    condition     = var.alarm_period > 0
+    error_message = "Alarm period must be greater than 0"
+  }
+}
+
 variable "enable_request_metrics" {
   description = "Enable S3 Request Metrics for detailed monitoring"
   type        = bool

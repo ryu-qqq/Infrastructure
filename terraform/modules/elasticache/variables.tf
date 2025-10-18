@@ -299,6 +299,17 @@ variable "alarm_memory_threshold" {
   }
 }
 
+variable "alarm_swap_threshold" {
+  description = "Swap usage threshold for Memcached CloudWatch alarm (bytes, default: 52428800 = 50MB)"
+  type        = number
+  default     = 52428800
+
+  validation {
+    condition     = var.alarm_swap_threshold > 0
+    error_message = "Swap threshold must be greater than 0"
+  }
+}
+
 variable "alarm_connection_threshold" {
   description = "Connection count threshold for CloudWatch alarm"
   type        = number
