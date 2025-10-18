@@ -122,8 +122,8 @@ SNAKE_CASE_PATTERN='^[a-z0-9][a-z0-9_]*[a-z0-9]$|^[a-z0-9]$'
 while IFS= read -r line; do
     if [[ "$line" =~ name[[:space:]]*=[[:space:]]*\"([^\"]+)\" ]]; then
         NAME="${BASH_REMATCH[1]}"
-        # Skip if it's a variable reference
-        if [[ ! "$NAME" =~ ^\$ ]]; then
+        # Skip if it's a variable reference or contains variable interpolation
+        if [[ ! "$NAME" =~ ^\$ ]] && [[ ! "$NAME" =~ \$\{ ]]; then
             if [[ ! "$NAME" =~ $KEBAB_CASE_PATTERN ]]; then
                 echo -e "${RED}✗ Resource name \"$NAME\" should use kebab-case${NC}"
                 ((ERRORS++))
