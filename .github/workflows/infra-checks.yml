@@ -1,0 +1,473 @@
+name: Infrastructure Security & Compliance Checks
+
+on:
+  workflow_call:
+    inputs:
+      terraform_directory:
+        description: 'Terraform directory to scan'
+        required: false
+        type: string
+        default: 'terraform'
+
+      run_tfsec:
+        description: 'Run tfsec security scanner'
+        required: false
+        type: boolean
+        default: true
+
+      run_checkov:
+        description: 'Run checkov policy checker'
+        required: false
+        type: boolean
+        default: true
+
+      run_conftest:
+        description: 'Run OPA/Conftest policy validation'
+        required: false
+        type: boolean
+        default: true
+
+      run_infracost:
+        description: 'Run Infracost cost estimation'
+        required: false
+        type: boolean
+        default: true
+
+      cost_threshold_warning:
+        description: 'Cost increase percentage threshold for warning'
+        required: false
+        type: number
+        default: 10
+
+      cost_threshold_block:
+        description: 'Cost increase percentage threshold for blocking'
+        required: false
+        type: number
+        default: 30
+
+      fail_on_security_issues:
+        description: 'Fail workflow on critical/high security issues'
+        required: false
+        type: boolean
+        default: false
+
+      fail_on_policy_violations:
+        description: 'Fail workflow on policy violations'
+        required: false
+        type: boolean
+        default: false
+
+    secrets:
+      INFRACOST_API_KEY:
+        description: 'Infracost API key for cost estimation'
+        required: false
+
+      AWS_ROLE_ARN:
+        description: 'AWS IAM Role ARN for OIDC authentication'
+        required: false
+
+permissions:
+  contents: read
+  pull-requests: write
+  id-token: write
+
+jobs:
+  infrastructure-checks:
+    name: Infrastructure Checks
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.6.0
+
+      # Install Security Scanners
+      - name: Install tfsec
+        if: inputs.run_tfsec
+        run: |
+          curl -s https://raw.githubusercontent.com/aquasecurity/tfsec/master/scripts/install_linux.sh | bash
+          tfsec --version
+
+      - name: Install checkov
+        if: inputs.run_checkov
+        run: |
+          pip install checkov
+          checkov --version
+
+      - name: Install Conftest
+        if: inputs.run_conftest
+        run: |
+          CONFTEST_VERSION=0.49.1
+          wget "https://github.com/open-policy-agent/conftest/releases/download/v${CONFTEST_VERSION}/conftest_${CONFTEST_VERSION}_Linux_x86_64.tar.gz"
+          tar xzf "conftest_${CONFTEST_VERSION}_Linux_x86_64.tar.gz"
+          sudo mv conftest /usr/local/bin/
+          conftest --version
+
+      - name: Setup Infracost
+        if: inputs.run_infracost
+        uses: infracost/actions/setup@v3
+        with:
+          api-key: ${{ secrets.INFRACOST_API_KEY }}
+
+      # Configure AWS credentials if needed
+      - name: Configure AWS credentials
+        if: secrets.AWS_ROLE_ARN != ''
+        uses: aws-actions/configure-aws-credentials@v4
+        timeout-minutes: 2
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: ap-northeast-2
+          role-duration-seconds: 3600
+          role-session-name: GitHubActions-InfraChecks
+
+      # Run Security Scans
+      - name: Run tfsec Security Scan
+        id: tfsec
+        if: inputs.run_tfsec
+        continue-on-error: true
+        run: |
+          chmod +x scripts/validators/check-tfsec.sh
+          ./scripts/validators/check-tfsec.sh "${{ inputs.terraform_directory }}"
+
+      - name: Run checkov Policy Check
+        id: checkov
+        if: inputs.run_checkov
+        continue-on-error: true
+        run: |
+          chmod +x scripts/validators/check-checkov.sh
+          ./scripts/validators/check-checkov.sh "${{ inputs.terraform_directory }}"
+
+      # Run Conftest Policy Validation
+      - name: Run Conftest Policy Validation
+        id: conftest
+        if: inputs.run_conftest
+        continue-on-error: true
+        run: |
+          chmod +x scripts/policy/run-conftest.sh
+
+          # Create results file for reporting
+          echo '{"passed":0,"failed":0,"warnings":0,"errors":[]}' > conftest-results.json
+
+          # Run conftest
+          if ./scripts/policy/run-conftest.sh "${{ inputs.terraform_directory }}"; then
+            echo "status=passed" >> $GITHUB_OUTPUT
+            jq '.passed = 1' conftest-results.json > conftest-results.tmp && mv conftest-results.tmp conftest-results.json
+          else
+            echo "status=failed" >> $GITHUB_OUTPUT
+            jq '.failed = 1' conftest-results.json > conftest-results.tmp && mv conftest-results.tmp conftest-results.json
+          fi
+
+      # Terraform Plan and Infracost
+      - name: Find Terraform Modules
+        id: find-modules
+        run: |
+          # Find all directories containing .tf files
+          MODULES=$(find "${{ inputs.terraform_directory }}" -name "*.tf" -type f -exec dirname {} \; | sort -u | tr '\n' ' ')
+          echo "modules=${MODULES}" >> $GITHUB_OUTPUT
+          echo "Found modules: ${MODULES}"
+
+      - name: Generate Terraform Plans
+        id: terraform-plan
+        continue-on-error: true
+        run: |
+          MODULES="${{ steps.find-modules.outputs.modules }}"
+
+          for module_dir in ${MODULES}; do
+            echo "Processing module: ${module_dir}"
+            cd "${GITHUB_WORKSPACE}/${module_dir}"
+
+            # Initialize Terraform
+            if terraform init -backend=false > /dev/null 2>&1; then
+              # Create plan
+              MODULE_NAME=$(echo ${module_dir} | tr '/' '-')
+              terraform plan -no-color -out="${GITHUB_WORKSPACE}/tfplan-${MODULE_NAME}" || true
+            fi
+          done
+
+      - name: Generate Infracost Estimates
+        id: infracost
+        if: inputs.run_infracost
+        continue-on-error: true
+        run: |
+          set +e
+          MODULES="${{ steps.find-modules.outputs.modules }}"
+
+          # Create empty combined JSON as fallback
+          echo '{"projects":[],"totalMonthlyCost":"0","pastTotalMonthlyCost":"0","diffTotalMonthlyCost":"0"}' > infracost-combined.json
+
+          INFRACOST_FILES=""
+
+          for module_dir in ${MODULES}; do
+            MODULE_NAME=$(echo ${module_dir} | tr '/' '-')
+            PLAN_FILE="${GITHUB_WORKSPACE}/tfplan-${MODULE_NAME}"
+
+            if [ -f "${PLAN_FILE}" ]; then
+              cd "${GITHUB_WORKSPACE}/${module_dir}"
+
+              infracost breakdown \
+                --path "${PLAN_FILE}" \
+                --format json \
+                --out-file "${GITHUB_WORKSPACE}/infracost-${MODULE_NAME}.json" || true
+
+              if [ -f "${GITHUB_WORKSPACE}/infracost-${MODULE_NAME}.json" ]; then
+                INFRACOST_FILES="${INFRACOST_FILES} ${GITHUB_WORKSPACE}/infracost-${MODULE_NAME}.json"
+              fi
+            fi
+          done
+
+          # Combine all infracost results
+          if [ ! -z "${INFRACOST_FILES}" ]; then
+            cd "${GITHUB_WORKSPACE}"
+            infracost output \
+              --path "${INFRACOST_FILES}" \
+              --format json \
+              --out-file infracost-combined.json || true
+          fi
+
+          exit 0
+
+      - name: Validate Cost Thresholds
+        id: cost-validation
+        if: inputs.run_infracost
+        continue-on-error: true
+        run: |
+          # Parse combined cost data
+          TOTAL_MONTHLY_COST=$(jq -r '.totalMonthlyCost // "0"' infracost-combined.json | sed 's/[^0-9.]//g')
+          PAST_MONTHLY_COST=$(jq -r '.pastTotalMonthlyCost // "0"' infracost-combined.json | sed 's/[^0-9.]//g')
+          DIFF_MONTHLY_COST=$(jq -r '.diffTotalMonthlyCost // "0"' infracost-combined.json | sed 's/[^0-9.]//g')
+
+          # Calculate percentage change
+          if [ "$PAST_MONTHLY_COST" != "0" ] && [ "$PAST_MONTHLY_COST" != "" ]; then
+            PERCENT_CHANGE=$(echo "scale=2; ($DIFF_MONTHLY_COST / $PAST_MONTHLY_COST) * 100" | bc)
+          else
+            PERCENT_CHANGE=0
+          fi
+
+          echo "total_cost=${TOTAL_MONTHLY_COST}" >> $GITHUB_OUTPUT
+          echo "past_cost=${PAST_MONTHLY_COST}" >> $GITHUB_OUTPUT
+          echo "diff_cost=${DIFF_MONTHLY_COST}" >> $GITHUB_OUTPUT
+          echo "percent_change=${PERCENT_CHANGE}" >> $GITHUB_OUTPUT
+
+          # Check thresholds
+          THRESHOLD_BLOCK=${{ inputs.cost_threshold_block }}
+          THRESHOLD_WARNING=${{ inputs.cost_threshold_warning }}
+
+          if (( $(echo "$PERCENT_CHANGE >= $THRESHOLD_BLOCK" | bc -l) )); then
+            echo "cost_status=blocked" >> $GITHUB_OUTPUT
+            echo "::error::Cost increase of ${PERCENT_CHANGE}% exceeds blocking threshold (${THRESHOLD_BLOCK}%)"
+          elif (( $(echo "$PERCENT_CHANGE >= $THRESHOLD_WARNING" | bc -l) )); then
+            echo "cost_status=warning" >> $GITHUB_OUTPUT
+            echo "::warning::Cost increase of ${PERCENT_CHANGE}% exceeds warning threshold (${THRESHOLD_WARNING}%)"
+          else
+            echo "cost_status=ok" >> $GITHUB_OUTPUT
+          fi
+
+      # Generate Integrated Report
+      - name: Generate PR Comment
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const fs = require('fs');
+
+            // Read tfsec results
+            let tfsecResults = '';
+            if (${{ inputs.run_tfsec }}) {
+              try {
+                const tfsecJson = JSON.parse(fs.readFileSync('tfsec-results.json', 'utf8'));
+                const results = tfsecJson.results || [];
+
+                if (results.length === 0) {
+                  tfsecResults = '✅ No security issues found!';
+                } else {
+                  const critical = results.filter(r => r.severity === 'CRITICAL').length;
+                  const high = results.filter(r => r.severity === 'HIGH').length;
+                  const medium = results.filter(r => r.severity === 'MEDIUM').length;
+                  const low = results.filter(r => r.severity === 'LOW').length;
+
+                  tfsecResults = '**Security Scan Summary:**\n';
+                  if (critical > 0) tfsecResults += `🚨 Critical: ${critical}\n`;
+                  if (high > 0) tfsecResults += `❌ High: ${high}\n`;
+                  if (medium > 0) tfsecResults += `⚠️ Medium: ${medium}\n`;
+                  if (low > 0) tfsecResults += `ℹ️ Low: ${low}\n`;
+
+                  if (critical + high > 0) {
+                    tfsecResults += '\n⚠️ **Action Required:** Security issues must be resolved before merging.\n';
+                  }
+                }
+              } catch (error) {
+                tfsecResults = 'Security scan results not available.';
+              }
+            } else {
+              tfsecResults = '_Skipped_';
+            }
+
+            // Read checkov results
+            let checkovResults = '';
+            if (${{ inputs.run_checkov }}) {
+              try {
+                const checkovJson = JSON.parse(fs.readFileSync('checkov-results.json', 'utf8'));
+                const summary = checkovJson.summary || {};
+
+                const passed = summary.passed || 0;
+                const failed = summary.failed || 0;
+                const skipped = summary.skipped || 0;
+
+                checkovResults = '**Policy Compliance Summary:**\n';
+                checkovResults += `✅ Passed: ${passed}\n`;
+                if (failed > 0) checkovResults += `❌ Failed: ${failed}\n`;
+                if (skipped > 0) checkovResults += `⊘ Skipped: ${skipped}\n`;
+
+                if (failed > 0) {
+                  checkovResults += '\n⚠️ **Action Required:** Policy violations must be resolved.\n';
+                }
+              } catch (error) {
+                checkovResults = 'Policy compliance results not available.';
+              }
+            } else {
+              checkovResults = '_Skipped_';
+            }
+
+            // Read conftest results
+            let conftestResults = '';
+            if (${{ inputs.run_conftest }}) {
+              try {
+                const conftestJson = JSON.parse(fs.readFileSync('conftest-results.json', 'utf8'));
+
+                if (conftestJson.passed > 0) {
+                  conftestResults = '✅ All OPA policies passed!';
+                } else if (conftestJson.failed > 0) {
+                  conftestResults = '❌ OPA policy violations detected\n';
+                  conftestResults += '⚠️ **Action Required:** Review policy violations in workflow logs.\n';
+                } else {
+                  conftestResults = 'ℹ️ No policy checks executed';
+                }
+              } catch (error) {
+                conftestResults = 'OPA policy results not available.';
+              }
+            } else {
+              conftestResults = '_Skipped_';
+            }
+
+            // Read Infracost results
+            let costResults = '';
+            if (${{ inputs.run_infracost }}) {
+              try {
+                const infracostJson = JSON.parse(fs.readFileSync('infracost-combined.json', 'utf8'));
+
+                const totalCost = parseFloat(infracostJson.totalMonthlyCost) || 0;
+                const pastCost = parseFloat(infracostJson.pastTotalMonthlyCost) || 0;
+                const diffCost = parseFloat(infracostJson.diffTotalMonthlyCost) || 0;
+
+                const hasProjects = infracostJson.projects && infracostJson.projects.length > 0;
+                const hasCostData = totalCost > 0 || pastCost > 0 || diffCost !== 0;
+
+                if (!hasProjects || !hasCostData) {
+                  if (pastCost > 0 && totalCost === 0) {
+                    costResults = '✅ **Cost savings detected**\n\n';
+                    costResults += `📉 Previous: $${pastCost.toFixed(2)}\n`;
+                    costResults += `💰 Current: $0.00\n`;
+                    costResults += `🎉 **Savings**: -$${pastCost.toFixed(2)} (100%)\n`;
+                  } else {
+                    costResults = 'ℹ️ **No cost estimation available**\n';
+                    costResults += 'This PR contains no billable resource changes.\n';
+                  }
+                } else {
+                  let percentChange = 0;
+                  if (pastCost > 0) {
+                    percentChange = ((diffCost / pastCost) * 100).toFixed(2);
+                  }
+
+                  costResults = '**Cost Impact Summary:**\n';
+                  costResults += `💰 Current: $${totalCost.toFixed(2)}\n`;
+                  costResults += `📊 Previous: $${pastCost.toFixed(2)}\n`;
+
+                  if (diffCost > 0) {
+                    costResults += `📈 Increase: +$${diffCost.toFixed(2)} (+${percentChange}%)\n`;
+                  } else if (diffCost < 0) {
+                    costResults += `📉 Decrease: $${diffCost.toFixed(2)} (${percentChange}%)\n`;
+                  } else {
+                    costResults += '➡️ No cost change\n';
+                  }
+
+                  costResults += '\n**Cost Policy Status:**\n';
+
+                  if (percentChange >= ${{ inputs.cost_threshold_block }}) {
+                    costResults += `🚫 **BLOCKED**: Exceeds ${${{ inputs.cost_threshold_block }}}% threshold\n`;
+                  } else if (percentChange >= ${{ inputs.cost_threshold_warning }}) {
+                    costResults += `⚠️ **WARNING**: Exceeds ${${{ inputs.cost_threshold_warning }}}% threshold\n`;
+                  } else {
+                    costResults += '✅ Within acceptable thresholds\n';
+                  }
+                }
+              } catch (error) {
+                costResults = '⚠️ Cost analysis unavailable\n';
+                costResults += `Error: ${error.message}\n`;
+              }
+            } else {
+              costResults = '_Skipped_';
+            }
+
+            const output = `## 🛡️ Infrastructure Security & Compliance Report
+
+            <details><summary>🔒 Security Scan (tfsec)</summary>
+
+            ${tfsecResults}
+
+            </details>
+
+            <details><summary>📋 Policy Compliance (checkov)</summary>
+
+            ${checkovResults}
+
+            </details>
+
+            <details><summary>⚖️ OPA Policy Validation (conftest)</summary>
+
+            ${conftestResults}
+
+            </details>
+
+            <details><summary>💰 Cost Impact (Infracost)</summary>
+
+            ${costResults}
+
+            </details>
+
+            ---
+            *Infrastructure checks powered by [tfsec](https://github.com/aquasecurity/tfsec), [checkov](https://www.checkov.io/), [Conftest](https://www.conftest.dev/), and [Infracost](https://www.infracost.io/)*
+            `;
+
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: output
+            });
+
+      # Fail workflow based on settings
+      - name: Check Security Issues
+        if: |
+          inputs.fail_on_security_issues &&
+          inputs.run_tfsec &&
+          steps.tfsec.outcome == 'failure'
+        run: |
+          echo "❌ Workflow failed due to security issues"
+          exit 1
+
+      - name: Check Policy Violations
+        if: |
+          inputs.fail_on_policy_violations &&
+          (
+            (inputs.run_checkov && steps.checkov.outcome == 'failure') ||
+            (inputs.run_conftest && steps.conftest.outputs.status == 'failed')
+          )
+        run: |
+          echo "❌ Workflow failed due to policy violations"
+          exit 1

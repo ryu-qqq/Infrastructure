@@ -1,0 +1,88 @@
+name: Test Infrastructure Checks
+
+# This workflow demonstrates how to use the reusable infra-checks.yml workflow
+# It can be triggered manually for testing purposes
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Environment to test'
+        required: true
+        type: choice
+        options:
+          - dev
+          - prod
+          - custom
+
+      terraform_directory:
+        description: 'Terraform directory (default: terraform)'
+        required: false
+        type: string
+        default: 'terraform'
+
+      enable_strict_mode:
+        description: 'Enable strict mode (fail on issues)'
+        required: false
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+  pull-requests: write
+  id-token: write
+
+jobs:
+  # Example 1: Development environment (permissive)
+  dev-checks:
+    if: inputs.environment == 'dev'
+    uses: ./.github/workflows/infra-checks.yml
+    with:
+      terraform_directory: ${{ inputs.terraform_directory }}
+      run_tfsec: true
+      run_checkov: true
+      run_conftest: true
+      run_infracost: true
+      cost_threshold_warning: 25
+      cost_threshold_block: 50
+      fail_on_security_issues: false
+      fail_on_policy_violations: false
+    secrets:
+      INFRACOST_API_KEY: ${{ secrets.INFRACOST_API_KEY }}
+      AWS_ROLE_ARN: ${{ secrets.AWS_ROLE_ARN }}
+
+  # Example 2: Production environment (strict)
+  prod-checks:
+    if: inputs.environment == 'prod'
+    uses: ./.github/workflows/infra-checks.yml
+    with:
+      terraform_directory: ${{ inputs.terraform_directory }}
+      run_tfsec: true
+      run_checkov: true
+      run_conftest: true
+      run_infracost: true
+      cost_threshold_warning: 5
+      cost_threshold_block: 15
+      fail_on_security_issues: ${{ inputs.enable_strict_mode }}
+      fail_on_policy_violations: ${{ inputs.enable_strict_mode }}
+    secrets:
+      INFRACOST_API_KEY: ${{ secrets.INFRACOST_API_KEY }}
+      AWS_ROLE_ARN: ${{ secrets.AWS_ROLE_ARN }}
+
+  # Example 3: Custom configuration
+  custom-checks:
+    if: inputs.environment == 'custom'
+    uses: ./.github/workflows/infra-checks.yml
+    with:
+      terraform_directory: ${{ inputs.terraform_directory }}
+      run_tfsec: true
+      run_checkov: true
+      run_conftest: true
+      run_infracost: true
+      cost_threshold_warning: 10
+      cost_threshold_block: 30
+      fail_on_security_issues: ${{ inputs.enable_strict_mode }}
+      fail_on_policy_violations: ${{ inputs.enable_strict_mode }}
+    secrets:
+      INFRACOST_API_KEY: ${{ secrets.INFRACOST_API_KEY }}
+      AWS_ROLE_ARN: ${{ secrets.AWS_ROLE_ARN }}
