@@ -34,6 +34,11 @@ module "common_tags" {
   project     = "elasticache-advanced-example"
 }
 
+# Local variable for required tags (governance validation pattern)
+locals {
+  required_tags = module.common_tags.tags
+}
+
 # ==============================================================================
 # VPC Data Source (Assuming VPC already exists)
 # ==============================================================================
@@ -79,7 +84,7 @@ resource "aws_security_group" "redis" {
   }
 
   tags = merge(
-    module.common_tags.tags,
+    local.required_tags,
     {
       Name = "${var.cluster_name}-redis-sg"
     }
@@ -96,7 +101,7 @@ resource "aws_kms_key" "redis" {
   deletion_window_in_days = 30
 
   tags = merge(
-    module.common_tags.tags,
+    local.required_tags,
     {
       Name = "${var.cluster_name}-redis-kms"
     }
@@ -116,7 +121,7 @@ resource "aws_sns_topic" "redis_alarms" {
   name = "${var.cluster_name}-redis-alarms"
 
   tags = merge(
-    module.common_tags.tags,
+    local.required_tags,
     {
       Name = "${var.cluster_name}-redis-alarms"
     }
@@ -131,7 +136,7 @@ module "redis" {
   source = "../../"
 
   # Required Configuration
-  common_tags        = module.common_tags.tags
+  common_tags        = local.required_tags
   cluster_id         = var.cluster_name
   engine             = "redis"
   node_type          = var.node_type
@@ -175,17 +180,17 @@ module "redis" {
   ]
 
   # Maintenance and Backup
-  snapshot_retention_limit = 14
-  snapshot_window          = "03:00-04:00"
-  maintenance_window       = "sun:04:00-sun:05:00"
+  snapshot_retention_limit   = 14
+  snapshot_window            = "03:00-04:00"
+  maintenance_window         = "sun:04:00-sun:05:00"
   auto_minor_version_upgrade = true
 
   # CloudWatch Alarms
-  enable_cloudwatch_alarms = true
-  alarm_cpu_threshold      = 80
-  alarm_memory_threshold   = 85
+  enable_cloudwatch_alarms   = true
+  alarm_cpu_threshold        = 80
+  alarm_memory_threshold     = 85
   alarm_connection_threshold = 5000
-  alarm_actions            = [aws_sns_topic.redis_alarms.arn]
+  alarm_actions              = [aws_sns_topic.redis_alarms.arn]
 
   # Logging
   log_delivery_configuration = [
@@ -213,7 +218,7 @@ resource "aws_cloudwatch_log_group" "slowlog" {
   retention_in_days = 7
 
   tags = merge(
-    module.common_tags.tags,
+    local.required_tags,
     {
       Name = "${var.cluster_name}-slowlog"
     }
@@ -225,7 +230,7 @@ resource "aws_cloudwatch_log_group" "enginelog" {
   retention_in_days = 7
 
   tags = merge(
-    module.common_tags.tags,
+    local.required_tags,
     {
       Name = "${var.cluster_name}-enginelog"
     }

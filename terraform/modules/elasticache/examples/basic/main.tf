@@ -34,6 +34,11 @@ module "common_tags" {
   project     = "elasticache-basic-example"
 }
 
+# Local variable for required tags (governance validation pattern)
+locals {
+  required_tags = module.common_tags.tags
+}
+
 # ==============================================================================
 # VPC Data Source (Assuming VPC already exists)
 # ==============================================================================
@@ -79,7 +84,7 @@ resource "aws_security_group" "redis" {
   }
 
   tags = merge(
-    module.common_tags.tags,
+    local.required_tags,
     {
       Name = "${var.cluster_name}-redis-sg"
     }
@@ -96,7 +101,7 @@ resource "aws_kms_key" "redis" {
   deletion_window_in_days = 30
 
   tags = merge(
-    module.common_tags.tags,
+    local.required_tags,
     {
       Name = "${var.cluster_name}-redis-kms"
     }
@@ -116,7 +121,7 @@ module "redis" {
   source = "../../"
 
   # Required Configuration
-  common_tags        = module.common_tags.tags
+  common_tags        = local.required_tags
   cluster_id         = var.cluster_name
   engine             = "redis"
   node_type          = var.node_type
@@ -144,15 +149,15 @@ module "redis" {
   ]
 
   # Maintenance and Backup
-  snapshot_retention_limit = 7
-  snapshot_window          = "03:00-04:00"
-  maintenance_window       = "sun:04:00-sun:05:00"
+  snapshot_retention_limit   = 7
+  snapshot_window            = "03:00-04:00"
+  maintenance_window         = "sun:04:00-sun:05:00"
   auto_minor_version_upgrade = true
 
   # CloudWatch Alarms
-  enable_cloudwatch_alarms = true
-  alarm_cpu_threshold      = 75
-  alarm_memory_threshold   = 75
+  enable_cloudwatch_alarms   = true
+  alarm_cpu_threshold        = 75
+  alarm_memory_threshold     = 75
   alarm_connection_threshold = 1000
 }
 
