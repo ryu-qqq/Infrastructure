@@ -117,7 +117,7 @@ resource "aws_kms_alias" "redis" {
 # SNS Topic for CloudWatch Alarms
 # ==============================================================================
 
-resource "aws_sns_topic" "redis_alarms" {
+resource "aws_sns_topic" "redis-alarms" {
   name = "${var.cluster_name}-redis-alarms"
 
   tags = merge(
@@ -190,7 +190,7 @@ module "redis" {
   alarm_cpu_threshold        = 80
   alarm_memory_threshold     = 85
   alarm_connection_threshold = 5000
-  alarm_actions              = [aws_sns_topic.redis_alarms.arn]
+  alarm_actions              = [aws_sns_topic.redis-alarms.arn]
 
   # Logging
   log_delivery_configuration = [

@@ -4,12 +4,12 @@
 
 output "cluster_id" {
   description = "The cluster identifier"
-  value       = var.replication_group_id != null ? aws_elasticache_replication_group.redis[0].id : (var.engine == "redis" ? aws_elasticache_cluster.memcached_or_single_redis[0].cluster_id : aws_elasticache_cluster.memcached_or_single_redis[0].cluster_id)
+  value       = var.replication_group_id != null ? aws_elasticache_replication_group.redis[0].id : (var.engine == "redis" ? aws_elasticache_cluster.memcached-or-single-redis[0].cluster_id : aws_elasticache_cluster.memcached-or-single-redis[0].cluster_id)
 }
 
 output "cluster_arn" {
   description = "The ARN of the ElastiCache cluster or replication group"
-  value       = var.replication_group_id != null ? aws_elasticache_replication_group.redis[0].arn : aws_elasticache_cluster.memcached_or_single_redis[0].arn
+  value       = var.replication_group_id != null ? aws_elasticache_replication_group.redis[0].arn : aws_elasticache_cluster.memcached-or-single-redis[0].arn
 }
 
 # ==============================================================================
@@ -18,7 +18,7 @@ output "cluster_arn" {
 
 output "configuration_endpoint" {
   description = "The configuration endpoint (for Memcached clusters or Redis cluster mode enabled)"
-  value       = var.engine == "memcached" ? aws_elasticache_cluster.memcached_or_single_redis[0].configuration_endpoint : null
+  value       = var.engine == "memcached" ? aws_elasticache_cluster.memcached-or-single-redis[0].configuration_endpoint : null
 }
 
 output "primary_endpoint_address" {
@@ -33,7 +33,7 @@ output "reader_endpoint_address" {
 
 output "cache_nodes" {
   description = "List of cache nodes (for standalone clusters)"
-  value       = var.replication_group_id == null ? aws_elasticache_cluster.memcached_or_single_redis[0].cache_nodes : []
+  value       = var.replication_group_id == null ? aws_elasticache_cluster.memcached-or-single-redis[0].cache_nodes : []
 }
 
 # ==============================================================================
@@ -47,7 +47,7 @@ output "engine" {
 
 output "engine_version" {
   description = "The running version of the cache engine"
-  value       = var.replication_group_id != null ? aws_elasticache_replication_group.redis[0].engine_version_actual : aws_elasticache_cluster.memcached_or_single_redis[0].engine_version_actual
+  value       = var.replication_group_id != null ? aws_elasticache_replication_group.redis[0].engine_version_actual : aws_elasticache_cluster.memcached-or-single-redis[0].engine_version_actual
 }
 
 output "port" {
@@ -90,7 +90,7 @@ output "subnet_group_id" {
 
 output "availability_zone" {
   description = "The availability zone of the cluster (for single-node clusters)"
-  value       = var.replication_group_id == null && var.num_cache_nodes == 1 ? aws_elasticache_cluster.memcached_or_single_redis[0].availability_zone : null
+  value       = var.replication_group_id == null && var.num_cache_nodes == 1 ? aws_elasticache_cluster.memcached-or-single-redis[0].availability_zone : null
 }
 
 # ==============================================================================

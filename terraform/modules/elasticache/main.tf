@@ -116,7 +116,7 @@ resource "aws_elasticache_replication_group" "redis" {
 # ElastiCache Cluster (Memcached or Single-Node Redis)
 # ==============================================================================
 
-resource "aws_elasticache_cluster" "memcached_or_single_redis" {
+resource "aws_elasticache_cluster" "memcached-or-single-redis" {
   count = var.replication_group_id == null ? 1 : 0
 
   cluster_id = var.cluster_id
