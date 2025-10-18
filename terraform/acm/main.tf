@@ -28,7 +28,7 @@ resource "aws_acm_certificate" "wildcard" {
 
 # Automatic DNS validation using Route53
 # Creates DNS records required for certificate validation
-resource "aws_route53_record" "certificate_validation" {
+resource "aws_route53_record" "certificate-validation" {
   for_each = {
     for dvo in aws_acm_certificate.wildcard.domain_validation_options : dvo.domain_name => {
       name   = dvo.resource_record_name
@@ -48,7 +48,7 @@ resource "aws_route53_record" "certificate_validation" {
 # Wait for certificate validation to complete
 resource "aws_acm_certificate_validation" "wildcard" {
   certificate_arn         = aws_acm_certificate.wildcard.arn
-  validation_record_fqdns = [for record in aws_route53_record.certificate_validation : record.fqdn]
+  validation_record_fqdns = [for record in aws_route53_record.certificate-validation : record.fqdn]
 
   timeouts {
     create = "10m"
@@ -57,7 +57,7 @@ resource "aws_acm_certificate_validation" "wildcard" {
 
 # CloudWatch Alarm for Certificate Expiration
 # AWS ACM automatically renews certificates, but this alarm monitors the renewal process
-resource "aws_cloudwatch_metric_alarm" "certificate_expiration" {
+resource "aws_cloudwatch_metric_alarm" "certificate-expiration" {
   count = var.enable_expiration_alarm ? 1 : 0
 
   alarm_name          = "acm-certificate-expiration-${var.domain_name}"

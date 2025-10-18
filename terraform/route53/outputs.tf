@@ -27,10 +27,10 @@ output "atlantis_health_check_id" {
 
 output "query_log_group_name" {
   description = "The CloudWatch Log Group name for query logs"
-  value       = var.enable_query_logging ? aws_cloudwatch_log_group.route53_query_logs[0].name : null
+  value       = var.enable_query_logging ? aws_cloudwatch_log_group.route53-query-logs[0].name : null
 }
 
 output "query_log_group_arn" {
   description = "The CloudWatch Log Group ARN for query logs"
-  value       = var.enable_query_logging ? aws_cloudwatch_log_group.route53_query_logs[0].arn : null
+  value       = var.enable_query_logging ? aws_cloudwatch_log_group.route53-query-logs[0].arn : null
 }

@@ -47,5 +47,5 @@ output "validation_record_fqdns" {
 
 output "expiration_alarm_arn" {
   description = "ARN of the certificate expiration CloudWatch alarm"
-  value       = var.enable_expiration_alarm ? aws_cloudwatch_metric_alarm.certificate_expiration[0].arn : null
+  value       = var.enable_expiration_alarm ? aws_cloudwatch_metric_alarm.certificate-expiration[0].arn : null
 }
