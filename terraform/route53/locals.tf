@@ -4,11 +4,13 @@ locals {
   # Required tags for governance compliance
   required_tags = {
     Owner       = "platform-team"
+    Team        = "platform-team"
     CostCenter  = "infrastructure"
     Lifecycle   = "production"
     DataClass   = "public"
     Service     = "dns"
     Environment = var.environment
+    Project     = "infrastructure"
     Component   = "route53"
   }
 

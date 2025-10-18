@@ -10,6 +10,24 @@ resource "aws_route53_record" "this" {
   # Simple records (A, AAAA, CNAME, TXT, etc.)
   records = var.alias_configuration != null ? null : var.records
 
+  # Validation: Ensure mutual exclusivity between alias and simple records
+  lifecycle {
+    precondition {
+      condition     = !(var.alias_configuration != null && var.records != null)
+      error_message = "Cannot specify both 'alias_configuration' and 'records'. Use one or the other."
+    }
+
+    precondition {
+      condition     = var.alias_configuration != null || var.records != null
+      error_message = "Must specify either 'alias_configuration' or 'records'."
+    }
+
+    precondition {
+      condition     = var.alias_configuration != null || (var.ttl != null && var.ttl >= 60 && var.ttl <= 86400)
+      error_message = "TTL must be between 60 and 86400 seconds for non-alias records."
+    }
+  }
+
   # Alias records (for AWS resources like ALB, CloudFront)
   dynamic "alias" {
     for_each = var.alias_configuration != null ? [var.alias_configuration] : []

@@ -40,6 +40,47 @@ resource "aws_route53_query_log" "primary" {
   depends_on = [aws_cloudwatch_log_group.route53_query_logs]
 }
 
+# KMS Key Policy Document for CloudWatch Logs
+data "aws_iam_policy_document" "route53_logs_kms" {
+  count = var.enable_query_logging ? 1 : 0
+
+  # Enable IAM User Permissions
+  statement {
+    sid    = "Enable IAM User Permissions"
+    effect = "Allow"
+    principals {
+      type        = "AWS"
+      identifiers = ["arn:aws:iam::${data.aws_caller_identity.current.account_id}:root"]
+    }
+    actions   = ["kms:*"]
+    resources = ["*"]
+  }
+
+  # Allow CloudWatch Logs Service
+  statement {
+    sid    = "Allow CloudWatch Logs"
+    effect = "Allow"
+    principals {
+      type        = "Service"
+      identifiers = ["logs.${var.aws_region}.amazonaws.com"]
+    }
+    actions = [
+      "kms:Encrypt",
+      "kms:Decrypt",
+      "kms:ReEncrypt*",
+      "kms:GenerateDataKey*",
+      "kms:CreateGrant",
+      "kms:DescribeKey"
+    ]
+    resources = ["*"]
+    condition {
+      test     = "ArnLike"
+      variable = "kms:EncryptionContext:aws:logs:arn"
+      values   = ["arn:aws:logs:${var.aws_region}:${data.aws_caller_identity.current.account_id}:log-group:/aws/route53/*"]
+    }
+  }
+}
+
 # KMS Key for CloudWatch Logs Encryption
 resource "aws_kms_key" "route53_logs" {
   count = var.enable_query_logging ? 1 : 0
@@ -47,43 +88,7 @@ resource "aws_kms_key" "route53_logs" {
   description             = "KMS key for Route53 query logs encryption"
   deletion_window_in_days = 30
   enable_key_rotation     = true
-
-  # KMS key policy to allow CloudWatch Logs service
-  policy = jsonencode({
-    Version = "2012-10-17"
-    Statement = [
-      {
-        Sid    = "Enable IAM User Permissions"
-        Effect = "Allow"
-        Principal = {
-          AWS = "arn:aws:iam::${data.aws_caller_identity.current.account_id}:root"
-        }
-        Action   = "kms:*"
-        Resource = "*"
-      },
-      {
-        Sid    = "Allow CloudWatch Logs"
-        Effect = "Allow"
-        Principal = {
-          Service = "logs.${var.aws_region}.amazonaws.com"
-        }
-        Action = [
-          "kms:Encrypt",
-          "kms:Decrypt",
-          "kms:ReEncrypt*",
-          "kms:GenerateDataKey*",
-          "kms:CreateGrant",
-          "kms:DescribeKey"
-        ]
-        Resource = "*"
-        Condition = {
-          ArnLike = {
-            "kms:EncryptionContext:aws:logs:arn" = "arn:aws:logs:${var.aws_region}:${data.aws_caller_identity.current.account_id}:log-group:/aws/route53/*"
-          }
-        }
-      }
-    ]
-  })
+  policy                  = data.aws_iam_policy_document.route53_logs_kms[0].json
 
   tags = merge(
     local.required_tags,
