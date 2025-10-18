@@ -68,6 +68,27 @@ terraform plan
 terraform apply
 ```
 
+### 기존 리소스 가져오기 (Import)
+
+만약 Bootstrap 인프라 리소스가 이미 수동으로 생성되어 있다면, `terraform apply`를 실행하기 전에 다음 명령어를 사용하여 Terraform 상태로 가져와야 합니다.
+
+```bash
+# 1. S3 버킷 가져오기
+terraform import aws_s3_bucket.terraform-state prod-connectly
+
+# 2. DynamoDB 테이블 가져오기
+terraform import aws_dynamodb_table.terraform-lock prod-connectly-tf-lock
+
+# 3. KMS 키 가져오기 (기존 키의 ID를 먼저 확인해야 합니다)
+# AWS Console > KMS에서 "terraform-state" 키의 ID 확인
+terraform import aws_kms_key.terraform-state <your-kms-key-id>
+
+# 4. KMS 키 별칭 가져오기
+terraform import aws_kms_alias.terraform-state alias/terraform-state
+```
+
+> **참고**: 임포트 후 `terraform plan`을 실행하여 변경 사항이 없는지 확인한 뒤, 이후 코드로 인프라를 관리할 수 있습니다.
+
 ### Backend 구성 예시
 
 Bootstrap 인프라 배포 후, 다른 Terraform 프로젝트에서 다음과 같이 사용할 수 있습니다:
