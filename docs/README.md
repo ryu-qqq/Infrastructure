@@ -20,6 +20,9 @@ Setup and operational guides
 - [Slack Setup Guide](./guides/setup/SLACK_SETUP_GUIDE.md) - AWS Chatbot and Slack integration
 - [Jira Integration](./guides/setup/JIRA_INTEGRATION.md) - GitHub Issues to Jira sync
 
+#### [Onboarding Guides](./guides/onboarding/)
+- [Service Repository Onboarding](./guides/onboarding/SERVICE_REPO_ONBOARDING.md) - Complete guide for service teams to build infrastructure autonomously
+
 #### [Operations Guides](./guides/operations/)
 - [Logs Insights Queries](./guides/operations/LOGS_INSIGHTS_QUERIES.md) - CloudWatch Logs Insights query examples
 - [Infrastructure Notion](./guides/operations/infrastructure_notion.md) - Notion integration details
@@ -54,10 +57,11 @@ Change history and templates
 ## 🚀 Quick Links
 
 ### For New Team Members
-1. Start with [Project Overview (Korean)](./ko/PROJECT_OVERVIEW_KR.md) or main [README](../README.md)
-2. Review [Infrastructure Governance](./governance/infrastructure_governance.md)
-3. Set up [GitHub Actions](./guides/setup/github_actions_setup.md)
-4. Install Git hooks: `./scripts/setup-hooks.sh`
+1. Start with [Service Repository Onboarding Guide](./guides/onboarding/SERVICE_REPO_ONBOARDING.md) - **NEW!**
+2. Read [Project Overview (Korean)](./ko/PROJECT_OVERVIEW_KR.md) or main [README](../README.md)
+3. Review [Infrastructure Governance](./governance/infrastructure_governance.md)
+4. Set up [GitHub Actions](./guides/setup/github_actions_setup.md)
+5. Install Git hooks: `./scripts/setup-hooks.sh`
 
 ### For Module Developers
 1. Read [Module Standards Guide](./modules/MODULE_STANDARDS_GUIDE.md)
@@ -82,6 +86,7 @@ Change history and templates
 | Category | Files | Purpose |
 |----------|-------|---------|
 | Governance | 5 | Standards, policies, and conventions |
+| Onboarding Guides | 1 | Service team onboarding and first PR tutorial |
 | Setup Guides | 3 | Initial configuration and integration |
 | Operations | 2 | Day-to-day operational guides |
 | Modules | 5 | Module development guidelines |
@@ -89,13 +94,14 @@ Change history and templates
 | Changelogs | 2 | Change history tracking |
 | Korean Docs | 3 | Korean language documentation |
 
-**Total Documents**: 23 active documents
+**Total Documents**: 24 active documents
 
 ---
 
 ## 🔍 Finding Documentation
 
 ### By Task
+- **Getting started with infrastructure**: → [Onboarding Guide](./guides/onboarding/SERVICE_REPO_ONBOARDING.md)
 - **Creating new modules**: → [Modules](./modules/)
 - **Responding to alerts**: → [Runbooks](./runbooks/)
 - **Setting up CI/CD**: → [Setup Guides](./guides/setup/)
@@ -125,4 +131,4 @@ When adding new documentation:
 
 `#infrastructure` `#terraform` `#aws` `#documentation` `#governance` `#modules`
 
-Last updated: 2025-10-17
+Last updated: 2025-10-18
