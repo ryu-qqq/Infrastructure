@@ -3,6 +3,24 @@
 # This module manages SSL/TLS certificates for the domain using AWS Certificate Manager.
 # Certificates are automatically validated via DNS and auto-renewed by AWS.
 
+# ==============================================================================
+# Common Tags Module
+# ==============================================================================
+
+module "common_tags" {
+  source = "../modules/common-tags"
+
+  environment = var.environment
+  service     = var.service
+  team        = var.team
+  owner       = var.owner
+  cost_center = var.cost_center
+}
+
+# ==============================================================================
+# ACM Certificate
+# ==============================================================================
+
 # Primary wildcard certificate for the domain
 # This certificate covers *.set-of.com and set-of.com
 resource "aws_acm_certificate" "wildcard" {
@@ -16,7 +34,7 @@ resource "aws_acm_certificate" "wildcard" {
   }
 
   tags = merge(
-    local.required_tags,
+    module.common_tags.tags,
     {
       Name      = "acm-wildcard-${var.domain_name}"
       Component = "acm"
@@ -76,7 +94,7 @@ resource "aws_cloudwatch_metric_alarm" "certificate-expiration" {
   }
 
   tags = merge(
-    local.required_tags,
+    module.common_tags.tags,
     {
       Name      = "alarm-acm-expiration-${var.domain_name}"
       Component = "monitoring"

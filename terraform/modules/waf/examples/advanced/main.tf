@@ -46,28 +46,25 @@ module "waf_logs_bucket" {
   source = "../../../s3-bucket"
 
   bucket_name = "prod-waf-logs-${data.aws_caller_identity.current.account_id}"
-  purpose     = "waf-logs"
+
+  # Required tag variables
+  environment = "prod"
+  service     = "waf-logging"
+  team        = "platform-team"
+  owner       = "platform@example.com"
+  cost_center = "engineering"
+  project     = "infrastructure"
 
   versioning_enabled = false
   lifecycle_rules = [
     {
-      id      = "archive-old-logs"
-      enabled = true
-      transitions = [
-        {
-          days          = 90
-          storage_class = "INTELLIGENT_TIERING"
-        },
-        {
-          days          = 365
-          storage_class = "GLACIER"
-        }
-      ]
-      expiration_days = 2555 # 7 years
+      id                         = "archive-old-logs"
+      enabled                    = true
+      transition_to_ia_days      = 90
+      transition_to_glacier_days = 365
+      expiration_days            = 2555 # 7 years
     }
   ]
-
-  common_tags = module.common_tags.tags
 }
 
 # ==============================================================================
