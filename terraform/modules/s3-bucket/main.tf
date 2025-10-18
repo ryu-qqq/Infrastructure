@@ -17,8 +17,9 @@ locals {
 
 # S3 Bucket
 resource "aws_s3_bucket" "this" {
-  bucket        = var.bucket_name
-  force_destroy = var.force_destroy
+  bucket              = var.bucket_name
+  force_destroy       = var.force_destroy
+  object_lock_enabled = var.enable_object_lock
 
   tags = merge(
     local.required_tags,
@@ -50,6 +51,22 @@ resource "aws_s3_bucket_versioning" "this" {
   versioning_configuration {
     status = "Enabled"
   }
+}
+
+# Object Lock Configuration (requires versioning)
+resource "aws_s3_bucket_object_lock_configuration" "this" {
+  count  = var.enable_object_lock ? 1 : 0
+  bucket = aws_s3_bucket.this.id
+
+  rule {
+    default_retention {
+      mode  = var.object_lock_mode
+      days  = var.object_lock_retention_days
+      years = var.object_lock_retention_years
+    }
+  }
+
+  depends_on = [aws_s3_bucket_versioning.this]
 }
 
 # Public Access Block Configuration
@@ -158,4 +175,84 @@ resource "aws_s3_bucket_website_configuration" "this" {
   error_document {
     key = var.website_error_document
   }
+}
+
+# Request Metrics Configuration
+resource "aws_s3_bucket_metric" "this" {
+  count  = var.enable_request_metrics ? 1 : 0
+  bucket = aws_s3_bucket.this.id
+  name   = "EntireBucket"
+
+  dynamic "filter" {
+    for_each = var.request_metrics_filter_prefix != "" ? [1] : []
+    content {
+      prefix = var.request_metrics_filter_prefix
+    }
+  }
+}
+
+# ==============================================================================
+# CloudWatch Alarms
+# ==============================================================================
+
+# Bucket Size Alarm
+resource "aws_cloudwatch_metric_alarm" "bucket-size" {
+  count = var.enable_cloudwatch_alarms ? 1 : 0
+
+  alarm_name          = "${var.bucket_name}-bucket-size"
+  alarm_description   = "S3 bucket ${var.bucket_name} - Storage size exceeds threshold"
+  comparison_operator = "GreaterThanThreshold"
+  evaluation_periods  = 1
+  metric_name         = "BucketSizeBytes"
+  namespace           = "AWS/S3"
+  period              = 86400 # 24 hours
+  statistic           = "Average"
+  threshold           = var.alarm_bucket_size_threshold
+  treat_missing_data  = "notBreaching"
+
+  dimensions = {
+    BucketName  = aws_s3_bucket.this.id
+    StorageType = "StandardStorage"
+  }
+
+  alarm_actions = var.alarm_actions
+
+  tags = merge(
+    local.required_tags,
+    var.additional_tags,
+    {
+      Name = "${var.bucket_name}-size-alarm"
+    }
+  )
+}
+
+# Object Count Alarm
+resource "aws_cloudwatch_metric_alarm" "object-count" {
+  count = var.enable_cloudwatch_alarms ? 1 : 0
+
+  alarm_name          = "${var.bucket_name}-object-count"
+  alarm_description   = "S3 bucket ${var.bucket_name} - Object count exceeds threshold"
+  comparison_operator = "GreaterThanThreshold"
+  evaluation_periods  = 1
+  metric_name         = "NumberOfObjects"
+  namespace           = "AWS/S3"
+  period              = 86400 # 24 hours
+  statistic           = "Average"
+  threshold           = var.alarm_object_count_threshold
+  treat_missing_data  = "notBreaching"
+
+  dimensions = {
+    BucketName  = aws_s3_bucket.this.id
+    StorageType = "AllStorageTypes"
+  }
+
+  alarm_actions = var.alarm_actions
+
+  tags = merge(
+    local.required_tags,
+    var.additional_tags,
+    {
+      Name = "${var.bucket_name}-object-count-alarm"
+    }
+  )
 }

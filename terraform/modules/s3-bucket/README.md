@@ -11,6 +11,9 @@ Terraform module for creating standardized S3 buckets with governance compliance
 - **Access Logging**: Optional S3 access logging
 - **CORS Configuration**: Support for Cross-Origin Resource Sharing
 - **Static Website Hosting**: Optional website hosting configuration
+- **CloudWatch Monitoring**: Bucket size and object count alarms
+- **Request Metrics**: Detailed S3 request monitoring (CloudWatch Request Metrics)
+- **Object Lock**: WORM (Write Once Read Many) protection with compliance/governance modes
 - **Governance Compliance**: Automatic tagging and naming convention validation
 
 ## Usage
@@ -130,6 +133,69 @@ module "logs_bucket" {
       abort_incomplete_upload_days = 1
     }
   ]
+}
+```
+
+### Bucket with Monitoring
+
+```hcl
+module "monitored_bucket" {
+  source = "../../modules/s3-bucket"
+
+  bucket_name = "prod-monitored-data-bucket"
+
+  # Required tags
+  environment = "prod"
+  service     = "data-storage"
+  team        = "platform-team"
+  owner       = "platform@example.com"
+  cost_center = "engineering"
+  project     = "infrastructure"
+
+  # Encryption
+  kms_key_id = aws_kms_key.bucket.arn
+
+  # CloudWatch Monitoring
+  enable_cloudwatch_alarms       = true
+  alarm_bucket_size_threshold    = 53687091200  # 50GB
+  alarm_object_count_threshold   = 500000       # 500k objects
+  alarm_actions                  = [aws_sns_topic.alerts.arn]
+
+  # Request Metrics for detailed monitoring
+  enable_request_metrics         = true
+  request_metrics_filter_prefix  = ""  # Monitor entire bucket
+}
+```
+
+### Compliance Bucket with Object Lock
+
+```hcl
+module "compliance_bucket" {
+  source = "../../modules/s3-bucket"
+
+  bucket_name = "prod-compliance-archive-bucket"
+
+  # Required tags
+  environment = "prod"
+  service     = "compliance"
+  team        = "legal-team"
+  owner       = "compliance@example.com"
+  cost_center = "legal"
+  project     = "regulatory-compliance"
+
+  # Encryption
+  kms_key_id = aws_kms_key.compliance.arn
+
+  # Versioning (required for Object Lock)
+  versioning_enabled = true
+
+  # Object Lock for regulatory compliance
+  enable_object_lock            = true
+  object_lock_mode              = "COMPLIANCE"  # Cannot be bypassed
+  object_lock_retention_years   = 7             # 7-year retention
+
+  # Prevent accidental deletion
+  force_destroy = false
 }
 ```
 

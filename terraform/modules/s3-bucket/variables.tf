@@ -154,3 +154,71 @@ variable "additional_tags" {
   type        = map(string)
   default     = {}
 }
+
+# Monitoring Variables
+
+variable "enable_cloudwatch_alarms" {
+  description = "Enable CloudWatch alarms for bucket monitoring"
+  type        = bool
+  default     = false
+}
+
+variable "alarm_bucket_size_threshold" {
+  description = "Alarm threshold for bucket size in bytes (default: 100GB)"
+  type        = number
+  default     = 107374182400 # 100GB
+}
+
+variable "alarm_object_count_threshold" {
+  description = "Alarm threshold for number of objects in bucket"
+  type        = number
+  default     = 1000000 # 1 million objects
+}
+
+variable "alarm_actions" {
+  description = "SNS topic ARNs to notify when alarm triggers"
+  type        = list(string)
+  default     = []
+}
+
+variable "enable_request_metrics" {
+  description = "Enable S3 Request Metrics for detailed monitoring"
+  type        = bool
+  default     = false
+}
+
+variable "request_metrics_filter_prefix" {
+  description = "Prefix filter for request metrics (leave empty for entire bucket)"
+  type        = string
+  default     = ""
+}
+
+# Object Lock Variables
+
+variable "enable_object_lock" {
+  description = "Enable S3 Object Lock for WORM (Write Once Read Many) protection"
+  type        = bool
+  default     = false
+}
+
+variable "object_lock_mode" {
+  description = "Object Lock mode: GOVERNANCE or COMPLIANCE"
+  type        = string
+  default     = "GOVERNANCE"
+  validation {
+    condition     = contains(["GOVERNANCE", "COMPLIANCE"], var.object_lock_mode)
+    error_message = "Object Lock mode must be either GOVERNANCE or COMPLIANCE"
+  }
+}
+
+variable "object_lock_retention_days" {
+  description = "Default retention period in days for Object Lock"
+  type        = number
+  default     = null
+}
+
+variable "object_lock_retention_years" {
+  description = "Default retention period in years for Object Lock"
+  type        = number
+  default     = null
+}

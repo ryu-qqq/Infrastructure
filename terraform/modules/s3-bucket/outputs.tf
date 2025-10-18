@@ -39,3 +39,36 @@ output "bucket_tags" {
   description = "The tags applied to the bucket"
   value       = aws_s3_bucket.this.tags_all
 }
+
+# Monitoring Outputs
+
+output "cloudwatch_alarm_bucket_size_arn" {
+  description = "ARN of the bucket size CloudWatch alarm"
+  value       = var.enable_cloudwatch_alarms ? aws_cloudwatch_metric_alarm.bucket-size[0].arn : null
+}
+
+output "cloudwatch_alarm_object_count_arn" {
+  description = "ARN of the object count CloudWatch alarm"
+  value       = var.enable_cloudwatch_alarms ? aws_cloudwatch_metric_alarm.object-count[0].arn : null
+}
+
+output "request_metrics_name" {
+  description = "Name of the S3 request metrics configuration"
+  value       = var.enable_request_metrics ? aws_s3_bucket_metric.this[0].name : null
+}
+
+# Object Lock Outputs
+
+output "object_lock_enabled" {
+  description = "Whether Object Lock is enabled on the bucket"
+  value       = var.enable_object_lock
+}
+
+output "object_lock_configuration" {
+  description = "Object Lock configuration details"
+  value = var.enable_object_lock ? {
+    mode            = var.object_lock_mode
+    retention_days  = var.object_lock_retention_days
+    retention_years = var.object_lock_retention_years
+  } : null
+}
