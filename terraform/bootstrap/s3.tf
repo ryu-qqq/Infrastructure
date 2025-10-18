@@ -1,5 +1,5 @@
 # S3 bucket for Terraform state
-resource "aws_s3_bucket" "terraform_state" {
+resource "aws_s3_bucket" "terraform-state" {
   bucket = var.tfstate_bucket_name
 
   tags = {
@@ -9,8 +9,8 @@ resource "aws_s3_bucket" "terraform_state" {
 }
 
 # Enable versioning
-resource "aws_s3_bucket_versioning" "terraform_state" {
-  bucket = aws_s3_bucket.terraform_state.id
+resource "aws_s3_bucket_versioning" "terraform-state" {
+  bucket = aws_s3_bucket.terraform-state.id
 
   versioning_configuration {
     status = "Enabled"
@@ -18,20 +18,20 @@ resource "aws_s3_bucket_versioning" "terraform_state" {
 }
 
 # Enable server-side encryption with KMS
-resource "aws_s3_bucket_server_side_encryption_configuration" "terraform_state" {
-  bucket = aws_s3_bucket.terraform_state.id
+resource "aws_s3_bucket_server_side_encryption_configuration" "terraform-state" {
+  bucket = aws_s3_bucket.terraform-state.id
 
   rule {
     apply_server_side_encryption_by_default {
       sse_algorithm     = "aws:kms"
-      kms_master_key_id = aws_kms_key.terraform_state.arn
+      kms_master_key_id = aws_kms_key.terraform-state.arn
     }
   }
 }
 
 # Block public access
-resource "aws_s3_bucket_public_access_block" "terraform_state" {
-  bucket = aws_s3_bucket.terraform_state.id
+resource "aws_s3_bucket_public_access_block" "terraform-state" {
+  bucket = aws_s3_bucket.terraform-state.id
 
   block_public_acls       = true
   block_public_policy     = true
@@ -40,8 +40,8 @@ resource "aws_s3_bucket_public_access_block" "terraform_state" {
 }
 
 # Lifecycle configuration for old versions
-resource "aws_s3_bucket_lifecycle_configuration" "terraform_state" {
-  bucket = aws_s3_bucket.terraform_state.id
+resource "aws_s3_bucket_lifecycle_configuration" "terraform-state" {
+  bucket = aws_s3_bucket.terraform-state.id
 
   rule {
     id     = "expire-old-versions"
@@ -67,8 +67,8 @@ resource "aws_s3_bucket_lifecycle_configuration" "terraform_state" {
 }
 
 # Bucket policy
-resource "aws_s3_bucket_policy" "terraform_state" {
-  bucket = aws_s3_bucket.terraform_state.id
+resource "aws_s3_bucket_policy" "terraform-state" {
+  bucket = aws_s3_bucket.terraform-state.id
 
   policy = jsonencode({
     Version = "2012-10-17"
@@ -79,8 +79,8 @@ resource "aws_s3_bucket_policy" "terraform_state" {
         Principal = "*"
         Action    = "s3:*"
         Resource = [
-          aws_s3_bucket.terraform_state.arn,
-          "${aws_s3_bucket.terraform_state.arn}/*"
+          aws_s3_bucket.terraform-state.arn,
+          "${aws_s3_bucket.terraform-state.arn}/*"
         ]
         Condition = {
           Bool = {
@@ -93,7 +93,7 @@ resource "aws_s3_bucket_policy" "terraform_state" {
         Effect    = "Deny"
         Principal = "*"
         Action    = "s3:PutObject"
-        Resource  = "${aws_s3_bucket.terraform_state.arn}/*"
+        Resource  = "${aws_s3_bucket.terraform-state.arn}/*"
         Condition = {
           StringNotEquals = {
             "s3:x-amz-server-side-encryption" = "aws:kms"

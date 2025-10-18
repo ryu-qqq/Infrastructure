@@ -1,5 +1,5 @@
 # DynamoDB table for Terraform state locking
-resource "aws_dynamodb_table" "terraform_lock" {
+resource "aws_dynamodb_table" "terraform-lock" {
   name         = var.dynamodb_table_name
   billing_mode = "PAY_PER_REQUEST"
   hash_key     = "LockID"
@@ -11,7 +11,7 @@ resource "aws_dynamodb_table" "terraform_lock" {
 
   server_side_encryption {
     enabled     = true
-    kms_key_arn = aws_kms_key.terraform_state.arn
+    kms_key_arn = aws_kms_key.terraform-state.arn
   }
 
   point_in_time_recovery {
