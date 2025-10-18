@@ -57,7 +57,7 @@ resource "aws_acm_certificate_validation" "wildcard" {
 
 # CloudWatch Alarm for Certificate Expiration
 # AWS ACM automatically renews certificates, but this alarm monitors the renewal process
-resource "aws_cloudwatch_metric_alarm" "certificate-expiration" {
+resource "aws_cloudwatch_metric_alarm" "certificate_expiration" {
   count = var.enable_expiration_alarm ? 1 : 0
 
   alarm_name          = "acm-certificate-expiration-${var.domain_name}"
@@ -89,6 +89,3 @@ data "aws_route53_zone" "primary" {
   name         = var.domain_name
   private_zone = false
 }
-
-# Data source for current AWS account ID
-data "aws_caller_identity" "current" {}

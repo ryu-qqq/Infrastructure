@@ -9,23 +9,4 @@ terraform {
       version = "~> 5.0"
     }
   }
-
-  backend "s3" {
-    bucket         = "prod-connectly"
-    key            = "acm/terraform.tfstate"
-    region         = "ap-northeast-2"
-    dynamodb_table = "prod-connectly-tf-lock"
-    encrypt        = true
-  }
-}
-
-provider "aws" {
-  region = var.aws_region
-
-  default_tags {
-    tags = {
-      ManagedBy = "terraform"
-      Project   = "infrastructure"
-    }
-  }
 }
