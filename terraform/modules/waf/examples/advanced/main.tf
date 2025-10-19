@@ -95,7 +95,7 @@ resource "aws_iam_role" "firehose" {
   )
 }
 
-resource "aws_iam_role_policy" "firehose_s3" {
+resource "aws_iam_role_policy" "firehose-s3" {
   name = "firehose-s3-policy"
   role = aws_iam_role.firehose.id
 
@@ -122,7 +122,7 @@ resource "aws_iam_role_policy" "firehose_s3" {
 # Kinesis Firehose Delivery Stream
 # ==============================================================================
 
-resource "aws_kinesis_firehose_delivery_stream" "waf_logs" {
+resource "aws_kinesis_firehose_delivery_stream" "waf-logs" {
   name        = "aws-waf-logs-prod"
   destination = "extended_s3"
 
@@ -184,7 +184,7 @@ module "waf" {
 
   # Logging Configuration
   enable_logging      = true
-  log_destination_arn = aws_kinesis_firehose_delivery_stream.waf_logs.arn
+  log_destination_arn = aws_kinesis_firehose_delivery_stream.waf-logs.arn
 
   redacted_fields = [
     {
@@ -206,7 +206,7 @@ module "waf" {
   common_tags = module.common_tags.tags
 
   depends_on = [
-    aws_kinesis_firehose_delivery_stream.waf_logs
+    aws_kinesis_firehose_delivery_stream.waf-logs
   ]
 }
 
@@ -214,7 +214,7 @@ module "waf" {
 # CloudWatch Alarms
 # ==============================================================================
 
-resource "aws_cloudwatch_metric_alarm" "waf_blocked_requests_high" {
+resource "aws_cloudwatch_metric_alarm" "waf-blocked-requests-high" {
   alarm_name          = "${module.waf.web_acl_name}-blocked-requests-high"
   comparison_operator = "GreaterThanThreshold"
   evaluation_periods  = 2
@@ -234,7 +234,7 @@ resource "aws_cloudwatch_metric_alarm" "waf_blocked_requests_high" {
   tags = module.common_tags.tags
 }
 
-resource "aws_cloudwatch_metric_alarm" "waf_rate_limit_triggered" {
+resource "aws_cloudwatch_metric_alarm" "waf-rate-limit-triggered" {
   alarm_name          = "${module.waf.web_acl_name}-rate-limit-triggered"
   comparison_operator = "GreaterThanThreshold"
   evaluation_periods  = 1
@@ -281,7 +281,7 @@ output "enabled_features" {
 
 output "firehose_stream_arn" {
   description = "ARN of the Kinesis Firehose delivery stream"
-  value       = aws_kinesis_firehose_delivery_stream.waf_logs.arn
+  value       = aws_kinesis_firehose_delivery_stream.waf-logs.arn
 }
 
 output "logs_bucket_name" {
@@ -292,7 +292,7 @@ output "logs_bucket_name" {
 output "cloudwatch_alarms" {
   description = "CloudWatch alarm ARNs"
   value = {
-    high_blocked_requests = aws_cloudwatch_metric_alarm.waf_blocked_requests_high.arn
-    rate_limit_triggered  = aws_cloudwatch_metric_alarm.waf_rate_limit_triggered.arn
+    high_blocked_requests = aws_cloudwatch_metric_alarm.waf-blocked-requests-high.arn
+    rate_limit_triggered  = aws_cloudwatch_metric_alarm.waf-rate-limit-triggered.arn
   }
 }
