@@ -19,8 +19,8 @@ resource "aws_cloudwatch_metric_alarm" "cpu-utilization" {
     DBInstanceIdentifier = aws_db_instance.main.identifier
   }
 
-  alarm_actions = var.alarm_sns_topic_arn != null ? [var.alarm_sns_topic_arn] : []
-  ok_actions    = var.alarm_sns_topic_arn != null ? [var.alarm_sns_topic_arn] : []
+  alarm_actions = [data.terraform_remote_state.monitoring.outputs.sns_topic_warning_arn]
+  ok_actions    = [data.terraform_remote_state.monitoring.outputs.sns_topic_info_arn]
 
   tags = merge(
     local.required_tags,
@@ -49,8 +49,8 @@ resource "aws_cloudwatch_metric_alarm" "free-storage-space" {
     DBInstanceIdentifier = aws_db_instance.main.identifier
   }
 
-  alarm_actions = var.alarm_sns_topic_arn != null ? [var.alarm_sns_topic_arn] : []
-  ok_actions    = var.alarm_sns_topic_arn != null ? [var.alarm_sns_topic_arn] : []
+  alarm_actions = [data.terraform_remote_state.monitoring.outputs.sns_topic_critical_arn]
+  ok_actions    = [data.terraform_remote_state.monitoring.outputs.sns_topic_info_arn]
 
   tags = merge(
     local.required_tags,
@@ -79,8 +79,8 @@ resource "aws_cloudwatch_metric_alarm" "freeable-memory" {
     DBInstanceIdentifier = aws_db_instance.main.identifier
   }
 
-  alarm_actions = var.alarm_sns_topic_arn != null ? [var.alarm_sns_topic_arn] : []
-  ok_actions    = var.alarm_sns_topic_arn != null ? [var.alarm_sns_topic_arn] : []
+  alarm_actions = [data.terraform_remote_state.monitoring.outputs.sns_topic_critical_arn]
+  ok_actions    = [data.terraform_remote_state.monitoring.outputs.sns_topic_info_arn]
 
   tags = merge(
     local.required_tags,
@@ -109,8 +109,8 @@ resource "aws_cloudwatch_metric_alarm" "database-connections" {
     DBInstanceIdentifier = aws_db_instance.main.identifier
   }
 
-  alarm_actions = var.alarm_sns_topic_arn != null ? [var.alarm_sns_topic_arn] : []
-  ok_actions    = var.alarm_sns_topic_arn != null ? [var.alarm_sns_topic_arn] : []
+  alarm_actions = [data.terraform_remote_state.monitoring.outputs.sns_topic_critical_arn]
+  ok_actions    = [data.terraform_remote_state.monitoring.outputs.sns_topic_info_arn]
 
   tags = merge(
     local.required_tags,
@@ -139,8 +139,8 @@ resource "aws_cloudwatch_metric_alarm" "read-latency" {
     DBInstanceIdentifier = aws_db_instance.main.identifier
   }
 
-  alarm_actions = var.alarm_sns_topic_arn != null ? [var.alarm_sns_topic_arn] : []
-  ok_actions    = var.alarm_sns_topic_arn != null ? [var.alarm_sns_topic_arn] : []
+  alarm_actions = [data.terraform_remote_state.monitoring.outputs.sns_topic_warning_arn]
+  ok_actions    = [data.terraform_remote_state.monitoring.outputs.sns_topic_info_arn]
 
   tags = merge(
     local.required_tags,
@@ -169,8 +169,8 @@ resource "aws_cloudwatch_metric_alarm" "write-latency" {
     DBInstanceIdentifier = aws_db_instance.main.identifier
   }
 
-  alarm_actions = var.alarm_sns_topic_arn != null ? [var.alarm_sns_topic_arn] : []
-  ok_actions    = var.alarm_sns_topic_arn != null ? [var.alarm_sns_topic_arn] : []
+  alarm_actions = [data.terraform_remote_state.monitoring.outputs.sns_topic_warning_arn]
+  ok_actions    = [data.terraform_remote_state.monitoring.outputs.sns_topic_info_arn]
 
   tags = merge(
     local.required_tags,

@@ -140,10 +140,6 @@ parameters = [
 
 enable_cloudwatch_alarms = true
 
-# TODO: SNS 토픽 ARN 설정 필요 (모니터링 알람 수신용)
-alarm_sns_topic_arn = null
-# alarm_sns_topic_arn = "arn:aws:sns:ap-northeast-2:646886795421:rds-alarms"
-
 cpu_utilization_threshold      = 80
 free_storage_threshold         = 5368709120 # 5GB
 freeable_memory_threshold      = 268435456  # 256MB

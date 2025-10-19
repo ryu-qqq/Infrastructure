@@ -276,12 +276,6 @@ variable "enable_cloudwatch_alarms" {
   default     = true
 }
 
-variable "alarm_sns_topic_arn" {
-  description = "SNS topic ARN for CloudWatch alarms"
-  type        = string
-  default     = null
-}
-
 variable "cpu_utilization_threshold" {
   description = "CPU utilization threshold for alarm (%)"
   type        = number

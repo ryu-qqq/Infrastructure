@@ -20,3 +20,13 @@ data "aws_caller_identity" "current" {}
 
 # 현재 리전 정보
 data "aws_region" "current" {}
+
+# Monitoring stack for SNS topic ARNs
+data "terraform_remote_state" "monitoring" {
+  backend = "s3"
+  config = {
+    bucket = "prod-connectly"
+    key    = "monitoring/terraform.tfstate"
+    region = var.aws_region
+  }
+}
