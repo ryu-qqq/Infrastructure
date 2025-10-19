@@ -109,6 +109,14 @@ resource "aws_iam_policy" "dlq" {
       }
     ]
   })
+
+  tags = merge(
+    local.required_tags,
+    {
+      Name      = "${local.function_name}-dlq-policy"
+      Component = "iam-policy"
+    }
+  )
 }
 
 resource "aws_iam_role_policy_attachment" "dlq" {
