@@ -233,6 +233,16 @@ resource "aws_lambda_alias" "this" {
       additional_version_weights = routing_config.value.additional_version_weights
     }
   }
+
+  tags = merge(
+    local.required_tags,
+    {
+      Name            = "${local.function_name}-${each.key}"
+      AliasName       = each.key
+      FunctionName    = local.function_name
+      FunctionVersion = each.value.function_version
+    }
+  )
 }
 
 # Lambda Permission for invoking from other AWS services
