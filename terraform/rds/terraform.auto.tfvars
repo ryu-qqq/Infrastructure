@@ -42,7 +42,7 @@ allowed_cidr_blocks = [
 # ============================================================================
 
 identifier     = "shared-mysql"
-mysql_version  = "8.0.35"
+mysql_version  = "8.0.39"
 instance_class = "db.t4g.small" # 2 vCPU, 2GB RAM
 
 # ============================================================================

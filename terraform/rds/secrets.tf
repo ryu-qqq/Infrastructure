@@ -7,14 +7,37 @@ resource "random_password" "master" {
   override_special = "!#$%&*()-_=+[]{}<>:?"
 }
 
+# Cleanup any existing secret scheduled for deletion
+# This is necessary because recovery_window_in_days = 0 doesn't always work immediately
+resource "null_resource" "cleanup_secret" {
+  triggers = {
+    secret_name = "${local.name_prefix}-master-password"
+  }
+
+  provisioner "local-exec" {
+    command = <<-EOT
+      aws secretsmanager delete-secret \
+        --secret-id ${local.name_prefix}-master-password \
+        --force-delete-without-recovery \
+        --region ${var.aws_region} 2>/dev/null || true
+    EOT
+  }
+}
+
 # Secrets Manager - Database Credentials
 # Single source of truth for RDS credentials to prevent password sync issues during rotation
 
 resource "aws_secretsmanager_secret" "db-master-password" {
+  depends_on = [null_resource.cleanup_secret]
   name                    = "${local.name_prefix}-master-password"
   description             = "Master credentials and connection info for shared MySQL RDS instance"
   recovery_window_in_days = 0  # Force deletion to allow immediate recreation
   kms_key_id              = data.aws_kms_key.secrets_manager.arn
+
+  # Allow Terraform to manage secrets even if deletion is pending
+  lifecycle {
+    create_before_destroy = false
+  }
 
   tags = merge(
     local.required_tags,
