@@ -16,7 +16,7 @@ resource "aws_secretsmanager_secret" "db_master_password" {
   kms_key_id              = data.aws_kms_key.secrets_manager.arn
 
   tags = merge(
-    local.common_tags,
+    local.required_tags,
     {
       Name = "${local.name_prefix}-master-password"
     }
@@ -44,7 +44,7 @@ resource "aws_secretsmanager_secret" "db_connection" {
   kms_key_id              = data.aws_kms_key.secrets_manager.arn
 
   tags = merge(
-    local.common_tags,
+    local.required_tags,
     {
       Name = "${local.name_prefix}-connection"
     }

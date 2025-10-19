@@ -23,7 +23,7 @@ resource "aws_cloudwatch_metric_alarm" "cpu_utilization" {
   ok_actions    = var.alarm_sns_topic_arn != null ? [var.alarm_sns_topic_arn] : []
 
   tags = merge(
-    local.common_tags,
+    local.required_tags,
     {
       Name = "${local.name_prefix}-cpu-alarm"
     }
@@ -53,7 +53,7 @@ resource "aws_cloudwatch_metric_alarm" "free_storage_space" {
   ok_actions    = var.alarm_sns_topic_arn != null ? [var.alarm_sns_topic_arn] : []
 
   tags = merge(
-    local.common_tags,
+    local.required_tags,
     {
       Name = "${local.name_prefix}-storage-alarm"
     }
@@ -83,7 +83,7 @@ resource "aws_cloudwatch_metric_alarm" "freeable_memory" {
   ok_actions    = var.alarm_sns_topic_arn != null ? [var.alarm_sns_topic_arn] : []
 
   tags = merge(
-    local.common_tags,
+    local.required_tags,
     {
       Name = "${local.name_prefix}-memory-alarm"
     }
@@ -113,7 +113,7 @@ resource "aws_cloudwatch_metric_alarm" "database_connections" {
   ok_actions    = var.alarm_sns_topic_arn != null ? [var.alarm_sns_topic_arn] : []
 
   tags = merge(
-    local.common_tags,
+    local.required_tags,
     {
       Name = "${local.name_prefix}-connections-alarm"
     }
@@ -143,7 +143,7 @@ resource "aws_cloudwatch_metric_alarm" "read_latency" {
   ok_actions    = var.alarm_sns_topic_arn != null ? [var.alarm_sns_topic_arn] : []
 
   tags = merge(
-    local.common_tags,
+    local.required_tags,
     {
       Name = "${local.name_prefix}-read-latency-alarm"
     }
@@ -173,7 +173,7 @@ resource "aws_cloudwatch_metric_alarm" "write_latency" {
   ok_actions    = var.alarm_sns_topic_arn != null ? [var.alarm_sns_topic_arn] : []
 
   tags = merge(
-    local.common_tags,
+    local.required_tags,
     {
       Name = "${local.name_prefix}-write-latency-alarm"
     }

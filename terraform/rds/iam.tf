@@ -19,7 +19,7 @@ resource "aws_iam_role" "rds_monitoring" {
   })
 
   tags = merge(
-    local.common_tags,
+    local.required_tags,
     {
       Name = "${local.name_prefix}-monitoring-role"
     }

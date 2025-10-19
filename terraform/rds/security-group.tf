@@ -6,7 +6,7 @@ resource "aws_security_group" "rds" {
   vpc_id      = var.vpc_id
 
   tags = merge(
-    local.common_tags,
+    local.required_tags,
     {
       Name = "${local.name_prefix}-sg"
     }
@@ -26,7 +26,7 @@ resource "aws_vpc_security_group_ingress_rule" "from_security_groups" {
   referenced_security_group_id = var.allowed_security_group_ids[count.index]
 
   tags = merge(
-    local.common_tags,
+    local.required_tags,
     {
       Name = "${local.name_prefix}-ingress-sg-${count.index + 1}"
     }
@@ -46,7 +46,7 @@ resource "aws_vpc_security_group_ingress_rule" "from_cidr_blocks" {
   cidr_ipv4   = var.allowed_cidr_blocks[count.index]
 
   tags = merge(
-    local.common_tags,
+    local.required_tags,
     {
       Name = "${local.name_prefix}-ingress-cidr-${count.index + 1}"
     }
@@ -62,7 +62,7 @@ resource "aws_vpc_security_group_egress_rule" "all" {
   cidr_ipv4   = "0.0.0.0/0"
 
   tags = merge(
-    local.common_tags,
+    local.required_tags,
     {
       Name = "${local.name_prefix}-egress-all"
     }

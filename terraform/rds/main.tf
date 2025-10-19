@@ -5,7 +5,7 @@ resource "aws_db_subnet_group" "main" {
   subnet_ids = var.private_subnet_ids
 
   tags = merge(
-    local.common_tags,
+    local.required_tags,
     {
       Name = "${local.name_prefix}-subnet-group"
     }
@@ -27,7 +27,7 @@ resource "aws_db_parameter_group" "main" {
   }
 
   tags = merge(
-    local.common_tags,
+    local.required_tags,
     {
       Name = "${local.name_prefix}-params"
     }
@@ -100,7 +100,7 @@ resource "aws_db_instance" "main" {
   apply_immediately = false
 
   tags = merge(
-    local.common_tags,
+    local.required_tags,
     {
       Name = local.name_prefix
     }
