@@ -25,14 +25,16 @@ private_subnet_ids = [
 # ============================================================================
 
 # 허용할 보안 그룹 ID 목록 (예: ECS 태스크, EC2 인스턴스)
-# TODO: 실제 애플리케이션 보안 그룹 ID로 교체 필요
+# ECS 개발 완료 후 보안 그룹 ID를 추가하세요
 allowed_security_group_ids = [
-  # "sg-xxxxxxxxxxxxx"  # Example: ECS tasks security group
+  # "sg-xxxxxxxxxxxxx"  # ECS tasks security group (나중에 추가)
 ]
 
-# 허용할 CIDR 블록 (필요한 경우만 사용)
+# 허용할 CIDR 블록
+# VPC 내부 모든 리소스에서 접근 가능 (개발/테스트용)
+# 운영 환경에서는 특정 보안 그룹만 허용하는 것을 권장
 allowed_cidr_blocks = [
-  # "10.0.0.0/16"  # Example: VPC CIDR
+  "10.0.0.0/16"  # VPC CIDR - VPC 내부 모든 트래픽 허용
 ]
 
 # ============================================================================
