@@ -13,7 +13,7 @@ resource "random_password" "master" {
 resource "aws_secretsmanager_secret" "db-master-password" {
   name                    = "${local.name_prefix}-master-password"
   description             = "Master credentials and connection info for shared MySQL RDS instance"
-  recovery_window_in_days = 7
+  recovery_window_in_days = 0  # Force deletion to allow immediate recreation
   kms_key_id              = data.aws_kms_key.secrets_manager.arn
 
   tags = merge(
