@@ -80,6 +80,20 @@ jobs:
           TF_VAR_github_webhook_secret: ${{ secrets.TF_VAR_GITHUB_WEBHOOK_SECRET }}
         run: terraform apply -auto-approve
 
+      # RDS Infrastructure (IN-160)
+      - name: Terraform Init - RDS
+        working-directory: terraform/rds
+        run: |
+          terraform init \
+            -backend-config="bucket=prod-connectly" \
+            -backend-config="key=rds/terraform.tfstate" \
+            -backend-config="region=ap-northeast-2" \
+            -backend-config="dynamodb_table=prod-connectly-tf-lock"
+
+      - name: Terraform Apply - RDS
+        working-directory: terraform/rds
+        run: terraform apply -auto-approve
+
       - name: Get ECR Registry
         id: registry
         run: |
