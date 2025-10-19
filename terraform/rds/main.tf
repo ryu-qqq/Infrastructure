@@ -83,7 +83,7 @@ resource "aws_db_instance" "main" {
   # Monitoring Configuration
   enabled_cloudwatch_logs_exports = var.enabled_cloudwatch_logs_exports
   monitoring_interval             = var.enable_enhanced_monitoring ? var.monitoring_interval : 0
-  monitoring_role_arn             = var.enable_enhanced_monitoring ? aws_iam_role.rds_monitoring[0].arn : null
+  monitoring_role_arn             = var.enable_enhanced_monitoring ? aws_iam_role.rds-monitoring[0].arn : null
 
   # Performance Insights
   performance_insights_enabled          = var.enable_performance_insights

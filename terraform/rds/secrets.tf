@@ -9,7 +9,7 @@ resource "random_password" "master" {
 
 # Secrets Manager - Master Password
 
-resource "aws_secretsmanager_secret" "db_master_password" {
+resource "aws_secretsmanager_secret" "db-master-password" {
   name                    = "${local.name_prefix}-master-password"
   description             = "Master password for shared MySQL RDS instance"
   recovery_window_in_days = 7
@@ -23,8 +23,8 @@ resource "aws_secretsmanager_secret" "db_master_password" {
   )
 }
 
-resource "aws_secretsmanager_secret_version" "db_master_password" {
-  secret_id = aws_secretsmanager_secret.db_master_password.id
+resource "aws_secretsmanager_secret_version" "db-master-password" {
+  secret_id = aws_secretsmanager_secret.db-master-password.id
   secret_string = jsonencode({
     username = var.master_username
     password = random_password.master.result
@@ -37,7 +37,7 @@ resource "aws_secretsmanager_secret_version" "db_master_password" {
 
 # Secrets Manager - Connection String
 
-resource "aws_secretsmanager_secret" "db_connection" {
+resource "aws_secretsmanager_secret" "db-connection" {
   name                    = "${local.name_prefix}-connection"
   description             = "Connection information for shared MySQL RDS instance"
   recovery_window_in_days = 7
@@ -51,8 +51,8 @@ resource "aws_secretsmanager_secret" "db_connection" {
   )
 }
 
-resource "aws_secretsmanager_secret_version" "db_connection" {
-  secret_id = aws_secretsmanager_secret.db_connection.id
+resource "aws_secretsmanager_secret_version" "db-connection" {
+  secret_id = aws_secretsmanager_secret.db-connection.id
   secret_string = jsonencode({
     engine               = "mysql"
     host                 = aws_db_instance.main.address

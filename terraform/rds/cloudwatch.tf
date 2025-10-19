@@ -1,7 +1,7 @@
 # CloudWatch Alarms for RDS
 
 # CPU Utilization Alarm
-resource "aws_cloudwatch_metric_alarm" "cpu_utilization" {
+resource "aws_cloudwatch_metric_alarm" "cpu-utilization" {
   count = var.enable_cloudwatch_alarms ? 1 : 0
 
   alarm_name          = "${local.name_prefix}-cpu-utilization"
@@ -31,7 +31,7 @@ resource "aws_cloudwatch_metric_alarm" "cpu_utilization" {
 }
 
 # Free Storage Space Alarm
-resource "aws_cloudwatch_metric_alarm" "free_storage_space" {
+resource "aws_cloudwatch_metric_alarm" "free-storage-space" {
   count = var.enable_cloudwatch_alarms ? 1 : 0
 
   alarm_name          = "${local.name_prefix}-free-storage-space"
@@ -61,7 +61,7 @@ resource "aws_cloudwatch_metric_alarm" "free_storage_space" {
 }
 
 # Freeable Memory Alarm
-resource "aws_cloudwatch_metric_alarm" "freeable_memory" {
+resource "aws_cloudwatch_metric_alarm" "freeable-memory" {
   count = var.enable_cloudwatch_alarms ? 1 : 0
 
   alarm_name          = "${local.name_prefix}-freeable-memory"
@@ -91,7 +91,7 @@ resource "aws_cloudwatch_metric_alarm" "freeable_memory" {
 }
 
 # Database Connections Alarm
-resource "aws_cloudwatch_metric_alarm" "database_connections" {
+resource "aws_cloudwatch_metric_alarm" "database-connections" {
   count = var.enable_cloudwatch_alarms ? 1 : 0
 
   alarm_name          = "${local.name_prefix}-database-connections"
@@ -121,7 +121,7 @@ resource "aws_cloudwatch_metric_alarm" "database_connections" {
 }
 
 # Read Latency Alarm
-resource "aws_cloudwatch_metric_alarm" "read_latency" {
+resource "aws_cloudwatch_metric_alarm" "read-latency" {
   count = var.enable_cloudwatch_alarms ? 1 : 0
 
   alarm_name          = "${local.name_prefix}-read-latency"
@@ -151,7 +151,7 @@ resource "aws_cloudwatch_metric_alarm" "read_latency" {
 }
 
 # Write Latency Alarm
-resource "aws_cloudwatch_metric_alarm" "write_latency" {
+resource "aws_cloudwatch_metric_alarm" "write-latency" {
   count = var.enable_cloudwatch_alarms ? 1 : 0
 
   alarm_name          = "${local.name_prefix}-write-latency"

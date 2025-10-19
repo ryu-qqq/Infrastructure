@@ -70,22 +70,22 @@ output "db_parameter_group_name" {
 
 output "master_password_secret_arn" {
   description = "ARN of the Secrets Manager secret containing master password"
-  value       = aws_secretsmanager_secret.db_master_password.arn
+  value       = aws_secretsmanager_secret.db-master-password.arn
 }
 
 output "master_password_secret_name" {
   description = "Name of the Secrets Manager secret containing master password"
-  value       = aws_secretsmanager_secret.db_master_password.name
+  value       = aws_secretsmanager_secret.db-master-password.name
 }
 
 output "connection_secret_arn" {
   description = "ARN of the Secrets Manager secret containing connection information"
-  value       = aws_secretsmanager_secret.db_connection.arn
+  value       = aws_secretsmanager_secret.db-connection.arn
 }
 
 output "connection_secret_name" {
   description = "Name of the Secrets Manager secret containing connection information"
-  value       = aws_secretsmanager_secret.db_connection.name
+  value       = aws_secretsmanager_secret.db-connection.name
 }
 
 # ============================================================================
@@ -94,7 +94,7 @@ output "connection_secret_name" {
 
 output "monitoring_role_arn" {
   description = "ARN of the IAM role for enhanced monitoring"
-  value       = var.enable_enhanced_monitoring ? aws_iam_role.rds_monitoring[0].arn : null
+  value       = var.enable_enhanced_monitoring ? aws_iam_role.rds-monitoring[0].arn : null
 }
 
 output "performance_insights_enabled" {
@@ -171,12 +171,12 @@ output "kms_key_id" {
 output "cloudwatch_alarm_arns" {
   description = "ARNs of CloudWatch alarms"
   value = var.enable_cloudwatch_alarms ? {
-    cpu_utilization      = aws_cloudwatch_metric_alarm.cpu_utilization[0].arn
-    free_storage_space   = aws_cloudwatch_metric_alarm.free_storage_space[0].arn
-    freeable_memory      = aws_cloudwatch_metric_alarm.freeable_memory[0].arn
-    database_connections = aws_cloudwatch_metric_alarm.database_connections[0].arn
-    read_latency         = aws_cloudwatch_metric_alarm.read_latency[0].arn
-    write_latency        = aws_cloudwatch_metric_alarm.write_latency[0].arn
+    cpu_utilization      = aws_cloudwatch_metric_alarm.cpu-utilization[0].arn
+    free_storage_space   = aws_cloudwatch_metric_alarm.free-storage-space[0].arn
+    freeable_memory      = aws_cloudwatch_metric_alarm.freeable-memory[0].arn
+    database_connections = aws_cloudwatch_metric_alarm.database-connections[0].arn
+    read_latency         = aws_cloudwatch_metric_alarm.read-latency[0].arn
+    write_latency        = aws_cloudwatch_metric_alarm.write-latency[0].arn
   } : {}
 }
 

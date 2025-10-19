@@ -14,7 +14,7 @@ resource "aws_security_group" "rds" {
 }
 
 # Ingress rule from allowed security groups
-resource "aws_vpc_security_group_ingress_rule" "from_security_groups" {
+resource "aws_vpc_security_group_ingress_rule" "from-security-groups" {
   count = length(var.allowed_security_group_ids)
 
   security_group_id = aws_security_group.rds.id
@@ -34,7 +34,7 @@ resource "aws_vpc_security_group_ingress_rule" "from_security_groups" {
 }
 
 # Ingress rule from allowed CIDR blocks
-resource "aws_vpc_security_group_ingress_rule" "from_cidr_blocks" {
+resource "aws_vpc_security_group_ingress_rule" "from-cidr-blocks" {
   count = length(var.allowed_cidr_blocks)
 
   security_group_id = aws_security_group.rds.id
