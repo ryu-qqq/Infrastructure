@@ -13,10 +13,9 @@ terraform {
   }
 
   backend "s3" {
-    bucket     = "prod-connectly"
-    key        = "rds/terraform.tfstate"
-    region     = "ap-northeast-2"
-    encrypt    = true
-    kms_key_id = "alias/terraform-state"
+    bucket  = "prod-connectly"
+    key     = "rds/terraform.tfstate"
+    region  = "ap-northeast-2"
+    encrypt = true
   }
 }
