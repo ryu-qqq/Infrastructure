@@ -143,6 +143,11 @@ variable "log_destination_arn" {
   description = "ARN of Kinesis Firehose delivery stream for WAF logs (required if enable_logging is true)"
   type        = string
   default     = null
+
+  validation {
+    condition     = !var.enable_logging || var.log_destination_arn != null
+    error_message = "log_destination_arn must be provided when enable_logging is true."
+  }
 }
 
 variable "redacted_fields" {
