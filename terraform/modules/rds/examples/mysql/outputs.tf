@@ -61,28 +61,28 @@ output "kms_key_arn" {
 # Secrets Manager
 output "db_password_secret_arn" {
   description = "데이터베이스 비밀번호가 저장된 Secrets Manager ARN"
-  value       = aws_secretsmanager_secret.db_password.arn
+  value       = aws_secretsmanager_secret.db-password.arn
 }
 
 output "db_password_secret_name" {
   description = "데이터베이스 비밀번호가 저장된 Secrets Manager 이름"
-  value       = aws_secretsmanager_secret.db_password.name
+  value       = aws_secretsmanager_secret.db-password.name
 }
 
 # CloudWatch 알람
 output "cpu_alarm_arn" {
   description = "CPU 사용률 CloudWatch 알람 ARN"
-  value       = aws_cloudwatch_metric_alarm.cpu_utilization.arn
+  value       = aws_cloudwatch_metric_alarm.cpu-utilization.arn
 }
 
 output "storage_alarm_arn" {
   description = "스토리지 사용량 CloudWatch 알람 ARN"
-  value       = aws_cloudwatch_metric_alarm.storage_space.arn
+  value       = aws_cloudwatch_metric_alarm.storage-space.arn
 }
 
 output "connections_alarm_arn" {
   description = "연결 수 CloudWatch 알람 ARN"
-  value       = aws_cloudwatch_metric_alarm.database_connections.arn
+  value       = aws_cloudwatch_metric_alarm.database-connections.arn
 }
 
 # 연결 문자열 예시
@@ -101,6 +101,6 @@ output "app_environment_variables" {
     DB_NAME     = module.rds_mysql.db_instance_name
     DB_USERNAME = module.rds_mysql.db_instance_username
     # DB_PASSWORD는 Secrets Manager에서 가져오기
-    DB_PASSWORD_SECRET_ARN = aws_secretsmanager_secret.db_password.arn
+    DB_PASSWORD_SECRET_ARN = aws_secretsmanager_secret.db-password.arn
   }
 }

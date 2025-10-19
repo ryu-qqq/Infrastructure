@@ -105,7 +105,7 @@ resource "aws_security_group" "rds" {
 # 커스텀 파라미터가 필요한 경우, RDS 모듈에 parameter_group 기능 추가 필요
 
 # IAM Role for Enhanced Monitoring
-resource "aws_iam_role" "rds_monitoring" {
+resource "aws_iam_role" "rds-monitoring" {
   name = "${var.service_name}-rds-monitoring-${var.environment}"
 
   assume_role_policy = jsonencode({
@@ -127,13 +127,13 @@ resource "aws_iam_role" "rds_monitoring" {
   )
 }
 
-resource "aws_iam_role_policy_attachment" "rds_monitoring" {
-  role       = aws_iam_role.rds_monitoring.name
+resource "aws_iam_role_policy_attachment" "rds-monitoring" {
+  role       = aws_iam_role.rds-monitoring.name
   policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonRDSEnhancedMonitoringRole"
 }
 
 # 랜덤 비밀번호 생성 (보안 강화)
-resource "random_password" "master_password" {
+resource "random_password" "master-password" {
   length  = 32
   special = true
   # MySQL에서 사용할 수 없는 특수문자 제외
@@ -141,7 +141,7 @@ resource "random_password" "master_password" {
 }
 
 # Secrets Manager에 초기 비밀번호 저장
-resource "aws_secretsmanager_secret" "db_password" {
+resource "aws_secretsmanager_secret" "db-password" {
   name                    = "${var.service_name}-db-password-${var.environment}"
   description             = "RDS MySQL master password"
   recovery_window_in_days = 7
@@ -154,9 +154,9 @@ resource "aws_secretsmanager_secret" "db_password" {
   )
 }
 
-resource "aws_secretsmanager_secret_version" "db_password" {
-  secret_id     = aws_secretsmanager_secret.db_password.id
-  secret_string = random_password.master_password.result
+resource "aws_secretsmanager_secret_version" "db-password" {
+  secret_id     = aws_secretsmanager_secret.db-password.id
+  secret_string = random_password.master-password.result
 }
 
 # RDS MySQL 인스턴스 모듈
@@ -179,7 +179,7 @@ module "rds_mysql" {
   # 데이터베이스 설정
   db_name         = var.database_name
   master_username = var.master_username
-  master_password = random_password.master_password.result
+  master_password = random_password.master-password.result
 
   # 네트워크 설정
   subnet_ids          = data.aws_subnets.database.ids
@@ -203,7 +203,7 @@ module "rds_mysql" {
   # 모니터링 설정
   enabled_cloudwatch_logs_exports       = ["error", "general", "slowquery"]
   monitoring_interval                   = 60
-  monitoring_role_arn                   = aws_iam_role.rds_monitoring.arn
+  monitoring_role_arn                   = aws_iam_role.rds-monitoring.arn
   performance_insights_enabled          = true
   performance_insights_retention_period = 7
 
@@ -215,7 +215,7 @@ module "rds_mysql" {
 }
 
 # CloudWatch 알람 - CPU 사용률
-resource "aws_cloudwatch_metric_alarm" "cpu_utilization" {
+resource "aws_cloudwatch_metric_alarm" "cpu-utilization" {
   alarm_name          = "${var.service_name}-rds-cpu-${var.environment}"
   comparison_operator = "GreaterThanThreshold"
   evaluation_periods  = "2"
@@ -240,7 +240,7 @@ resource "aws_cloudwatch_metric_alarm" "cpu_utilization" {
 }
 
 # CloudWatch 알람 - 스토리지 사용량
-resource "aws_cloudwatch_metric_alarm" "storage_space" {
+resource "aws_cloudwatch_metric_alarm" "storage-space" {
   alarm_name          = "${var.service_name}-rds-storage-${var.environment}"
   comparison_operator = "LessThanThreshold"
   evaluation_periods  = "1"
@@ -265,7 +265,7 @@ resource "aws_cloudwatch_metric_alarm" "storage_space" {
 }
 
 # CloudWatch 알람 - 연결 수
-resource "aws_cloudwatch_metric_alarm" "database_connections" {
+resource "aws_cloudwatch_metric_alarm" "database-connections" {
   alarm_name          = "${var.service_name}-rds-connections-${var.environment}"
   comparison_operator = "GreaterThanThreshold"
   evaluation_periods  = "2"

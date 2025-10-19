@@ -112,7 +112,7 @@ resource "aws_security_group" "alb" {
 }
 
 # ECS Tasks용 보안 그룹
-resource "aws_security_group" "ecs_tasks" {
+resource "aws_security_group" "ecs-tasks" {
   name        = "${var.service_name}-ecs-tasks-${var.environment}"
   description = "Security group for ECS tasks"
   vpc_id      = var.vpc_id
@@ -236,7 +236,7 @@ resource "aws_lb_listener" "https" {
 }
 
 # IAM Role - ECS Task Execution
-resource "aws_iam_role" "ecs_execution_role" {
+resource "aws_iam_role" "ecs-execution-role" {
   name = "${var.service_name}-ecs-execution-${var.environment}"
 
   assume_role_policy = jsonencode({
@@ -258,13 +258,13 @@ resource "aws_iam_role" "ecs_execution_role" {
   )
 }
 
-resource "aws_iam_role_policy_attachment" "ecs_execution_role_policy" {
-  role       = aws_iam_role.ecs_execution_role.name
+resource "aws_iam_role_policy_attachment" "ecs-execution-role-policy" {
+  role       = aws_iam_role.ecs-execution-role.name
   policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy"
 }
 
 # IAM Role - ECS Task
-resource "aws_iam_role" "ecs_task_role" {
+resource "aws_iam_role" "ecs-task-role" {
   name = "${var.service_name}-ecs-task-${var.environment}"
 
   assume_role_policy = jsonencode({
@@ -300,9 +300,9 @@ module "ecs_service" {
   memory             = var.task_memory
   desired_count      = var.desired_count
   subnet_ids         = data.aws_subnets.private.ids
-  security_group_ids = [aws_security_group.ecs_tasks.id]
-  execution_role_arn = aws_iam_role.ecs_execution_role.arn
-  task_role_arn      = aws_iam_role.ecs_task_role.arn
+  security_group_ids = [aws_security_group.ecs-tasks.id]
+  execution_role_arn = aws_iam_role.ecs-execution-role.arn
+  task_role_arn      = aws_iam_role.ecs-task-role.arn
 
   # 환경 변수
   container_environment = var.environment_variables

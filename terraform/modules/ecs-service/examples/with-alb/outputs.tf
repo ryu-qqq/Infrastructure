@@ -65,7 +65,7 @@ output "alb_security_group_id" {
 
 output "ecs_tasks_security_group_id" {
   description = "ECS Tasks 보안 그룹 ID"
-  value       = aws_security_group.ecs_tasks.id
+  value       = aws_security_group.ecs-tasks.id
 }
 
 # 접속 정보
