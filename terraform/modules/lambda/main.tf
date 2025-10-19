@@ -61,7 +61,7 @@ resource "aws_iam_role" "lambda" {
 }
 
 # Attach AWS Managed Policy for VPC execution (if VPC config is provided)
-resource "aws_iam_role_policy_attachment" "vpc_execution" {
+resource "aws_iam_role_policy_attachment" "vpc-execution" {
   count = var.create_role && var.vpc_config != null ? 1 : 0
 
   role       = aws_iam_role.lambda[0].name
@@ -69,7 +69,7 @@ resource "aws_iam_role_policy_attachment" "vpc_execution" {
 }
 
 # Attach AWS Managed Policy for basic execution
-resource "aws_iam_role_policy_attachment" "basic_execution" {
+resource "aws_iam_role_policy_attachment" "basic-execution" {
   count = var.create_role ? 1 : 0
 
   role       = aws_iam_role.lambda[0].name
@@ -260,8 +260,8 @@ resource "aws_lambda_function" "this" {
 
   depends_on = [
     aws_cloudwatch_log_group.lambda,
-    aws_iam_role_policy_attachment.basic_execution,
-    aws_iam_role_policy_attachment.vpc_execution,
+    aws_iam_role_policy_attachment.basic-execution,
+    aws_iam_role_policy_attachment.vpc-execution,
     aws_iam_role_policy_attachment.dlq,
   ]
 }

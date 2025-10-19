@@ -203,7 +203,7 @@ resource "aws_api_gateway_rest_api" "example" {
 }
 
 # Lambda Permission for API Gateway
-resource "aws_lambda_permission" "api_gateway" {
+resource "aws_lambda_permission" "api-gateway" {
   count = var.enable_api_gateway ? 1 : 0
 
   statement_id  = "AllowAPIGatewayInvoke"
