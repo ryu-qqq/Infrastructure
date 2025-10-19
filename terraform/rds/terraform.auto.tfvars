@@ -81,8 +81,8 @@ copy_tags_to_snapshot   = true
 # Monitoring Configuration
 # ============================================================================
 
-enable_performance_insights           = true
-performance_insights_retention_period = 7 # 7일 보존
+enable_performance_insights           = false # Not supported on db.t4g.small
+performance_insights_retention_period = 7    # 7일 보존
 
 enable_enhanced_monitoring = true
 monitoring_interval        = 60 # 60초 간격
