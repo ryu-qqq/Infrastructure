@@ -77,8 +77,11 @@ def handle_get_users(query_params):
         dict: API response
     """
     # Example: In production, this would query a database
-    limit = int(query_params.get('limit', 10))
-    offset = int(query_params.get('offset', 0))
+    try:
+        limit = int(query_params.get('limit', 10))
+        offset = int(query_params.get('offset', 0))
+    except ValueError:
+        return create_response(400, {'error': 'Query parameters limit and offset must be integers.'})
 
     logger.info(f"Fetching users: limit={limit}, offset={offset}")
 

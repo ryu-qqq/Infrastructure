@@ -185,9 +185,24 @@ module "api_lambda" {
   }
 }
 
-# Lambda Permission for API Gateway (example)
-# NOTE: This is a placeholder. In production, you would create an API Gateway
-# and link it to this Lambda function.
+# Example API Gateway REST API (for demonstration purposes)
+# NOTE: This is a minimal example to make the Lambda permission functional.
+# In production, you would create a complete API Gateway with stages, methods, etc.
+resource "aws_api_gateway_rest_api" "example" {
+  count = var.enable_api_gateway ? 1 : 0
+
+  name = "${var.service_name}-example-api-${var.environment}"
+
+  tags = merge(
+    local.required_tags,
+    {
+      Name      = "${var.service_name}-example-api-${var.environment}"
+      Component = "api-gateway"
+    }
+  )
+}
+
+# Lambda Permission for API Gateway
 resource "aws_lambda_permission" "api_gateway" {
   count = var.enable_api_gateway ? 1 : 0
 
@@ -196,8 +211,8 @@ resource "aws_lambda_permission" "api_gateway" {
   function_name = module.api_lambda.function_name
   principal     = "apigateway.amazonaws.com"
 
-  # Replace with actual API Gateway ARN
-  # source_arn = "${aws_api_gateway_rest_api.example.execution_arn}/*/*"
+  # Use the example API Gateway's execution ARN
+  source_arn = "${aws_api_gateway_rest_api.example[0].execution_arn}/*/*"
 }
 
 # Outputs

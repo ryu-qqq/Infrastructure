@@ -129,6 +129,18 @@ resource "aws_lambda_function" "this" {
   s3_object_version = var.s3_object_version
   source_code_hash  = var.source_code_hash
 
+  lifecycle {
+    precondition {
+      condition     = var.create_role || var.lambda_role_arn != null
+      error_message = "When create_role is false, a valid lambda_role_arn must be provided."
+    }
+
+    precondition {
+      condition     = var.filename != null || (var.s3_bucket != null && var.s3_key != null)
+      error_message = "Either 'filename' or both 's3_bucket' and 's3_key' must be provided for the Lambda function's source code."
+    }
+  }
+
   # Runtime configuration
   handler       = var.handler
   runtime       = var.runtime

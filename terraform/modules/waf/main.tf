@@ -284,7 +284,14 @@ resource "aws_wafv2_web_acl" "this" {
 # ==============================================================================
 
 resource "aws_wafv2_web_acl_logging_configuration" "this" {
-  count = var.enable_logging && var.log_destination_arn != null ? 1 : 0
+  count = var.enable_logging ? 1 : 0
+
+  lifecycle {
+    precondition {
+      condition     = var.log_destination_arn != null
+      error_message = "log_destination_arn must be provided when enable_logging is true."
+    }
+  }
 
   resource_arn            = aws_wafv2_web_acl.this.arn
   log_destination_configs = [var.log_destination_arn]
