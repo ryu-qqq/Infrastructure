@@ -24,6 +24,34 @@ variable "enable_expiration_alarm" {
   default     = true
 }
 
+# ==============================================================================
+# Tagging Variables (for common-tags module)
+# ==============================================================================
+
+variable "service" {
+  description = "Service name for tagging"
+  type        = string
+  default     = "certificate-management"
+}
+
+variable "team" {
+  description = "Team responsible for the resources"
+  type        = string
+  default     = "platform-team"
+}
+
+variable "owner" {
+  description = "Owner email or identifier"
+  type        = string
+  default     = "platform@example.com"
+}
+
+variable "cost_center" {
+  description = "Cost center for billing"
+  type        = string
+  default     = "infrastructure"
+}
+
 variable "tags" {
   description = "Additional tags to apply to resources"
   type        = map(string)

@@ -205,7 +205,7 @@ resource "aws_cloudwatch_metric_alarm" "bucket-size" {
   evaluation_periods  = 1
   metric_name         = "BucketSizeBytes"
   namespace           = "AWS/S3"
-  period              = 86400 # 24 hours
+  period              = var.alarm_period
   statistic           = "Average"
   threshold           = var.alarm_bucket_size_threshold
   treat_missing_data  = "notBreaching"
@@ -236,7 +236,7 @@ resource "aws_cloudwatch_metric_alarm" "object-count" {
   evaluation_periods  = 1
   metric_name         = "NumberOfObjects"
   namespace           = "AWS/S3"
-  period              = 86400 # 24 hours
+  period              = var.alarm_period
   statistic           = "Average"
   threshold           = var.alarm_object_count_threshold
   treat_missing_data  = "notBreaching"

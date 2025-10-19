@@ -61,7 +61,7 @@ resource "aws_elasticache_replication_group" "redis" {
   # Engine Configuration
   engine               = "redis"
   engine_version       = var.engine_version
-  port                 = coalesce(var.port, 6379)
+  port                 = local.port
   parameter_group_name = var.parameter_group_family != null ? aws_elasticache_parameter_group.this[0].name : null
   node_type            = var.node_type
 
@@ -124,7 +124,7 @@ resource "aws_elasticache_cluster" "memcached-or-single-redis" {
   # Engine Configuration
   engine               = var.engine
   engine_version       = var.engine_version
-  port                 = coalesce(var.port, var.engine == "redis" ? 6379 : 11211)
+  port                 = local.port
   parameter_group_name = var.parameter_group_family != null ? aws_elasticache_parameter_group.this[0].name : null
   node_type            = var.node_type
 
@@ -214,7 +214,7 @@ resource "aws_cloudwatch_metric_alarm" "memory" {
   namespace           = "AWS/ElastiCache"
   period              = 300
   statistic           = var.engine == "redis" ? "Average" : "Maximum"
-  threshold           = var.engine == "redis" ? var.alarm_memory_threshold : 52428800 # 50MB for Memcached swap
+  threshold           = var.engine == "redis" ? var.alarm_memory_threshold : var.alarm_swap_threshold
   treat_missing_data  = "notBreaching"
 
   dimensions = {
