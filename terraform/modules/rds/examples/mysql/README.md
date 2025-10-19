@@ -49,8 +49,7 @@ RDS MySQL (Multi-AZ)
 3. **보안 그룹**
    - RDS에 접근할 애플리케이션의 보안 그룹 ID
 
-4. **비밀번호**
-   - MySQL 마스터 비밀번호 (최소 8자)
+> **참고**: 마스터 비밀번호는 `random_password` 리소스로 자동 생성되어 Terraform state 파일에 평문으로 저장되지 않습니다. 생성된 비밀번호는 AWS Secrets Manager에 안전하게 저장됩니다.
 
 ## 사용 방법
 
@@ -79,7 +78,7 @@ max_allocated_storage = 100  # 최대 100GB까지 자동 확장
 # 데이터베이스
 database_name   = "myappdb"
 master_username = "admin"
-master_password = "YourSecurePassword123!"  # 실제로는 환경 변수나 Secrets Manager 사용 권장
+# 참고: master_password는 자동으로 생성되어 Secrets Manager에 저장됩니다
 
 # 고가용성
 enable_multi_az = true  # 운영 환경에서는 true 권장

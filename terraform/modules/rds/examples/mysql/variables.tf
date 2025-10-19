@@ -71,12 +71,6 @@ variable "master_username" {
   default     = "admin"
 }
 
-variable "master_password" {
-  description = "마스터 사용자 비밀번호 (최소 8자)"
-  type        = string
-  sensitive   = true
-}
-
 # 고가용성 설정
 variable "enable_multi_az" {
   description = "Multi-AZ 배포 활성화 여부"

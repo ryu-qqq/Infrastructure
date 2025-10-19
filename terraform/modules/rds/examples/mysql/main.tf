@@ -11,6 +11,10 @@ terraform {
       source  = "hashicorp/aws"
       version = ">= 5.0"
     }
+    random = {
+      source  = "hashicorp/random"
+      version = ">= 3.0"
+    }
   }
 }
 
@@ -128,6 +132,14 @@ resource "aws_iam_role_policy_attachment" "rds_monitoring" {
   policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonRDSEnhancedMonitoringRole"
 }
 
+# 랜덤 비밀번호 생성 (보안 강화)
+resource "random_password" "master_password" {
+  length  = 32
+  special = true
+  # MySQL에서 사용할 수 없는 특수문자 제외
+  override_special = "!#$%&*()-_=+[]{}<>:?"
+}
+
 # Secrets Manager에 초기 비밀번호 저장
 resource "aws_secretsmanager_secret" "db_password" {
   name                    = "${var.service_name}-db-password-${var.environment}"
@@ -144,7 +156,7 @@ resource "aws_secretsmanager_secret" "db_password" {
 
 resource "aws_secretsmanager_secret_version" "db_password" {
   secret_id     = aws_secretsmanager_secret.db_password.id
-  secret_string = var.master_password
+  secret_string = random_password.master_password.result
 }
 
 # RDS MySQL 인스턴스 모듈
@@ -167,7 +179,7 @@ module "rds_mysql" {
   # 데이터베이스 설정
   db_name         = var.database_name
   master_username = var.master_username
-  master_password = var.master_password
+  master_password = random_password.master_password.result
 
   # 네트워크 설정
   subnet_ids          = data.aws_subnets.database.ids
