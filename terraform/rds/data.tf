@@ -5,14 +5,14 @@ data "aws_vpc" "main" {
   id = var.vpc_id
 }
 
-# KMS 키 정보 (기존 생성된 RDS 암호화용 KMS 키)
+# KMS 키 정보 (AWS 관리형 RDS 암호화 키)
 data "aws_kms_key" "rds" {
-  key_id = "alias/rds-encryption"
+  key_id = "alias/aws/rds"
 }
 
-# KMS 키 정보 (Secrets Manager 암호화용)
+# KMS 키 정보 (AWS 관리형 Secrets Manager 암호화 키)
 data "aws_kms_key" "secrets_manager" {
-  key_id = "alias/secrets-manager"
+  key_id = "alias/aws/secretsmanager"
 }
 
 # 현재 AWS 계정 정보
