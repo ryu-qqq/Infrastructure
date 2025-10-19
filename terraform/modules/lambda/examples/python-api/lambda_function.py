@@ -80,8 +80,8 @@ def handle_get_users(query_params):
     try:
         limit = int(query_params.get('limit', 10))
         offset = int(query_params.get('offset', 0))
-    except ValueError:
-        return create_response(400, {'error': 'Query parameters limit and offset must be integers.'})
+    except (ValueError, TypeError):
+        return create_response(400, {'error': 'Invalid limit or offset. Must be an integer.'})
 
     logger.info(f"Fetching users: limit={limit}, offset={offset}")
 

@@ -186,6 +186,11 @@ variable "lambda_role_arn" {
   description = "Existing IAM role ARN (required if create_role is false)"
   type        = string
   default     = null
+
+  validation {
+    condition     = var.create_role || var.lambda_role_arn != null
+    error_message = "lambda_role_arn must be provided when create_role is false."
+  }
 }
 
 variable "custom_policy_arns" {

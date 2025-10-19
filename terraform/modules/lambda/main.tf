@@ -16,6 +16,21 @@ locals {
   function_name = var.function_name != "" ? var.function_name : "${var.service}-${var.environment}-${var.name}"
 }
 
+# Validate deployment source configuration
+check "deployment_source_exclusive" {
+  assert {
+    condition     = var.filename == null || var.s3_bucket == null
+    error_message = "'filename' (for local file) and 's3_bucket' (for S3) are mutually exclusive. Please specify only one deployment method."
+  }
+}
+
+check "local_deployment_requires_hash" {
+  assert {
+    condition     = var.filename == null || var.source_code_hash != null
+    error_message = "When using 'filename' for local deployment, 'source_code_hash' must also be provided to track changes."
+  }
+}
+
 # IAM Role for Lambda Function
 resource "aws_iam_role" "lambda" {
   count = var.create_role ? 1 : 0
@@ -76,6 +91,31 @@ resource "aws_iam_role_policy" "inline" {
   name   = "${local.function_name}-inline-policy"
   role   = aws_iam_role.lambda[0].id
   policy = var.inline_policy
+}
+
+# IAM Policy for DLQ access
+resource "aws_iam_policy" "dlq" {
+  count = var.create_dlq && var.create_role ? 1 : 0
+
+  name        = "${local.function_name}-dlq-policy"
+  description = "Allow Lambda to send messages to the SQS DLQ"
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect   = "Allow"
+        Action   = "sqs:SendMessage"
+        Resource = aws_sqs_queue.dlq[0].arn
+      }
+    ]
+  })
+}
+
+resource "aws_iam_role_policy_attachment" "dlq" {
+  count = var.create_dlq && var.create_role ? 1 : 0
+
+  role       = aws_iam_role.lambda[0].name
+  policy_arn = aws_iam_policy.dlq[0].arn
 }
 
 # CloudWatch Log Group with KMS encryption
@@ -214,6 +254,7 @@ resource "aws_lambda_function" "this" {
     aws_cloudwatch_log_group.lambda,
     aws_iam_role_policy_attachment.basic_execution,
     aws_iam_role_policy_attachment.vpc_execution,
+    aws_iam_role_policy_attachment.dlq,
   ]
 }
 
