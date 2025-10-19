@@ -69,23 +69,25 @@ output "db_parameter_group_name" {
 # ============================================================================
 
 output "master_password_secret_arn" {
-  description = "ARN of the Secrets Manager secret containing master password"
+  description = "ARN of the Secrets Manager secret containing master credentials and connection info"
   value       = aws_secretsmanager_secret.db-master-password.arn
 }
 
 output "master_password_secret_name" {
-  description = "Name of the Secrets Manager secret containing master password"
+  description = "Name of the Secrets Manager secret containing master credentials and connection info"
   value       = aws_secretsmanager_secret.db-master-password.name
 }
 
+# Deprecated: Use master_password_secret_* outputs instead
+# Kept for backward compatibility during migration
 output "connection_secret_arn" {
-  description = "ARN of the Secrets Manager secret containing connection information"
-  value       = aws_secretsmanager_secret.db-connection.arn
+  description = "[DEPRECATED] Use master_password_secret_arn - same secret contains all connection info"
+  value       = aws_secretsmanager_secret.db-master-password.arn
 }
 
 output "connection_secret_name" {
-  description = "Name of the Secrets Manager secret containing connection information"
-  value       = aws_secretsmanager_secret.db-connection.name
+  description = "[DEPRECATED] Use master_password_secret_name - same secret contains all connection info"
+  value       = aws_secretsmanager_secret.db-master-password.name
 }
 
 # ============================================================================
