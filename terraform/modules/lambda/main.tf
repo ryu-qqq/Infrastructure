@@ -143,7 +143,7 @@ resource "aws_sqs_queue" "dlq" {
 
   name                       = "${local.function_name}-dlq"
   message_retention_seconds  = var.dlq_message_retention_seconds
-  visibility_timeout_seconds = 300
+  visibility_timeout_seconds = var.dlq_visibility_timeout_seconds
   kms_master_key_id          = var.dlq_kms_key_id
 
   tags = merge(

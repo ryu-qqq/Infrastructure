@@ -256,6 +256,17 @@ variable "dlq_kms_key_id" {
   default     = null
 }
 
+variable "dlq_visibility_timeout_seconds" {
+  description = "DLQ visibility timeout in seconds (0-43200)"
+  type        = number
+  default     = 300
+
+  validation {
+    condition     = var.dlq_visibility_timeout_seconds >= 0 && var.dlq_visibility_timeout_seconds <= 43200
+    error_message = "DLQ visibility timeout must be between 0 and 43200 seconds."
+  }
+}
+
 # Tracing
 variable "tracing_mode" {
   description = "X-Ray tracing mode (Active or PassThrough)"

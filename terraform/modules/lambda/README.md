@@ -189,6 +189,20 @@ module "api_lambda" {
     }
   }
 
+  # Lambda Permissions
+  lambda_permissions = {
+    api_gateway = {
+      action     = "lambda:InvokeFunction"
+      principal  = "apigateway.amazonaws.com"
+      source_arn = "${aws_api_gateway_rest_api.api.execution_arn}/*/*"
+    }
+    s3_trigger = {
+      action     = "lambda:InvokeFunction"
+      principal  = "s3.amazonaws.com"
+      source_arn = "arn:aws:s3:::my-uploads-bucket"
+    }
+  }
+
   # Custom IAM Policies
   custom_policy_arns = {
     dynamodb = "arn:aws:iam::aws:policy/AmazonDynamoDBReadOnlyAccess"
@@ -199,6 +213,16 @@ module "api_lambda" {
   additional_tags = {
     Component = "api"
     Runtime   = "python3.11"
+  }
+}
+
+# Example API Gateway REST API (required for the Lambda permission below)
+resource "aws_api_gateway_rest_api" "api" {
+  name = "api-lambda-example"
+
+  tags = {
+    Environment = "prod"
+    Service     = "api-service"
   }
 }
 

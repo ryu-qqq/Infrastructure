@@ -29,20 +29,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Example: Python API Lambda with VPC and DLQ
 - Complete documentation with usage examples
 
-### Features
-- ✅ Multi-runtime support (9 runtime families)
-- ✅ Automatic IAM role creation and policy management
-- ✅ VPC integration (subnets, security groups)
-- ✅ Environment variables management
-- ✅ CloudWatch Logs with KMS encryption
-- ✅ Dead Letter Queue with KMS encryption
-- ✅ Version management and aliases
-- ✅ X-Ray tracing
-- ✅ Lambda Layers
-- ✅ Lambda permissions (API Gateway, S3, etc.)
-- ✅ Standardized tagging (governance compliance)
-- ✅ Comprehensive validation
-
 ### Governance Compliance
 - ✅ Required tags: Environment, Service, Team, Owner, CostCenter, Project
 - ✅ KMS encryption support for logs and DLQ
