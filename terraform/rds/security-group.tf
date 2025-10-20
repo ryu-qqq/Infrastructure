@@ -56,7 +56,7 @@ resource "aws_vpc_security_group_ingress_rule" "from-cidr-blocks" {
 # Ingress rule from Secrets Manager rotation Lambda
 # Only create if rotation is enabled AND Lambda is deployed in VPC (has security group)
 resource "aws_vpc_security_group_ingress_rule" "from-rotation-lambda" {
-  count = var.enable_secrets_rotation && data.terraform_remote_state.secrets.outputs.rotation_lambda_security_group_id != null ? 1 : 0
+  count = var.enable_secrets_rotation && try(data.terraform_remote_state.secrets.outputs.rotation_lambda_security_group_id, null) != null ? 1 : 0
 
   security_group_id = aws_security_group.rds.id
 
@@ -64,7 +64,7 @@ resource "aws_vpc_security_group_ingress_rule" "from-rotation-lambda" {
   from_port                    = var.port
   to_port                      = var.port
   ip_protocol                  = "tcp"
-  referenced_security_group_id = data.terraform_remote_state.secrets.outputs.rotation_lambda_security_group_id
+  referenced_security_group_id = try(data.terraform_remote_state.secrets.outputs.rotation_lambda_security_group_id, null)
 
   tags = merge(
     local.required_tags,
