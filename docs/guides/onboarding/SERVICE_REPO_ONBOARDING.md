@@ -20,144 +20,47 @@ Before you begin, ensure you have:
 - AWS credentials configured for your target environment
 
 ---
+# 서비스 리포지토리 온보딩 가이드
 
-## Infrastructure Folder Structure
+## 목적
 
-### Overview
+이 가이드는 서비스 팀이 인프라스트럭처 리포지토리의 표준화된 패턴을 활용하여 자율적으로 인프라를 구축하고 운영할 수 있도록 돕습니다. 서비스 리포지토리에서 인프라 코드를 체계적으로 구성하기 위한 디렉터리 구조, 네이밍 컨벤션, 모범 사례를 명확히 제시합니다.
 
-Service repositories should organize infrastructure code in a standardized `infra/` directory that mirrors the structure and conventions of the central infrastructure repository. This structure provides:
+## 대상 독자
 
-- **Clear separation** between application code and infrastructure code
-- **Environment isolation** for safe deployments across dev, staging, and prod
-- **Reusability** through modular Terraform configurations
-- **Discoverability** through consistent naming and organization
+- 신규 인프라를 구축하는 서비스 팀
+- IaC(Infrastructure as Code)로 전환 중인 개발자
+- 인프라 리포지토리에 기여하는 팀 구성원
 
-### Standard Directory Layout
+## 사전 준비 사항
 
-```
-service-repository/
-├── infra/                          # Infrastructure root directory
-│   ├── terraform/                  # Terraform configurations
-│   │   ├── modules/                # Service-specific reusable modules
-│   │   │   ├── app-service/        # Example: ECS service module
-│   │   │   │   ├── main.tf
-│   │   │   │   ├── variables.tf
-│   │   │   │   ├── outputs.tf
-│   │   │   │   ├── versions.tf
-│   │   │   │   ├── README.md
-│   │   │   │   └── examples/       # Usage examples
-│   │   │   │       ├── basic/
-│   │   │   │       └── advanced/
-│   │   │   └── app-database/       # Example: RDS module
-│   │   │       └── ...
-│   │   ├── environments/           # Environment-specific configurations
-│   │   │   ├── dev/                # Development environment
-│   │   │   │   ├── main.tf         # Main resource definitions
-│   │   │   │   ├── variables.tf    # Environment variables
-│   │   │   │   ├── terraform.tfvars # Variable values
-│   │   │   │   ├── backend.tf      # State backend configuration
-│   │   │   │   ├── provider.tf     # AWS provider configuration
-│   │   │   │   ├── outputs.tf      # Environment outputs
-│   │   │   │   └── README.md       # Environment-specific documentation
-│   │   │   ├── staging/            # Staging environment
-│   │   │   │   └── ...
-│   │   │   └── prod/               # Production environment
-│   │   │       └── ...
-│   │   └── shared/                 # Shared resources (optional)
-│   │       ├── network/            # VPC, subnets, security groups
-│   │       ├── kms/                # Encryption keys
-│   │       └── iam/                # IAM roles and policies
-│   ├── scripts/                    # Infrastructure automation scripts
-│   │   ├── validators/             # Governance validators
-│   │   ├── deploy.sh               # Deployment automation
-│   │   └── init-env.sh             # Environment initialization
-│   └── docs/                       # Infrastructure documentation
-│       ├── architecture/           # Architecture diagrams and decisions
-│       ├── runbooks/               # Operational procedures
-│       └── INFRASTRUCTURE.md       # Main infrastructure documentation
-├── src/                            # Application source code
-├── .github/                        # GitHub Actions workflows
-│   └── workflows/
-│       ├── terraform-plan.yml
-│       └── terraform-apply.yml
-└── README.md
-```
+시작하기 전에 다음을 준비하세요:
 
-### Directory Purpose and Guidelines
+- Terraform 및 AWS에 대한 기본 이해
 
-#### `infra/` - Infrastructure Root
-- **Purpose**: Container for all infrastructure-related code and documentation
-- **Guideline**: Keep this separate from application code for clear separation of concerns
-- **Ownership**: Typically managed collaboratively between service teams and platform teams
+- 중앙 인프라스트럭처 리포지토리에 대한 접근 권한
+- 서비스 아키텍처와 요구사항에 대한 이해
+- 대상 환경에 맞게 구성된 AWS 자격 증명
 
-#### `infra/terraform/modules/` - Service-Specific Modules
-- **Purpose**: Reusable Terraform modules specific to your service
-- **Naming Convention**: Use kebab-case (e.g., `app-service`, `cache-layer`, `message-queue`)
-- **When to Create**:
-  - When you need custom infrastructure patterns not available in central modules
-  - When service-specific logic requires encapsulation
-  - When you want to standardize infrastructure across your service's environments
-- **File Requirements**:
-  - `main.tf` - Main resource definitions
-  - `variables.tf` - Input variables
-  - `outputs.tf` - Output values
-  - `versions.tf` - Terraform and provider version constraints
-  - `README.md` - Module documentation (usage, inputs, outputs)
-  - `examples/` - Working examples (basic and advanced)
+---
 
-**Module Structure Example**:
-```
-modules/app-service/
-├── main.tf           # ECS service, task definition, service discovery
-├── variables.tf      # Required: name, cluster_id, vpc_id; Optional: desired_count, cpu, memory
-├── outputs.tf        # service_id, service_arn, task_definition_arn
-├── versions.tf       # terraform >= 1.5.0, aws >= 5.0.0
-├── README.md         # Module documentation with usage examples
-└── examples/
-    ├── basic/        # Minimal configuration example
-    │   ├── main.tf
-    │   └── README.md
-    └── advanced/     # Full-featured example with autoscaling, monitoring
-        ├── main.tf
-        └── README.md
-```
+---
 
-#### `infra/terraform/environments/` - Environment Configurations
-- **Purpose**: Environment-specific infrastructure deployments
-- **Directory Structure**: One directory per environment (dev, staging, prod)
-- **Naming Convention**: Use lowercase environment names
-- **File Organization**:
-  - `main.tf` - Resource definitions using modules
-  - `variables.tf` - Variable declarations (no default values)
-  - `terraform.tfvars` - Environment-specific variable values (sensitive values in secrets)
-  - `backend.tf` - S3 backend configuration for state management
-  - `provider.tf` - AWS provider with region and assume role configuration
-  - `outputs.tf` - Infrastructure outputs (URLs, IDs, ARNs)
-  - `README.md` - Environment-specific documentation and deployment instructions
+## 문서 분할 안내
 
-**Environment Configuration Example** (`environments/prod/main.tf`):
-```hcl
-# Production environment infrastructure
+## 목차
 
-# Common tags for all resources
-module "common_tags" {
-  source = "git::https://github.com/org/infrastructure.git//terraform/modules/common-tags?ref=v1.0.0"
+- [인프라 디렉터리 구조와 가이드라인](./01-structure.md)
+- [파일 구성과 상태 관리](./02-files-and-state.md)
+- [모듈 사용 가이드](./03-modules-usage.md)
+- [버전 관리와 업그레이드](./04-versioning-and-upgrades.md)
+- [백엔드 구성 모범사례 및 트러블슈팅](./05-backend-best-practices.md)
 
-  environment = "prod"
-  service     = "user-api"
-  team        = "backend-team"
-  owner       = "backend-team@company.com"
-  cost_center = "product-development"
-}
+---
+## 참고
 
-# Application ECS service
-module "app_service" {
-  source = "../../modules/app-service"
-
-  name                = "prod-user-api-service"
-  cluster_id          = data.aws_ecs_cluster.main.id
-  vpc_id              = data.aws_vpc.main.id
-  subnet_ids          = data.aws_subnets.private.ids
+- 본 문서는 `SERVICE_REPO_ONBOARDING.md`의 전체 내용을 한국어로 정리한 후, 섹션별로 분할한 인덱스입니다.
+- 각 하위 문서에는 코드 블록과 구체 예시가 포함되어 있으며, 원문 구조와 경로를 유지합니다.
   desired_count       = 3
   cpu                 = 512
   memory              = 1024
@@ -183,14 +86,14 @@ terraform {
 }
 ```
 
-#### `infra/terraform/shared/` - Shared Resources (Optional)
-- **Purpose**: Infrastructure shared across all environments
-- **When to Use**:
-  - Network infrastructure (VPC, subnets) used by all environments
-  - KMS keys for encryption
-  - IAM roles and policies
-  - Cross-environment service discovery
-- **Guideline**: Only create if you have genuinely shared resources; most services should use environment-specific configurations
+#### `infra/terraform/shared/` - 공용 리소스(선택)
+- **목적**: 모든 환경에서 공통으로 사용하는 인프라
+- **사용 시점**:
+  - 모든 환경이 공통으로 사용하는 네트워크(VPC, 서브넷 등)
+  - 암호화를 위한 KMS 키
+  - IAM 역할 및 정책
+  - 환경 간 서비스 디스커버리
+- **가이드라인**: 실제로 공용이 필요한 경우에만 생성하고, 대부분은 환경별 구성을 권장
 
 **Shared Resource Example**:
 ```
@@ -205,40 +108,40 @@ shared/
     └── backend.tf     # Separate state for encryption keys
 ```
 
-### File Naming Conventions
+### 파일 네이밍 컨벤션
 
-#### Terraform Files
-- **Main files**: Use standard Terraform naming
-  - `main.tf` - Primary resource definitions
-  - `variables.tf` - Input variable declarations
-  - `outputs.tf` - Output value definitions
-  - `versions.tf` - Version constraints
-  - `provider.tf` - Provider configurations
-  - `backend.tf` - Backend configuration
-  - `locals.tf` - Local values (optional, use when complex logic exists)
-  - `data.tf` - Data source definitions (optional, use when many data sources exist)
+#### Terraform 파일
+- **기본 파일**: 표준 Terraform 파일명을 사용
+  - `main.tf` - 핵심 리소스 정의
+  - `variables.tf` - 입력 변수 선언
+  - `outputs.tf` - 출력 값 정의
+  - `versions.tf` - 버전 제약 정의
+  - `provider.tf` - 프로바이더 설정
+  - `backend.tf` - 백엔드 설정
+  - `locals.tf` - 로컬 값(선택, 복잡한 로직이 있을 때 사용)
+  - `data.tf` - 데이터 소스 정의(선택, 데이터 소스가 많을 때 분리)
 
-- **Resource-specific files**: Group related resources for large configurations
-  - `ecs.tf` - ECS cluster, services, task definitions
-  - `rds.tf` - Database instances and parameter groups
-  - `security-groups.tf` - Security group definitions
-  - `iam.tf` - IAM roles and policies
-  - `monitoring.tf` - CloudWatch alarms and dashboards
+- **리소스별 파일 분리**: 규모가 큰 구성에서는 관련 리소스를 묶어 분리
+  - `ecs.tf` - ECS 클러스터, 서비스, 태스크 정의
+  - `rds.tf` - 데이터베이스 인스턴스 및 파라미터 그룹
+  - `security-groups.tf` - 보안 그룹 정의
+  - `iam.tf` - IAM 역할 및 정책
+  - `monitoring.tf` - CloudWatch 알람/대시보드
 
-#### Variable Files
-- `terraform.tfvars` - Default variable values for the environment
-- `prod.tfvars`, `staging.tfvars`, `dev.tfvars` - Environment-specific overrides (if using workspace pattern)
-- `secrets.auto.tfvars` - Sensitive values (excluded from version control via `.gitignore`)
+#### 변수 파일
+- `terraform.tfvars` - 환경 기본 변수 값
+- `prod.tfvars`, `staging.tfvars`, `dev.tfvars` - 환경별 오버라이드(workspace 패턴 사용 시)
+- `secrets.auto.tfvars` - 민감한 값(`.gitignore`로 버전 관리 제외)
 
-#### Documentation Files
-- `README.md` - Module or environment documentation
-- `ARCHITECTURE.md` - Architecture decisions and diagrams
-- `RUNBOOK.md` - Operational procedures
+#### 문서 파일
+- `README.md` - 모듈/환경 문서
+- `ARCHITECTURE.md` - 아키텍처 결정 사항 및 다이어그램
+- `RUNBOOK.md` - 운영 절차
 
-### File Organization Best Practices
+### 파일 구성 모범 사례
 
-#### Small Configurations (< 10 Resources)
-Use simple structure with standard files:
+#### 소규모 구성(< 10 리소스)
+표준 파일을 활용한 간단한 구조 사용:
 ```
 environments/dev/
 ├── main.tf          # All resource definitions
@@ -249,8 +152,8 @@ environments/dev/
 └── terraform.tfvars # Variable values
 ```
 
-#### Medium Configurations (10-50 Resources)
-Group related resources into logical files:
+#### 중간 규모 구성(10~50 리소스)
+관련 리소스를 논리적으로 파일로 그룹화:
 ```
 environments/prod/
 ├── main.tf              # Module calls and primary resources
@@ -265,8 +168,8 @@ environments/prod/
 └── terraform.tfvars     # Variable values
 ```
 
-#### Large Configurations (> 50 Resources)
-Consider splitting into multiple modules or using subdirectories:
+#### 대규모 구성(> 50 리소스)
+여러 모듈로 분할하거나 하위 디렉터리 사용 고려:
 ```
 environments/prod/
 ├── compute/
@@ -284,10 +187,10 @@ environments/prod/
 └── provider.tf       # AWS provider
 ```
 
-### State Management
+### 상태(State) 관리
 
-#### Backend Configuration
-Always use remote state backend (S3 + DynamoDB) for team collaboration:
+#### 백엔드 구성
+팀 협업을 위해 항상 원격 상태 백엔드(S3 + DynamoDB)를 사용하세요:
 
 ```hcl
 terraform {
@@ -302,22 +205,22 @@ terraform {
 }
 ```
 
-**Key Guidelines**:
-- **Bucket**: Organization-wide Terraform state bucket (create once, use for all services)
-- **Key Pattern**: `services/{service-name}/{environment}/terraform.tfstate` for isolation
-- **Encryption**: Always enable with customer-managed KMS key
-- **Locking**: Use DynamoDB table to prevent concurrent modifications
-- **Versioning**: Enable S3 bucket versioning for state history
+**핵심 가이드라인**:
+- **Bucket**: 조직 공용 Terraform 상태 버킷(한 번 생성해 모든 서비스에서 사용)
+- **Key 패턴**: 격리를 위해 `services/{service-name}/{environment}/terraform.tfstate`
+- **암호화**: 고객 관리형 KMS 키로 항상 암호화 활성화
+- **락킹**: 동시 수정 방지를 위해 DynamoDB 테이블 사용
+- **버저닝**: 상태 이력을 위해 S3 버킷 버저닝 활성화
 
-#### State File Organization
-- **One state per environment**: Separate state files for dev, staging, prod
-- **Separate shared state**: If using shared resources, use separate state file
-- **Module state isolation**: Each environment references modules but maintains its own state
+#### 상태 파일 구성
+- **환경별 1 상태 파일**: dev, staging, prod를 각각 분리
+- **공용 상태 분리**: 공용 리소스를 사용한다면 별도 상태 파일 사용
+- **모듈 상태 분리**: 각 환경은 모듈을 참조하되 자체 상태를 유지
 
-### Module Reuse Strategy
+### 모듈 재사용 전략
 
-#### Using Central Infrastructure Modules
-Reference centralized modules from the infrastructure repository:
+#### 중앙 인프라 모듈 사용
+인프라 리포지토리의 중앙 모듈을 참조하여 사용하세요:
 
 ```hcl
 module "common_tags" {
@@ -342,14 +245,14 @@ module "ecs_service" {
 }
 ```
 
-**Best Practices**:
-- **Version Pinning**: Always specify `?ref=v1.2.0` to lock module versions
-- **Semantic Versioning**: Follow semver for module releases (MAJOR.MINOR.PATCH)
-- **Testing**: Test module updates in dev environment before production
-- **Documentation**: Check module README for input/output specifications
+**모범 사례**:
+- **버전 고정**: 모듈 버전을 고정하기 위해 항상 `?ref=v1.2.0` 형태로 명시
+- **시맨틱 버저닝**: 모듈 릴리스에 semver(주.부.패치) 준수
+- **테스트**: 프로덕션 적용 전에 개발 환경에서 모듈 업데이트를 테스트
+- **문서 확인**: 모듈 README에서 입력/출력 사양 확인
 
-#### Creating Service-Specific Modules
-When central modules don't meet your needs:
+#### 서비스 전용 모듈 생성
+중앙 모듈로 요구 사항을 충족할 수 없을 때:
 
 ```hcl
 # In infra/terraform/modules/custom-cache/
@@ -366,16 +269,16 @@ module "redis_cache" {
 }
 ```
 
-**When to Create**:
-- Service-specific infrastructure patterns
-- Custom business logic requirements
-- Complex multi-resource compositions
-- When central modules are too generic
+**생성 기준**:
+- 서비스 특화 인프라 패턴이 필요한 경우
+- 커스텀 비즈니스 로직 요구가 있는 경우
+- 복잡한 다중 리소스 조합이 필요한 경우
+- 중앙 모듈이 지나치게 범용적이라 맞지 않는 경우
 
-### Documentation Requirements
+### 문서화 요구사항
 
-#### Module README Template
-Every module must include a README with:
+#### 모듈 README 템플릿
+모든 모듈에는 다음 내용을 포함한 README가 필요합니다:
 
 ```markdown
 # Module Name
@@ -412,8 +315,8 @@ module "example" {
 - [Advanced](./examples/advanced/) - Full-featured setup
 ```
 
-#### Environment README Template
-Each environment directory should document:
+#### 환경 README 템플릿
+각 환경 디렉터리는 다음 내용을 문서화해야 합니다:
 
 ```markdown
 # {Environment} Environment
@@ -444,36 +347,36 @@ Common issues and solutions.
 
 ---
 
-## Central Module Reference
+## 중앙 모듈 참조
 
-### Overview
+### 개요
 
-The infrastructure repository provides centralized, production-ready Terraform modules that service teams can reference and use. This section explains how to discover, reference, and manage versions of these central modules in your service repository.
+인프라 리포지토리는 서비스 팀이 참조하여 사용할 수 있는 중앙화된 프로덕션 준비 완료 Terraform 모듈을 제공합니다. 이 섹션은 서비스 리포지토리에서 이러한 중앙 모듈을 검색, 참조, 버전 관리하는 방법을 설명합니다.
 
-### Why Use Central Modules?
+### 중앙 모듈을 사용하는 이유
 
-**Benefits**:
-- **Pre-tested patterns**: Modules are validated against organization standards
-- **Consistent infrastructure**: Same patterns across all services
-- **Reduced development time**: Don't reinvent the wheel for common patterns
-- **Built-in best practices**: Security, monitoring, and governance built-in
-- **Maintained centrally**: Updates and improvements benefit all services
+**이점**:
+- **사전 검증된 패턴**: 조직 표준에 대해 검증된 모듈
+- **일관된 인프라**: 모든 서비스에 동일한 패턴 적용
+- **개발 시간 단축**: 공통 패턴을 재발명할 필요 없음
+- **베스트 프랙티스 내장**: 보안, 모니터링, 거버넌스 기본 포함
+- **중앙 관리**: 업데이트/개선의 혜택이 모든 서비스에 공유
 
-**When to Use Central Modules**:
-- Standard AWS resources (ECS services, RDS instances, ALB, security groups)
-- Common infrastructure patterns (logging, monitoring, tagging)
-- Governance requirements (required tags, naming conventions, security baselines)
+**중앙 모듈 사용 적합 시나리오**:
+- 표준 AWS 리소스(ECS 서비스, RDS 인스턴스, ALB, 보안 그룹)
+- 공통 인프라 패턴(로깅, 모니터링, 태깅)
+- 거버넌스 요구사항(필수 태그, 네이밍 컨벤션, 보안 베이스라인)
 
-**When to Create Service-Specific Modules**:
-- Unique business logic or workflows specific to your service
-- Custom combinations not available in central modules
-- Temporary experiments before contributing back to central repository
+**서비스 전용 모듈을 생성할 때**:
+- 서비스 고유의 비즈니스 로직/워크플로우가 필요한 경우
+- 중앙 모듈에서 제공하지 않는 커스텀 조합이 필요한 경우
+- 중앙 리포지토리에 기여하기 전 임시 실험이 필요한 경우
 
-### Module Discovery
+### 모듈 검색
 
-#### Finding Available Modules
+#### 사용 가능한 모듈 찾기
 
-**Primary Source**: Infrastructure Repository Module Catalog
+**주요 출처**: 인프라 리포지토리 모듈 카탈로그
 ```bash
 # Clone or navigate to infrastructure repository
 cd infrastructure/
@@ -491,8 +394,8 @@ ls -la terraform/modules/
 # security-group/
 ```
 
-**Module Documentation**:
-Each module includes comprehensive documentation:
+**모듈 문서**:
+각 모듈은 다음과 같은 포괄적 문서를 포함합니다:
 
 ```
 terraform/modules/{module-name}/
@@ -509,44 +412,44 @@ terraform/modules/{module-name}/
     └── advanced/          # Full-featured example
 ```
 
-**Module Catalog Reference**:
-- [Terraform Modules README](../../../terraform/modules/README.md) - Complete module catalog
-- [Module Directory Structure](../../modules/MODULES_DIRECTORY_STRUCTURE.md) - Organization patterns
-- [Module Standards Guide](../../modules/MODULE_STANDARDS_GUIDE.md) - Coding conventions
+**모듈 카탈로그 참조**:
+- [Terraform Modules README](../../../terraform/modules/README.md) - 전체 모듈 카탈로그
+- [Module Directory Structure](../../modules/MODULES_DIRECTORY_STRUCTURE.md) - 조직화 패턴
+- [Module Standards Guide](../../modules/MODULE_STANDARDS_GUIDE.md) - 코딩 컨벤션
 
-#### Module Categories
+#### 모듈 카테고리
 
-**Core Infrastructure**:
-- `common-tags` - Standardized tagging for all resources
-- `cloudwatch-log-group` - Log group with retention and encryption
-- `iam-role-policy` - IAM roles with least-privilege policies
-- `security-group` - Security groups with validation
+**코어 인프라**:
+- `common-tags` - 모든 리소스에 표준화된 태깅
+- `cloudwatch-log-group` - 보존/암호화 설정된 로그 그룹
+- `iam-role-policy` - 최소 권한 정책의 IAM 역할
+- `security-group` - 검증 포함 보안 그룹
 
-**Compute**:
-- `ecs-service` - ECS Fargate service with auto scaling
-- `ecs-task-definition` - Task definitions with container configurations
-- `lambda-function` - Lambda functions with monitoring
+**컴퓨트**:
+- `ecs-service` - 오토스케일링 지원 ECS Fargate 서비스
+- `ecs-task-definition` - 컨테이너 구성을 포함한 태스크 정의
+- `lambda-function` - 모니터링 포함 Lambda 함수
 
-**Database & Storage**:
-- `rds-instance` - RDS with multi-AZ, encryption, backups
-- `elasticache-redis` - Redis cluster with replication
-- `s3-bucket` - S3 with versioning, encryption, lifecycle
+**데이터베이스 & 스토리지**:
+- `rds-instance` - 멀티 AZ, 암호화, 백업을 갖춘 RDS
+- `elasticache-redis` - 복제를 지원하는 Redis 클러스터
+- `s3-bucket` - 버저닝/암호화/수명주기 설정 S3
 
-**Networking**:
-- `alb` - Application Load Balancer with target groups
-- `vpc` - VPC with public/private subnets
-- `vpc-endpoint` - VPC endpoints for AWS services
+**네트워킹**:
+- `alb` - 타깃 그룹을 포함한 ALB
+- `vpc` - 퍼블릭/프라이빗 서브넷을 갖춘 VPC
+- `vpc-endpoint` - AWS 서비스용 VPC 엔드포인트
 
-**Monitoring & Observability**:
-- `cloudwatch-dashboard` - Custom CloudWatch dashboards
-- `cloudwatch-alarm` - Alarms with SNS integration
-- `log-metric-filter` - Log-based metrics
+**모니터링 & 가시성**:
+- `cloudwatch-dashboard` - 커스텀 CloudWatch 대시보드
+- `cloudwatch-alarm` - SNS 통합 알람
+- `log-metric-filter` - 로그 기반 메트릭
 
-### Git URL Module Reference
+### Git URL 모듈 참조
 
-#### Basic Syntax
+#### 기본 문법
 
-Central modules are referenced using Git URLs with the following pattern:
+중앙 모듈은 다음 패턴의 Git URL로 참조합니다:
 
 ```hcl
 module "module_name" {
@@ -557,12 +460,12 @@ module "module_name" {
 }
 ```
 
-**Components**:
-- `git::` - Protocol prefix indicating Git source
-- `https://github.com/{org}/{repo}.git` - Repository URL
-- `//` - Path separator (double slash required)
-- `{path}` - Path to module within repository
-- `?ref={version}` - Version tag to use
+**구성 요소**:
+- `git::` - Git 소스를 나타내는 프로토콜 접두사
+- `https://github.com/{org}/{repo}.git` - 리포지토리 URL
+- `//` - 경로 구분자(슬래시 2개 필요)
+- `{path}` - 리포지토리 내 모듈 경로
+- `?ref={version}` - 사용할 버전 태그
 
 #### Complete Example
 
@@ -593,24 +496,24 @@ module "app_service" {
 }
 ```
 
-#### Alternative Git Protocols
+#### 대체 Git 프로토콜
 
-**SSH (for private repositories with SSH keys)**:
+**SSH(SSH 키를 사용하는 프라이빗 리포지토리용)**:
 ```hcl
 module "example" {
   source = "git::ssh://git@github.com/{org}/{repo}.git//{path}?ref={version}"
 }
 ```
 
-**HTTPS with credentials (not recommended, use SSH or tokens instead)**:
+**자격증명을 포함한 HTTPS(비권장, SSH 또는 토큰 사용 권장)**:
 ```hcl
 # Avoid hardcoding credentials
 # Use environment variables or SSH keys
 ```
 
-#### Local Development Reference
+#### 로컬 개발 참조
 
-During module development or testing, use local paths:
+모듈 개발/테스트 중에는 로컬 경로를 사용하세요:
 
 ```hcl
 module "app_service" {
@@ -622,40 +525,40 @@ module "app_service" {
 }
 ```
 
-**Workflow**:
-1. **Development**: Use local path `source = "../../modules/ecs-service"`
-2. **Testing**: Validate with `terraform init`, `terraform plan`
-3. **Production**: Switch to Git URL with version `source = "git::...?ref=v1.0.0"`
+**워크플로우**:
+1. **개발**: 로컬 경로 사용 `source = "../../modules/ecs-service"`
+2. **테스트**: `terraform init`, `terraform plan` 으로 검증
+3. **프로덕션**: 버전을 포함한 Git URL로 전환 `source = "git::...?ref=v1.0.0"`
 
-### Version Management Strategy
+### 버전 관리 전략
 
-#### Semantic Versioning
+#### 시맨틱 버저닝
 
-All central modules follow [Semantic Versioning 2.0.0](https://semver.org/):
+모든 중앙 모듈은 [Semantic Versioning 2.0.0](https://semver.org/)을 따릅니다:
 
 ```
 {MAJOR}.{MINOR}.{PATCH}
 ```
 
-**Version Components**:
-- **MAJOR** (1.0.0 → 2.0.0): Breaking changes requiring code updates
-- **MINOR** (1.0.0 → 1.1.0): New features, backward compatible
-- **PATCH** (1.0.0 → 1.0.1): Bug fixes, backward compatible
+**버전 구성 요소**:
+- **MAJOR** (1.0.0 → 2.0.0): 코드 변경이 필요한 파괴적 변경
+- **MINOR** (1.0.0 → 1.1.0): 신규 기능, 하위 호환 유지
+- **PATCH** (1.0.0 → 1.0.1): 버그 수정, 하위 호환 유지
 
-**Examples**:
+**예시**:
 
-| Change Type | Example | Version Impact |
-|-------------|---------|----------------|
-| Add required variable | `variable "new_required" {}` | **MAJOR** 1.0.0 → 2.0.0 |
-| Remove variable | Remove `variable "old_var"` | **MAJOR** 1.0.0 → 2.0.0 |
-| Add optional variable | `variable "new_opt" { default = "value" }` | **MINOR** 1.0.0 → 1.1.0 |
-| Add output | `output "new_id" { value = aws_resource.id }` | **MINOR** 1.0.0 → 1.1.0 |
-| Fix bug | Correct tag merge logic | **PATCH** 1.0.0 → 1.0.1 |
-| Update documentation | README improvements | **PATCH** 1.0.0 → 1.0.1 |
+| 변경 유형 | 예시 | 버전 영향 |
+|----------|------|-----------|
+| 필수 변수 추가 | `variable "new_required" {}` | **MAJOR** 1.0.0 → 2.0.0 |
+| 변수 제거 | `variable "old_var"` 제거 | **MAJOR** 1.0.0 → 2.0.0 |
+| 선택 변수 추가 | `variable "new_opt" { default = "value" }` | **MINOR** 1.0.0 → 1.1.0 |
+| 출력 추가 | `output "new_id" { value = aws_resource.id }` | **MINOR** 1.0.0 → 1.1.0 |
+| 버그 수정 | 태그 병합 로직 수정 | **PATCH** 1.0.0 → 1.0.1 |
+| 문서 업데이트 | README 개선 | **PATCH** 1.0.0 → 1.0.1 |
 
-#### Version Pinning Best Practices
+#### 버전 고정 모범 사례
 
-**Always Pin to Specific Versions in Production**:
+**프로덕션에서는 항상 특정 버전에 고정하세요**:
 
 ```hcl
 ✅ Good - Explicit version
@@ -674,17 +577,17 @@ module "ecs_service" {
 }
 ```
 
-**Version Pinning Strategy by Environment**:
+**환경별 버전 고정 전략**:
 
-| Environment | Strategy | Example | Rationale |
-|-------------|----------|---------|-----------|
-| **Development** | Latest stable minor | `?ref=v1.2.0` | Test new features early |
-| **Staging** | Same as production candidate | `?ref=v1.1.5` | Pre-production validation |
-| **Production** | Specific tested version | `?ref=v1.1.5` | Maximum stability |
+| 환경 | 전략 | 예시 | 근거 |
+|------|------|------|------|
+| **Development** | 최신 안정 마이너 | `?ref=v1.2.0` | 신규 기능을 조기에 테스트 |
+| **Staging** | 프로덕션 후보와 동일 | `?ref=v1.1.5` | 프로덕션 전 검증 |
+| **Production** | 검증 완료된 특정 버전 | `?ref=v1.1.5` | 최대 안정성 |
 
-#### Version Upgrade Process
+#### 버전 업그레이드 프로세스
 
-**Step-by-Step Upgrade Workflow**:
+**단계별 업그레이드 워크플로우**:
 
 ```
 1. Review CHANGELOG
@@ -698,9 +601,9 @@ module "ecs_service" {
 5. Deploy to Production
 ```
 
-**Detailed Steps**:
+**자세한 단계**:
 
-**1. Check Module Changelog**
+**1. 모듈 변경 로그 확인**
 ```bash
 # View module changelog
 cd infrastructure/terraform/modules/ecs-service
@@ -710,9 +613,9 @@ cat CHANGELOG.md
 # https://github.com/ryuqqq/infrastructure/releases/tag/modules/ecs-service/v2.0.0
 ```
 
-**2. Assess Version Impact**
+**2. 버전 영향도 평가**
 
-**MAJOR Version (Breaking Changes)**:
+**MAJOR 버전(파괴적 변경)**:
 ```hcl
 # v1.x.x → v2.x.x requires code changes
 
@@ -734,7 +637,7 @@ module "app_service" {
 }
 ```
 
-**MINOR/PATCH Version (Safe to Upgrade)**:
+**MINOR/PATCH 버전(안전 업그레이드)**:
 ```hcl
 # v1.0.0 → v1.1.0 or v1.0.1 - No code changes needed
 
@@ -746,7 +649,7 @@ module "app_service" {
 }
 ```
 
-**3. Test in Development Environment**
+**3. 개발 환경에서 테스트**
 ```bash
 cd infra/terraform/environments/dev
 
@@ -768,7 +671,7 @@ terraform plan
 terraform apply
 ```
 
-**4. Validate in Staging**
+**4. 스테이징에서 검증**
 ```bash
 cd ../staging
 
@@ -782,7 +685,7 @@ terraform apply
 # Monitor for 24-48 hours
 ```
 
-**5. Deploy to Production**
+**5. 프로덕션에 배포**
 ```bash
 cd ../prod
 
@@ -795,9 +698,9 @@ terraform plan -out=tfplan
 terraform apply tfplan
 ```
 
-#### Version Compatibility Matrix
+#### 버전 호환성 매트릭스
 
-**Tracking Module Dependencies**:
+**모듈 의존성 추적**:
 
 ```hcl
 # environments/prod/versions.tf
@@ -820,9 +723,9 @@ terraform {
 # - alb: v1.1.0
 ```
 
-**Version Compatibility Checks**:
+**버전 호환성 점검**:
 
-Each module's README includes compatibility information:
+각 모듈의 README에는 호환성 정보가 포함됩니다:
 
 ```markdown
 ## Requirements
@@ -840,7 +743,7 @@ This module is tested with:
 - iam-role-policy: v1.x.x
 ```
 
-### Module Version Decision Tree
+### 모듈 버전 의사결정 트리
 
 ```
 Need to use a central module?
@@ -869,11 +772,11 @@ Need to use a central module?
          Validate in staging for 48h → Get approval → Deploy with rollback plan
 ```
 
-### Module Update Tracking
+### 모듈 업데이트 추적
 
-#### Monitoring New Releases
+#### 신규 릴리스 모니터링
 
-**Methods to Stay Updated**:
+**최신 상태를 유지하는 방법**:
 
 1. **GitHub Watch** (Recommended)
    ```
@@ -882,7 +785,7 @@ Need to use a central module?
    - Receive notifications for new module versions
    ```
 
-2. **Release Notes Review**
+2. **릴리스 노트 확인(Release Notes Review)**
    ```bash
    # Check recent releases
    gh release list --repo ryuqqq/infrastructure --limit 10
@@ -891,14 +794,14 @@ Need to use a central module?
    gh release view modules/ecs-service/v2.0.0 --repo ryuqqq/infrastructure
    ```
 
-3. **Changelog Monitoring**
+3. **변경 로그 모니터링(Changelog Monitoring)**
    - Subscribe to infrastructure repository updates
    - Review CHANGELOG.md files periodically
    - Attend infrastructure team office hours (if available)
 
-#### Documenting Module Versions
+#### 모듈 버전 문서화
 
-**In Your Service Repository**:
+**서비스 리포지토리 내**:
 
 Create `infra/MODULE_VERSIONS.md`:
 ```markdown
@@ -931,18 +834,18 @@ Last Updated: 2025-10-18
 - **Result**: Deployed successfully
 ```
 
-### Common Issues and Solutions
+### 흔한 이슈와 해결책
 
-#### Issue 1: Module Not Found
+#### 이슈 1: 모듈을 찾을 수 없음
 
-**Error**:
+**오류**:
 ```
 Error: Failed to download module
 Module source: git::https://github.com/org/infrastructure.git//terraform/modules/wrong-name?ref=v1.0.0
 Could not download module
 ```
 
-**Solutions**:
+**해결**:
 ```bash
 # 1. Verify module exists
 ls infrastructure/terraform/modules/
@@ -955,7 +858,7 @@ ls infrastructure/terraform/modules/
 git ls-remote --tags https://github.com/ryuqqq/infrastructure.git | grep "modules/ecs-service"
 ```
 
-#### Issue 2: Version Not Found
+#### 이슈 2: 버전을 찾을 수 없음
 
 **Error**:
 ```
@@ -975,7 +878,7 @@ git ls-remote --tags https://github.com/ryuqqq/infrastructure.git | grep "module
 # Update ?ref= to valid version tag
 ```
 
-#### Issue 3: Incompatible Version
+#### 이슈 3: 호환되지 않는 버전
 
 **Error**:
 ```
@@ -994,7 +897,7 @@ brew upgrade terraform  # macOS
 # Check module's CHANGELOG for older versions with lower requirements
 ```
 
-#### Issue 4: Authentication Failed
+#### 이슈 4: 인증 실패
 
 **Error**:
 ```
@@ -1015,9 +918,9 @@ export GIT_TOKEN=your_token
 # Or configure in ~/.netrc
 ```
 
-### Best Practices Summary
+### 모범 사례 요약
 
-**DO**:
+**해야 할 것**:
 - ✅ Always pin to specific versions in production (`?ref=modules/name/v1.0.0`)
 - ✅ Read CHANGELOG before upgrading
 - ✅ Test upgrades in dev → staging → prod sequence
@@ -1026,7 +929,7 @@ export GIT_TOKEN=your_token
 - ✅ Subscribe to release notifications
 - ✅ Validate with `terraform plan` before applying
 
-**DON'T**:
+**하지 말아야 할 것**:
 - ❌ Use branch names as refs (`?ref=main`)
 - ❌ Omit version entirely (unpredictable)
 - ❌ Skip testing in lower environments
@@ -1034,7 +937,7 @@ export GIT_TOKEN=your_token
 - ❌ Ignore breaking changes in MAJOR updates
 - ❌ Mix local and Git references for same module across environments
 
-### Related Documentation
+### 관련 문서
 
 For deeper understanding of module management:
 
@@ -1045,9 +948,9 @@ For deeper understanding of module management:
 
 ---
 
-## Terraform Backend Configuration
+## Terraform 백엔드 구성
 
-### Overview
+### 개요
 
 Terraform backend configuration is critical for team collaboration and safe infrastructure management. Remote state storage in S3 with DynamoDB locking ensures that:
 
@@ -1057,9 +960,9 @@ Terraform backend configuration is critical for team collaboration and safe infr
 - **Concurrent modifications are prevented** through state locking
 - **Sensitive data is encrypted** at rest and in transit
 
-### Why Remote State is Important
+### 리모트 상태가 중요한 이유
 
-#### Problems with Local State
+#### 로컬 상태의 문제
 
 **Local state files** (`terraform.tfstate` on your machine) create several problems:
 
@@ -1069,7 +972,7 @@ Terraform backend configuration is critical for team collaboration and safe infr
 - ❌ **Security risk**: Sensitive data stored in plain text on local disk
 - ❌ **Manual sharing**: Difficult to share state for team workflows
 
-#### Benefits of Remote State
+#### 리모트 상태의 이점
 
 **Remote state with S3 backend** solves these problems:
 
@@ -1080,9 +983,9 @@ Terraform backend configuration is critical for team collaboration and safe infr
 - ✅ **Access control**: IAM policies control who can read/write state
 - ✅ **Durability**: S3 provides 99.999999999% durability
 
-### Backend Configuration Structure
+### 백엔드 구성 구조
 
-#### Standard backend.tf
+#### 표준 backend.tf
 
 Create a `backend.tf` file in each environment directory:
 
@@ -1113,15 +1016,15 @@ terraform {
 }
 ```
 
-#### Configuration Components
+#### 구성 요소
 
-**S3 Bucket** (`bucket`):
+**S3 버킷**(`bucket`):
 - **Purpose**: Store Terraform state files
 - **Naming**: Organization-wide bucket (e.g., `myorg-terraform-state`)
 - **Creation**: Created once by platform team, shared across all services
 - **Features**: Versioning enabled, encryption required, lifecycle policies configured
 
-**State Key** (`key`):
+**상태 키**(`key`):
 - **Purpose**: Path to state file within S3 bucket
 - **Pattern**: `services/{service-name}/{environment}/terraform.tfstate`
 - **Examples**:
@@ -1130,31 +1033,31 @@ terraform {
   - `shared/network/terraform.tfstate`
 - **Isolation**: Each environment has separate state file
 
-**Region** (`region`):
+**리전**(`region`):
 - **Purpose**: AWS region where state bucket is located
 - **Recommendation**: Use your primary infrastructure region
 - **Consistency**: Should match your main infrastructure region
 
-**Encryption** (`encrypt`):
+**암호화**(`encrypt`):
 - **Purpose**: Enable server-side encryption for state files
 - **Required**: Always set to `true`
 - **Protection**: Encrypts state at rest in S3
 
-**KMS Key** (`kms_key_id`):
+**KMS 키**(`kms_key_id`):
 - **Purpose**: Customer-managed encryption key for enhanced security
 - **Optional**: Can omit to use AWS-managed keys (SSE-S3)
 - **Recommended**: Use KMS for production environments
 - **Format**: Full KMS key ARN
 
-**DynamoDB Table** (`dynamodb_table`):
+**DynamoDB 테이블**(`dynamodb_table`):
 - **Purpose**: Implement state locking mechanism
 - **Required**: Strongly recommended for team environments
 - **Naming**: Organization-wide table (e.g., `terraform-state-lock`)
 - **Partition Key**: Must be `LockID` (string type)
 
-### Environment-Specific Backend Configurations
+### 환경별 백엔드 구성
 
-#### Development Environment
+#### 개발 환경
 
 ```hcl
 # File: infra/terraform/environments/dev/backend.tf
@@ -1170,13 +1073,13 @@ terraform {
 }
 ```
 
-**Development Characteristics**:
+**개발 환경 특징**:
 - Rapid iteration and frequent changes
 - Lower security requirements (but still encrypted)
 - Can use AWS-managed encryption (no KMS key required)
 - Full state locking still recommended
 
-#### Staging Environment
+#### 스테이징 환경
 
 ```hcl
 # File: infra/terraform/environments/staging/backend.tf
@@ -1193,13 +1096,13 @@ terraform {
 }
 ```
 
-**Staging Characteristics**:
+**스테이징 특징**:
 - Production-like configuration
 - KMS encryption recommended
 - State locking required
 - Separate state from production
 
-#### Production Environment
+#### 프로덕션 환경
 
 ```hcl
 # File: infra/terraform/environments/prod/backend.tf
@@ -1216,18 +1119,18 @@ terraform {
 }
 ```
 
-**Production Characteristics**:
+**프로덕션 특징**:
 - Maximum security configuration
 - KMS encryption required
 - State locking mandatory
 - Strict access controls via IAM
 - S3 versioning and lifecycle policies
 
-### State Management Best Practices
+### 상태 관리 모범 사례
 
-#### State File Organization
+#### 상태 파일 구성
 
-**Directory-Based Approach** (Recommended):
+**디렉터리 기반 접근**(권장):
 ```
 S3 Bucket: myorg-terraform-state/
 ├── services/
@@ -1246,13 +1149,13 @@ S3 Bucket: myorg-terraform-state/
     └── kms/terraform.tfstate
 ```
 
-**Advantages**:
+**장점**:
 - Clear separation between services and environments
 - Easy to manage IAM permissions per service
 - Intuitive navigation and discovery
 - No workspace confusion
 
-**Workspace-Based Approach** (Not Recommended for Service Repos):
+**워크스페이스 기반 접근**(서비스 리포에 비권장):
 ```
 S3 Bucket: myorg-terraform-state/
 └── services/
@@ -1263,15 +1166,15 @@ S3 Bucket: myorg-terraform-state/
         └── env:/prod/terraform.tfstate
 ```
 
-**Why Not Recommended**:
+**비권장 이유**:
 - Complex workspace management
 - Easy to forget which workspace you're in
 - Harder to implement fine-grained IAM permissions
 - Risk of accidentally applying to wrong workspace
 
-#### State Locking Mechanism
+#### 상태 락킹 메커니즘
 
-**How State Locking Works**:
+**상태 락킹 동작 방식**:
 
 1. **Before `terraform apply`**:
    ```
@@ -1293,7 +1196,7 @@ S3 Bucket: myorg-terraform-state/
    Lock released → Next operation can proceed
    ```
 
-**DynamoDB Lock Table Structure**:
+**DynamoDB 락 테이블 구조**:
 ```hcl
 # Platform team creates this once
 resource "aws_dynamodb_table" "terraform_locks" {
@@ -1314,15 +1217,15 @@ resource "aws_dynamodb_table" "terraform_locks" {
 }
 ```
 
-**Lock Behavior**:
+**락 동작**:
 - ✅ **Prevents concurrent modifications**: Only one operation at a time
 - ✅ **Automatic lock release**: Released after successful apply/destroy
 - ✅ **Force unlock capability**: Can manually unlock if operation crashes
 - ⚠️ **Lock timeout**: Default 10 minutes, configurable
 
-#### Security Considerations
+#### 보안 고려사항
 
-**S3 Bucket Security**:
+**S3 버킷 보안**:
 
 ```hcl
 # Platform team S3 bucket configuration
@@ -1373,7 +1276,7 @@ resource "aws_s3_bucket_public_access_block" "terraform_state" {
 }
 ```
 
-**IAM Access Control**:
+**IAM 접근 제어**:
 
 ```hcl
 # Service team IAM policy for state access
@@ -1429,7 +1332,7 @@ resource "aws_iam_policy" "user_api_state_access" {
 }
 ```
 
-**Security Best Practices**:
+**보안 모범 사례**:
 - ✅ Always enable S3 bucket versioning for state history
 - ✅ Use KMS encryption for production environments
 - ✅ Implement least-privilege IAM policies per service
@@ -1438,15 +1341,15 @@ resource "aws_iam_policy" "user_api_state_access" {
 - ✅ Use MFA delete for production state bucket
 - ✅ Regularly review state access logs
 
-#### State File Versioning
+#### 상태 파일 버저닝
 
-**S3 Versioning Benefits**:
+**S3 버저닝의 이점**:
 - **Rollback capability**: Recover from corrupted state
 - **Audit trail**: Track state changes over time
 - **Disaster recovery**: Restore deleted state files
 - **Safety net**: Protection against accidental modifications
 
-**Accessing State Versions**:
+**상태 버전 조회**:
 ```bash
 # List state file versions
 aws s3api list-object-versions \
@@ -1461,7 +1364,7 @@ aws s3api get-object \
   terraform.tfstate.backup
 ```
 
-**Lifecycle Policy**:
+**수명주기 정책**:
 ```hcl
 # Retain old versions for disaster recovery
 resource "aws_s3_bucket_lifecycle_configuration" "terraform_state" {
@@ -1483,9 +1386,9 @@ resource "aws_s3_bucket_lifecycle_configuration" "terraform_state" {
 }
 ```
 
-### Setup Prerequisites
+### 설정 사전 준비
 
-#### Required AWS Resources
+#### 필요한 AWS 리소스
 
 Before configuring backend for your service, ensure these resources exist (created by platform team):
 
@@ -1510,7 +1413,7 @@ Before configuring backend for your service, ensure these resources exist (creat
    - DynamoDB: Read/Write access to lock table
    - KMS: Encrypt/Decrypt permissions on state encryption key
 
-#### Verifying Prerequisites
+#### 사전 준비 검증
 
 ```bash
 # Check S3 bucket exists
@@ -1526,9 +1429,9 @@ aws kms describe-key --key-id alias/terraform-state
 aws sts get-caller-identity
 ```
 
-### Initial Backend Configuration
+### 초기 백엔드 구성
 
-#### Step 1: Create backend.tf
+#### 1단계: backend.tf 생성
 
 Create `backend.tf` in your environment directory:
 
@@ -1550,7 +1453,7 @@ terraform {
 EOF
 ```
 
-#### Step 2: Initialize Backend
+#### 2단계: 백엔드 초기화
 
 ```bash
 # Initialize Terraform with backend configuration
@@ -1567,7 +1470,7 @@ terraform init
 # Terraform has been successfully initialized!
 ```
 
-#### Step 3: Verify Backend Configuration
+#### 3단계: 백엔드 구성 검증
 
 ```bash
 # Verify backend is configured
@@ -1585,13 +1488,13 @@ terraform plan
 # Error: Error acquiring the state lock
 ```
 
-### Migration from Local to Remote State
+### 로컬 상태에서 리모트 상태로 마이그레이션
 
-#### Scenario: Existing Local State
+#### 시나리오: 기존 로컬 상태
 
 If you've been working with local state and need to migrate to remote state:
 
-**Step-by-Step Migration**:
+**단계별 마이그레이션**:
 
 1. **Backup Local State**:
    ```bash
@@ -1646,20 +1549,20 @@ If you've been working with local state and need to migrate to remote state:
    ls terraform.tfstate.backup.*
    ```
 
-**Important Notes**:
+**중요 참고사항**:
 - ⚠️ **Team coordination**: Notify team before migration
 - ✅ **Backup first**: Always backup local state before migration
 - ✅ **Verify migration**: Ensure state was copied correctly
 - ✅ **Test operations**: Run `terraform plan` to confirm remote state works
 - ⚠️ **One-time operation**: Migration happens once during `terraform init`
 
-### Multi-Region Considerations
+### 멀티 리전 고려사항
 
-#### Cross-Region State Access
+#### 크로스 리전 상태 접근
 
 If your infrastructure spans multiple regions, consider:
 
-**Option 1: Single Region State Bucket** (Recommended):
+**옵션 1: 단일 리전 상태 버킷**(권장):
 ```hcl
 # All environments use same region state bucket
 terraform {
@@ -1677,7 +1580,7 @@ terraform {
 - Simpler access control
 - Lower cost (single bucket)
 
-**Option 2: Regional State Buckets**:
+**옵션 2: 리전별 상태 버킷**:
 ```hcl
 # US region infrastructure
 terraform {
@@ -1703,12 +1606,12 @@ terraform {
 - Lower latency for region-specific ops
 - Regional isolation
 
-**Considerations**:
+**고려사항**:
 - More complex management
 - Higher cost (multiple buckets)
 - Duplicate lock tables needed
 
-### Troubleshooting Common Backend Issues
+### 백엔드 공통 문제 해결
 
 #### Issue 1: Backend Configuration Change Error
 
@@ -1722,7 +1625,7 @@ migrating existing state.
 If you wish to attempt automatic migration of the state, use "terraform init -migrate-state".
 ```
 
-**Solution**:
+**해결**:
 ```bash
 # Option 1: Migrate state to new backend
 terraform init -migrate-state
@@ -1734,7 +1637,7 @@ terraform init -reconfigure
 # Review backend.tf changes carefully before migrating
 ```
 
-**When to Use Each Option**:
+**옵션별 사용 시점**:
 - `-migrate-state`: When intentionally moving state to new backend
 - `-reconfigure`: When correcting a backend configuration mistake (⚠️ careful!)
 - Review first: When unsure what changed in backend.tf
@@ -1759,9 +1662,9 @@ again. For most commands, you can disable locking with the "-lock=false"
 flag, but this is not recommended.
 ```
 
-**Cause**: Another operation is in progress or crashed without releasing lock
+**원인**: 다른 작업이 진행 중이거나 비정상 종료로 락이 해제되지 않음
 
-**Solution 1: Wait for Lock Release**:
+**해결 1: 락 해제 대기**:
 ```bash
 # Check who has the lock
 aws dynamodb get-item \
@@ -1772,7 +1675,7 @@ aws dynamodb get-item \
 # Lock will auto-release when operation finishes
 ```
 
-**Solution 2: Force Unlock** (⚠️ Use with caution):
+**해결 2: 강제 해제(Force Unlock)** (⚠️ 주의해서 사용):
 ```bash
 # Only if you're certain no operation is running
 terraform force-unlock a1b2c3d4-5e6f-7g8h-9i0j-k1l2m3n4o5p6
@@ -1781,7 +1684,7 @@ terraform force-unlock a1b2c3d4-5e6f-7g8h-9i0j-k1l2m3n4o5p6
 # This could corrupt state if used incorrectly
 ```
 
-**Prevention**:
+**예방**:
 - Always complete or cancel operations properly (Ctrl+C gracefully)
 - Communicate with team before long-running operations
 - Use CI/CD for apply operations to avoid manual lock issues
@@ -1796,7 +1699,7 @@ error calling sts:GetCallerIdentity: operation error STS: GetCallerIdentity
 Error: AccessDenied: Access Denied
 ```
 
-**Cause**: Insufficient IAM permissions for S3 bucket or KMS key
+**원인**: S3 버킷 또는 KMS 키에 대한 IAM 권한 부족
 
 **Solution**:
 ```bash
@@ -1815,7 +1718,7 @@ aws kms describe-key --key-id alias/terraform-state
 # - KMS: Encrypt/Decrypt on terraform state key
 ```
 
-**Required IAM Permissions**:
+**필요한 IAM 권한**:
 ```json
 {
   "Version": "2012-10-17",
