@@ -34,7 +34,7 @@ allowed_security_group_ids = [
 # VPC 내부 모든 리소스에서 접근 가능 (개발/테스트용)
 # 운영 환경에서는 특정 보안 그룹만 허용하는 것을 권장
 allowed_cidr_blocks = [
-  "10.0.0.0/16"  # VPC CIDR - VPC 내부 모든 트래픽 허용
+  "10.0.0.0/16" # VPC CIDR - VPC 내부 모든 트래픽 허용
 ]
 
 # ============================================================================
@@ -82,7 +82,7 @@ copy_tags_to_snapshot   = true
 # ============================================================================
 
 enable_performance_insights           = false # Not supported on db.t4g.small
-performance_insights_retention_period = 7    # 7일 보존
+performance_insights_retention_period = 7     # 7일 보존
 
 enable_enhanced_monitoring = true
 monitoring_interval        = 60 # 60초 간격

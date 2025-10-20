@@ -34,6 +34,11 @@ output "rotation_lambda_role_arn" {
   value       = aws_iam_role.rotation-lambda.arn
 }
 
+output "rotation_lambda_security_group_id" {
+  description = "Security group ID of the rotation Lambda function"
+  value       = var.vpc_id != "" ? aws_security_group.rotation-lambda[0].id : null
+}
+
 output "secret_naming_pattern" {
   description = "Standard naming pattern for secrets"
   value       = "/${local.org_name}/{service}/{environment}/{name}"

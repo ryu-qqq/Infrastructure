@@ -81,3 +81,22 @@ variable "enable_rotation" {
   type        = bool
   default     = true
 }
+
+# Network Configuration for Lambda VPC
+variable "vpc_id" {
+  description = "VPC ID where Lambda will be deployed for RDS access"
+  type        = string
+  default     = ""
+}
+
+variable "private_subnet_ids" {
+  description = "List of private subnet IDs for Lambda VPC configuration"
+  type        = list(string)
+  default     = []
+}
+
+variable "rds_security_group_id" {
+  description = "Security group ID of RDS instance to allow Lambda access"
+  type        = string
+  default     = ""
+}

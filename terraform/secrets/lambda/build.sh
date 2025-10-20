@@ -1,25 +1,34 @@
 #!/bin/bash
-# Build script for Lambda rotation function
+# Build Lambda deployment package for Secrets Manager rotation
 
 set -e
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-cd "$SCRIPT_DIR"
+BUILD_DIR="${SCRIPT_DIR}/build"
+ZIP_FILE="${SCRIPT_DIR}/rotation.zip"
 
-echo "Building Lambda rotation function..."
+echo "🔨 Building Lambda deployment package..."
 
-# Create temporary directory
-TMP_DIR=$(mktemp -d)
-trap "rm -rf $TMP_DIR" EXIT
+# Clean previous build
+rm -rf "${BUILD_DIR}" "${ZIP_FILE}"
+mkdir -p "${BUILD_DIR}"
 
-# Copy Python file
-cp rotation.py "$TMP_DIR/index.py"
+# Install dependencies
+echo "📦 Installing dependencies..."
+pip install -r "${SCRIPT_DIR}/requirements.txt" -t "${BUILD_DIR}" --quiet
+
+# Copy Lambda function code
+echo "📄 Copying Lambda function..."
+cp "${SCRIPT_DIR}/index.py" "${BUILD_DIR}/"
 
 # Create ZIP file
-cd "$TMP_DIR"
-zip -q rotation.zip index.py
+echo "📦 Creating deployment package..."
+cd "${BUILD_DIR}"
+zip -r "${ZIP_FILE}" . -q
 
-# Move ZIP to lambda directory
-mv rotation.zip "$SCRIPT_DIR/"
+# Cleanup
+cd "${SCRIPT_DIR}"
+rm -rf "${BUILD_DIR}"
 
-echo "Lambda function built successfully: rotation.zip"
+echo "✅ Build complete: ${ZIP_FILE}"
+echo "📊 Package size: $(du -h "${ZIP_FILE}" | cut -f1)"
