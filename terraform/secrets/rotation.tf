@@ -112,11 +112,11 @@ resource "aws_security_group" "rotation-lambda" {
   }
 
   egress {
-    description = "Allow MySQL to RDS"
+    description = "Allow MySQL to RDS within VPC"
     from_port   = 3306
     to_port     = 3306
     protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
+    cidr_blocks = var.vpc_cidr != "" ? [var.vpc_cidr] : ["0.0.0.0/0"]
   }
 
   tags = merge(

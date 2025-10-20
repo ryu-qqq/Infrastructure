@@ -138,8 +138,9 @@ def set_secret(secret_arn: str, token: str) -> None:
             new_password = pending_dict['password']
 
             # MySQL 5.7+ and 8.0 compatible password update
-            alter_user_sql = f"ALTER USER '{username}'@'%' IDENTIFIED BY %s"
-            cursor.execute(alter_user_sql, (new_password,))
+            # Fully parameterized to prevent SQL injection
+            alter_user_sql = "ALTER USER %s@'%%' IDENTIFIED BY %s"
+            cursor.execute(alter_user_sql, (username, new_password))
 
             # Flush privileges to ensure changes take effect
             cursor.execute("FLUSH PRIVILEGES")

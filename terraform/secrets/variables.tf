@@ -100,3 +100,9 @@ variable "rds_security_group_id" {
   type        = string
   default     = ""
 }
+
+variable "vpc_cidr" {
+  description = "VPC CIDR block to restrict Lambda egress traffic"
+  type        = string
+  default     = ""
+}
