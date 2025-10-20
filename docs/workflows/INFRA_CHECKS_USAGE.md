@@ -1,41 +1,41 @@
-# Infrastructure Checks Workflow Usage Guide
+# 인프라 체크 워크플로우 사용 가이드
 
-This guide explains how to integrate the centralized Infrastructure Checks workflow into service repositories.
+서비스 리포지토리에 중앙화된 인프라 체크 재사용 워크플로우를 통합하는 방법을 설명합니다.
 
-## Overview
+## 개요
 
-The `infra-checks.yml` reusable workflow provides automated security, policy, and cost validation for Terraform infrastructure code. It integrates:
+`infra-checks.yml` 재사용 워크플로우는 Terraform 인프라 코드에 대해 보안, 정책, 비용을 자동 검증합니다. 통합 도구:
 
-- **tfsec**: Security vulnerability scanning
-- **checkov**: Policy compliance validation (CIS, PCI-DSS, HIPAA, ISO 27001)
-- **OPA/Conftest**: Custom policy enforcement
-- **Infracost**: Cost estimation and budget validation
+- **tfsec**: 보안 취약점 스캔
+- **checkov**: 정책 준수 검증(CIS, PCI-DSS, HIPAA, ISO 27001)
+- **OPA/Conftest**: 커스텀 정책 강제
+- **Infracost**: 비용 추정 및 예산 검증
 
-## Prerequisites
+## 사전 준비
 
-### Required Tools
+### 필요한 도구
 
-The workflow automatically installs all required tools, but your Terraform code must be properly structured:
+워크플로우가 필요한 도구를 자동 설치하지만, Terraform 코드는 올바르게 구성되어야 합니다:
 
-1. Valid Terraform configuration files (`.tf`)
-2. Terraform version 1.6.0 compatible code
-3. (Optional) AWS credentials for cloud provider validation
+1. 유효한 Terraform 구성 파일(`.tf`)
+2. Terraform 1.6.0 호환 코드
+3. (선택) 클라우드 공급자 검증을 위한 AWS 자격 증명
 
-### Required Secrets
+### 필요한 시크릿
 
-Configure these secrets in your repository:
+리포지토리에 다음 시크릿을 설정하세요:
 
-| Secret | Required | Description |
-|--------|----------|-------------|
-| `INFRACOST_API_KEY` | For cost checks | Get from [Infracost](https://www.infracost.io/) |
-| `AWS_ROLE_ARN` | For AWS resources | IAM Role ARN for OIDC authentication |
-| `GITHUB_TOKEN` | Automatic | Provided by GitHub Actions |
+| Secret | 필요 여부 | 설명 |
+|--------|-----------|------|
+| `INFRACOST_API_KEY` | 비용 체크 시 필요 | [Infracost](https://www.infracost.io/) 에서 발급 |
+| `AWS_ROLE_ARN` | AWS 리소스 검증 시 필요 | OIDC 인증용 IAM Role ARN |
+| `GITHUB_TOKEN` | 자동 제공 | GitHub Actions 기본 토큰 |
 
-## Basic Usage
+## 기본 사용법
 
-### Minimal Configuration
+### 최소 구성
 
-Create `.github/workflows/terraform-validation.yml` in your service repository:
+서비스 리포지토리에 `.github/workflows/terraform-validation.yml` 생성:
 
 ```yaml
 name: Terraform Validation
@@ -61,89 +61,89 @@ jobs:
       AWS_ROLE_ARN: ${{ secrets.AWS_ROLE_ARN }}
 ```
 
-This runs all checks with default settings:
-- ✅ tfsec security scan
-- ✅ checkov policy validation
-- ✅ Conftest OPA policies
-- ✅ Infracost cost estimation
-- ⚠️ Non-blocking (reports issues but doesn't fail workflow)
+기본 설정으로 모든 체크가 실행됩니다:
+- ✅ tfsec 보안 스캔
+- ✅ checkov 정책 검증
+- ✅ Conftest OPA 정책
+- ✅ Infracost 비용 추정
+- ⚠️ Non-blocking(이슈를 보고하되 워크플로우는 실패 처리하지 않음)
 
-### Custom Configuration
+### 커스텀 구성
 
-Customize behavior with input parameters:
+입력 파라미터로 동작을 커스터마이즈하세요:
 
 ```yaml
 jobs:
   infrastructure-checks:
     uses: ryu-qqq/Infrastructure/.github/workflows/infra-checks.yml@main
     with:
-      # Terraform directory path
+      # Terraform 디렉터리 경로
       terraform_directory: 'infrastructure/terraform'
 
-      # Enable/disable specific checks
+      # 개별 체크 활성/비활성
       run_tfsec: true
       run_checkov: true
       run_conftest: true
       run_infracost: true
 
-      # Cost thresholds
-      cost_threshold_warning: 10   # Warn at 10% increase
-      cost_threshold_block: 30     # Block at 30% increase
+      # 비용 임계값
+      cost_threshold_warning: 10   # 10% 증가 시 경고
+      cost_threshold_block: 30     # 30% 증가 시 차단
 
-      # Workflow failure conditions
-      fail_on_security_issues: false    # Don't fail on security issues
-      fail_on_policy_violations: false  # Don't fail on policy violations
+      # 워크플로우 실패 조건
+      fail_on_security_issues: false    # 보안 이슈로 실패 처리하지 않음
+      fail_on_policy_violations: false  # 정책 위반으로 실패 처리하지 않음
 
     secrets:
       INFRACOST_API_KEY: ${{ secrets.INFRACOST_API_KEY }}
       AWS_ROLE_ARN: ${{ secrets.AWS_ROLE_ARN }}
 ```
 
-## Configuration Options
+## 설정 옵션
 
-### Input Parameters
+### 입력 파라미터
 
-| Parameter | Type | Default | Description |
-|-----------|------|---------|-------------|
-| `terraform_directory` | string | `terraform` | Directory containing Terraform code |
-| `run_tfsec` | boolean | `true` | Enable tfsec security scanning |
-| `run_checkov` | boolean | `true` | Enable checkov policy checks |
-| `run_conftest` | boolean | `true` | Enable OPA/Conftest validation |
-| `run_infracost` | boolean | `true` | Enable cost estimation |
-| `cost_threshold_warning` | number | `10` | Cost increase % for warning |
-| `cost_threshold_block` | number | `30` | Cost increase % for blocking |
-| `fail_on_security_issues` | boolean | `false` | Fail workflow on security issues |
-| `fail_on_policy_violations` | boolean | `false` | Fail workflow on policy violations |
+| 파라미터 | 타입 | 기본값 | 설명 |
+|----------|------|--------|------|
+| `terraform_directory` | string | `terraform` | Terraform 코드가 포함된 디렉터리 |
+| `run_tfsec` | boolean | `true` | tfsec 보안 스캔 활성화 |
+| `run_checkov` | boolean | `true` | checkov 정책 검증 활성화 |
+| `run_conftest` | boolean | `true` | OPA/Conftest 검증 활성화 |
+| `run_infracost` | boolean | `true` | 비용 추정 활성화 |
+| `cost_threshold_warning` | number | `10` | 경고 임계 비율(%) |
+| `cost_threshold_block` | number | `30` | 차단 임계 비율(%) |
+| `fail_on_security_issues` | boolean | `false` | 보안 이슈 발생 시 워크플로우 실패 여부 |
+| `fail_on_policy_violations` | boolean | `false` | 정책 위반 발생 시 워크플로우 실패 여부 |
 
-### Workflow Behavior
+### 워크플로우 동작 모드
 
-#### Non-Blocking Mode (Default)
+#### Non-Blocking 모드(기본)
 ```yaml
 fail_on_security_issues: false
 fail_on_policy_violations: false
 ```
 
-- ✅ All checks run to completion
-- 📊 Results reported in PR comments
-- ⚠️ Issues highlighted but don't block merge
-- 💡 Best for initial adoption and development environments
+- ✅ 모든 체크가 완료까지 실행
+- 📊 결과는 PR 코멘트로 보고
+- ⚠️ 이슈는 표시되지만 병합은 차단하지 않음
+- 💡 초기 도입 및 개발 환경에 적합
 
-#### Blocking Mode (Strict)
+#### Blocking 모드(엄격)
 ```yaml
 fail_on_security_issues: true
 fail_on_policy_violations: true
 ```
 
-- ❌ Workflow fails on critical/high security issues
-- ❌ Workflow fails on policy violations
-- 🛑 PR cannot be merged until issues resolved
-- 🔒 Best for production environments
+- ❌ 심각/높음 보안 이슈 발생 시 워크플로우 실패
+- ❌ 정책 위반 시 워크플로우 실패
+- 🛑 문제 해결 전까지 PR 병합 불가
+- 🔒 프로덕션 환경에 적합
 
-## Usage Examples
+## 사용 예시
 
-### Example 1: Development Environment
+### 예시 1: 개발 환경
 
-Permissive settings for rapid iteration:
+빠른 반복을 위한 관대한 설정:
 
 ```yaml
 jobs:
@@ -160,9 +160,9 @@ jobs:
       AWS_ROLE_ARN: ${{ secrets.AWS_DEV_ROLE_ARN }}
 ```
 
-### Example 2: Production Environment
+### 예시 2: 프로덕션 환경
 
-Strict settings for production safety:
+안전을 위한 엄격한 설정:
 
 ```yaml
 jobs:
@@ -179,9 +179,9 @@ jobs:
       AWS_ROLE_ARN: ${{ secrets.AWS_PROD_ROLE_ARN }}
 ```
 
-### Example 3: Security-Only Checks
+### 예시 3: 보안 전용 체크
 
-Skip cost analysis, focus on security:
+비용 분석은 생략하고 보안에 집중:
 
 ```yaml
 jobs:
@@ -191,15 +191,15 @@ jobs:
       run_tfsec: true
       run_checkov: true
       run_conftest: true
-      run_infracost: false  # Skip cost analysis
+      run_infracost: false  # 비용 분석 생략
       fail_on_security_issues: true
     secrets:
       AWS_ROLE_ARN: ${{ secrets.AWS_ROLE_ARN }}
 ```
 
-### Example 4: Cost Analysis Only
+### 예시 4: 비용 분석 전용
 
-Focus on cost management:
+비용 관리에 집중:
 
 ```yaml
 jobs:
@@ -217,9 +217,9 @@ jobs:
       AWS_ROLE_ARN: ${{ secrets.AWS_ROLE_ARN }}
 ```
 
-### Example 5: Multi-Environment Pipeline
+### 예시 5: 멀티 환경 파이프라인
 
-Different checks for each environment:
+환경별로 서로 다른 체크 구성:
 
 ```yaml
 name: Multi-Environment Validation
@@ -258,11 +258,11 @@ jobs:
       AWS_ROLE_ARN: ${{ secrets.AWS_PROD_ROLE_ARN }}
 ```
 
-## Understanding Results
+## 결과 이해하기
 
-### PR Comment Format
+### PR 코멘트 형식
 
-The workflow posts a comprehensive report as a PR comment:
+워크플로우는 PR 코멘트로 종합 리포트를 게시합니다:
 
 ```markdown
 ## 🛡️ Infrastructure Security & Compliance Report
@@ -289,156 +289,152 @@ The workflow posts a comprehensive report as a PR comment:
 </details>
 ```
 
-### Result Interpretation
+### 결과 해석
 
-#### Security Scan (tfsec)
+#### 보안 스캔(tfsec)
+- **🚨 Critical**: 즉시 조치 필요, 반드시 수정
+- **❌ High**: 심각 이슈, 가급적 빠른 수정 권장
+- **⚠️ Medium**: 중간 위험, 검토 필요
+- **ℹ️ Low**: 경미한 이슈, Non-blocking
 
-- **🚨 Critical**: Immediate security risk, must fix
-- **❌ High**: Serious security issue, should fix
-- **⚠️ Medium**: Moderate risk, review needed
-- **ℹ️ Low**: Minor issue, non-blocking
+#### 정책 준수(checkov)
+- **✅ Passed**: 검증 통과
+- **❌ Failed**: 정책 위반 발견
+- **⊘ Skipped**: 적용 불가 또는 건너뜀
 
-#### Policy Compliance (checkov)
+#### OPA 정책(Conftest)
+- **✅ Passed**: 모든 커스텀 정책 충족
+- **❌ Failed**: 정책 위반 발견
 
-- **✅ Passed**: Checks passed successfully
-- **❌ Failed**: Policy violations detected
-- **⊘ Skipped**: Checks not applicable or skipped
+#### 비용 영향(Infracost)
+- **✅ OK**: 허용 임계값 이내
+- **⚠️ WARNING**: 비용 한계치 접근
+- **🚫 BLOCKED**: 비용 임계치 초과
 
-#### OPA Policies (Conftest)
+## 트러블슈팅
 
-- **✅ Passed**: All custom policies satisfied
-- **❌ Failed**: Policy violations found
+### 자주 발생하는 문제
 
-#### Cost Impact (Infracost)
+#### 1. 워크플로우를 찾을 수 없음
 
-- **✅ OK**: Within acceptable thresholds
-- **⚠️ WARNING**: Approaching cost limit
-- **🚫 BLOCKED**: Exceeds cost threshold
+**에러**: `Unable to resolve action ryu-qqq/Infrastructure/.github/workflows/infra-checks.yml@main`
 
-## Troubleshooting
+**해결**: Infrastructure 리포지토리에 해당 워크플로우 파일이 존재하고 참조가 올바른지 확인하세요.
 
-### Common Issues
+#### 2. Infracost 실패
 
-#### 1. Workflow Not Found
+**에러**: `Infracost analysis failed`
 
-**Error**: `Unable to resolve action ryu-qqq/Infrastructure/.github/workflows/infra-checks.yml@main`
+**가능한 원인**:
+- `INFRACOST_API_KEY` 시크릿 누락
+- 삭제 전용 변경(비용 영향 없음)
+- 설정만 변경(비용 영향 없음)
 
-**Solution**: Ensure the workflow file exists in the Infrastructure repository and the reference is correct.
+**해결**: 과금 리소스 변경이 있는지 확인하세요. 비과금 변경은 비용 추정을 생략합니다.
 
-#### 2. Infracost Failed
+#### 3. AWS 인증 실패
 
-**Error**: `Infracost analysis failed`
+**에러**: `Failed to configure AWS credentials`
 
-**Possible causes**:
-- Missing `INFRACOST_API_KEY` secret
-- Deletion-only changes (no cost impact)
-- Configuration-only changes
+**가능한 원인**:
+- `AWS_ROLE_ARN` 시크릿 누락
+- IAM Role 구성 오류
+- OIDC 신뢰 관계 미설정
 
-**Solution**: Check if changes include billable resources. Cost estimation is skipped for non-billable changes.
+**해결**:
+1. IAM Role 존재 확인
+2. OIDC 신뢰 정책에 해당 리포지토리 포함 확인
+3. Role 권한 확인
 
-#### 3. AWS Authentication Failed
+#### 4. 정책 검증 실패
 
-**Error**: `Failed to configure AWS credentials`
+**에러**: `Conftest policy validation failed`
 
-**Possible causes**:
-- Missing `AWS_ROLE_ARN` secret
-- Incorrect IAM role configuration
-- OIDC trust relationship not configured
+**가능한 원인**:
+- Terraform 코드가 커스텀 정책을 위반
+- 정책 파일 부재
+- Conftest 구성 누락
 
-**Solution**:
-1. Verify IAM role exists
-2. Check OIDC trust policy includes your repository
-3. Ensure role has necessary permissions
+**해결**:
+1. 워크플로우 로그에서 정책 위반 내역 확인
+2. 리포지토리에 `conftest.toml` 존재 확인
+3. `policies/` 디렉터리에 정책 파일 확인
 
-#### 4. Policy Validation Failed
+#### 5. Terraform 초기화 실패
 
-**Error**: `Conftest policy validation failed`
+**에러**: `Terraform initialization failed`
 
-**Possible causes**:
-- Terraform code violates custom policies
-- Policy files not available
-- Conftest configuration missing
+**가능한 원인**:
+- 잘못된 Terraform 구성
+- 프로바이더 설정 누락
+- 백엔드 설정 문제
 
-**Solution**:
-1. Review policy violations in workflow logs
-2. Ensure `conftest.toml` exists in repository
-3. Check policy files in `policies/` directory
+**해결**:
+1. 로컬에서 Terraform init 테스트
+2. Terraform 버전 호환성 점검
+3. 프로바이더 요구사항 확인
 
-#### 5. Terraform Init Failed
+### 디버그 모드
 
-**Error**: `Terraform initialization failed`
+문제 해결을 위한 상세 로그 활성화:
 
-**Possible causes**:
-- Invalid Terraform configuration
-- Missing provider configuration
-- Backend configuration issues
+**단계별 디버그 로그**:
 
-**Solution**:
-1. Test Terraform init locally
-2. Review Terraform version compatibility
-3. Check provider requirements
+호출 리포지토리에서 `ACTIONS_STEP_DEBUG` 시크릿을 `true`로 설정해야 합니다.
 
-### Debug Mode
+1. 리포지토리 **Settings** → **Secrets and variables** → **Actions** 이동
+2. `ACTIONS_STEP_DEBUG` 시크릿을 추가하고 값을 `true`로 설정
+3. 워크플로우 재실행 후 디버그 로그 확인
 
-Enable detailed logging for troubleshooting:
+**러너 진단 로그**:
 
-**Step-level debug logs**:
+리포지토리 시크릿 `ACTIONS_RUNNER_DEBUG` 를 `true`로 설정:
+1. 리포지토리 **Settings** → **Secrets and variables** → **Actions**
+2. 새 시크릿 생성: `ACTIONS_RUNNER_DEBUG` = `true`
+3. 워크플로우 재실행
 
-To enable step-level debug logs, you must set the following secret in the repository that contains the workflow: `ACTIONS_STEP_DEBUG` to `true`.
+**참고**: 두 디버그 모드는 호출 워크플로우의 env가 재사용 워크플로우로 전달되지 않기 때문에, 워크플로우 파일의 환경변수가 아니라 리포지토리 시크릿으로만 활성화할 수 있습니다.
 
-1. Go to repository **Settings** → **Secrets and variables** → **Actions**.
-2. Create a new repository secret named `ACTIONS_STEP_DEBUG` with the value `true`.
-3. Re-run the workflow to see the debug logs.
+## 모범 사례
 
-**Runner diagnostic logs**:
+### 1. Non-Blocking으로 시작
 
-Set the `ACTIONS_RUNNER_DEBUG` repository secret to `true`:
-1. Go to repository **Settings** → **Secrets and variables** → **Actions**
-2. Create new repository secret: `ACTIONS_RUNNER_DEBUG` = `true`
-3. Re-run the workflow
-
-**Note**: Both debug modes must be enabled via repository secrets, not environment variables in the workflow file. This is because the `env` context from the calling workflow is not passed down to reusable workflows.
-
-## Best Practices
-
-### 1. Start Non-Blocking
-
-Begin with non-blocking mode to understand baseline issues:
+베이스라인 이슈 파악을 위해 Non-Blocking 모드로 시작하세요:
 
 ```yaml
 fail_on_security_issues: false
 fail_on_policy_violations: false
 ```
 
-### 2. Gradual Strictness
+### 2. 점진적 엄격화
 
-Increase strictness over time:
+시간 경과에 따라 엄격도를 높이세요:
 
-1. **Week 1**: Run all checks, non-blocking
-2. **Week 2**: Fix existing issues
-3. **Week 3**: Enable `fail_on_security_issues`
-4. **Week 4**: Enable `fail_on_policy_violations`
+1. **1주차**: 모든 체크 실행, Non-Blocking
+2. **2주차**: 기존 이슈 해결
+3. **3주차**: `fail_on_security_issues` 활성화
+4. **4주차**: `fail_on_policy_violations` 활성화
 
-### 3. Environment-Specific Settings
+### 3. 환경별 설정
 
-Use stricter settings for production:
+프로덕션으로 갈수록 엄격하게:
 
-- **Development**: Permissive (fast feedback)
-- **Staging**: Moderate (catch issues early)
-- **Production**: Strict (enforce compliance)
+- **Development**: 관대(빠른 피드백)
+- **Staging**: 중간(조기 이슈 포착)
+- **Production**: 엄격(컴플라이언스 보장)
 
-### 4. Cost Monitoring
+### 4. 비용 모니터링
 
-Set realistic cost thresholds:
+현실적인 임계값 설정:
 
-- **Warning threshold**: 10% (review required)
-- **Block threshold**: 30% (approval needed)
+- **경고 임계값**: 10% (검토 필요)
+- **차단 임계값**: 30% (승인 필요)
 
-Adjust based on your organization's budget policies.
+조직의 예산 정책에 따라 조정하세요.
 
-### 5. Policy Customization
+### 5. 정책 커스터마이징
 
-Create custom OPA policies in service repositories:
+서비스 리포지토리에서 커스텀 OPA 정책을 작성하세요:
 
 ```bash
 service-repo/
@@ -452,41 +448,41 @@ service-repo/
 └── conftest.toml
 ```
 
-### 6. Version Pinning (Recommended)
+### 6. 버전 고정(권장)
 
-**Always pin to specific versions for production environments:**
+**프로덕션 환경에서는 항상 특정 버전에 고정하세요:**
 
 ```yaml
-# ✅ RECOMMENDED: Pin to specific version for stability and predictable builds
+# ✅ 권장: 특정 버전에 고정하여 안정성과 재현성 보장
 uses: ryu-qqq/Infrastructure/.github/workflows/infra-checks.yml@v1.0.0
 
-# ✅ ALTERNATIVE: Pin to specific commit SHA for maximum stability
-uses: ryu-qqq/Infrastructure/.github/workflows/infra-checks.yml@a1b2c3d
+# ✅ 대안: 특정 커밋 SHA에 고정하여 최대 안정성 확보
+actions: ryu-qqq/Infrastructure/.github/workflows/infra-checks.yml@a1b2c3d
 
-# ⚠️ NOT RECOMMENDED FOR PRODUCTION: Using @main can pull breaking changes
-# Only use @main for development/testing environments where you want latest features
+# ⚠️ 프로덕션 비권장: @main 은 파괴적 변경을 포함할 수 있음
+# 최신 기능을 원하는 개발/테스트 환경에서만 사용 권장
 uses: ryu-qqq/Infrastructure/.github/workflows/infra-checks.yml@main
 ```
 
-**Why version pinning matters:**
-- **Predictable Builds**: Same workflow version across all runs, no surprise failures
-- **Breaking Change Protection**: Avoid automatic updates that break your pipelines
-- **Change Control**: Review and test updates before adopting them
-- **Rollback Capability**: Easy to revert to previous version if issues arise
+**버전 고정의 이점:**
+- **예측 가능한 빌드**: 실행마다 동일한 워크플로우 버전으로 돌발 실패 방지
+- **파괴적 변경 보호**: 자동 업데이트로 인한 파이프라인 붕괴 방지
+- **변경 통제**: 업데이트를 채택하기 전에 리뷰/테스트 가능
+- **롤백 용이성**: 문제 발생 시 이전 버전으로 즉시 복귀 가능
 
-**Update Strategy:**
-1. Monitor releases in Infrastructure repository
-2. Test new versions in development environment first
-3. Update version reference after validation
-4. Document version updates in your changelog
+**업데이트 전략:**
+1. Infrastructure 리포지토리의 릴리즈 모니터링
+2. 개발 환경에서 신버전 테스트
+3. 검증 후 버전 참조 업데이트
+4. 변경 로그에 버전 업데이트 기록
 
-## Integration with Other Workflows
+## 다른 워크플로우와의 통합
 
-### Combine with Terraform Apply
+### Terraform Apply와 결합
 
-For applying changes after validation, use a separate workflow triggered on `push` to `main`:
+검증 후 변경을 적용하려면 `push` to `main` 트리거의 별도 워크플로우를 사용하세요:
 
-**Validation Workflow** (`.github/workflows/terraform-validation.yml`):
+**검증 워크플로우**(`.github/workflows/terraform-validation.yml`):
 ```yaml
 name: Terraform Validation
 
@@ -507,7 +503,7 @@ jobs:
       AWS_ROLE_ARN: ${{ secrets.AWS_ROLE_ARN }}
 ```
 
-**Apply Workflow** (`.github/workflows/terraform-apply.yml`):
+**적용 워크플로우**(`.github/workflows/terraform-apply.yml`):
 ```yaml
 name: Terraform Apply
 
@@ -545,7 +541,7 @@ jobs:
           terraform apply -auto-approve
 ```
 
-### Parallel Execution with Other Checks
+### 다른 체크와 병렬 실행
 
 ```yaml
 jobs:
@@ -570,34 +566,34 @@ jobs:
         run: npm run lint
 ```
 
-## Support and Contributing
+## 지원 및 기여
 
-### Getting Help
+### 도움 받기
 
-- **Documentation**: Check [Infrastructure Governance](../governance/infrastructure_governance.md)
-- **Issues**: Open an issue in the Infrastructure repository
-- **Policy Guides**: See [Checkov Policy Guide](../governance/CHECKOV_POLICY_GUIDE.md)
+- **문서**: [Infrastructure Governance](../governance/infrastructure_governance.md)
+- **이슈**: Infrastructure 리포지토리에 이슈 등록
+- **정책 가이드**: [Checkov Policy Guide](../governance/CHECKOV_POLICY_GUIDE.md)
 
-### Contributing
+### 기여하기
 
-To suggest improvements to the workflow:
+워크플로우 개선 제안을 하려면:
 
-1. Fork the Infrastructure repository
-2. Create a feature branch
-3. Make changes to `.github/workflows/infra-checks.yml`
-4. Test in your service repository
-5. Submit a pull request
+1. Infrastructure 리포지토리를 포크
+2. 기능 브랜치 생성
+3. `.github/workflows/infra-checks.yml` 변경
+4. 서비스 리포지토리에서 테스트
+5. Pull Request 제출
 
-## Version History
+## 버전 이력
 
-| Version | Date | Changes |
-|---------|------|---------|
-| 1.0.0 | 2024-01 | Initial release with tfsec, checkov, conftest, infracost |
+| 버전 | 날짜 | 변경 |
+|------|------|------|
+| 1.0.0 | 2024-01 | tfsec, checkov, conftest, infracost 포함 초기 릴리스 |
 
-## Additional Resources
+## 추가 자료
 
-- [tfsec Documentation](https://aquasecurity.github.io/tfsec/)
-- [checkov Documentation](https://www.checkov.io/documentation.html)
-- [Conftest Documentation](https://www.conftest.dev/)
-- [Infracost Documentation](https://www.infracost.io/docs/)
-- [GitHub Actions Reusable Workflows](https://docs.github.com/en/actions/using-workflows/reusing-workflows)
+- [tfsec 문서](https://aquasecurity.github.io/tfsec/)
+- [checkov 문서](https://www.checkov.io/documentation.html)
+- [Conftest 문서](https://www.conftest.dev/)
+- [Infracost 문서](https://www.infracost.io/docs/)
+- [GitHub Actions 재사용 워크플로우](https://docs.github.com/en/actions/using-workflows/reusing-workflows)

@@ -70,6 +70,15 @@ check_resource_naming() {
     local resource_name=$3
     local line_number=$4
 
+    # Skip Terraform meta-resources that don't represent AWS resources
+    local skip_types=("null_resource" "terraform_data" "time_sleep" "random_id" "random_string" "random_password" "data")
+
+    for skip_type in "${skip_types[@]}"; do
+        if [[ "$resource_type" == "$skip_type" ]]; then
+            return
+        fi
+    done
+
     if validate_kebab_case "$resource_name"; then
         echo -e "${GREEN}✓ $resource_type.$resource_name (kebab-case)${NC}"
     else
