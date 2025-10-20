@@ -85,7 +85,7 @@ resource "aws_iam_role_policy" "rotation-lambda-policy" {
 resource "aws_cloudwatch_log_group" "rotation-lambda" {
   name              = "/aws/lambda/secrets-manager-rotation"
   retention_in_days = 14
-  kms_key_id        = data.terraform_remote_state.kms.outputs.secrets_manager_key_arn
+  kms_key_id        = data.terraform_remote_state.kms.outputs.cloudwatch_logs_key_arn
 
   tags = merge(
     local.required_tags,
