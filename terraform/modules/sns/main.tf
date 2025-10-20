@@ -56,7 +56,7 @@ resource "aws_sns_topic_subscription" "this" {
   protocol             = each.value.protocol
   endpoint             = each.value.endpoint
   raw_message_delivery = lookup(each.value, "raw_message_delivery", null)
-  filter_policy        = lookup(each.value, "filter_policy", null)
+  filter_policy        = lookup(each.value, "filter_policy", null) != null ? jsonencode(each.value.filter_policy) : null
   filter_policy_scope  = lookup(each.value, "filter_policy_scope", null)
   delivery_policy      = lookup(each.value, "delivery_policy", null)
   redrive_policy       = lookup(each.value, "redrive_policy", null)

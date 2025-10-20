@@ -79,9 +79,6 @@ module "sqs_queues" {
   enable_dlq        = lookup(each.value, "enable_dlq", true)
   max_receive_count = lookup(each.value, "max_receive_count", 3)
 
-  # Queue policy to allow SNS to send messages
-  queue_policy = data.aws_iam_policy_document.sqs_policy[each.key].json
-
   # CloudWatch alarms
   enable_cloudwatch_alarms = var.enable_cloudwatch_alarms
   alarm_actions            = var.alarm_actions
@@ -96,33 +93,29 @@ module "sqs_queues" {
   )
 }
 
-# IAM Policy Document for SQS to allow SNS to send messages
-data "aws_iam_policy_document" "sqs_policy" {
+# SQS Queue Policy to allow SNS to send messages
+resource "aws_sqs_queue_policy" "sns_to_sqs" {
   for_each = { for idx, queue in var.sqs_queues : queue.name => queue }
 
-  statement {
-    sid    = "AllowSNSToSendMessages"
-    effect = "Allow"
+  queue_url = module.sqs_queues[each.key].queue_id
 
-    principals {
-      type        = "Service"
-      identifiers = ["sns.amazonaws.com"]
-    }
-
-    actions = [
-      "sqs:SendMessage"
-    ]
-
-    resources = [
-      module.sqs_queues[each.key].queue_arn
-    ]
-
-    condition {
-      test     = "ArnEquals"
-      variable = "aws:SourceArn"
-      values   = [module.sns_topic.topic_arn]
-    }
-  }
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [{
+      Sid    = "AllowSNSToSendMessages"
+      Effect = "Allow"
+      Principal = {
+        Service = "sns.amazonaws.com"
+      }
+      Action   = "sqs:SendMessage"
+      Resource = module.sqs_queues[each.key].queue_arn
+      Condition = {
+        ArnEquals = {
+          "aws:SourceArn" = module.sns_topic.topic_arn
+        }
+      }
+    }]
+  })
 }
 
 # SNS Topic Subscriptions to SQS Queues
@@ -139,7 +132,3 @@ resource "aws_sns_topic_subscription" "sqs" {
 
   depends_on = [module.sqs_queues]
 }
-
-# Current AWS region and account
-data "aws_region" "current" {}
-data "aws_caller_identity" "current" {}

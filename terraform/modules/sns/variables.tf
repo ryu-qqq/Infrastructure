@@ -81,7 +81,7 @@ variable "subscriptions" {
     protocol                        = string
     endpoint                        = string
     raw_message_delivery            = optional(bool)
-    filter_policy                   = optional(string)
+    filter_policy                   = optional(map(list(string)))
     filter_policy_scope             = optional(string)
     delivery_policy                 = optional(string)
     redrive_policy                  = optional(string)
