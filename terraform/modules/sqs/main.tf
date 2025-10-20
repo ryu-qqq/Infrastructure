@@ -99,7 +99,7 @@ resource "aws_sqs_queue_policy" "this" {
 }
 
 # CloudWatch Metric Alarm - Queue Depth (Age of Oldest Message)
-resource "aws_cloudwatch_metric_alarm" "message_age" {
+resource "aws_cloudwatch_metric_alarm" "message-age" {
   count = var.enable_cloudwatch_alarms ? 1 : 0
 
   alarm_name          = "${local.queue_name}-message-age-high"
@@ -130,7 +130,7 @@ resource "aws_cloudwatch_metric_alarm" "message_age" {
 }
 
 # CloudWatch Metric Alarm - Number of Messages Visible
-resource "aws_cloudwatch_metric_alarm" "messages_visible" {
+resource "aws_cloudwatch_metric_alarm" "messages-visible" {
   count = var.enable_cloudwatch_alarms ? 1 : 0
 
   alarm_name          = "${local.queue_name}-messages-visible-high"
@@ -161,7 +161,7 @@ resource "aws_cloudwatch_metric_alarm" "messages_visible" {
 }
 
 # CloudWatch Metric Alarm - DLQ Depth
-resource "aws_cloudwatch_metric_alarm" "dlq_messages" {
+resource "aws_cloudwatch_metric_alarm" "dlq-messages" {
   count = var.enable_dlq && var.enable_cloudwatch_alarms ? 1 : 0
 
   alarm_name          = "${local.dlq_queue_name}-messages-visible"

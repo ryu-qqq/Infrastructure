@@ -66,7 +66,7 @@ resource "aws_sns_topic_subscription" "this" {
 }
 
 # CloudWatch Metric Alarm - Number of Messages Published
-resource "aws_cloudwatch_metric_alarm" "messages_published" {
+resource "aws_cloudwatch_metric_alarm" "messages-published" {
   count = var.enable_cloudwatch_alarms ? 1 : 0
 
   alarm_name          = "${local.topic_name}-messages-published-low"
@@ -97,7 +97,7 @@ resource "aws_cloudwatch_metric_alarm" "messages_published" {
 }
 
 # CloudWatch Metric Alarm - Number of Notifications Failed
-resource "aws_cloudwatch_metric_alarm" "notifications_failed" {
+resource "aws_cloudwatch_metric_alarm" "notifications-failed" {
   count = var.enable_cloudwatch_alarms ? 1 : 0
 
   alarm_name          = "${local.topic_name}-notifications-failed"

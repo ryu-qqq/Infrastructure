@@ -94,7 +94,7 @@ module "sqs_queues" {
 }
 
 # SQS Queue Policy to allow SNS to send messages
-resource "aws_sqs_queue_policy" "sns_to_sqs" {
+resource "aws_sqs_queue_policy" "sns-to-sqs" {
   for_each = { for idx, queue in var.sqs_queues : queue.name => queue }
 
   queue_url = module.sqs_queues[each.key].queue_id
