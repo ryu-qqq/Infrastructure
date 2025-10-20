@@ -80,6 +80,20 @@ jobs:
           TF_VAR_github_webhook_secret: ${{ secrets.TF_VAR_GITHUB_WEBHOOK_SECRET }}
         run: terraform apply -auto-approve
 
+      # KMS Infrastructure (Required for Secrets and RDS encryption)
+      - name: Terraform Init - KMS
+        working-directory: terraform/kms
+        run: |
+          terraform init \
+            -backend-config="bucket=prod-connectly" \
+            -backend-config="key=kms/terraform.tfstate" \
+            -backend-config="region=ap-northeast-2" \
+            -backend-config="dynamodb_table=prod-connectly-tf-lock"
+
+      - name: Terraform Apply - KMS
+        working-directory: terraform/kms
+        run: terraform apply -auto-approve
+
       # Secrets Infrastructure (IN-159)
       - name: Terraform Init - Secrets
         working-directory: terraform/secrets
