@@ -301,6 +301,26 @@ variable "database_connections_threshold" {
 }
 
 # ============================================================================
+# Secrets Rotation Configuration
+# ============================================================================
+
+variable "enable_secrets_rotation" {
+  description = "Enable automatic rotation for RDS master password"
+  type        = bool
+  default     = true
+}
+
+variable "rotation_days" {
+  description = "Number of days between automatic password rotations"
+  type        = number
+  default     = 30
+  validation {
+    condition     = var.rotation_days >= 1 && var.rotation_days <= 365
+    error_message = "Rotation days must be between 1 and 365."
+  }
+}
+
+# ============================================================================
 # Tags
 # ============================================================================
 

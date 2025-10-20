@@ -95,6 +95,38 @@ resource "aws_cloudwatch_log_group" "rotation-lambda" {
   )
 }
 
+# Security Group for Lambda rotation function
+resource "aws_security_group" "rotation-lambda" {
+  count       = var.vpc_id != "" ? 1 : 0
+  name        = "secrets-manager-rotation-lambda-sg"
+  description = "Security group for Secrets Manager rotation Lambda"
+  vpc_id      = var.vpc_id
+
+  # Outbound rules
+  egress {
+    description = "Allow HTTPS to Secrets Manager"
+    from_port   = 443
+    to_port     = 443
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  egress {
+    description = "Allow MySQL to RDS within VPC"
+    from_port   = 3306
+    to_port     = 3306
+    protocol    = "tcp"
+    cidr_blocks = var.vpc_cidr != "" ? [var.vpc_cidr] : ["0.0.0.0/0"]
+  }
+
+  tags = merge(
+    local.required_tags,
+    {
+      Name = "secrets-manager-rotation-lambda-sg"
+    }
+  )
+}
+
 # Lambda function for generic secret rotation
 resource "aws_lambda_function" "rotation" {
   filename         = "${path.module}/lambda/rotation.zip"
@@ -108,6 +140,15 @@ resource "aws_lambda_function" "rotation" {
   environment {
     variables = {
       SECRETS_MANAGER_ENDPOINT = "https://secretsmanager.${var.aws_region}.amazonaws.com"
+    }
+  }
+
+  # VPC configuration for RDS access
+  dynamic "vpc_config" {
+    for_each = var.vpc_id != "" ? [1] : []
+    content {
+      subnet_ids         = var.private_subnet_ids
+      security_group_ids = [aws_security_group.rotation-lambda[0].id]
     }
   }
 
@@ -141,18 +182,51 @@ resource "aws_cloudwatch_metric_alarm" "rotation-failures" {
   period              = 300
   statistic           = "Sum"
   threshold           = 0
-  alarm_description   = "Alert when secret rotation fails"
+  alarm_description   = "Alert when Secrets Manager rotation Lambda fails. This requires immediate attention as password rotation failure could impact security compliance."
+  treat_missing_data  = "notBreaching"
 
   dimensions = {
     FunctionName = aws_lambda_function.rotation.function_name
   }
 
-  alarm_actions = [] # Add SNS topic ARN for notifications
+  alarm_actions = [] # TODO: Add SNS topic ARN for notifications when monitoring stack is available
 
   tags = merge(
     local.required_tags,
     {
-      Name = "rotation-failures-alarm"
+      Name      = "rotation-failures-alarm"
+      Severity  = "high"
+      Runbook   = "https://github.com/ryu-qqq/Infrastructure/wiki/Secrets-Rotation-Runbook"
+      Component = "security"
+    }
+  )
+}
+
+# CloudWatch alarm for rotation duration
+resource "aws_cloudwatch_metric_alarm" "rotation-duration" {
+  alarm_name          = "secrets-manager-rotation-duration"
+  comparison_operator = "GreaterThanThreshold"
+  evaluation_periods  = 1
+  metric_name         = "Duration"
+  namespace           = "AWS/Lambda"
+  period              = 300
+  statistic           = "Maximum"
+  threshold           = 50000 # 50 seconds (Lambda timeout is 60s)
+  alarm_description   = "Alert when rotation Lambda takes longer than expected. May indicate database performance issues."
+  treat_missing_data  = "notBreaching"
+
+  dimensions = {
+    FunctionName = aws_lambda_function.rotation.function_name
+  }
+
+  alarm_actions = [] # TODO: Add SNS topic ARN for notifications
+
+  tags = merge(
+    local.required_tags,
+    {
+      Name      = "rotation-duration-alarm"
+      Severity  = "medium"
+      Component = "performance"
     }
   )
 }

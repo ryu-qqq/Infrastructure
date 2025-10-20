@@ -28,10 +28,10 @@ resource "null_resource" "cleanup_secret" {
 # Single source of truth for RDS credentials to prevent password sync issues during rotation
 
 resource "aws_secretsmanager_secret" "db-master-password" {
-  depends_on = [null_resource.cleanup_secret]
+  depends_on              = [null_resource.cleanup_secret]
   name                    = "${local.name_prefix}-master-password"
   description             = "Master credentials and connection info for shared MySQL RDS instance"
-  recovery_window_in_days = 0  # Force deletion to allow immediate recreation
+  recovery_window_in_days = 0 # Force deletion to allow immediate recreation
   kms_key_id              = data.aws_kms_key.secrets_manager.arn
 
   # Allow Terraform to manage secrets even if deletion is pending
@@ -67,4 +67,34 @@ resource "aws_secretsmanager_secret_version" "db-master-password" {
     backup_retention     = var.backup_retention_period
     performance_insights = var.enable_performance_insights
   })
+
+  lifecycle {
+    ignore_changes = [secret_string]
+  }
+}
+
+# Reference to rotation Lambda from secrets module
+data "terraform_remote_state" "secrets" {
+  backend = "s3"
+  config = {
+    bucket = "prod-connectly"
+    key    = "secrets/terraform.tfstate"
+    region = var.aws_region
+  }
+}
+
+# Automatic rotation configuration for RDS master password
+resource "aws_secretsmanager_secret_rotation" "db-master-password" {
+  count = var.enable_secrets_rotation ? 1 : 0
+
+  secret_id           = aws_secretsmanager_secret.db-master-password.id
+  rotation_lambda_arn = data.terraform_remote_state.secrets.outputs.rotation_lambda_arn
+
+  rotation_rules {
+    automatically_after_days = var.rotation_days
+  }
+
+  depends_on = [
+    aws_secretsmanager_secret_version.db-master-password
+  ]
 }
