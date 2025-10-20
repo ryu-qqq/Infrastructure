@@ -18,6 +18,7 @@ References:
 import json
 import logging
 import os
+import time
 import boto3
 import pymysql
 from typing import Dict, Any
@@ -147,6 +148,13 @@ def set_secret(secret_arn: str, token: str) -> None:
 
             conn.commit()
             logger.info(f"setSecret: Successfully updated password for user: {username}")
+
+            # Wait for application retry with cached credentials
+            # This allows time for applications to retry with old credentials
+            # before the secret is marked as AWSCURRENT
+            logger.info("Waiting 30 seconds to allow application retry with cached credentials...")
+            time.sleep(30)
+            logger.info("Wait period completed, proceeding to next rotation step")
 
     except Exception as e:
         logger.error(f"setSecret: Failed to update password: {str(e)}")
