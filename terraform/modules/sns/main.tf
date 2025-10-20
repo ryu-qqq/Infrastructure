@@ -126,18 +126,3 @@ resource "aws_cloudwatch_metric_alarm" "notifications_failed" {
     }
   )
 }
-
-# Data subscription for SQS queues to allow SNS to send messages
-resource "aws_sns_topic_subscription" "sqs_permission" {
-  for_each = {
-    for idx, sub in var.subscriptions : idx => sub
-    if sub.protocol == "sqs"
-  }
-
-  topic_arn = aws_sns_topic.this.arn
-  protocol  = "sqs"
-  endpoint  = each.value.endpoint
-
-  filter_policy        = lookup(each.value, "filter_policy", null)
-  raw_message_delivery = lookup(each.value, "raw_message_delivery", false)
-}
