@@ -24,7 +24,13 @@
         "rds:ListTagsForResource",
         "rds:DescribeDBEngineVersions"
       ],
-      "Resource": "*"
+      "Resource": "*",
+      "Condition": {
+        "StringEquals": {
+          "aws:RequestTag/ManagedBy": "Terraform",
+          "aws:RequestTag/Service": "shared-database"
+        }
+      }
     },
     {
       "Sid": "RDSIAMRoleManagement",
@@ -73,10 +79,14 @@
         "ec2:RevokeSecurityGroupEgress",
         "ec2:CreateTags"
       ],
-      "Resource": "*",
+      "Resource": [
+        "arn:aws:ec2:ap-northeast-2:646886795421:security-group/*",
+        "arn:aws:ec2:ap-northeast-2:646886795421:vpc/*"
+      ],
       "Condition": {
-        "StringLike": {
-          "aws:RequestTag/Service": "shared-database"
+        "StringEquals": {
+          "aws:RequestTag/Service": "shared-database",
+          "aws:RequestTag/ManagedBy": "Terraform"
         }
       }
     },

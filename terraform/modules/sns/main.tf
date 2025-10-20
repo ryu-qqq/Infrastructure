@@ -50,7 +50,7 @@ resource "aws_sns_topic_policy" "this" {
 
 # SNS Topic Subscriptions
 resource "aws_sns_topic_subscription" "this" {
-  for_each = { for idx, sub in var.subscriptions : idx => sub }
+  for_each = var.subscriptions
 
   topic_arn            = aws_sns_topic.this.arn
   protocol             = each.value.protocol

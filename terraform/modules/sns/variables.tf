@@ -76,8 +76,8 @@ variable "delivery_policy" {
 
 # Subscriptions
 variable "subscriptions" {
-  description = "List of subscription configurations"
-  type = list(object({
+  description = "Map of subscription configurations, where the key is a unique identifier for the subscription"
+  type = map(object({
     protocol                        = string
     endpoint                        = string
     raw_message_delivery            = optional(bool)
@@ -87,7 +87,7 @@ variable "subscriptions" {
     redrive_policy                  = optional(string)
     confirmation_timeout_in_minutes = optional(number)
   }))
-  default = []
+  default = {}
 }
 
 # CloudWatch Alarms

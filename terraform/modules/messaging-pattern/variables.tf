@@ -76,6 +76,11 @@ variable "sqs_queues" {
     filter_policy              = optional(map(list(string)))
     additional_tags            = optional(map(string), {})
   }))
+
+  validation {
+    condition     = length(var.sqs_queues) == length(toset([for q in var.sqs_queues : q.name]))
+    error_message = "The 'name' attribute for each queue in 'sqs_queues' must be unique."
+  }
 }
 
 # CloudWatch Alarms
