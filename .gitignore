@@ -45,3 +45,4 @@ tfsec-results.json
 checkov-results.json
 checkov-results.sarif
 checkov-results.xml
+__pycache__/
