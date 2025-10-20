@@ -15,9 +15,9 @@ locals {
       ManagedBy   = "Terraform"
       Project     = "shared-infrastructure"
       # Optional tags
-      Lifecycle   = "production"
-      DataClass   = "sensitive"
-      Stack       = "rds"
+      Lifecycle = "production"
+      DataClass = "sensitive"
+      Stack     = "rds"
     },
     var.tags
   )
