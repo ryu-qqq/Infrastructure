@@ -157,6 +157,3 @@ resource "aws_kms_alias" "cloudwatch-logs" {
   name          = "alias/cloudwatch-logs"
   target_key_id = aws_kms_key.cloudwatch-logs.key_id
 }
-
-# Data source for current AWS account ID
-data "aws_caller_identity" "current" {}
