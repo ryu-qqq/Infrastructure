@@ -24,7 +24,7 @@ variable "cost_center" {
   default     = "engineering"
 }
 
-variable "lifecycle" {
+variable "lifecycle_stage" {
   description = "Lifecycle stage of the resources"
   type        = string
   default     = "production"

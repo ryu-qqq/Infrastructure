@@ -6,7 +6,7 @@ locals {
     Owner       = var.owner
     CostCenter  = var.cost_center
     Environment = var.environment
-    Lifecycle   = var.lifecycle
+    Lifecycle   = var.lifecycle_stage
     DataClass   = var.data_class
     Service     = "fileflow"
   }
