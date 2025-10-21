@@ -55,12 +55,21 @@ data "aws_kms_key" "ecs-secrets" {
 # RDS Data Sources
 # ============================================================================
 
+# Read RDS identifiers from SSM Parameter Store (exported by RDS module)
+data "aws_ssm_parameter" "db-instance-id" {
+  name = "/shared/rds/db-instance-id"
+}
+
+data "aws_ssm_parameter" "master-password-secret-name" {
+  name = "/shared/rds/master-password-secret-name"
+}
+
 data "aws_db_instance" "main" {
-  db_instance_identifier = "prod-shared-mysql"
+  db_instance_identifier = data.aws_ssm_parameter.db-instance-id.value
 }
 
 data "aws_secretsmanager_secret" "db-master-password" {
-  name = "rds/prod-shared-mysql/master-credentials"
+  name = data.aws_ssm_parameter.master-password-secret-name.value
 }
 
 data "aws_secretsmanager_secret_version" "db-master-password" {
