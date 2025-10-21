@@ -19,7 +19,7 @@ data "aws_subnets" "private" {
 
   filter {
     name   = "tag:Type"
-    values = ["private"]
+    values = ["Private"]
   }
 }
 
