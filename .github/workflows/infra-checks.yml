@@ -116,7 +116,6 @@ jobs:
 
       # Configure AWS credentials if needed
       - name: Configure AWS credentials
-        if: secrets.AWS_ROLE_ARN != ''
         uses: aws-actions/configure-aws-credentials@v4
         timeout-minutes: 2
         with:
