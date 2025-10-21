@@ -238,3 +238,18 @@ resource "aws_ssm_parameter" "elasticache-key-arn" {
     }
   )
 }
+
+resource "aws_ssm_parameter" "ecs-secrets-key-arn" {
+  name        = "/shared/kms/ecs-secrets-key-arn"
+  description = "ECS Secrets KMS key ARN for cross-stack references"
+  type        = "String"
+  value       = aws_kms_key.ecs-secrets.arn
+
+  tags = merge(
+    local.required_tags,
+    {
+      Name      = "ecs-secrets-key-arn-export"
+      Component = "kms"
+    }
+  )
+}
