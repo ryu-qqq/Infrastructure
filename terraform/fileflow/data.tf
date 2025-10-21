@@ -31,7 +31,7 @@ data "aws_subnets" "public" {
 
   filter {
     name   = "tag:Type"
-    values = ["public"]
+    values = ["Public"]
   }
 }
 
