@@ -43,8 +43,8 @@ output "dlq_name" {
 output "cloudwatch_alarm_arns" {
   description = "ARNs of CloudWatch alarms for monitoring"
   value = {
-    message_age      = try(aws_cloudwatch_metric_alarm.message_age[0].arn, null)
-    messages_visible = try(aws_cloudwatch_metric_alarm.messages_visible[0].arn, null)
-    dlq_messages     = try(aws_cloudwatch_metric_alarm.dlq_messages[0].arn, null)
+    message_age      = var.enable_cloudwatch_alarms ? aws_cloudwatch_metric_alarm.message-age[0].arn : null
+    messages_visible = var.enable_cloudwatch_alarms ? aws_cloudwatch_metric_alarm.messages-visible[0].arn : null
+    dlq_messages     = var.enable_cloudwatch_alarms && var.enable_dlq ? aws_cloudwatch_metric_alarm.dlq-messages[0].arn : null
   }
 }
