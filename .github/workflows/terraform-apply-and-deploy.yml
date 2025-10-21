@@ -122,6 +122,20 @@ jobs:
         working-directory: terraform/rds
         run: terraform apply -auto-approve
 
+      # ECR Infrastructure for FileFlow (KAN-147)
+      - name: Terraform Init - ECR FileFlow
+        working-directory: terraform/ecr/fileflow
+        run: |
+          terraform init \
+            -backend-config="bucket=prod-connectly" \
+            -backend-config="key=ecr/fileflow/terraform.tfstate" \
+            -backend-config="region=ap-northeast-2" \
+            -backend-config="dynamodb_table=prod-connectly-tf-lock"
+
+      - name: Terraform Apply - ECR FileFlow
+        working-directory: terraform/ecr/fileflow
+        run: terraform apply -auto-approve
+
       - name: Get ECR Registry
         id: registry
         run: |
