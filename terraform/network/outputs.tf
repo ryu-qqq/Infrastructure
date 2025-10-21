@@ -66,7 +66,7 @@ output "transit_gateway_route_table_id" {
 # SSM Parameter Store Exports for Cross-Stack References
 # ============================================================================
 
-resource "aws_ssm_parameter" "vpc_id" {
+resource "aws_ssm_parameter" "vpc-id" {
   name        = "/shared/network/vpc-id"
   description = "VPC ID for cross-stack references"
   type        = "String"
@@ -81,7 +81,7 @@ resource "aws_ssm_parameter" "vpc_id" {
   )
 }
 
-resource "aws_ssm_parameter" "public_subnet_ids" {
+resource "aws_ssm_parameter" "public-subnet-ids" {
   name        = "/shared/network/public-subnet-ids"
   description = "Public subnet IDs for cross-stack references"
   type        = "StringList"
@@ -96,7 +96,7 @@ resource "aws_ssm_parameter" "public_subnet_ids" {
   )
 }
 
-resource "aws_ssm_parameter" "private_subnet_ids" {
+resource "aws_ssm_parameter" "private-subnet-ids" {
   name        = "/shared/network/private-subnet-ids"
   description = "Private subnet IDs for cross-stack references"
   type        = "StringList"

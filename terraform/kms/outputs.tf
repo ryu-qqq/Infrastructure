@@ -134,7 +134,7 @@ output "kms_keys_summary" {
 # SSM Parameter Store Exports for Cross-Stack References
 # ============================================================================
 
-resource "aws_ssm_parameter" "cloudwatch_logs_key_arn" {
+resource "aws_ssm_parameter" "cloudwatch-logs-key-arn" {
   name        = "/shared/kms/cloudwatch-logs-key-arn"
   description = "CloudWatch Logs KMS key ARN for cross-stack references"
   type        = "String"
@@ -149,7 +149,7 @@ resource "aws_ssm_parameter" "cloudwatch_logs_key_arn" {
   )
 }
 
-resource "aws_ssm_parameter" "secrets_manager_key_arn" {
+resource "aws_ssm_parameter" "secrets-manager-key-arn" {
   name        = "/shared/kms/secrets-manager-key-arn"
   description = "Secrets Manager KMS key ARN for cross-stack references"
   type        = "String"
@@ -164,7 +164,7 @@ resource "aws_ssm_parameter" "secrets_manager_key_arn" {
   )
 }
 
-resource "aws_ssm_parameter" "rds_key_arn" {
+resource "aws_ssm_parameter" "rds-key-arn" {
   name        = "/shared/kms/rds-key-arn"
   description = "RDS KMS key ARN for cross-stack references"
   type        = "String"
@@ -179,7 +179,7 @@ resource "aws_ssm_parameter" "rds_key_arn" {
   )
 }
 
-resource "aws_ssm_parameter" "s3_key_arn" {
+resource "aws_ssm_parameter" "s3-key-arn" {
   name        = "/shared/kms/s3-key-arn"
   description = "S3 KMS key ARN for cross-stack references"
   type        = "String"
@@ -194,7 +194,7 @@ resource "aws_ssm_parameter" "s3_key_arn" {
   )
 }
 
-resource "aws_ssm_parameter" "sqs_key_arn" {
+resource "aws_ssm_parameter" "sqs-key-arn" {
   name        = "/shared/kms/sqs-key-arn"
   description = "SQS KMS key ARN for cross-stack references"
   type        = "String"
@@ -209,7 +209,7 @@ resource "aws_ssm_parameter" "sqs_key_arn" {
   )
 }
 
-resource "aws_ssm_parameter" "ssm_key_arn" {
+resource "aws_ssm_parameter" "ssm-key-arn" {
   name        = "/shared/kms/ssm-key-arn"
   description = "SSM Parameter Store KMS key ARN for cross-stack references"
   type        = "String"
@@ -224,7 +224,7 @@ resource "aws_ssm_parameter" "ssm_key_arn" {
   )
 }
 
-resource "aws_ssm_parameter" "elasticache_key_arn" {
+resource "aws_ssm_parameter" "elasticache-key-arn" {
   name        = "/shared/kms/elasticache-key-arn"
   description = "ElastiCache KMS key ARN for cross-stack references"
   type        = "String"
