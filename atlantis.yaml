@@ -155,6 +155,20 @@ projects:
     apply_requirements: ["approved", "mergeable"]
     workflow: default
 
+  # ============================================================================
+  # Application Infrastructure (애플리케이션 인프라)
+  # ============================================================================
+
+  # FileFlow - ECS Service
+  - name: fileflow-prod
+    dir: terraform/fileflow
+    workspace: default
+    autoplan:
+      when_modified: ["*.tf", "*.tfvars"]
+      enabled: true
+    apply_requirements: ["approved", "mergeable"]
+    workflow: default
+
 
 # Workflows
 workflows:
