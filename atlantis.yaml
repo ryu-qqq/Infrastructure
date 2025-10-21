@@ -13,11 +13,118 @@ parallel_apply: false
 
 # Projects configuration
 projects:
+  # ============================================================================
+  # Shared Infrastructure (공유 인프라)
+  # ============================================================================
+
+  # 1. Bootstrap - Initial Setup
+  - name: bootstrap-prod
+    dir: terraform/bootstrap
+    workspace: default
+    autoplan:
+      when_modified: ["*.tf", "*.tfvars"]
+      enabled: true
+    apply_requirements: ["approved", "mergeable"]
+    workflow: default
+
+  # 2. KMS - Encryption Keys
+  - name: kms-prod
+    dir: terraform/kms
+    workspace: default
+    autoplan:
+      when_modified: ["*.tf", "*.tfvars"]
+      enabled: true
+    apply_requirements: ["approved", "mergeable"]
+    workflow: default
+
+  # 3. Network - VPC, Subnets, Routing
+  - name: network-prod
+    dir: terraform/network
+    workspace: default
+    autoplan:
+      when_modified: ["*.tf", "*.tfvars"]
+      enabled: true
+    apply_requirements: ["approved", "mergeable"]
+    workflow: default
+
+  # 4. Secrets - Secrets Manager
+  - name: secrets-prod
+    dir: terraform/secrets
+    workspace: default
+    autoplan:
+      when_modified: ["*.tf", "*.tfvars"]
+      enabled: true
+    apply_requirements: ["approved", "mergeable"]
+    workflow: default
+
+  # 5. RDS - Shared Database
+  - name: rds-prod
+    dir: terraform/rds
+    workspace: default
+    autoplan:
+      when_modified: ["*.tf", "*.tfvars"]
+      enabled: true
+    apply_requirements: ["approved", "mergeable"]
+    workflow: default
+
+  # 6. CloudTrail - Audit Logging
+  - name: cloudtrail-prod
+    dir: terraform/cloudtrail
+    workspace: default
+    autoplan:
+      when_modified: ["*.tf", "*.tfvars"]
+      enabled: true
+    apply_requirements: ["approved", "mergeable"]
+    workflow: default
+
+  # 7. Logging - Log Infrastructure
+  - name: logging-prod
+    dir: terraform/logging
+    workspace: default
+    autoplan:
+      when_modified: ["*.tf", "*.tfvars"]
+      enabled: true
+    apply_requirements: ["approved", "mergeable"]
+    workflow: default
+
+  # 8. Monitoring - CloudWatch, Alarms
+  - name: monitoring-prod
+    dir: terraform/monitoring
+    workspace: default
+    autoplan:
+      when_modified: ["*.tf", "*.tfvars"]
+      enabled: true
+    apply_requirements: ["approved", "mergeable"]
+    workflow: default
+
+  # 9. Route53 - DNS Management
+  - name: route53-prod
+    dir: terraform/route53
+    workspace: default
+    autoplan:
+      when_modified: ["*.tf", "*.tfvars"]
+      enabled: true
+    apply_requirements: ["approved", "mergeable"]
+    workflow: default
+
+  # 10. ACM - SSL Certificates
+  - name: acm-prod
+    dir: terraform/acm
+    workspace: default
+    autoplan:
+      when_modified: ["*.tf", "*.tfvars"]
+      enabled: true
+    apply_requirements: ["approved", "mergeable"]
+    workflow: default
+
+  # ============================================================================
+  # Platform Infrastructure (플랫폼 인프라)
+  # ============================================================================
+
   # Atlantis Server Infrastructure
   - name: atlantis-prod
     dir: terraform/atlantis
     workspace: default
-    terraform_version: v1.5.0
     autoplan:
       when_modified: ["*.tf", "*.tfvars"]
       enabled: true
@@ -28,7 +135,6 @@ projects:
   - name: atlantis-test
     dir: terraform/test
     workspace: default
-    terraform_version: v1.5.0
     autoplan:
       when_modified: ["*.tf", "*.tfvars"]
       enabled: true
