@@ -32,7 +32,6 @@ projects:
   - name: kms-prod
     dir: terraform/kms
     workspace: default
-    terraform_version: v1.13.4
     autoplan:
       when_modified: ["*.tf", "*.tfvars"]
       enabled: true
@@ -43,7 +42,6 @@ projects:
   - name: network-prod
     dir: terraform/network
     workspace: default
-    terraform_version: v1.13.4
     autoplan:
       when_modified: ["*.tf", "*.tfvars"]
       enabled: true
