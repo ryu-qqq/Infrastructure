@@ -13,7 +13,7 @@ terraform {
   }
 
   backend "s3" {
-    bucket  = "prod-connectly"
+    bucket  = "ryuqqq-prod-tfstate"
     key     = "rds/terraform.tfstate"
     region  = "ap-northeast-2"
     encrypt = true
