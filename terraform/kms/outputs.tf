@@ -129,3 +129,112 @@ output "kms_keys_summary" {
     }
   }
 }
+
+# ============================================================================
+# SSM Parameter Store Exports for Cross-Stack References
+# ============================================================================
+
+resource "aws_ssm_parameter" "cloudwatch_logs_key_arn" {
+  name        = "/shared/kms/cloudwatch-logs-key-arn"
+  description = "CloudWatch Logs KMS key ARN for cross-stack references"
+  type        = "String"
+  value       = aws_kms_key.cloudwatch-logs.arn
+
+  tags = merge(
+    local.required_tags,
+    {
+      Name      = "cloudwatch-logs-key-arn-export"
+      Component = "kms"
+    }
+  )
+}
+
+resource "aws_ssm_parameter" "secrets_manager_key_arn" {
+  name        = "/shared/kms/secrets-manager-key-arn"
+  description = "Secrets Manager KMS key ARN for cross-stack references"
+  type        = "String"
+  value       = aws_kms_key.secrets-manager.arn
+
+  tags = merge(
+    local.required_tags,
+    {
+      Name      = "secrets-manager-key-arn-export"
+      Component = "kms"
+    }
+  )
+}
+
+resource "aws_ssm_parameter" "rds_key_arn" {
+  name        = "/shared/kms/rds-key-arn"
+  description = "RDS KMS key ARN for cross-stack references"
+  type        = "String"
+  value       = aws_kms_key.rds.arn
+
+  tags = merge(
+    local.required_tags,
+    {
+      Name      = "rds-key-arn-export"
+      Component = "kms"
+    }
+  )
+}
+
+resource "aws_ssm_parameter" "s3_key_arn" {
+  name        = "/shared/kms/s3-key-arn"
+  description = "S3 KMS key ARN for cross-stack references"
+  type        = "String"
+  value       = aws_kms_key.s3.arn
+
+  tags = merge(
+    local.required_tags,
+    {
+      Name      = "s3-key-arn-export"
+      Component = "kms"
+    }
+  )
+}
+
+resource "aws_ssm_parameter" "sqs_key_arn" {
+  name        = "/shared/kms/sqs-key-arn"
+  description = "SQS KMS key ARN for cross-stack references"
+  type        = "String"
+  value       = aws_kms_key.sqs.arn
+
+  tags = merge(
+    local.required_tags,
+    {
+      Name      = "sqs-key-arn-export"
+      Component = "kms"
+    }
+  )
+}
+
+resource "aws_ssm_parameter" "ssm_key_arn" {
+  name        = "/shared/kms/ssm-key-arn"
+  description = "SSM Parameter Store KMS key ARN for cross-stack references"
+  type        = "String"
+  value       = aws_kms_key.ssm.arn
+
+  tags = merge(
+    local.required_tags,
+    {
+      Name      = "ssm-key-arn-export"
+      Component = "kms"
+    }
+  )
+}
+
+resource "aws_ssm_parameter" "elasticache_key_arn" {
+  name        = "/shared/kms/elasticache-key-arn"
+  description = "ElastiCache KMS key ARN for cross-stack references"
+  type        = "String"
+  value       = aws_kms_key.elasticache.arn
+
+  tags = merge(
+    local.required_tags,
+    {
+      Name      = "elasticache-key-arn-export"
+      Component = "kms"
+    }
+  )
+}

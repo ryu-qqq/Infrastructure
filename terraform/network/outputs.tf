@@ -61,3 +61,52 @@ output "transit_gateway_route_table_id" {
   description = "Transit Gateway default route table ID"
   value       = var.enable_transit_gateway ? aws_ec2_transit_gateway.main[0].association_default_route_table_id : null
 }
+
+# ============================================================================
+# SSM Parameter Store Exports for Cross-Stack References
+# ============================================================================
+
+resource "aws_ssm_parameter" "vpc_id" {
+  name        = "/shared/network/vpc-id"
+  description = "VPC ID for cross-stack references"
+  type        = "String"
+  value       = aws_vpc.main.id
+
+  tags = merge(
+    local.required_tags,
+    {
+      Name      = "vpc-id-export"
+      Component = "network"
+    }
+  )
+}
+
+resource "aws_ssm_parameter" "public_subnet_ids" {
+  name        = "/shared/network/public-subnet-ids"
+  description = "Public subnet IDs for cross-stack references"
+  type        = "StringList"
+  value       = join(",", aws_subnet.public[*].id)
+
+  tags = merge(
+    local.required_tags,
+    {
+      Name      = "public-subnet-ids-export"
+      Component = "network"
+    }
+  )
+}
+
+resource "aws_ssm_parameter" "private_subnet_ids" {
+  name        = "/shared/network/private-subnet-ids"
+  description = "Private subnet IDs for cross-stack references"
+  type        = "StringList"
+  value       = join(",", aws_subnet.private[*].id)
+
+  tags = merge(
+    local.required_tags,
+    {
+      Name      = "private-subnet-ids-export"
+      Component = "network"
+    }
+  )
+}
