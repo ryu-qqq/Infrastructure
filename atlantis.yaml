@@ -125,6 +125,17 @@ projects:
     apply_requirements: ["approved", "mergeable"]
     workflow: default
 
+  # 11. ECR - Container Registry
+  - name: ecr-fileflow-prod
+    dir: terraform/ecr/fileflow
+    workspace: default
+    terraform_version: v1.13.4
+    autoplan:
+      when_modified: ["*.tf", "*.tfvars"]
+      enabled: true
+    apply_requirements: ["approved", "mergeable"]
+    workflow: default
+
   # ============================================================================
   # Platform Infrastructure (플랫폼 인프라)
   # ============================================================================
