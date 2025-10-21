@@ -21,7 +21,6 @@ projects:
   - name: bootstrap-prod
     dir: terraform/bootstrap
     workspace: default
-    terraform_version: v1.13.4
     autoplan:
       when_modified: ["*.tf", "*.tfvars"]
       enabled: true
@@ -52,7 +51,6 @@ projects:
   - name: secrets-prod
     dir: terraform/secrets
     workspace: default
-    terraform_version: v1.13.4
     autoplan:
       when_modified: ["*.tf", "*.tfvars"]
       enabled: true
@@ -63,7 +61,6 @@ projects:
   - name: rds-prod
     dir: terraform/rds
     workspace: default
-    terraform_version: v1.13.4
     autoplan:
       when_modified: ["*.tf", "*.tfvars"]
       enabled: true
@@ -74,7 +71,6 @@ projects:
   - name: cloudtrail-prod
     dir: terraform/cloudtrail
     workspace: default
-    terraform_version: v1.13.4
     autoplan:
       when_modified: ["*.tf", "*.tfvars"]
       enabled: true
@@ -85,7 +81,6 @@ projects:
   - name: logging-prod
     dir: terraform/logging
     workspace: default
-    terraform_version: v1.13.4
     autoplan:
       when_modified: ["*.tf", "*.tfvars"]
       enabled: true
@@ -96,7 +91,6 @@ projects:
   - name: monitoring-prod
     dir: terraform/monitoring
     workspace: default
-    terraform_version: v1.13.4
     autoplan:
       when_modified: ["*.tf", "*.tfvars"]
       enabled: true
@@ -107,7 +101,6 @@ projects:
   - name: route53-prod
     dir: terraform/route53
     workspace: default
-    terraform_version: v1.13.4
     autoplan:
       when_modified: ["*.tf", "*.tfvars"]
       enabled: true
@@ -118,7 +111,6 @@ projects:
   - name: acm-prod
     dir: terraform/acm
     workspace: default
-    terraform_version: v1.13.4
     autoplan:
       when_modified: ["*.tf", "*.tfvars"]
       enabled: true
@@ -133,7 +125,6 @@ projects:
   - name: atlantis-prod
     dir: terraform/atlantis
     workspace: default
-    terraform_version: v1.13.4
     autoplan:
       when_modified: ["*.tf", "*.tfvars"]
       enabled: true
@@ -144,7 +135,6 @@ projects:
   - name: atlantis-test
     dir: terraform/test
     workspace: default
-    terraform_version: v1.13.4
     autoplan:
       when_modified: ["*.tf", "*.tfvars"]
       enabled: true
