@@ -56,11 +56,11 @@ data "aws_kms_key" "ecs-secrets" {
 # ============================================================================
 
 data "aws_db_instance" "main" {
-  db_instance_identifier = "prod-server"
+  db_instance_identifier = "prod-shared-mysql"
 }
 
 data "aws_secretsmanager_secret" "db-master-password" {
-  name = "rds/prod-server/master-credentials"
+  name = "rds/prod-shared-mysql/master-credentials"
 }
 
 data "aws_secretsmanager_secret_version" "db-master-password" {
