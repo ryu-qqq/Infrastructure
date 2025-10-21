@@ -15,7 +15,7 @@ terraform {
     key            = "ecr/fileflow/terraform.tfstate"
     region         = "ap-northeast-2"
     encrypt        = true
-    dynamodb_table = "terraform-lock"
+    dynamodb_table = "prod-connectly-tf-lock"
     kms_key_id     = "alias/terraform-state"
   }
 }
