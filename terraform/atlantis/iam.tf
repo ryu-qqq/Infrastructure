@@ -190,6 +190,15 @@ resource "aws_iam_role_policy" "atlantis-terraform-operations" {
           "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/atlantis-*",
           "arn:aws:iam::${data.aws_caller_identity.current.account_id}:policy/atlantis-*"
         ]
+      },
+      {
+        Sid    = "IAMOIDCProviderReadOnly"
+        Effect = "Allow"
+        Action = [
+          "iam:ListOpenIDConnectProviders",
+          "iam:GetOpenIDConnectProvider"
+        ]
+        Resource = "*"
       }
     ]
   })
