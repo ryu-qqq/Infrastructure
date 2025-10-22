@@ -12,6 +12,18 @@
       "filePattern": "\\.tf$",
       "command": "./scripts/validators/validate-terraform-file.sh {{filePath}}",
       "description": "Validate Terraform files after editing"
+    },
+    {
+      "tool": "Write",
+      "filePattern": "terraform/.*/README\\.md$",
+      "command": "./scripts/check-terraform-docs.sh $(dirname {{filePath}})",
+      "description": "Validate Terraform documentation after README creation"
+    },
+    {
+      "tool": "Edit",
+      "filePattern": "terraform/.*/README\\.md$",
+      "command": "./scripts/check-terraform-docs.sh $(dirname {{filePath}})",
+      "description": "Validate Terraform documentation after README editing"
     }
   ],
   "SessionStart": [

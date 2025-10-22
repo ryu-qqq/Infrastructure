@@ -151,26 +151,39 @@ resource "aws_iam_role_policy" "atlantis-terraform-operations" {
         Effect = "Allow"
         Action = [
           "ec2:Describe*",
+          "ec2:DescribeVpcEndpoints",
           "ecs:Describe*",
           "ecr:Describe*",
+          "ecr:DescribeRepositories",
           "ecr:GetLifecyclePolicy",
           "ecr:GetRepositoryPolicy",
           "ecr:ListTagsForResource",
           "elasticloadbalancing:Describe*",
           "elasticfilesystem:Describe*",
+          "elasticfilesystem:DescribeFileSystems",
+          "elasticfilesystem:DescribeFileSystemPolicy",
+          "elasticfilesystem:DescribeAccessPoints",
+          "elasticfilesystem:DescribeMountTargets",
           "kms:Describe*",
           "kms:List*",
           "kms:GetKeyPolicy",
           "kms:GetKeyRotationStatus",
           "logs:Describe*",
           "logs:ListTagsForResource",
+          "rds:DescribeDBSubnetGroups",
+          "rds:DescribeDBParameterGroups",
+          "rds:DescribeDBParameters",
+          "rds:DescribeDBInstances",
+          "rds:ListTagsForResource",
           "secretsmanager:DescribeSecret",
           "secretsmanager:GetResourcePolicy",
           "secretsmanager:GetSecretValue",
           "secretsmanager:ListSecretVersionIds",
           "s3:List*",
           "ssm:GetParameter",
-          "ssm:GetParameters"
+          "ssm:GetParameters",
+          "ssm:DescribeParameters",
+          "ssm:ListTagsForResource"
         ]
         Resource = "*"
       },
@@ -188,6 +201,7 @@ resource "aws_iam_role_policy" "atlantis-terraform-operations" {
         ]
         Resource = [
           "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/atlantis-*",
+          "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/*-shared-*-monitoring-role",
           "arn:aws:iam::${data.aws_caller_identity.current.account_id}:policy/atlantis-*"
         ]
       },
