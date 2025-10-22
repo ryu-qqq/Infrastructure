@@ -170,6 +170,9 @@ resource "aws_iam_role_policy" "atlantis-terraform-operations" {
           "kms:GetKeyRotationStatus",
           "logs:Describe*",
           "logs:ListTagsForResource",
+          "rds:DescribeDBSubnetGroups",
+          "rds:DescribeDBParameterGroups",
+          "rds:DescribeDBInstances",
           "secretsmanager:DescribeSecret",
           "secretsmanager:GetResourcePolicy",
           "secretsmanager:GetSecretValue",
@@ -177,7 +180,8 @@ resource "aws_iam_role_policy" "atlantis-terraform-operations" {
           "s3:List*",
           "ssm:GetParameter",
           "ssm:GetParameters",
-          "ssm:DescribeParameters"
+          "ssm:DescribeParameters",
+          "ssm:ListTagsForResource"
         ]
         Resource = "*"
       },
@@ -195,6 +199,7 @@ resource "aws_iam_role_policy" "atlantis-terraform-operations" {
         ]
         Resource = [
           "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/atlantis-*",
+          "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/*-shared-*-monitoring-role",
           "arn:aws:iam::${data.aws_caller_identity.current.account_id}:policy/atlantis-*"
         ]
       },
