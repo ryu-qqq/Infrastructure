@@ -190,3 +190,82 @@ output "connection_string_example" {
   description = "Example connection string (password is in Secrets Manager)"
   value       = "mysql://${aws_db_instance.main.username}:<password>@${aws_db_instance.main.address}:${aws_db_instance.main.port}/${aws_db_instance.main.db_name}"
 }
+
+# ============================================================================
+# SSM Parameter Store Exports for Cross-Stack References
+# ============================================================================
+
+resource "aws_ssm_parameter" "db-instance-id" {
+  name        = "/shared/rds/db-instance-id"
+  description = "RDS instance identifier for cross-stack references"
+  type        = "String"
+  value       = aws_db_instance.main.identifier
+
+  tags = merge(
+    local.required_tags,
+    {
+      Name      = "db-instance-id-export"
+      Component = "rds"
+    }
+  )
+}
+
+resource "aws_ssm_parameter" "db-instance-address" {
+  name        = "/shared/rds/db-instance-address"
+  description = "RDS instance hostname for cross-stack references"
+  type        = "String"
+  value       = aws_db_instance.main.address
+
+  tags = merge(
+    local.required_tags,
+    {
+      Name      = "db-instance-address-export"
+      Component = "rds"
+    }
+  )
+}
+
+resource "aws_ssm_parameter" "db-instance-port" {
+  name        = "/shared/rds/db-instance-port"
+  description = "RDS instance port for cross-stack references"
+  type        = "String"
+  value       = tostring(aws_db_instance.main.port)
+
+  tags = merge(
+    local.required_tags,
+    {
+      Name      = "db-instance-port-export"
+      Component = "rds"
+    }
+  )
+}
+
+resource "aws_ssm_parameter" "db-security-group-id" {
+  name        = "/shared/rds/db-security-group-id"
+  description = "RDS security group ID for cross-stack references"
+  type        = "String"
+  value       = aws_security_group.rds.id
+
+  tags = merge(
+    local.required_tags,
+    {
+      Name      = "db-security-group-id-export"
+      Component = "rds"
+    }
+  )
+}
+
+resource "aws_ssm_parameter" "master-password-secret-name" {
+  name        = "/shared/rds/master-password-secret-name"
+  description = "RDS master password secret name for cross-stack references"
+  type        = "String"
+  value       = aws_secretsmanager_secret.db-master-password.name
+
+  tags = merge(
+    local.required_tags,
+    {
+      Name      = "master-password-secret-name-export"
+      Component = "rds"
+    }
+  )
+}
