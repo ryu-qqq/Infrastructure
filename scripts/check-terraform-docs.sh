@@ -19,12 +19,13 @@ NC='\033[0m' # No Color
 TOTAL_ERRORS=0
 TOTAL_WARNINGS=0
 
-# 필수 섹션 목록
+# 필수 섹션 목록 (각 섹션은 여러 변형을 가질 수 있음)
+# 형식: "섹션명|변형1|변형2|변형3"
 REQUIRED_SECTIONS=(
-    "개요"
-    "사용 방법"
-    "Variables"
-    "Outputs"
+    "개요|Overview|About"
+    "사용 방법|Usage|Quick Start|Getting Started|배포 가이드|Deployment|How to Use"
+    "Variables|Input Variables|Inputs|Configuration"
+    "Outputs|Output Values|Return Values"
 )
 
 # 권장 섹션 목록
@@ -81,11 +82,26 @@ check_readme() {
     fi
 
     # 필수 섹션 확인
-    for section in "${REQUIRED_SECTIONS[@]}"; do
-        if grep -qi "^##.*${section}" "$readme"; then
-            log_success "필수 섹션 존재: $section"
+    for section_variants in "${REQUIRED_SECTIONS[@]}"; do
+        # 파이프로 구분된 변형들을 배열로 분리
+        IFS='|' read -ra variants <<< "$section_variants"
+        primary_name="${variants[0]}"
+
+        # 변형 중 하나라도 존재하는지 확인
+        section_found=false
+        found_variant=""
+        for variant in "${variants[@]}"; do
+            if grep -qi "^##.*${variant}" "$readme"; then
+                section_found=true
+                found_variant="$variant"
+                break
+            fi
+        done
+
+        if [[ "$section_found" == true ]]; then
+            log_success "필수 섹션 존재: $primary_name (발견: $found_variant)"
         else
-            log_error "필수 섹션 누락: $section"
+            log_error "필수 섹션 누락: $primary_name (변형: ${variants[*]})"
         fi
     done
 
