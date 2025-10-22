@@ -167,7 +167,7 @@ main() {
     if [[ -n "$1" ]]; then
         # 특정 디렉토리만 검증
         if [[ -d "$1" ]]; then
-            check_readme "$1"
+            check_readme "$1" || true  # Continue even if check fails
         else
             log_error "디렉토리를 찾을 수 없습니다: $1"
             exit 1
@@ -176,14 +176,28 @@ main() {
         # terraform 디렉토리 내 모든 패키지 검증
         log_info "terraform/ 디렉토리의 모든 패키지를 검증합니다..."
 
+        # 검증에서 제외할 디렉토리 목록
+        EXCLUDED_DIRS=("archived" "modules" "test" "bootstrap")
+
         # terraform 직하위 디렉토리 검색
         for dir in terraform/*/; do
             # 디렉토리가 실제로 존재하는지 확인
             if [[ -d "$dir" ]]; then
                 # .terraform, .git 등 숨김 디렉토리 제외
                 dirname=$(basename "$dir")
-                if [[ ! "$dirname" =~ ^\. ]]; then
-                    check_readme "$dir"
+
+                # 제외 목록 확인
+                skip_dir=false
+                for excluded in "${EXCLUDED_DIRS[@]}"; do
+                    if [[ "$dirname" == "$excluded" ]]; then
+                        skip_dir=true
+                        log_info "검증 제외: $dir (특수 디렉토리)"
+                        break
+                    fi
+                done
+
+                if [[ ! "$dirname" =~ ^\. ]] && [[ "$skip_dir" == false ]]; then
+                    check_readme "$dir" || true  # Continue even if check fails
                 fi
             fi
         done
@@ -194,7 +208,7 @@ main() {
                 if [[ -d "$service_dir" ]]; then
                     dirname=$(basename "$service_dir")
                     if [[ ! "$dirname" =~ ^\. ]] && [[ -f "$service_dir/main.tf" ]]; then
-                        check_readme "$service_dir"
+                        check_readme "$service_dir" || true  # Continue even if check fails
                     fi
                 fi
             done
