@@ -110,7 +110,7 @@ resource "aws_security_group" "alb" {
 }
 
 # ECS Task Security Group
-resource "aws_security_group" "ecs_task" {
+resource "aws_security_group" "ecs-task" {
   name        = "atlantis-ecs-task-${var.environment}"
   description = "Security group for Atlantis ECS tasks"
   vpc_id      = data.aws_vpc.selected.id
@@ -228,7 +228,7 @@ resource "aws_ecs_service" "atlantis" {
 
   network_configuration {
     subnets          = data.aws_subnets.private.ids
-    security_groups  = [aws_security_group.ecs_task.id]
+    security_groups  = [aws_security_group.ecs-task.id]
     assign_public_ip = false
   }
 
