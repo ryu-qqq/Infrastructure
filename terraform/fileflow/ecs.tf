@@ -148,6 +148,12 @@ resource "aws_ecs_task_definition" "fileflow" {
   execution_role_arn       = aws_iam_role.ecs-task-execution.arn
   task_role_arn            = aws_iam_role.ecs-task.arn
 
+  # Runtime platform configuration for X86_64 compatibility
+  runtime_platform {
+    operating_system_family = "LINUX"
+    cpu_architecture        = "X86_64"
+  }
+
   container_definitions = jsonencode([
     {
       name      = local.container_name
