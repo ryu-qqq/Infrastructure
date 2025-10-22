@@ -170,7 +170,8 @@ resource "aws_iam_role_policy" "atlantis-terraform-operations" {
           "secretsmanager:ListSecretVersionIds",
           "s3:List*",
           "ssm:GetParameter",
-          "ssm:GetParameters"
+          "ssm:GetParameters",
+          "ssm:DescribeParameters"
         ]
         Resource = "*"
       },
