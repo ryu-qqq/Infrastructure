@@ -14,7 +14,10 @@ parallel_apply: false
 # Projects configuration
 projects:
   # ============================================================================
-  # Shared Infrastructure (공유 인프라)
+  # 1. Shared Infrastructure (공유 인프라) - Manual Management
+  # ============================================================================
+  # Core infrastructure shared across all services
+  # Managed manually - changes require careful review
   # ============================================================================
 
   # 1. Bootstrap - Initial Setup
@@ -118,7 +121,10 @@ projects:
     workflow: default
 
   # ============================================================================
-  # Platform Infrastructure (플랫폼 인프라)
+  # 2. Platform Infrastructure (플랫폼 인프라) - Manual Management
+  # ============================================================================
+  # Platform services like Atlantis, CI/CD tools
+  # Managed manually - critical infrastructure
   # ============================================================================
 
   # Atlantis Server Infrastructure
@@ -142,7 +148,10 @@ projects:
     workflow: default
 
   # ============================================================================
-  # Container Registry (컨테이너 레지스트리)
+  # 3. Container Registry (컨테이너 레지스트리) - Manual Management
+  # ============================================================================
+  # ECR repositories for container images
+  # Managed manually - add new registries as needed
   # ============================================================================
 
   # ECR - FileFlow Container Registry
@@ -156,18 +165,37 @@ projects:
     workflow: default
 
   # ============================================================================
-  # Application Infrastructure (애플리케이션 인프라)
+  # 4. Application Services (애플리케이션 서비스) - Wizard Auto-Managed
+  # ============================================================================
+  # ⚠️  WARNING: This section is AUTOMATICALLY managed by Infrastructure Wizard
+  #
+  # New services are added below in alphabetical order by the wizard
+  # DO NOT manually edit projects in this section
+  #
+  # To add a new service, run:
+  #   $ ./wizard/infra-wizard.sh
+  #
+  # The wizard will:
+  #   1. Generate Terraform code in terraform/services/{service-name}/
+  #   2. Automatically add the project to this section
+  #   3. Create a PR with all changes
+  #
+  # Last updated: 2025-10-24
   # ============================================================================
 
-  # FileFlow - ECS Service
+  # FILEFLOW - Service infrastructure (migrated from terraform/fileflow)
   - name: fileflow-prod
     dir: terraform/fileflow
     workspace: default
     autoplan:
       when_modified: ["*.tf", "*.tfvars"]
       enabled: true
-    # apply_requirements: ["approved", "mergeable"]  # Temporarily disabled for initial deployment
+    apply_requirements: ["approved", "mergeable"]
     workflow: default
+
+  # ============================================================================
+  # END OF WIZARD AUTO-MANAGED SECTION
+  # ============================================================================
 
 
 # Workflows
