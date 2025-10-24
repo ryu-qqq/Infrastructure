@@ -25,6 +25,11 @@ from rich.panel import Panel
 from rich.table import Table
 from rich import print as rprint
 
+# Import wizard modules
+from generator import CodeGenerator
+from atlantis_updater import AtlantisUpdater
+from git_helper import GitHelper
+
 # Initialize Rich console
 console = Console()
 
@@ -241,12 +246,21 @@ def display_summary(template_name, params, components):
 @click.command()
 @click.option('--template', help='Template name to use')
 @click.option('--dry-run', is_flag=True, help='Show what would be generated without creating files')
-def main(template, dry_run):
+@click.option('--no-pr', is_flag=True, help='Skip PR creation (only generate code and commit)')
+def main(template, dry_run, no_pr):
     """Infrastructure Wizard - Generate Terraform code automatically."""
 
     try:
         # Print banner
         print_banner()
+
+        # Get project root
+        project_root = get_project_root()
+
+        # Initialize helpers
+        generator = CodeGenerator(project_root)
+        atlantis_updater = AtlantisUpdater(project_root / "atlantis.yaml")
+        git_helper = GitHelper(project_root)
 
         # Select template
         if not template:
@@ -268,14 +282,108 @@ def main(template, dry_run):
         # Display summary
         display_summary(template_name, params, components)
 
-        # TODO: Generate code
-        console.print("\n[yellow]🚧 코드 생성 기능은 다음 단계에서 구현됩니다[/yellow]")
-        console.print(f"\n생성될 위치: terraform/services/{params.get('service_name', 'unknown')}/")
+        # Get service details
+        service_name = params.get('service_name')
+        environment = params.get('environment', 'prod')
 
-        if dry_run:
-            console.print("\n[yellow]--dry-run 모드: 실제 파일을 생성하지 않았습니다[/yellow]")
+        # Generate output directory path
+        output_dir = generator.get_service_directory(service_name)
+        service_dir = f"terraform/services/{service_name}"
 
-        console.print("\n[green]✅ 위자드 완료![/green]")
+        # Step 1: Generate Terraform code
+        console.print(f"\n[bold cyan]{'='*60}[/bold cyan]")
+        console.print(f"[bold cyan]Step 1/4: 코드 생성[/bold cyan]")
+        console.print(f"[bold cyan]{'='*60}[/bold cyan]")
+
+        generated_files = generator.generate_code(
+            template_name=template_name,
+            params=params,
+            components=components,
+            output_dir=output_dir,
+            dry_run=dry_run
+        )
+
+        # Step 2: Update atlantis.yaml
+        console.print(f"\n[bold cyan]{'='*60}[/bold cyan]")
+        console.print(f"[bold cyan]Step 2/4: atlantis.yaml 업데이트[/bold cyan]")
+        console.print(f"[bold cyan]{'='*60}[/bold cyan]")
+
+        atlantis_updated = atlantis_updater.add_service(
+            service_name=service_name,
+            service_dir=service_dir,
+            environment=environment,
+            dry_run=dry_run
+        )
+
+        if not dry_run:
+            # Step 3: Create Git branch and commit
+            console.print(f"\n[bold cyan]{'='*60}[/bold cyan]")
+            console.print(f"[bold cyan]Step 3/4: Git 커밋[/bold cyan]")
+            console.print(f"[bold cyan]{'='*60}[/bold cyan]")
+
+            # Create feature branch
+            branch_name = git_helper.create_feature_branch(service_name)
+
+            # Stage files
+            files_to_stage = [
+                output_dir / filename for filename in generated_files.keys()
+            ]
+            files_to_stage.append(project_root / "atlantis.yaml")
+
+            git_helper.stage_files(files_to_stage)
+
+            # Create commit
+            git_helper.create_commit(
+                service_name=service_name,
+                service_dir=service_dir,
+                components=components,
+                dry_run=False
+            )
+
+            # Step 4: Create PR (optional)
+            if not no_pr:
+                console.print(f"\n[bold cyan]{'='*60}[/bold cyan]")
+                console.print(f"[bold cyan]Step 4/4: GitHub PR 생성[/bold cyan]")
+                console.print(f"[bold cyan]{'='*60}[/bold cyan]")
+
+                pr_url = git_helper.create_pr_with_gh(
+                    service_name=service_name,
+                    components=components,
+                    base_branch="main",
+                    dry_run=False
+                )
+
+                # Final summary
+                console.print(f"\n[bold green]{'='*60}[/bold green]")
+                console.print(f"[bold green]✅ 위자드 완료![/bold green]")
+                console.print(f"[bold green]{'='*60}[/bold green]")
+
+                console.print(f"\n[bold]생성된 리소스:[/bold]")
+                console.print(f"  📁 디렉토리: {service_dir}/")
+                console.print(f"  📄 파일: {len(generated_files)}개")
+                console.print(f"  🔀 브랜치: {branch_name}")
+
+                if pr_url:
+                    console.print(f"\n[bold cyan]🚀 다음 단계:[/bold cyan]")
+                    console.print(f"  1. PR 열기: {pr_url}")
+                    console.print(f"  2. Atlantis plan 결과 확인 (1-2분 소요)")
+                    console.print(f"  3. 플랜 검토 후 PR 승인")
+                    console.print(f"  4. 머지 → Atlantis가 자동으로 apply")
+                else:
+                    console.print(f"\n[yellow]⚠️  PR 자동 생성 실패 - 수동으로 생성해주세요[/yellow]")
+                    console.print(f"  브랜치: {branch_name}")
+
+            else:
+                console.print(f"\n[bold green]✅ 코드 생성 및 커밋 완료![/bold green]")
+                console.print(f"  브랜치: {branch_name}")
+                console.print(f"\n[yellow]--no-pr 옵션: PR을 수동으로 생성해주세요[/yellow]")
+
+        else:
+            console.print("\n[yellow]🔍 --dry-run 모드: 실제 파일을 생성하지 않았습니다[/yellow]")
+            console.print(f"\n생성될 위치: {service_dir}/")
+            console.print(f"생성될 파일: {len(generated_files)}개")
+
+        console.print("\n")
 
     except KeyboardInterrupt:
         console.print("\n\n[yellow]⚠️  사용자가 취소했습니다.[/yellow]")
