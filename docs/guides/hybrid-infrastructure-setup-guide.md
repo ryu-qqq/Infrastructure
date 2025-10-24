@@ -4960,7 +4960,7 @@ infrastructure/
 │       └── infra-checks.yml
 │
 ├── .claude/
-│   ├── hooks.json
+│   ├── settings.local.json
 │   └── INFRASTRUCTURE_RULES.md
 │
 ├── terraform/

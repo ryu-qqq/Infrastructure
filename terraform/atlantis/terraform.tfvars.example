@@ -1,42 +1,89 @@
-# Atlantis Terraform Configuration Variables - Example
-# Copy this file to terraform.tfvars and fill in the actual values
+# Atlantis Terraform Configuration Variables - TEMPLATE
+# ============================================================================
+# IMPORTANT: Copy this file to terraform.tfvars and fill in your actual values
+# NEVER commit terraform.tfvars to git - it contains sensitive information!
+# ============================================================================
 
-# Environment
+# ============================================================================
+# Environment Configuration
+# ============================================================================
 environment = "prod"
 aws_region  = "ap-northeast-2"
 
-# ACM Certificate ARN for HTTPS
+# ============================================================================
+# ACM Certificate
+# ============================================================================
 # Get from: aws acm list-certificates --region ap-northeast-2
-# Use a certificate that covers your domain (e.g., *.set-of.com)
-acm_certificate_arn = "arn:aws:acm:ap-northeast-2:ACCOUNT_ID:certificate/CERTIFICATE_ID"
+# Certificate: *.your-domain.com (AWS-issued, auto-renewable)
+acm_certificate_arn = "arn:aws:acm:REGION:ACCOUNT_ID:certificate/CERT_ID"
 
+# ============================================================================
 # Atlantis Configuration
+# ============================================================================
 atlantis_url            = "https://atlantis.your-domain.com"
 atlantis_repo_allowlist = "github.com/your-org/*"
 
+# ============================================================================
 # Network Configuration
+# ============================================================================
 # Get from: aws ec2 describe-vpcs --region ap-northeast-2
-vpc_id = "vpc-xxxxxxxxxxxxxxxxx"
+vpc_id = "vpc-xxxxxxxxxxxxx"
 
-# Get from: aws ec2 describe-subnets --region ap-northeast-2 --filters "Name=vpc-id,Values=vpc-xxx"
+# Get from: aws ec2 describe-subnets --filters "Name=vpc-id,Values=vpc-xxx"
 public_subnet_ids = [
-  "subnet-xxxxxxxxxxxxxxxxx", # Public subnet in AZ a
-  "subnet-yyyyyyyyyyyyyyyyy"  # Public subnet in AZ b
+  "subnet-xxxxxxxxxxxxx", # public-subnet-1 (az-a)
+  "subnet-xxxxxxxxxxxxx"  # public-subnet-2 (az-b)
 ]
+
 private_subnet_ids = [
-  "subnet-zzzzzzzzzzzzzzzzz", # Private subnet in AZ a
-  "subnet-aaaaaaaaaaaaaaaaa"  # Private subnet in AZ b
+  "subnet-xxxxxxxxxxxxx", # private-subnet-1 (az-a)
+  "subnet-xxxxxxxxxxxxx"  # private-subnet-2 (az-b)
 ]
 
-# Security - Allowed CIDR blocks for ALB access
-# IMPORTANT: Restrict this to specific IP ranges for production
+# ============================================================================
+# Security Configuration
+# ============================================================================
+# Allowed CIDR blocks for ALB access
+# IMPORTANT: Restrict to specific IP ranges for production
 allowed_cidr_blocks = [
-  "0.0.0.0/0" # WARNING: Allow from anywhere - restrict in production
+  "0.0.0.0/0" # WARNING: Allows from anywhere - restrict in production!
 ]
 
+# ============================================================================
 # Resource Configuration
+# ============================================================================
 atlantis_cpu    = 512  # CPU units (256, 512, 1024, 2048, 4096)
 atlantis_memory = 1024 # Memory in MiB
 
+# ============================================================================
 # ALB Configuration
+# ============================================================================
 alb_enable_deletion_protection = false # Set to true for production
+
+# ============================================================================
+# GitHub Configuration (SENSITIVE - Use Environment Variables Instead!)
+# ============================================================================
+# RECOMMENDED: Set via environment variables (see SECURITY.md)
+#   export TF_VAR_github_username="your-username"
+#   export TF_VAR_github_token="ghp_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+#
+# If you must set here (local dev only):
+github_username = ""  # Your GitHub username
+github_token    = ""  # GitHub Personal Access Token (repo, write:repo_hook)
+
+# ============================================================================
+# GitHub App Configuration (SENSITIVE - Use AWS Secrets Manager!)
+# ============================================================================
+# Generate from: GitHub → Settings → Developer settings → GitHub Apps
+#
+# RECOMMENDED: Use AWS Secrets Manager or environment variables
+#   export TF_VAR_github_app_id="123456"
+#   export TF_VAR_github_app_installation_id="12345678"
+#   export TF_VAR_github_app_private_key="$(base64 < private-key.pem)"
+#   export TF_VAR_github_webhook_secret="your-webhook-secret-here"
+#
+# If you must set here (local dev only):
+github_app_id              = ""  # GitHub App ID (numeric)
+github_app_installation_id = ""  # Installation ID (numeric)
+github_app_private_key     = ""  # Base64-encoded RSA private key
+github_webhook_secret      = ""  # Webhook secret for validation

@@ -1,0 +1,23 @@
+{
+  "comment": "Claude Code Session Hooks for Infrastructure Governance - Optimized",
+  "AfterToolUse": [
+    {
+      "tool": "Write",
+      "filePattern": "\\.tf$",
+      "command": "./scripts/validators/validate-terraform-file.sh {{filePath}}",
+      "description": "Validate Terraform files after creation"
+    },
+    {
+      "tool": "Edit",
+      "filePattern": "\\.tf$",
+      "command": "./scripts/validators/validate-terraform-file.sh {{filePath}}",
+      "description": "Validate Terraform files after editing"
+    }
+  ],
+  "SessionStart": [
+    {
+      "command": "echo '\n🔍 Infrastructure Governance Active:\n  ✅ Required tags: merge(local.required_tags)\n  ✅ Encryption: KMS only (no AES256)\n  ✅ Naming: kebab-case (resources), snake_case (variables)\n  ✅ Secrets: No hardcoding\n  📖 Rules: .claude/INFRASTRUCTURE_RULES.md\n  📊 Project: 214 .tf files, 15 modules, 55 docs\n'",
+      "description": "Display governance reminder and project stats at session start"
+    }
+  ]
+}

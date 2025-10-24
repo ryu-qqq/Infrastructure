@@ -71,25 +71,39 @@ terraform apply
 ```
 infrastructure/
 ├── .github/
-│   └── workflows/          # CI/CD 파이프라인 (GitHub Actions)
+│   └── workflows/          # CI/CD 파이프라인 (6개 GitHub Actions)
 ├── terraform/
 │   ├── network/            # VPC, Subnets, Transit Gateway (중앙 관리)
-│   ├── kms/                # KMS Keys (7개 암호화 키, 중앙 관리)
+│   ├── kms/                # KMS Keys (9개 암호화 키, 중앙 관리)
 │   ├── rds/                # Shared RDS (공유 데이터베이스)
 │   ├── ecr/                # ECR Repositories (서비스별)
-│   ├── modules/            # 재사용 가능한 Terraform 모듈 (10개)
+│   ├── acm/                # ACM 인증서 관리
+│   ├── route53/            # Route53 DNS 관리
+│   ├── logging/            # 중앙 로깅 시스템 (S3, CloudWatch)
+│   ├── secrets/            # Secrets Manager 및 자동 로테이션
+│   ├── shared/             # 공유 리소스 통합 (KMS, Security, Network)
+│   ├── modules/            # 재사용 가능한 Terraform 모듈 (15개)
 │   ├── atlantis/           # Atlantis 서버 (Terraform 자동화)
 │   ├── monitoring/         # 중앙 모니터링 (CloudWatch, AMP, AMG)
-│   └── cloudtrail/         # 감사 로그
+│   ├── cloudtrail/         # 감사 로그
+│   └── bootstrap/          # 초기 인프라 부트스트랩
 ├── scripts/
-│   ├── validators/         # Terraform 검증 스크립트
-│   └── atlantis/           # Atlantis 운영 스크립트
+│   ├── validators/         # Terraform 검증 스크립트 (7개)
+│   ├── atlantis/           # Atlantis 운영 스크립트
+│   ├── hooks/              # Git hooks 설정
+│   └── policy/             # OPA 정책 헬퍼
 ├── docs/
-│   ├── guides/             # 운영 가이드 (하이브리드 가이드 등)
-│   ├── governance/         # 거버넌스 정책 (태깅, 암호화, 네이밍)
-│   ├── modules/            # 모듈 개발 가이드
-│   └── runbooks/           # 인시던트 대응 런북
-└── policies/               # OPA 정책 (Open Policy Agent)
+│   ├── guides/             # 운영 가이드 (16개)
+│   ├── governance/         # 거버넌스 정책 (10개)
+│   ├── modules/            # 모듈 개발 가이드 (6개)
+│   ├── runbooks/           # 인시던트 대응 런북 (3개)
+│   ├── workflows/          # 워크플로 문서
+│   └── changelogs/         # 변경 이력
+└── policies/               # OPA 정책 (8개 파일, 4개 정책)
+    ├── tagging/            # 태깅 정책
+    ├── naming/             # 네이밍 정책
+    ├── security_groups/    # 보안 그룹 정책
+    └── public_resources/   # 공개 리소스 정책
 ```
 
 ---
@@ -100,6 +114,13 @@ infrastructure/
 - [Infrastructure Governance](docs/governance/infrastructure_governance.md) - 필수 태그, KMS 전략, 네이밍 규칙
 - [Tagging Standards](docs/governance/TAGGING_STANDARDS.md) - AWS 리소스 태깅 요구사항
 - [Naming Convention](docs/governance/NAMING_CONVENTION.md) - 리소스 네이밍 규칙 (kebab-case)
+- [Logging Naming Convention](docs/governance/LOGGING_NAMING_CONVENTION.md) - CloudWatch 로그 네이밍 표준
+- [Checkov Policy Guide](docs/governance/CHECKOV_POLICY_GUIDE.md) - Checkov 정책 가이드
+- [Security Scan Report Template](docs/governance/SECURITY_SCAN_REPORT_TEMPLATE.md) - 보안 스캔 보고서 템플릿
+- [Secrets Rotation Guide](docs/governance/README_SECRETS_ROTATION.md) - Secrets 자동 로테이션 가이드
+- [Secrets Rotation Checklist](docs/governance/SECRETS_ROTATION_CHECKLIST.md) - Secrets 로테이션 체크리스트
+- [Secrets Rotation Status](docs/governance/SECRETS_ROTATION_CURRENT_STATUS.md) - 현재 로테이션 상태
+- [Infrastructure PR Guide](docs/governance/infrastructure_pr.md) - PR 생성 및 리뷰 가이드
 
 ### 🏗️ 하이브리드 인프라 가이드 (⭐ 필수)
 중앙 집중식 + 분산 관리 하이브리드 구조 완벽 가이드:
@@ -129,6 +150,8 @@ infrastructure/
 
 ## 🛠️ 사용 가능한 Terraform 모듈
 
+### 핵심 모듈 (15개)
+
 | 모듈 | 설명 | 버전 |
 |------|------|------|
 | `alb` | Application Load Balancer | 1.0.0 |
@@ -137,10 +160,15 @@ infrastructure/
 | `ecs-service` | ECS Fargate Service | 1.0.0 |
 | `elasticache` | ElastiCache Redis | 1.0.0 |
 | `iam-role-policy` | IAM Role and Policy | 1.0.0 |
+| `lambda` | Lambda Function 관리 | 1.0.0 |
+| `messaging-pattern` | 메시징 패턴 (SNS+SQS) | 1.0.0 |
 | `rds` | RDS MySQL (Multi-AZ) | 1.0.0 |
+| `route53-record` | Route53 DNS 레코드 | 1.0.0 |
 | `s3-bucket` | S3 Bucket (암호화, Lifecycle) | 1.0.0 |
 | `security-group` | Security Group Templates | 1.0.0 |
+| `sns` | SNS Topic 관리 | 1.0.0 |
 | `sqs` | SQS Queue (KMS 암호화) | 1.0.0 |
+| `waf` | WAF 규칙 관리 | 1.0.0 |
 
 **📖 자세한 내용**: [Modules Directory](terraform/modules/)
 
@@ -188,16 +216,48 @@ PR 생성 시 자동으로 다음 검증이 실행됩니다:
 
 ### 필수 보안 규칙
 
-1. **KMS 암호화**: 모든 데이터는 Customer Managed KMS Key로 암호화
+1. **KMS 암호화**: 모든 데이터는 Customer Managed KMS Key로 암호화 (9개 키 운영)
 2. **필수 태그**: Owner, CostCenter, Environment, Lifecycle, DataClass, Service
 3. **Security Group**: 최소 권한 원칙, 0.0.0.0/0 개방 금지
-4. **Secrets 관리**: Secrets Manager 사용, 하드코딩 금지
+4. **Secrets 관리**: Secrets Manager 사용, Lambda 자동 로테이션 (90일 주기)
+
+### KMS 암호화 키 (9개)
+
+데이터 클래스별로 분리된 암호화 키 관리:
+
+| KMS 키 | 용도 | 데이터 클래스 |
+|--------|------|---------------|
+| `terraform-state` | Terraform 상태 파일 암호화 | Confidential |
+| `rds` | RDS 데이터베이스 암호화 | Highly Confidential |
+| `ecs-secrets` | ECS 환경 변수 및 시크릿 | Confidential |
+| `secrets-manager` | Secrets Manager 암호화 | Highly Confidential |
+| `cloudwatch-logs` | CloudWatch 로그 암호화 | Internal |
+| `s3` | S3 버킷 암호화 | Various |
+| `sqs` | SQS 메시지 암호화 | Internal |
+| `ssm` | SSM Parameter Store 암호화 | Confidential |
+| `elasticache` | ElastiCache 데이터 암호화 | Internal |
+
+**모든 KMS 키는 자동 로테이션 활성화** (매년 자동 갱신)
+
+### Secrets 자동 로테이션
+
+Lambda 기반 자동 로테이션 시스템:
+
+- **로테이션 주기**: 90일 자동 갱신
+- **지원 시크릿**:
+  - RDS 데이터베이스 자격증명
+  - API Keys (외부 서비스)
+  - Application Secrets
+- **알림**: CloudWatch Logs + SNS 알림
+- **모니터링**: 로테이션 실패 시 자동 알림
+
+**📖 자세한 내용**: [Secrets Rotation Guide](docs/governance/README_SECRETS_ROTATION.md)
 
 ### 자동 검증 도구
 
 - **tfsec**: AWS 보안 모범 사례
 - **checkov**: 컴플라이언스 프레임워크 (CIS AWS, PCI-DSS)
-- **OPA (Open Policy Agent)**: 커스텀 정책 검증
+- **OPA (Open Policy Agent)**: 커스텀 정책 검증 (태깅, 네이밍, 보안그룹, 공개리소스)
 
 **📖 자세한 내용**: [Infrastructure Governance](docs/governance/infrastructure_governance.md)
 
@@ -329,9 +389,12 @@ docs: Update hybrid infrastructure guide
 
 ## 📈 통계
 
-- **Terraform 모듈**: 10개
-- **문서**: 27개 (Governance 5, Guides 14, Modules 5, Runbooks 3)
-- **CI/CD 워크플로**: 4개 (GitHub Actions)
+- **Terraform 모듈**: 15개
+- **KMS 암호화 키**: 9개
+- **문서**: 50개 (Governance 10, Guides 16, Modules 6, Runbooks 3, Workflows 2, Changelogs 2)
+- **CI/CD 워크플로**: 6개 (GitHub Actions)
+- **검증 스크립트**: 7개 (tfsec, checkov, tags, encryption, naming, secrets-rotation 등)
+- **OPA 정책**: 4개 (태깅, 네이밍, 보안그룹, 공개리소스)
 - **월간 인프라 비용**: ~$1,502
 
 ---
@@ -342,6 +405,6 @@ docs: Update hybrid infrastructure guide
 
 ---
 
-**Last Updated**: 2025-10-22
+**Last Updated**: 2025-10-24
 
 **Maintainers**: Platform Team (@platform-team)
