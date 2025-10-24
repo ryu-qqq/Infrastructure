@@ -1,0 +1,23 @@
+# Infrastructure Wizard Dependencies
+
+# CLI Framework
+click>=8.1.0
+
+# Template Engine
+Jinja2>=3.1.0
+
+# YAML Processing
+PyYAML>=6.0
+
+# JSON Schema Validation
+jsonschema>=4.17.0
+
+# Terminal UI
+rich>=13.0.0
+questionary>=2.0.0
+
+# Git Operations
+GitPython>=3.1.0
+
+# Date/Time
+python-dateutil>=2.8.0
