@@ -26,7 +26,10 @@ resource "aws_iam_role" "github-actions" {
             "token.actions.githubusercontent.com:aud" = "sts.amazonaws.com"
           }
           StringLike = {
-            "token.actions.githubusercontent.com:sub" = "repo:ryu-qqq/Infrastructure:*"
+            "token.actions.githubusercontent.com:sub" = [
+              "repo:ryu-qqq/Infrastructure:*",
+              "repo:ryu-qqq/fileflow:*"
+            ]
           }
         }
       }
