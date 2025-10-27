@@ -1,0 +1,13 @@
+locals {
+  required_tags = {
+    Environment = var.environment
+    Service     = var.service_name
+    Owner       = "{{ owner | default('platform-team@ryuqqq.com') }}"
+    CostCenter  = "{{ cost_center | default('engineering') }}"
+    Lifecycle   = "{{ lifecycle | default('permanent') }}"
+    DataClass   = "{{ data_class | default('internal') }}"
+  }
+
+  queue_name = "${var.service_name}-{{ environment }}{% if fifo_queue %}.fifo{% endif %}"
+  dlq_name   = "${var.service_name}-dlq-{{ environment }}{% if fifo_queue %}.fifo{% endif %}"
+}
