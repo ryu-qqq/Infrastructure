@@ -135,7 +135,7 @@ module "{{ service_name | replace('-', '_') }}_service" {
 
   # CloudWatch Logs
   log_configuration = {
-    logDriver = "awslogs"
+    log_driver = "awslogs"
     options = {
       "awslogs-group"         = module.{{ service_name | replace('-', '_') }}_logs.name
       "awslogs-region"        = "{{ aws_region }}"
@@ -153,24 +153,42 @@ module "{{ service_name | replace('-', '_') }}_service" {
   {% endif %}
 
   # Environment Variables
-  environment_variables = {
-    ENVIRONMENT  = local.environment
-    SERVICE_NAME = local.service_name
+  container_environment = [
+    {
+      name  = "ENVIRONMENT"
+      value = local.environment
+    },
+    {
+      name  = "SERVICE_NAME"
+      value = local.service_name
+    },
     {% if database == "shared-rds" %}
-    DB_HOST = local.db_address
-    DB_PORT = tostring(local.db_port)
+    {
+      name  = "DB_HOST"
+      value = local.db_address
+    },
+    {
+      name  = "DB_PORT"
+      value = tostring(local.db_port)
+    },
     {% endif %}
     {% if cache == "shared-elasticache" %}
-    REDIS_ENDPOINT = local.redis_endpoint
+    {
+      name  = "REDIS_ENDPOINT"
+      value = local.redis_endpoint
+    },
     {% endif %}
-  }
+  ]
 
   # Secrets (injected at runtime)
-  secrets = {
+  container_secrets = [
     {% if database == "shared-rds" %}
-    DB_PASSWORD = data.aws_ssm_parameter.master_password_secret_name.value
+    {
+      name      = "DB_PASSWORD"
+      valueFrom = data.aws_ssm_parameter.master_password_secret_name.value
+    },
     {% endif %}
-  }
+  ]
 
   depends_on = [
     module.{{ service_name | replace('-', '_') }}_logs,
