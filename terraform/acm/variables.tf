@@ -18,6 +18,11 @@ variable "domain_name" {
   default     = "set-of.com"
 }
 
+variable "route53_zone_id" {
+  description = "Route53 Hosted Zone ID for DNS validation (required for ACM certificate validation)"
+  type        = string
+}
+
 variable "enable_expiration_alarm" {
   description = "Enable CloudWatch alarm for certificate expiration monitoring"
   type        = bool

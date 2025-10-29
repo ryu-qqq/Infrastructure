@@ -11,7 +11,7 @@ terraform {
   }
 
   backend "s3" {
-    bucket         = "terraform-state-bucket"
+    bucket         = "prod-connectly"
     key            = "logging/terraform.tfstate"
     region         = "ap-northeast-2"
     encrypt        = true
