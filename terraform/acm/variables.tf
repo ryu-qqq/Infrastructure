@@ -19,7 +19,7 @@ variable "domain_name" {
 }
 
 variable "route53_zone_id" {
-  description = "Route53 Hosted Zone ID for DNS validation. If not provided, will lookup by domain_name (requires Route53:ListHostedZones permission)"
+  description = "Route53 Hosted Zone ID for DNS validation. If not provided, will lookup from SSM Parameter Store (/shared/route53/hosted-zone-id)"
   type        = string
   default     = ""
 }

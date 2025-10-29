@@ -102,15 +102,19 @@ resource "aws_cloudwatch_metric_alarm" "certificate-expiration" {
   )
 }
 
-# Data source to lookup Route53 zone if zone_id not provided
-# Note: This requires Route53:ListHostedZones permission
-data "aws_route53_zone" "primary" {
-  count        = var.route53_zone_id == "" ? 1 : 0
-  name         = var.domain_name
-  private_zone = false
+# ==============================================================================
+# Route53 Zone ID Resolution (Cross-Stack Reference Pattern)
+# ==============================================================================
+
+# Lookup Route53 Hosted Zone ID from SSM Parameter Store
+# This follows the project's cross-stack reference pattern and avoids
+# requiring Route53:ListHostedZones permission for Atlantis
+data "aws_ssm_parameter" "route53_zone_id" {
+  count = var.route53_zone_id == "" ? 1 : 0
+  name  = "/shared/route53/hosted-zone-id"
 }
 
-# Use provided zone_id or lookup from data source
+# Use provided zone_id or lookup from SSM Parameter Store
 locals {
-  route53_zone_id = var.route53_zone_id != "" ? var.route53_zone_id : data.aws_route53_zone.primary[0].zone_id
+  route53_zone_id = var.route53_zone_id != "" ? var.route53_zone_id : data.aws_ssm_parameter.route53_zone_id[0].value
 }
