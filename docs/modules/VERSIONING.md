@@ -356,6 +356,4 @@ modules/v1.0.0  # 모든 모듈의 첫 번째 공식 릴리스
 
 ## 문의
 
-- **Epic**: [IN-100 - 재사용 가능한 표준 모듈](https://ryuqqq.atlassian.net/browse/IN-100)
-- **Task**: [IN-121 - 모듈 디렉터리 구조 설계](https://ryuqqq.atlassian.net/browse/IN-121)
 - **문의**: Infrastructure Team

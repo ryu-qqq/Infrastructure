@@ -239,8 +239,6 @@ fields @timestamp, duration
 - [Logs Insights 쿼리 템플릿](../../../docs/LOGS_INSIGHTS_QUERIES.md)
 - [설계 문서](../../../claudedocs/IN-116-logging-system-design.md)
 - [태깅 표준](../../../docs/TAGGING_STANDARDS.md)
-- [IN-116 Jira Task](https://ryuqqq.atlassian.net/browse/IN-116)
-- [EPIC 3: 중앙 관측성 시스템](https://ryuqqq.atlassian.net/browse/IN-99)
 
 ## 🆘 문제 해결
 
@@ -273,6 +271,4 @@ terraform init -upgrade
 ## 👥 담당자
 
 - **Owner**: Platform Team
-- **Maintainer**: platform-team@example.com
-- **Jira Epic**: [IN-99](https://ryuqqq.atlassian.net/browse/IN-99)
-- **Jira Task**: [IN-116](https://ryuqqq.atlassian.net/browse/IN-116)
+- **Maintainer**: fbtkdals2@naver.com

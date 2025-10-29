@@ -1,0 +1,43 @@
+output "function_name" {
+  description = "Lambda function name"
+  value       = module.{{ service_name | replace('-', '_') }}_lambda.function_name
+}
+
+output "function_arn" {
+  description = "Lambda function ARN"
+  value       = module.{{ service_name | replace('-', '_') }}_lambda.function_arn
+}
+
+output "function_invoke_arn" {
+  description = "Lambda function invoke ARN"
+  value       = module.{{ service_name | replace('-', '_') }}_lambda.invoke_arn
+}
+
+output "role_arn" {
+  description = "IAM role ARN for Lambda function"
+  value       = aws_iam_role.{{ service_name | replace('-', '_') }}_lambda.arn
+}
+
+output "log_group_name" {
+  description = "CloudWatch log group name"
+  value       = aws_cloudwatch_log_group.{{ service_name | replace('-', '_') }}_lambda.name
+}
+
+{% if api_gateway %}
+output "api_endpoint" {
+  description = "API Gateway endpoint URL"
+  value       = aws_apigatewayv2_stage.{{ service_name | replace('-', '_') }}.invoke_url
+}
+
+output "api_id" {
+  description = "API Gateway ID"
+  value       = aws_apigatewayv2_api.{{ service_name | replace('-', '_') }}.id
+}
+{% endif %}
+
+{% if vpc_config %}
+output "security_group_id" {
+  description = "Security group ID for Lambda function"
+  value       = aws_security_group.{{ service_name | replace('-', '_') }}_lambda.id
+}
+{% endif %}

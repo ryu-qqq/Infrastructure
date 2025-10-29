@@ -172,7 +172,6 @@
 
 ## 질문 또는 이슈
 
-- **Jira 에픽**: [IN-121 - 모듈 디렉터리 구조 설계](https://ryuqqq.atlassian.net/browse/IN-121)
 - **문서**: `docs/` 디렉터리
 - **팀**: Infrastructure 팀
 

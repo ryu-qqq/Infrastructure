@@ -1,0 +1,318 @@
+variable "aws_region" {
+  description = "AWS region"
+  type        = string
+  default     = "{{ aws_region }}"
+}
+
+variable "environment" {
+  description = "Environment (dev/staging/prod)"
+  type        = string
+  default     = "{{ environment }}"
+}
+
+variable "service_name" {
+  description = "Service name"
+  type        = string
+  default     = "{{ service_name }}"
+}
+
+variable "node_type" {
+  description = "Cache node type"
+  type        = string
+  default     = "{{ node_type }}"
+}
+
+variable "num_cache_nodes" {
+  description = "Number of cache nodes"
+  type        = number
+  default     = {{ num_cache_nodes }}
+}
+
+# Subnet Group
+resource "aws_elasticache_subnet_group" "main" {
+  name       = local.redis_name
+  subnet_ids = data.aws_subnets.private.ids
+
+  tags = merge(
+    local.required_tags,
+    {
+      Name      = local.redis_name
+      Component = "elasticache-subnet-group"
+    }
+  )
+}
+
+# Security Group
+resource "aws_security_group" "redis" {
+  name        = "${local.redis_name}-sg"
+  description = "Security group for ${local.redis_name}"
+  vpc_id      = data.aws_vpc.main.id
+
+  ingress {
+    description     = "Redis from application"
+    from_port       = 6379
+    to_port         = 6379
+    protocol        = "tcp"
+    security_groups = data.aws_security_groups.app.ids
+  }
+
+  egress {
+    description = "Allow all outbound"
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  tags = merge(
+    local.required_tags,
+    {
+      Name      = "${local.redis_name}-sg"
+      Component = "security-group"
+    }
+  )
+}
+
+# Parameter Group
+resource "aws_elasticache_parameter_group" "main" {
+  name   = local.redis_name
+  family = "redis7"
+
+  parameter {
+    name  = "maxmemory-policy"
+    value = "allkeys-lru"
+  }
+
+  parameter {
+    name  = "timeout"
+    value = "300"
+  }
+
+  tags = merge(
+    local.required_tags,
+    {
+      Name      = local.redis_name
+      Component = "parameter-group"
+    }
+  )
+}
+
+{% if automatic_failover %}
+# Replication Group (with automatic failover)
+resource "aws_elasticache_replication_group" "main" {
+  replication_group_id       = local.redis_name
+  replication_group_description = "Redis cluster for {{ service_name }}"
+
+  engine               = "redis"
+  engine_version       = "7.0"
+  node_type            = var.node_type
+  num_cache_clusters   = var.num_cache_nodes
+  parameter_group_name = aws_elasticache_parameter_group.main.name
+
+  port                       = 6379
+  subnet_group_name          = aws_elasticache_subnet_group.main.name
+  security_group_ids         = [aws_security_group.redis.id]
+
+  automatic_failover_enabled = true
+  multi_az_enabled          = true
+
+  at_rest_encryption_enabled = true
+  transit_encryption_enabled = true
+  auth_token_enabled        = true
+
+  snapshot_retention_limit = {{ snapshot_retention | default(7) }}
+  snapshot_window         = "03:00-05:00"
+  maintenance_window      = "sun:05:00-sun:07:00"
+
+  auto_minor_version_upgrade = true
+
+  log_delivery_configuration {
+    destination      = aws_cloudwatch_log_group.redis_slow.name
+    destination_type = "cloudwatch-logs"
+    log_format      = "json"
+    log_type        = "slow-log"
+  }
+
+  log_delivery_configuration {
+    destination      = aws_cloudwatch_log_group.redis_engine.name
+    destination_type = "cloudwatch-logs"
+    log_format      = "json"
+    log_type        = "engine-log"
+  }
+
+  tags = merge(
+    local.required_tags,
+    {
+      Name      = local.redis_name
+      Component = "elasticache-replication-group"
+    }
+  )
+}
+{% else %}
+# Single Cache Cluster (without automatic failover)
+resource "aws_elasticache_cluster" "main" {
+  cluster_id           = local.redis_name
+  engine               = "redis"
+  engine_version       = "7.0"
+  node_type            = var.node_type
+  num_cache_nodes      = 1
+  parameter_group_name = aws_elasticache_parameter_group.main.name
+
+  port               = 6379
+  subnet_group_name  = aws_elasticache_subnet_group.main.name
+  security_group_ids = [aws_security_group.redis.id]
+
+  snapshot_retention_limit = {{ snapshot_retention | default(7) }}
+  snapshot_window         = "03:00-05:00"
+  maintenance_window      = "sun:05:00-sun:07:00"
+
+  auto_minor_version_upgrade = true
+
+  log_delivery_configuration {
+    destination      = aws_cloudwatch_log_group.redis_slow.name
+    destination_type = "cloudwatch-logs"
+    log_format      = "json"
+    log_type        = "slow-log"
+  }
+
+  log_delivery_configuration {
+    destination      = aws_cloudwatch_log_group.redis_engine.name
+    destination_type = "cloudwatch-logs"
+    log_format      = "json"
+    log_type        = "engine-log"
+  }
+
+  tags = merge(
+    local.required_tags,
+    {
+      Name      = local.redis_name
+      Component = "elasticache-cluster"
+    }
+  )
+}
+{% endif %}
+
+# CloudWatch Log Groups
+resource "aws_cloudwatch_log_group" "redis_slow" {
+  name              = "/aws/elasticache/${local.redis_name}/slow-log"
+  retention_in_days = 7
+
+  tags = merge(
+    local.required_tags,
+    {
+      Name      = "log-${local.redis_name}-slow"
+      Component = "cloudwatch-logs"
+    }
+  )
+}
+
+resource "aws_cloudwatch_log_group" "redis_engine" {
+  name              = "/aws/elasticache/${local.redis_name}/engine-log"
+  retention_in_days = 7
+
+  tags = merge(
+    local.required_tags,
+    {
+      Name      = "log-${local.redis_name}-engine"
+      Component = "cloudwatch-logs"
+    }
+  )
+}
+
+# CloudWatch Alarms
+resource "aws_cloudwatch_metric_alarm" "cpu_utilization" {
+  alarm_name          = "${local.redis_name}-cpu-utilization"
+  comparison_operator = "GreaterThanThreshold"
+  evaluation_periods  = 2
+  metric_name         = "CPUUtilization"
+  namespace           = "AWS/ElastiCache"
+  period              = 300
+  statistic           = "Average"
+  threshold           = 75
+  alarm_description   = "Redis CPU utilization is too high"
+  treat_missing_data  = "notBreaching"
+
+  dimensions = {
+{% if automatic_failover %}
+    ReplicationGroupId = aws_elasticache_replication_group.main.id
+{% else %}
+    CacheClusterId = aws_elasticache_cluster.main.id
+{% endif %}
+  }
+
+  tags = merge(
+    local.required_tags,
+    {
+      Name      = "${local.redis_name}-cpu-alarm"
+      Component = "cloudwatch-alarm"
+    }
+  )
+}
+
+resource "aws_cloudwatch_metric_alarm" "memory_utilization" {
+  alarm_name          = "${local.redis_name}-memory-utilization"
+  comparison_operator = "GreaterThanThreshold"
+  evaluation_periods  = 2
+  metric_name         = "DatabaseMemoryUsagePercentage"
+  namespace           = "AWS/ElastiCache"
+  period              = 300
+  statistic           = "Average"
+  threshold           = 80
+  alarm_description   = "Redis memory utilization is too high"
+  treat_missing_data  = "notBreaching"
+
+  dimensions = {
+{% if automatic_failover %}
+    ReplicationGroupId = aws_elasticache_replication_group.main.id
+{% else %}
+    CacheClusterId = aws_elasticache_cluster.main.id
+{% endif %}
+  }
+
+  tags = merge(
+    local.required_tags,
+    {
+      Name      = "${local.redis_name}-memory-alarm"
+      Component = "cloudwatch-alarm"
+    }
+  )
+}
+
+# SSM Parameters
+resource "aws_ssm_parameter" "redis_endpoint" {
+  name        = "/{{ service_name }}/{{ environment }}/redis/endpoint"
+  description = "Redis endpoint for {{ service_name }}"
+  type        = "String"
+{% if automatic_failover %}
+  value       = aws_elasticache_replication_group.main.primary_endpoint_address
+{% else %}
+  value       = aws_elasticache_cluster.main.cache_nodes[0].address
+{% endif %}
+
+  tags = merge(
+    local.required_tags,
+    {
+      Name      = "ssm-${local.redis_name}-endpoint"
+      Component = "parameter-store"
+    }
+  )
+}
+
+resource "aws_ssm_parameter" "redis_port" {
+  name        = "/{{ service_name }}/{{ environment }}/redis/port"
+  description = "Redis port for {{ service_name }}"
+  type        = "String"
+{% if automatic_failover %}
+  value       = tostring(aws_elasticache_replication_group.main.port)
+{% else %}
+  value       = tostring(aws_elasticache_cluster.main.port)
+{% endif %}
+
+  tags = merge(
+    local.required_tags,
+    {
+      Name      = "ssm-${local.redis_name}-port"
+      Component = "parameter-store"
+    }
+  )
+}

@@ -1,0 +1,35 @@
+terraform {
+  required_version = ">= 1.0"
+
+  required_providers {
+    aws = {
+      source  = "hashicorp/aws"
+      version = "~> 5.0"
+    }
+    random = {
+      source  = "hashicorp/random"
+      version = "~> 3.5"
+    }
+  }
+
+  backend "s3" {
+    bucket         = "ryuqqq-{{ environment }}-tfstate"
+    key            = "{{ service_name }}/rds-mysql/terraform.tfstate"
+    region         = "{{ aws_region }}"
+    encrypt        = true
+    dynamodb_table = "terraform-lock"
+    kms_key_id     = "alias/terraform-state"
+  }
+}
+
+provider "aws" {
+  region = "{{ aws_region }}"
+
+  default_tags {
+    tags = {
+      ManagedBy   = "Terraform"
+      Environment = "{{ environment }}"
+      Service     = "{{ service_name }}"
+    }
+  }
+}

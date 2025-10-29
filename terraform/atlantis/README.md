@@ -669,9 +669,6 @@ aws ec2 describe-nat-gateways \
 
 ## 관련 이슈
 
-- Jira: [IN-12](https://ryuqqq.atlassian.net/browse/IN-12) - Application Load Balancer 구성
-- Jira: [IN-11](https://ryuqqq.atlassian.net/browse/IN-11) - ECS 클러스터 및 Task Definition 생성
-- Epic: [IN-1](https://ryuqqq.atlassian.net/browse/IN-1) - Phase 1: Atlantis 서버 ECS 배포
 
 ---
 

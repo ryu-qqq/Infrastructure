@@ -150,7 +150,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 - Health check configuration ([#123](https://github.com/ryuqqq/infrastructure/pull/123))
-- Custom alarm thresholds ([IN-142](https://ryuqqq.atlassian.net/browse/IN-142))
 
 ### Fixed
 - Memory leak in log rotation ([#125](https://github.com/ryuqqq/infrastructure/pull/125))
@@ -335,5 +334,3 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Epic & Task
 
-- **Epic**: [IN-100 - 재사용 가능한 표준 모듈](https://ryuqqq.atlassian.net/browse/IN-100)
-- **Task**: [IN-121 - 모듈 디렉터리 구조 설계](https://ryuqqq.atlassian.net/browse/IN-121)

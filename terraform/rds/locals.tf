@@ -10,7 +10,7 @@ locals {
       Environment = var.environment
       Service     = "shared-database"
       Team        = "platform-team"
-      Owner       = "platform-team@ryuqqq.com"
+      Owner       = "fbtkdals2@naver.com"
       CostCenter  = "engineering"
       ManagedBy   = "Terraform"
       Project     = "shared-infrastructure"

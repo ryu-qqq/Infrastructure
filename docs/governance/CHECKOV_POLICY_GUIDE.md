@@ -679,4 +679,3 @@ resource "aws_flow_log" "example" {
 문의사항이나 Skip 규칙 승인 요청:
 - **Platform Team**: platform-team@example.com
 - **Security Team**: security-team@example.com
-- **Jira**: [IN-101 - EPIC 5: 가드레일 및 정책 검증](https://ryuqqq.atlassian.net/browse/IN-101)

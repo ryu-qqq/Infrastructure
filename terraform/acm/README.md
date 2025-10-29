@@ -241,5 +241,3 @@ AWS ACM은 인증서를 자동으로 갱신합니다. 단, DNS 검증 레코드�
 ## 작성자
 
 - Platform Team
-- Jira 이슈: [IN-140](https://ryuqqq.atlassian.net/browse/IN-140)
-- Epic: [IN-98 - EPIC 2: 공통 플랫폼 인프라](https://ryuqqq.atlassian.net/browse/IN-98)

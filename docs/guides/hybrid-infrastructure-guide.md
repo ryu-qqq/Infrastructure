@@ -278,7 +278,6 @@ terraform apply -var-file=environments/dev/terraform.tfvars
 ### 문서 관련 문의
 - **담당**: 플랫폼 팀
 - **이메일**: platform@ryuqqq.com
-- **Jira Epic**: [IN-1 - Atlantis 서버 ECS 배포](https://ryuqqq.atlassian.net/browse/IN-1)
 
 ### 긴급 지원
 - **Slack 채널**: #platform-support

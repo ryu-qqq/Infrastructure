@@ -63,4 +63,3 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 **Note**: This is the initial release (v1.0.0) of the Lambda module as part of the "재사용 가능한 표준 모듈" epic (IN-100).
 
-**Related Jira**: [IN-144 - Lambda Function 재사용 모듈 개발](https://ryuqqq.atlassian.net/browse/IN-144)

@@ -28,7 +28,7 @@ module "common_tags" {
   environment = var.environment
   service     = "cache-service"
   team        = "platform-team"
-  owner       = "platform@example.com"
+  owner       = "fbtkdals2@naver.com"
   cost_center = "engineering"
   managed_by  = "terraform"
   project     = "elasticache-advanced-example"

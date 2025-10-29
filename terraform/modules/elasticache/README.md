@@ -66,7 +66,7 @@ module "common_tags" {
   environment = "dev"
   service     = "cache-service"
   team        = "platform-team"
-  owner       = "platform@example.com"
+  owner       = "fbtkdals2@naver.com"
   cost_center = "engineering"
 }
 

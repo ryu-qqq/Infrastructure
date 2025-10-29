@@ -61,5 +61,4 @@ mv terraform/atlantis-iam ../archived/
 
 ## 문의 (Contact)
 
-- **Epic**: [IN-1 - Phase 1: Atlantis 서버 ECS 배포](https://ryuqqq.atlassian.net/browse/IN-1)
 - **관련 문서**: Infrastructure Team

@@ -29,5 +29,3 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Examples for basic, advanced, and complete usage scenarios
 
 ### Epic & Task
-- **Epic**: [IN-100 - 재사용 가능한 표준 모듈](https://ryuqqq.atlassian.net/browse/IN-100)
-- **Task**: [IN-122 - TASK 4-2: ECS Service 모듈 개발](https://ryuqqq.atlassian.net/browse/IN-122)

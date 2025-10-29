@@ -28,7 +28,7 @@ module "common_tags" {
   environment = "prod"
   service     = "main-database"
   team        = "platform-team"
-  owner       = "platform@example.com"
+  owner       = "fbtkdals2@naver.com"
   cost_center = "engineering"
 }
 
@@ -430,8 +430,6 @@ module "rds_postgres" {
 
 ## Epic & Tasks
 
-- **Epic**: [IN-100 - 재사용 가능한 표준 모듈](https://ryuqqq.atlassian.net/browse/IN-100)
-- **Task**: [IN-123 - TASK 4-3: RDS 모듈 개발](https://ryuqqq.atlassian.net/browse/IN-123)
 
 ## License
 

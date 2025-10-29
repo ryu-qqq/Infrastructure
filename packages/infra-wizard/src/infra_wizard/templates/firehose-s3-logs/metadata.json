@@ -1,0 +1,52 @@
+{
+  "module": "firehose-s3-logs",
+  "version": "1.0.0",
+  "description": "CloudWatch Logs to S3 archiving via Kinesis Firehose with lifecycle management",
+  "category": "logging",
+  "parameters": {
+    "required": {
+      "create_s3_bucket": {
+        "type": "boolean",
+        "description": "Create dedicated S3 bucket (true) or use existing shared bucket (false)",
+        "default": true
+      },
+      "s3_bucket_name": {
+        "type": "string",
+        "description": "Existing S3 bucket name (only if create_s3_bucket=false)",
+        "default": "shared-logs-bucket"
+      }
+    }
+  },
+  "optional_components": {
+    "buffer_size": {
+      "type": "number",
+      "question": "Firehose 버퍼 크기 (MB)",
+      "default": 5,
+      "description": "1-128 MB, larger = fewer S3 writes = lower cost"
+    },
+    "buffer_interval": {
+      "type": "number",
+      "question": "Firehose 버퍼 간격 (초)",
+      "default": 300,
+      "description": "60-900 seconds, longer = more batching = lower cost"
+    },
+    "cloudwatch_retention": {
+      "type": "number",
+      "question": "CloudWatch Logs 보존 기간 (일)",
+      "default": 7,
+      "description": "1, 3, 5, 7, 14, 30, 60, 90, 120, 150, 180, 365, 400, 545, 731, 1827, 3653"
+    },
+    "log_retention_days": {
+      "type": "number",
+      "question": "S3 로그 영구 삭제 기간 (일, 0=무제한)",
+      "default": 0,
+      "description": "0 for unlimited, or number of days before permanent deletion"
+    },
+    "filter_pattern": {
+      "type": "string",
+      "question": "로그 필터 패턴 (비어있으면 모든 로그)",
+      "default": "",
+      "description": "CloudWatch Logs filter pattern, empty = all logs"
+    }
+  }
+}

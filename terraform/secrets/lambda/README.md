@@ -193,8 +193,8 @@ aws logs tail /aws/lambda/secrets-manager-rotation --follow
 
 ### 비상 연락처
 
-- **보안 이슈**: security@ryuqqq.com
-- **인프라 이슈**: platform-team@ryuqqq.com
+- **보안 이슈**: fbtkdals2@naver.com
+- **인프라 이슈**: fbtkdals2@naver.com
 - **온콜**: PagerDuty 알림 확인
 
 ## 참고 자료

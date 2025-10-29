@@ -15,7 +15,7 @@ variable "environment" {
 variable "owner" {
   description = "Owner of the resources"
   type        = string
-  default     = "platform-team@ryuqqq.com"
+  default     = "fbtkdals2@naver.com"
 }
 
 variable "cost_center" {

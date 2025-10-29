@@ -40,7 +40,7 @@ locals {
     Environment = var.environment
     Service     = var.service_name
     Team        = "platform-team"
-    Owner       = "platform@example.com"
+    Owner       = "fbtkdals2@naver.com"
     CostCenter  = "engineering"
     ManagedBy   = "terraform"
     Project     = "ecs-service-example"

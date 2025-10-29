@@ -1,0 +1,14 @@
+data "aws_caller_identity" "current" {}
+
+data "aws_region" "current" {}
+
+{% if not create_s3_bucket %}
+# Use existing S3 bucket
+data "aws_s3_bucket" "logs" {
+  bucket = local.s3_bucket_name
+}
+
+data "aws_kms_key" "s3" {
+  key_id = "alias/s3-encryption"
+}
+{% endif %}

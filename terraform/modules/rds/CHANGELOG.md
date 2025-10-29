@@ -80,8 +80,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Advanced: 프로덕션 환경을 위한 완전한 기능의 PostgreSQL 인스턴스
 
 #### 관련 작업
-- Epic: [IN-100 - 재사용 가능한 표준 모듈](https://ryuqqq.atlassian.net/browse/IN-100)
-- Task: [IN-123 - TASK 4-3: RDS 모듈 개발](https://ryuqqq.atlassian.net/browse/IN-123)
 
 ## [0.1.0] - TBD
 

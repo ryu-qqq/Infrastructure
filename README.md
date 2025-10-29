@@ -180,7 +180,7 @@ infrastructure/
 
 ```bash
 # 1. Feature 브랜치 생성
-git checkout -b feature/KAN-XXX-description
+git checkout -b feature/XXX-description
 
 # 2. Terraform 코드 작성
 cd terraform/network
@@ -193,8 +193,8 @@ terraform plan
 
 # 4. 커밋 및 푸시
 git add .
-git commit -m "feat: Add VPC peering configuration (KAN-XXX)"
-git push origin feature/KAN-XXX-description
+git commit -m "feat: Add VPC peering configuration "
+git push origin feature/XXX-description
 
 # 5. Pull Request 생성
 # GitHub에서 PR 생성 → Atlantis가 자동으로 terraform plan 실행
@@ -313,8 +313,6 @@ Lambda 기반 자동 로테이션 시스템:
 - [ECS Memory Critical](docs/runbooks/ecs-memory-critical.md) - 메모리 크리티컬 알림
 - [ECS Task Count Zero](docs/runbooks/ecs-task-count-zero.md) - 태스크 실패 대응
 
-**Slack 알림**: `#platform-alerts` 채널
-
 ---
 
 ## 🤝 기여 가이드
@@ -336,7 +334,7 @@ PR 생성 전 다음을 확인하세요:
 
 ```bash
 # 형식
-<type>: <subject> (JIRA-XXX)
+<type>: <subject>
 
 # 타입
 feat: 새로운 기능
@@ -346,8 +344,8 @@ refactor: 코드 리팩토링
 test: 테스트 추가/수정
 
 # 예제
-feat: Add Shared RDS connection for FileFlow (KAN-147)
-fix: Correct KMS key reference in S3 module (KAN-155)
+feat: Add Shared RDS connection for FileFlow 
+fix: Correct KMS key reference in S3 module
 docs: Update hybrid infrastructure guide
 ```
 
@@ -358,22 +356,14 @@ docs: Update hybrid infrastructure guide
 ### 문제 발생 시
 
 1. **트러블슈팅 가이드**: [hybrid-08-troubleshooting-guide.md](docs/guides/hybrid-08-troubleshooting-guide.md)
-2. **FAQ**: 트러블슈팅 가이드 내 포함
-3. **Slack**: `#platform-support` 채널
-4. **Email**: platform@ryuqqq.com
-
-### 긴급 인시던트
-
-- **P0/P1**: Slack `#platform-alerts` 채널로 즉시 알림
-- **Runbook**: `/docs/runbooks/` 참조
-- **On-call**: PagerDuty 통해 담당자 호출
+2. **Email**: fbtkdals2@naver.com
+3. **Runbook**: `/docs/runbooks/` 참조
 
 ---
 
 ## 📚 추가 자료
 
 ### 내부 문서
-- [CLAUDE.md](CLAUDE.md) - Claude Code 가이드
 - [Documentation Hub](docs/README.md) - 전체 문서 인덱스
 
 ### 외부 링크
@@ -381,30 +371,13 @@ docs: Update hybrid infrastructure guide
 - [AWS Well-Architected Framework](https://aws.amazon.com/architecture/well-architected/)
 - [Atlantis Documentation](https://www.runatlantis.io/docs/)
 
-### Jira 프로젝트
-- [IN-1 - Atlantis 서버 ECS 배포](https://ryuqqq.atlassian.net/browse/IN-1)
-- [IN-100 - 재사용 가능한 표준 모듈](https://ryuqqq.atlassian.net/browse/IN-100)
-
----
-
-## 📈 통계
-
-- **Terraform 모듈**: 15개
-- **KMS 암호화 키**: 9개
-- **문서**: 50개 (Governance 10, Guides 16, Modules 6, Runbooks 3, Workflows 2, Changelogs 2)
-- **CI/CD 워크플로**: 6개 (GitHub Actions)
-- **검증 스크립트**: 7개 (tfsec, checkov, tags, encryption, naming, secrets-rotation 등)
-- **OPA 정책**: 4개 (태깅, 네이밍, 보안그룹, 공개리소스)
-- **월간 인프라 비용**: ~$1,502
-
 ---
 
 ## 📝 라이선스
 
-이 프로젝트는 Ryuqqq의 내부 인프라 코드입니다. 외부 공유 금지.
+이 프로젝트는 ryu-qqq의 인프라 관리 코드입니다.
 
 ---
 
-**Last Updated**: 2025-10-24
-
-**Maintainers**: Platform Team (@platform-team)
+**Last Updated**: 2025-10-29
+**Maintainers**: ryu-qqq

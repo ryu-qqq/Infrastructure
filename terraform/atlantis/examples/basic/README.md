@@ -249,5 +249,4 @@ terraform destroy
 
 ## 문의
 
-- **Epic**: [IN-1 - Atlantis 서버 ECS 배포](https://ryuqqq.atlassian.net/browse/IN-1)
 - **문의 채널**: Slack #infrastructure

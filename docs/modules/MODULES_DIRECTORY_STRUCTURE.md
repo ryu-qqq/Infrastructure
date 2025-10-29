@@ -263,5 +263,3 @@ resource "aws_resource" "this" {
 
 ## Epic 및 Task 참조
 
-- Epic: [IN-100 - EPIC 4: 재사용 가능한 표준 모듈](https://ryuqqq.atlassian.net/browse/IN-100)
-- Task: [IN-121 - TASK 4-1: 모듈 디렉터리 구조 설계](https://ryuqqq.atlassian.net/browse/IN-121)

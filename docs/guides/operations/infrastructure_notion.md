@@ -235,5 +235,4 @@ SLO/SLI, 대시보드, 알람, 런북을 통해 모든 인프라의 상태와 �
 - Atlantis: [https://www.runatlantis.io/docs/](https://www.runatlantis.io/docs/)
 - Terraform Best Practices: [https://www.terraform-best-practices.com/](https://www.terraform-best-practices.com/)
 - AWS Well-Architected: [https://aws.amazon.com/architecture/well-architected/](https://aws.amazon.com/architecture/well-architected/)
-- Jira: [https://ryuqqq.atlassian.net](https://ryuqqq.atlassian.net)
 - GitHub: [https://github.com/ryu-qqq](https://github.com/ryu-qqq)

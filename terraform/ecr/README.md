@@ -149,7 +149,7 @@ docker push <account-id>.dkr.ecr.ap-northeast-2.amazonaws.com/fileflow:latest
 |------|------|--------|------|
 | `aws_region` | AWS 리전 | `ap-northeast-2` | string |
 | `environment` | 환경 이름 | `prod` | string |
-| `owner` | 리소스 소유자 | `platform-team@ryuqqq.com` | string |
+| `owner` | 리소스 소유자 | `fbtkdals2@naver.com` | string |
 | `cost_center` | 비용 센터 | `engineering` | string |
 | `lifecycle_stage` | 라이프사이클 단계 | `production` | string |
 | `data_class` | 데이터 분류 | `confidential` | string |
@@ -811,7 +811,7 @@ ECR 배포 및 사용 시 확인 사항:
 |------|-------------|------|---------|----------|
 | aws_region | AWS region for ECR repository | string | `ap-northeast-2` | No |
 | environment | Environment name (dev, staging, prod) | string | `prod` | No |
-| owner | Owner of the resources | string | `platform-team@ryuqqq.com` | No |
+| owner | Owner of the resources | string | `fbtkdals2@naver.com` | No |
 | cost_center | Cost center for billing | string | `engineering` | No |
 | lifecycle_stage | Lifecycle stage of the resources | string | `production` | No |
 | data_class | Data classification level | string | `confidential` | No |

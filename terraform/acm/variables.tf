@@ -43,7 +43,7 @@ variable "team" {
 variable "owner" {
   description = "Owner email or identifier"
   type        = string
-  default     = "platform@example.com"
+  default     = "fbtkdals2@naver.com"
 }
 
 variable "cost_center" {

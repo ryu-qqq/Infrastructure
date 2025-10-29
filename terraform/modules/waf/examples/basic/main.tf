@@ -32,7 +32,7 @@ module "common_tags" {
   environment = "dev"
   service     = "example-api"
   team        = "platform-team"
-  owner       = "platform@example.com"
+  owner       = "fbtkdals2@naver.com"
   cost_center = "engineering"
 }
 

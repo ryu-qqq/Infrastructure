@@ -309,5 +309,3 @@ resource "aws_kms_key" "log" {
 - Git hooks for pre-commit/pre-push validation
 
 ### Related Jira
-- Epic: [IN-1 - Atlantis 서버 ECS 배포](https://ryuqqq.atlassian.net/browse/IN-1)
-- Epic: [IN-100 - 재사용 가능한 표준 모듈](https://ryuqqq.atlassian.net/browse/IN-100)

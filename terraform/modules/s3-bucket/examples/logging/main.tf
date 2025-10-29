@@ -27,7 +27,7 @@ resource "aws_kms_key" "logs" {
     Environment = var.environment
     Service     = "logging"
     Team        = "platform-team"
-    Owner       = "platform@example.com"
+    Owner       = "fbtkdals2@naver.com"
     CostCenter  = "engineering"
     Project     = "infrastructure"
     ManagedBy   = "Terraform"
@@ -45,7 +45,7 @@ module "logs_bucket" {
   environment = var.environment
   service     = "logging"
   team        = "platform-team"
-  owner       = "platform@example.com"
+  owner       = "fbtkdals2@naver.com"
   cost_center = "engineering"
   project     = "infrastructure"
 

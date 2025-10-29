@@ -26,7 +26,7 @@ module "notification_fanout" {
   environment = "dev"
   service     = "notification-service"
   team        = "platform-team"
-  owner       = "platform@example.com"
+  owner       = "fbtkdals2@naver.com"
   cost_center = "engineering"
   project     = "user-engagement"
 

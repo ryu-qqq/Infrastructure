@@ -428,5 +428,3 @@ See [KMS Strategy Guide](../../claudedocs/kms-strategy.md) for detailed usage gu
 
 ## Related Issues
 
-- **Epic**: [IN-98 - EPIC 2: 공통 플랫폼 인프라](https://ryuqqq.atlassian.net/browse/IN-98)
-- **Task**: [IN-111 - TASK 2-3: KMS 키 전략 수립](https://ryuqqq.atlassian.net/browse/IN-111)

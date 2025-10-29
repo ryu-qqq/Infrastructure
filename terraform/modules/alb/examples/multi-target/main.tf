@@ -41,7 +41,7 @@ module "common_tags" {
   environment = var.environment
   service     = var.service_name
   team        = "platform-team"
-  owner       = "platform@example.com"
+  owner       = "fbtkdals2@naver.com"
   cost_center = "engineering"
 }
 
