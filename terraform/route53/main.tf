@@ -158,7 +158,7 @@ data "aws_caller_identity" "current" {}
 # ==============================================================================
 
 # Export Hosted Zone ID for other stacks (e.g., ACM certificate validation)
-resource "aws_ssm_parameter" "hosted_zone_id" {
+resource "aws_ssm_parameter" "hosted-zone-id" {
   name        = "/shared/route53/hosted-zone-id"
   description = "Route53 Hosted Zone ID for ${var.domain_name}"
   type        = "String"
