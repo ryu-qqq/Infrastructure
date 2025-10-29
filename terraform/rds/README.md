@@ -1793,6 +1793,90 @@ aws iam get-role-policy \
 - [ ] Rollback 전략 수립
 - [ ] 마이그레이션 테스트 (Dev/Staging 환경)
 
+## 📥 Variables
+
+이 모듈은 다음과 같은 입력 변수를 사용합니다:
+
+### 필수 변수
+| 변수 이름 | 설명 | 타입 | 기본값 | 필수 여부 |
+|-----------|------|------|--------|-----------|
+| `vpc_id` | RDS가 배포될 VPC ID | `string` | - | **Yes** |
+| `private_subnet_ids` | RDS 서브넷 그룹용 Private 서브넷 ID 목록 (Multi-AZ를 위해 최소 2개) | `list(string)` | - | **Yes** |
+
+### 기본 설정
+| 변수 이름 | 설명 | 타입 | 기본값 | 필수 여부 |
+|-----------|------|------|--------|-----------|
+| `aws_region` | AWS 리전 | `string` | `ap-northeast-2` | No |
+| `environment` | 환경 이름 (prod, staging, dev) | `string` | `prod` | No |
+| `identifier` | RDS 인스턴스 식별자 | `string` | `shared-mysql` | No |
+
+### RDS 구성
+| 변수 이름 | 설명 | 타입 | 기본값 | 필수 여부 |
+|-----------|------|------|--------|-----------|
+| `mysql_version` | MySQL 엔진 버전 | `string` | `8.0.35` | No |
+| `instance_class` | RDS 인스턴스 클래스 | `string` | `db.t4g.small` | No |
+| `allocated_storage` | 초기 할당 스토리지 (GB) | `number` | `30` | No |
+| `max_allocated_storage` | 자동 스케일링 최대 스토리지 (GB) | `number` | `200` | No |
+| `storage_type` | 스토리지 타입 (gp3, gp2, io1) | `string` | `gp3` | No |
+
+### 데이터베이스 구성
+| 변수 이름 | 설명 | 타입 | 기본값 | 필수 여부 |
+|-----------|------|------|--------|-----------|
+| `database_name` | 생성할 기본 데이터베이스 이름 | `string` | `shared_db` | No |
+| `master_username` | 마스터 사용자 이름 | `string` | `admin` | No |
+
+### 보안 설정
+| 변수 이름 | 설명 | 타입 | 기본값 | 필수 여부 |
+|-----------|------|------|--------|-----------|
+| `allowed_security_group_ids` | RDS 접근 허용할 보안 그룹 ID 목록 | `list(string)` | `[]` | No |
+| `allowed_cidr_blocks` | RDS 접근 허용할 CIDR 블록 목록 | `list(string)` | `[]` | No |
+
+### 고가용성 & 백업
+| 변수 이름 | 설명 | 타입 | 기본값 | 필수 여부 |
+|-----------|------|------|--------|-----------|
+| `multi_az` | Multi-AZ 배포 활성화 | `bool` | `true` | No |
+| `backup_retention_period` | 백업 보존 기간 (일) | `number` | `14` | No |
+| `backup_window` | 백업 시간 (UTC) | `string` | `03:00-04:00` | No |
+| `maintenance_window` | 유지보수 시간 (UTC) | `string` | `Mon:04:00-Mon:05:00` | No |
+
+전체 변수 목록은 [variables.tf](./variables.tf) 파일을 참조하세요.
+
+## 📤 Outputs
+
+이 모듈은 다음과 같은 출력 값을 제공합니다:
+
+### RDS 인스턴스 정보
+| 출력 이름 | 설명 |
+|-----------|------|
+| `db_instance_id` | RDS 인스턴스 식별자 |
+| `db_instance_arn` | RDS 인스턴스 ARN |
+| `db_instance_endpoint` | 연결 엔드포인트 (호스트:포트) |
+| `db_instance_address` | RDS 인스턴스 호스트명 |
+| `db_instance_port` | RDS 포트 번호 |
+| `db_instance_name` | 데이터베이스 이름 |
+| `db_instance_resource_id` | RDS 리소스 ID |
+
+### 보안 정보
+| 출력 이름 | 설명 |
+|-----------|------|
+| `db_security_group_id` | RDS 보안 그룹 ID |
+| `db_subnet_group_name` | DB 서브넷 그룹 이름 |
+| `db_parameter_group_name` | DB 파라미터 그룹 이름 |
+
+### Secrets Manager 정보
+| 출력 이름 | 설명 |
+|-----------|------|
+| `master_password_secret_arn` | 마스터 자격증명 Secrets Manager ARN |
+| `master_password_secret_name` | Secrets Manager 시크릿 이름 |
+
+### KMS 정보
+| 출력 이름 | 설명 |
+|-----------|------|
+| `kms_key_arn` | RDS 암호화에 사용된 KMS 키 ARN |
+| `kms_key_id` | RDS 암호화 KMS 키 ID |
+
+전체 출력 목록은 [outputs.tf](./outputs.tf) 파일을 참조하세요.
+
 ## 📚 참고 자료
 
 - [AWS RDS MySQL 공식 문서](https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/CHAP_MySQL.html)

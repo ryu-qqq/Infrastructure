@@ -475,6 +475,74 @@ aws secretsmanager describe-secret \
   --secret-id /ryuqqq/crawler/prod/db-master
 ```
 
+## 📥 Variables
+
+이 모듈은 다음과 같은 입력 변수를 사용합니다:
+
+### 기본 설정
+| 변수 이름 | 설명 | 타입 | 기본값 | 필수 여부 |
+|-----------|------|------|--------|-----------|
+| `environment` | 환경 이름 (dev, staging, prod) | `string` | `prod` | No |
+| `aws_region` | AWS 리전 | `string` | `ap-northeast-2` | No |
+| `service` | 서비스 이름 | `string` | `secrets-manager` | No |
+
+### 태그 관련
+| 변수 이름 | 설명 | 타입 | 기본값 | 필수 여부 |
+|-----------|------|------|--------|-----------|
+| `team` | 담당 팀 | `string` | `platform-team` | No |
+| `owner` | 소유자 이메일 또는 식별자 | `string` | `platform-team` | No |
+| `cost_center` | 비용 센터 | `string` | `infrastructure` | No |
+
+### Secrets 구성
+| 변수 이름 | 설명 | 타입 | 기본값 | 필수 여부 |
+|-----------|------|------|--------|-----------|
+| `secret_recovery_window_in_days` | 시크릿 영구 삭제 전 대기 기간 (7-30일) | `number` | `30` | No |
+| `rotation_days` | 자동 로테이션 주기 (일) | `number` | `90` | No |
+| `enable_rotation` | 자동 로테이션 활성화 | `bool` | `true` | No |
+
+### Lambda VPC 구성 (선택사항)
+| 변수 이름 | 설명 | 타입 | 기본값 | 필수 여부 |
+|-----------|------|------|--------|-----------|
+| `vpc_id` | Lambda가 배포될 VPC ID (RDS 접근용) | `string` | `""` | No |
+| `private_subnet_ids` | Lambda VPC 구성용 Private 서브넷 ID 목록 | `list(string)` | `[]` | No |
+| `rds_security_group_id` | Lambda 접근 허용할 RDS 보안 그룹 ID | `string` | `""` | No |
+
+전체 변수 목록은 [variables.tf](./variables.tf) 파일을 참조하세요.
+
+## 📤 Outputs
+
+이 모듈은 다음과 같은 출력 값을 제공합니다:
+
+### KMS 정보
+| 출력 이름 | 설명 |
+|-----------|------|
+| `secrets_manager_kms_key_id` | Secrets Manager 암호화에 사용된 KMS 키 ID |
+| `secrets_manager_kms_key_arn` | Secrets Manager 암호화 KMS 키 ARN |
+
+### Secrets 정보
+| 출력 이름 | 설명 |
+|-----------|------|
+| `example_secret_arns` | 생성된 예시 시크릿들의 ARN 맵 |
+| `example_secret_ids` | 생성된 예시 시크릿들의 ID 맵 |
+| `secret_naming_pattern` | 표준 시크릿 네이밍 패턴 |
+
+### Lambda 정보
+| 출력 이름 | 설명 |
+|-----------|------|
+| `rotation_lambda_arn` | 로테이션 Lambda 함수 ARN |
+| `rotation_lambda_role_arn` | Lambda 실행 역할 ARN |
+| `rotation_lambda_security_group_id` | Lambda 보안 그룹 ID (VPC 사용 시) |
+| `rotation_schedule_days` | 자동 로테이션 주기 (일) |
+
+### IAM 정책 ARN
+| 출력 이름 | 설명 |
+|-----------|------|
+| `crawler_secrets_read_policy_arn` | Crawler 서비스 시크릿 읽기 정책 ARN |
+| `devops_secrets_management_policy_arn` | DevOps 시크릿 관리 정책 ARN |
+| `github_actions_secrets_policy_arn` | GitHub Actions 시크릿 정책 ARN |
+
+전체 출력 목록은 [outputs.tf](./outputs.tf) 파일을 참조하세요.
+
 ## 참고 자료
 
 - [Secrets Management Strategy Guide](../../claudedocs/secrets-management-strategy.md)
