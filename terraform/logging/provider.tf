@@ -15,7 +15,7 @@ terraform {
     key            = "logging/terraform.tfstate"
     region         = "ap-northeast-2"
     encrypt        = true
-    dynamodb_table = "terraform-state-lock"
+    dynamodb_table = "prod-connectly-tf-lock"
   }
 }
 
