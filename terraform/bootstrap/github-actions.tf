@@ -28,7 +28,7 @@ resource "aws_iam_role" "github-actions" {
           StringLike = {
             "token.actions.githubusercontent.com:sub" = [
               "repo:ryu-qqq/Infrastructure:*",
-              "repo:ryu-qqq/FileFlow:*"
+              "repo:ryu-qqq/fileflow:*"
             ]
           }
         }
