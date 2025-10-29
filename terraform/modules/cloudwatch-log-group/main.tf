@@ -42,6 +42,14 @@ resource "aws_cloudwatch_log_subscription_filter" "sentry" {
   destination_arn = var.sentry_lambda_arn
 
   depends_on = [aws_cloudwatch_log_group.this]
+
+  tags = merge(
+    local.required_tags,
+    {
+      Name       = "${var.name}-sentry-filter"
+      FilterType = "sentry"
+    }
+  )
 }
 
 # Optional: Subscription Filter for Langfuse integration (future)
@@ -54,6 +62,14 @@ resource "aws_cloudwatch_log_subscription_filter" "langfuse" {
   destination_arn = var.langfuse_lambda_arn
 
   depends_on = [aws_cloudwatch_log_group.this]
+
+  tags = merge(
+    local.required_tags,
+    {
+      Name       = "${var.name}-langfuse-filter"
+      FilterType = "langfuse"
+    }
+  )
 }
 
 # Optional: Metric Filter for Error Rate Monitoring
