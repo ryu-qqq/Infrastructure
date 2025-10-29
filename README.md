@@ -66,6 +66,124 @@ terraform apply
 
 ---
 
+## 🔗 GitHub App 설치 및 Atlantis 연동
+
+Atlantis를 배포한 후, **PR 기반 Terraform 자동화**를 사용하려면 GitHub App을 생성하고 설치해야 합니다.
+
+### 1. Atlantis 서버 배포
+
+먼저 Atlantis 인프라를 배포합니다:
+
+```bash
+cd terraform/atlantis
+terraform init
+terraform plan
+terraform apply
+```
+
+배포 완료 후 ALB DNS Name을 확인합니다:
+
+```bash
+terraform output alb_dns_name
+# 예시: atlantis-prod-123456789.ap-northeast-2.elb.amazonaws.com
+```
+
+### 2. GitHub App 생성
+
+**⚠️ 중요**: 각 사용자는 자신의 Organization/계정에 맞는 GitHub App을 새로 생성해야 합니다.
+
+1. **GitHub Settings 접속**
+   - Organization 사용 시: `https://github.com/organizations/{your-org}/settings/apps`
+   - 개인 계정: `https://github.com/settings/apps`
+
+2. **"New GitHub App" 클릭**
+
+3. **기본 정보 입력**
+   ```
+   App name: Atlantis (또는 원하는 이름)
+   Homepage URL: https://{your-atlantis-domain}
+   Webhook URL: https://{your-atlantis-domain}/events
+   Webhook secret: (생성한 Secret 값 입력, Secrets Manager에서 확인)
+   ```
+
+4. **Repository permissions 설정**
+   - **Contents**: Read & Write
+   - **Pull requests**: Read & Write
+   - **Issues**: Write
+   - **Webhooks**: Read & Write
+
+5. **Subscribe to events 선택**
+   - ✅ Pull request
+   - ✅ Pull request review
+   - ✅ Pull request review comment
+   - ✅ Push
+   - ✅ Issue comment
+
+6. **"Create GitHub App" 클릭**
+
+### 3. GitHub App 설치
+
+GitHub App 생성 후 설치:
+
+1. App 설정 페이지에서 **"Install App"** 클릭
+2. Organization 또는 개인 계정 선택
+3. **Repository access** 선택:
+   - "All repositories" 또는
+   - "Only select repositories" (infrastructure, 서비스 레포지토리 선택)
+4. **"Install"** 클릭
+
+### 4. Secrets Manager 업데이트
+
+GitHub App 생성 후 다음 정보를 Secrets Manager에 저장:
+
+```bash
+# App ID 확인 (GitHub App 설정 페이지에서)
+APP_ID="your-app-id"
+
+# Installation ID 확인
+# https://github.com/settings/installations → 설치한 App 클릭 → URL에서 확인
+# 예: github.com/settings/installations/12345678
+INSTALLATION_ID="your-installation-id"
+
+# Private Key 생성
+# GitHub App 설정 → "Generate a private key" → .pem 파일 다운로드
+
+# Secrets Manager 업데이트
+aws secretsmanager put-secret-value \
+  --secret-id atlantis/github-app-v2-prod \
+  --secret-string '{
+    "app_id": "'$APP_ID'",
+    "installation_id": "'$INSTALLATION_ID'",
+    "private_key": "-----BEGIN RSA PRIVATE KEY-----\n...\n-----END RSA PRIVATE KEY-----"
+  }' \
+  --region ap-northeast-2
+```
+
+### 5. Atlantis 재시작
+
+Secrets 업데이트 후 Atlantis 서비스 재시작:
+
+```bash
+aws ecs update-service \
+  --cluster atlantis-prod \
+  --service atlantis-prod \
+  --force-new-deployment \
+  --region ap-northeast-2
+```
+
+### 6. 동작 확인
+
+테스트 PR 생성 후 확인:
+
+1. Infrastructure 레포지토리에서 테스트 브랜치 생성
+2. 사소한 변경 후 PR 생성
+3. PR에 코멘트 작성: `atlantis plan`
+4. Atlantis가 자동으로 `terraform plan` 실행하고 결과를 PR 코멘트로 남기는지 확인
+
+**📖 자세한 내용**: [Atlantis 운영 가이드](docs/guides/atlantis-operations-guide.md)
+
+---
+
 ## 📂 프로젝트 구조
 
 ```
