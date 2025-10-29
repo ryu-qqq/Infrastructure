@@ -69,7 +69,7 @@ claudedocs/
 └── IN-116-logging-system-design.md  # 설계 문서
 ```
 
-## 🚀 사용법
+## 🚀 사용 방법 (Usage)
 
 ### 1. 사전 요구사항
 
@@ -118,6 +118,34 @@ terraform output log_groups_summary
 ### KMS Keys
 
 - **alias/cloudwatch-logs**: CloudWatch Logs 전용 KMS 키 (자동 rotation)
+
+## 📥 Variables
+
+이 모듈은 다음과 같은 입력 변수를 사용합니다:
+
+| 변수 이름 | 설명 | 타입 | 기본값 | 필수 여부 |
+|-----------|------|------|--------|-----------|
+| `aws_region` | AWS 리전 | `string` | `ap-northeast-2` | No |
+| `environment` | 환경 이름 (dev, staging, prod) | `string` | `prod` | No |
+| `owner` | 소유자 이메일 또는 식별자 | `string` | `fbtkdals2@naver.com` | No |
+| `cost_center` | 비용 센터 | `string` | `infrastructure` | No |
+| `terraform_state_bucket` | Terraform 상태 저장 S3 버킷 | `string` | `terraform-state-bucket` | No |
+
+자세한 내용은 [variables.tf](./variables.tf) 파일을 참조하세요.
+
+## 📤 Outputs
+
+이 모듈은 다음과 같은 출력 값을 제공합니다:
+
+| 출력 이름 | 설명 | 예시 값 |
+|-----------|------|---------|
+| `atlantis_application_log_group` | Atlantis 애플리케이션 로그 그룹 정보 | `{ name, arn, retention_in_days }` |
+| `atlantis_error_log_group` | Atlantis 에러 로그 그룹 정보 | `{ name, arn, retention_in_days }` |
+| `secrets_rotation_log_group` | Secrets Manager rotation Lambda 로그 그룹 정보 | `{ name, arn, retention_in_days }` |
+| `log_groups_summary` | 생성된 모든 로그 그룹 요약 | `{ total_groups, groups[] }` |
+| `kms_key_used` | 로그 암호화에 사용된 KMS 키 | `{ arn, alias }` |
+
+자세한 내용은 [outputs.tf](./outputs.tf) 파일을 참조하세요.
 
 ## 🔧 커스터마이징
 
