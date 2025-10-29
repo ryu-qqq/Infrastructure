@@ -30,7 +30,7 @@ module "api_lambda" {
   environment = "prod"
   service     = "user-api"
   team        = "platform-team"
-  owner       = "platform@example.com"
+  owner       = "fbtkdals2@naver.com"
   cost_center = "engineering"
   project     = "user-service"
 
@@ -124,7 +124,7 @@ module "api_lambda" {
   environment = "prod"
   service     = "user-api"
   team        = "platform-team"
-  owner       = "platform@example.com"
+  owner       = "fbtkdals2@naver.com"
   cost_center = "engineering"
   project     = "user-service"
 
@@ -624,7 +624,7 @@ timeout = 300  # 최대 15분 (900초)
 
 ## Authors
 
-Platform Team (platform@example.com)
+Platform Team (fbtkdals2@naver.com)
 
 ## References
 

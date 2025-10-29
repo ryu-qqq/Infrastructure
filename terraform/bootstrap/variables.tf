@@ -31,7 +31,7 @@ variable "service" {
 variable "owner" {
   description = "Owner email"
   type        = string
-  default     = "platform@ryuqqq.com"
+  default     = "fbtkdals2@naver.com"
 }
 
 variable "cost_center" {

@@ -1,0 +1,32 @@
+{
+  "module": "elasticache-redis",
+  "version": "1.0.0",
+  "description": "ElastiCache Redis cluster for caching",
+  "category": "database",
+  "parameters": {
+    "required": {
+      "node_type": {
+        "type": "string",
+        "description": "Cache node type",
+        "default": "cache.t3.micro"
+      },
+      "num_cache_nodes": {
+        "type": "number",
+        "description": "Number of cache nodes",
+        "default": 1
+      }
+    }
+  },
+  "optional_components": {
+    "automatic_failover": {
+      "type": "boolean",
+      "question": "자동 장애 조치를 활성화하시겠습니까? (Multi-AZ)",
+      "default": true
+    },
+    "snapshot_retention": {
+      "type": "number",
+      "question": "스냅샷 보존 기간 (일)",
+      "default": 7
+    }
+  }
+}

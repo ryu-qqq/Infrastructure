@@ -986,7 +986,6 @@ terraform-docs markdown table . --output-file README.md --output-mode inject
 
 모듈 개발 중 문제가 발생하거나 개선 사항이 있다면:
 
-- **Jira Epic**: [IN-102 - 문서화 및 온보딩](https://ryuqqq.atlassian.net/browse/IN-102)
 - **GitHub Issues**: Infrastructure 저장소에 이슈 등록
 - **팀 채널**: Platform Team Slack 채널
 

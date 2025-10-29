@@ -24,7 +24,7 @@ locals {
     Environment = var.environment
     Service     = var.name
     Team        = "platform-team"
-    Owner       = "platform@example.com"
+    Owner       = "fbtkdals2@naver.com"
     CostCenter  = "engineering"
     ManagedBy   = "Terraform"
     Project     = "alb-module-advanced-example"

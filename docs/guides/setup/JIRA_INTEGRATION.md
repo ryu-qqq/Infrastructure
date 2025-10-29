@@ -38,7 +38,6 @@ GitHub에서 이슈가 생성되면 자동으로 Jira에 Task가 생성되는 �
 
 ### 2. Jira 프로젝트 정보 확인
 
-- **Base URL**: `https://your-domain.atlassian.net`
 - **Project Key**: Jira 프로젝트의 키 (예: `FFL`, `PROJ`)
 - **User Email**: Jira 계정 이메일
 
@@ -53,7 +52,6 @@ GitHub 저장소 설정에서 다음 Secrets를 추가해야 합니다:
 
 | Secret 이름 | 설명 | 예시 |
 |------------|------|------|
-| `JIRA_BASE_URL` | Jira 인스턴스 URL | `https://your-domain.atlassian.net` |
 | `JIRA_USER_EMAIL` | Jira 계정 이메일 | `your-email@company.com` |
 | `JIRA_API_TOKEN` | Jira API 토큰 | `ATATT3xFf...` |
 | `JIRA_PROJECT_KEY` | Jira 프로젝트 키 | `FFL` 또는 `PROJ` |
@@ -69,7 +67,6 @@ GitHub 저장소 설정에서 다음 Secrets를 추가해야 합니다:
 
 GitHub CLI 사용:
 ```bash
-gh secret set JIRA_BASE_URL -b "https://your-domain.atlassian.net"
 gh secret set JIRA_USER_EMAIL -b "your-email@company.com"
 gh secret set JIRA_API_TOKEN -b "YOUR_API_TOKEN"
 gh secret set JIRA_PROJECT_KEY -b "FFL"
@@ -92,7 +89,6 @@ gh secret set JIRA_PROJECT_KEY -b "FFL"
 
 ```bash
 # GitHub CLI를 사용하는 경우
-gh secret set JIRA_BASE_URL -b "https://your-domain.atlassian.net"
 gh secret set JIRA_USER_EMAIL -b "your-email@company.com"
 gh secret set JIRA_API_TOKEN -b "YOUR_API_TOKEN"
 gh secret set JIRA_PROJECT_KEY -b "FFL"

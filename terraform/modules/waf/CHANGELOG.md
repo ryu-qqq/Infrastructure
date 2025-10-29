@@ -70,8 +70,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Security best practices
 
 ### Related
-- Epic: [IN-98 - 공통 플랫폼 인프라](https://ryuqqq.atlassian.net/browse/IN-98)
-- Task: [IN-141 - WAF 공통 규칙 구축](https://ryuqqq.atlassian.net/browse/IN-141)
 
 [Unreleased]: https://github.com/ryuqqq/infrastructure/compare/modules/waf/v1.0.0...HEAD
 [1.0.0]: https://github.com/ryuqqq/infrastructure/releases/tag/modules/waf/v1.0.0

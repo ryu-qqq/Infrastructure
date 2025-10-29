@@ -1,0 +1,53 @@
+{
+  "version": "1.0.0",
+  "templates": {
+    "ecs-service": {
+      "version": "1.0.0",
+      "path": "ecs-service",
+      "description": "ECS Service with Fargate launch type",
+      "category": "compute"
+    },
+    "rds-postgres": {
+      "version": "1.0.0",
+      "path": "rds-postgres",
+      "description": "RDS PostgreSQL database with Multi-AZ and automated backups",
+      "category": "database"
+    },
+    "lambda-function": {
+      "version": "1.0.0",
+      "path": "lambda-function",
+      "description": "AWS Lambda function with API Gateway integration",
+      "category": "compute"
+    },
+    "s3-bucket": {
+      "version": "1.0.0",
+      "path": "s3-bucket",
+      "description": "S3 bucket with encryption and versioning",
+      "category": "storage"
+    },
+    "elasticache-redis": {
+      "version": "1.0.0",
+      "path": "elasticache-redis",
+      "description": "ElastiCache Redis cluster for caching",
+      "category": "database"
+    },
+    "sqs-queue": {
+      "version": "1.0.0",
+      "path": "sqs-queue",
+      "description": "SQS queue for asynchronous messaging",
+      "category": "messaging"
+    },
+    "rds-mysql": {
+      "version": "1.0.0",
+      "path": "rds-mysql",
+      "description": "RDS MySQL 8.0 database with Multi-AZ and automated backups",
+      "category": "database"
+    },
+    "firehose-s3-logs": {
+      "version": "1.0.0",
+      "path": "firehose-s3-logs",
+      "description": "CloudWatch Logs to S3 archiving via Kinesis Firehose",
+      "category": "logging"
+    }
+  }
+}

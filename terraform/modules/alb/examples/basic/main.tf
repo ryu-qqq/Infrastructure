@@ -20,7 +20,7 @@ locals {
     Environment = "dev"
     Service     = "alb-example"
     Team        = "platform-team"
-    Owner       = "platform@example.com"
+    Owner       = "fbtkdals2@naver.com"
     CostCenter  = "engineering"
     ManagedBy   = "Terraform"
     Project     = "alb-module-example"

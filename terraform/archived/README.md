@@ -71,7 +71,6 @@ If you need to remove resources tracked by these state files:
 ## 📞 Questions?
 
 - **Team**: Infrastructure Team
-- **Epic**: [IN-121 - Module Directory Structure Design](https://ryuqqq.atlassian.net/browse/IN-121)
 - **Archived Date**: 2025-10-14
 
 ---

@@ -31,7 +31,7 @@ module "data_bucket" {
   environment = "prod"
   service     = "data-storage"
   team        = "platform-team"
-  owner       = "platform@example.com"
+  owner       = "fbtkdals2@naver.com"
   cost_center = "engineering"
   project     = "infrastructure"
 
@@ -112,7 +112,7 @@ module "logs_bucket" {
   environment = "prod"
   service     = "logging"
   team        = "platform-team"
-  owner       = "platform@example.com"
+  owner       = "fbtkdals2@naver.com"
   cost_center = "engineering"
   project     = "infrastructure"
 
@@ -148,7 +148,7 @@ module "monitored_bucket" {
   environment = "prod"
   service     = "data-storage"
   team        = "platform-team"
-  owner       = "platform@example.com"
+  owner       = "fbtkdals2@naver.com"
   cost_center = "engineering"
   project     = "infrastructure"
 

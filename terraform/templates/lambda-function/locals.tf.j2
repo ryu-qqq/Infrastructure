@@ -1,0 +1,12 @@
+locals {
+  name_prefix = "{{ service_name }}-{{ environment }}"
+
+  required_tags = {
+    Service     = "{{ service_name }}"
+    Environment = "{{ environment }}"
+    Owner       = "platform-team"
+    CostCenter  = "engineering"
+    Lifecycle   = "{{ environment }}"
+    DataClass   = "internal"
+  }
+}

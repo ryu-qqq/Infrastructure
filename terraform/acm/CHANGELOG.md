@@ -33,6 +33,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Region: ap-northeast-2 (or us-east-1 for CloudFront)
 
 ### References
-- Jira Issue: [IN-140 - ACM 중앙 관리 구축](https://ryuqqq.atlassian.net/browse/IN-140)
-- Epic: [IN-98 - EPIC 2: 공통 플랫폼 인프라](https://ryuqqq.atlassian.net/browse/IN-98)
 - Related PR: #[TBD]

@@ -26,7 +26,7 @@ module "common_tags" {
   environment = "prod"
   service     = "api-gateway"
   team        = "platform-team"
-  owner       = "platform@example.com"
+  owner       = "fbtkdals2@naver.com"
   cost_center = "engineering"
 }
 
@@ -397,4 +397,3 @@ Maintained by Infrastructure Team.
 
 **Module Version**: 1.0.0
 **Last Updated**: 2025-10-18
-**Jira**: [IN-141](https://ryuqqq.atlassian.net/browse/IN-141)

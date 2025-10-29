@@ -24,7 +24,7 @@ module "common_tags" {
   environment = "prod"
   service     = "logging"
   team        = "platform-team"
-  owner       = "platform@example.com"
+  owner       = "fbtkdals2@naver.com"
   cost_center = "infrastructure"
 }
 
@@ -210,7 +210,6 @@ All log groups automatically receive:
 - [Logging System Design](../../../claudedocs/IN-116-logging-system-design.md)
 - [Logging Naming Convention](../../../docs/LOGGING_NAMING_CONVENTION.md)
 - [Tagging Standards](../../../docs/TAGGING_STANDARDS.md)
-- [IN-116 Jira Task](https://ryuqqq.atlassian.net/browse/IN-116)
 
 ## Requirements
 

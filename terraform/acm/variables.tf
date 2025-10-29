@@ -18,6 +18,12 @@ variable "domain_name" {
   default     = "set-of.com"
 }
 
+variable "route53_zone_id" {
+  description = "Route53 Hosted Zone ID for DNS validation. If not provided, will lookup from SSM Parameter Store (/shared/route53/hosted-zone-id)"
+  type        = string
+  default     = ""
+}
+
 variable "enable_expiration_alarm" {
   description = "Enable CloudWatch alarm for certificate expiration monitoring"
   type        = bool
@@ -43,7 +49,7 @@ variable "team" {
 variable "owner" {
   description = "Owner email or identifier"
   type        = string
-  default     = "platform@example.com"
+  default     = "fbtkdals2@naver.com"
 }
 
 variable "cost_center" {

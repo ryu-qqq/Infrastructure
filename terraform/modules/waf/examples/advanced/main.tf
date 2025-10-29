@@ -34,7 +34,7 @@ module "common_tags" {
   environment = "prod"
   service     = "api-gateway"
   team        = "platform-team"
-  owner       = "platform@example.com"
+  owner       = "fbtkdals2@naver.com"
   cost_center = "engineering"
 }
 
@@ -51,7 +51,7 @@ module "waf_logs_bucket" {
   environment = "prod"
   service     = "waf-logging"
   team        = "platform-team"
-  owner       = "platform@example.com"
+  owner       = "fbtkdals2@naver.com"
   cost_center = "engineering"
   project     = "infrastructure"
 

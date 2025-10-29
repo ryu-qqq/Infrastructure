@@ -1,5 +1,7 @@
 # Atlantis Terraform Configuration
 
+## 개요 (Overview)
+
 Atlantis 서버를 AWS ECS Fargate에 배포하기 위한 Terraform 구성입니다.
 
 ## 구성 요소
@@ -100,7 +102,7 @@ terraform plan
 terraform apply
 ```
 
-## 변수 설정
+## 변수 설정 (Variables)
 
 ### terraform.tfvars 생성
 
@@ -155,7 +157,7 @@ aws acm list-certificates --region ap-northeast-2 \
   --query 'CertificateSummaryList[?Status==`ISSUED`]'
 ```
 
-## 출력값
+## 출력값 (Outputs)
 
 배포 후 다음 값들이 출력됩니다:
 - ECR 저장소 URL 및 ARN
@@ -669,9 +671,6 @@ aws ec2 describe-nat-gateways \
 
 ## 관련 이슈
 
-- Jira: [IN-12](https://ryuqqq.atlassian.net/browse/IN-12) - Application Load Balancer 구성
-- Jira: [IN-11](https://ryuqqq.atlassian.net/browse/IN-11) - ECS 클러스터 및 Task Definition 생성
-- Epic: [IN-1](https://ryuqqq.atlassian.net/browse/IN-1) - Phase 1: Atlantis 서버 ECS 배포
 
 ---
 

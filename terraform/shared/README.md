@@ -598,6 +598,30 @@ terraform apply
 
 ---
 
+## 📥 Variables
+
+이 디렉토리는 공유 리소스 정의와 예시를 포함하는 컬렉션으로, 중앙화된 변수 파일이 없습니다. 각 하위 모듈(`kms/`, `network/`, `security/`)은 자체적인 variables.tf 파일을 가지고 있습니다.
+
+### 하위 모듈별 변수
+- **kms/**: KMS 키 관련 변수 - [kms/variables.tf](./kms/variables.tf) 참조
+- **network/**: 네트워크 리소스 변수 - [network/variables.tf](./network/variables.tf) 참조
+- **security/**: 보안 그룹 변수 - [security/variables.tf](./security/variables.tf) 참조
+
+## 📤 Outputs
+
+이 디렉토리는 공유 리소스의 컬렉션으로, 중앙화된 outputs.tf 파일이 없습니다. 각 하위 모듈은 자체적인 outputs.tf 파일을 통해 SSM Parameter Store에 값을 저장합니다.
+
+### SSM Parameter 네이밍 패턴
+공유 리소스는 다음 패턴으로 SSM Parameter에 저장됩니다:
+- KMS 키: `/shared/kms/{purpose}-key-arn` (예: `/shared/kms/rds-key-arn`)
+- 네트워크: `/shared/network/{resource}` (예: `/shared/network/vpc-id`)
+- RDS: `/shared/rds/{attribute}` (예: `/shared/rds/endpoint`)
+
+### 하위 모듈별 출력
+- **kms/**: KMS 키 ARN들 - [kms/outputs.tf](./kms/outputs.tf) 참조
+- **network/**: VPC, 서브넷 ID들 - [network/outputs.tf](./network/outputs.tf) 참조
+- **security/**: 보안 그룹 ID들 - [security/outputs.tf](./security/outputs.tf) 참조
+
 ## 관련 문서
 
 ### 내부 문서

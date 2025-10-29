@@ -58,8 +58,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Cost optimization tips
 
 ### Related Tasks
-- **Epic**: [IN-100 - 재사용 가능한 표준 모듈](https://ryuqqq.atlassian.net/browse/IN-100)
-- **Task**: [IN-124 - TASK 4-4: ALB 모듈 개발](https://ryuqqq.atlassian.net/browse/IN-124)
 
 ### Breaking Changes
 - None (initial release)

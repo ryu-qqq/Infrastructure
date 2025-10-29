@@ -40,7 +40,7 @@ locals {
     Environment = var.environment
     Service     = var.service_name
     Team        = "platform-team"
-    Owner       = "platform@example.com"
+    Owner       = "fbtkdals2@naver.com"
     CostCenter  = "engineering"
     ManagedBy   = "terraform"
     Project     = "lambda-module-example"
@@ -121,7 +121,7 @@ module "api_lambda" {
   environment = var.environment
   service     = var.service_name
   team        = "platform-team"
-  owner       = "platform@example.com"
+  owner       = "fbtkdals2@naver.com"
   cost_center = "engineering"
   project     = "lambda-module-example"
 

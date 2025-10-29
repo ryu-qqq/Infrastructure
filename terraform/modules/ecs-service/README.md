@@ -28,7 +28,7 @@ module "common_tags" {
   environment = "prod"
   service     = "api-server"
   team        = "platform-team"
-  owner       = "platform@example.com"
+  owner       = "fbtkdals2@naver.com"
   cost_center = "engineering"
 }
 
@@ -357,8 +357,6 @@ Fargate는 특정 CPU/메모리 조합만 지원합니다:
 
 ## Epic & Tasks
 
-- **Epic**: [IN-100 - 재사용 가능한 표준 모듈](https://ryuqqq.atlassian.net/browse/IN-100)
-- **Task**: [IN-122 - TASK 4-2: ECS Service 모듈 개발](https://ryuqqq.atlassian.net/browse/IN-122)
 
 ## License
 

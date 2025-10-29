@@ -326,8 +326,6 @@ See [CloudTrail Operations Guide](../../claudedocs/cloudtrail-operations-guide.m
 
 ## Related Issues
 
-- **Epic**: [IN-98 - EPIC 2: 공통 플랫폼 인프라](https://ryuqqq.atlassian.net/browse/IN-98)
-- **Task**: [IN-113 - TASK 2-5: CloudTrail 중앙 수집](https://ryuqqq.atlassian.net/browse/IN-113)
 
 ## References
 

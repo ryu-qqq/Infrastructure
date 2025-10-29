@@ -4968,7 +4968,6 @@ If service fails to start or has issues:
 - [x] Atlantis project configuration added
 
 ## References
-- Task: [IN-200](https://company.atlassian.net/browse/IN-200)
 - Documentation: [Service Repository Onboarding Guide](../infrastructure/docs/guides/onboarding/SERVICE_REPO_ONBOARDING.md)
 
 ## Questions for Reviewers
@@ -6137,5 +6136,3 @@ After understanding the folder structure, proceed to:
 For questions or assistance:
 - **Platform Team**: platform-team@company.com
 - **Infrastructure Repository**: [GitHub Issues](https://github.com/org/infrastructure/issues)
-- **Jira Epic**: [IN-102 - Documentation and Onboarding](https://ryuqqq.atlassian.net/browse/IN-102)
-- **Task**: [IN-134 - Service Repository Onboarding Guide](https://ryuqqq.atlassian.net/browse/IN-134)

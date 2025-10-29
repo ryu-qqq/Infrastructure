@@ -71,6 +71,7 @@ resource "aws_cloudfront_distribution" "main" {
 | aws_region | AWS 리전 (CloudFront용은 us-east-1 필요) | `string` | `"ap-northeast-2"` | no |
 | environment | 환경 이름 (prod, staging, dev) | `string` | `"prod"` | no |
 | domain_name | 인증서를 생성할 도메인 이름 | `string` | `"set-of.com"` | no |
+| route53_zone_id | Route53 Hosted Zone ID (DNS 검증용). 미제공시 SSM Parameter Store에서 자동 조회 (`/shared/route53/hosted-zone-id`) | `string` | `""` | no |
 | enable_expiration_alarm | 인증서 만료 CloudWatch 알람 활성화 | `bool` | `true` | no |
 | tags | 추가 태그 | `map(string)` | `{}` | no |
 
@@ -241,5 +242,3 @@ AWS ACM은 인증서를 자동으로 갱신합니다. 단, DNS 검증 레코드�
 ## 작성자
 
 - Platform Team
-- Jira 이슈: [IN-140](https://ryuqqq.atlassian.net/browse/IN-140)
-- Epic: [IN-98 - EPIC 2: 공통 플랫폼 인프라](https://ryuqqq.atlassian.net/browse/IN-98)

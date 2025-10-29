@@ -66,6 +66,124 @@ terraform apply
 
 ---
 
+## 🔗 GitHub App 설치 및 Atlantis 연동
+
+Atlantis를 배포한 후, **PR 기반 Terraform 자동화**를 사용하려면 GitHub App을 생성하고 설치해야 합니다.
+
+### 1. Atlantis 서버 배포
+
+먼저 Atlantis 인프라를 배포합니다:
+
+```bash
+cd terraform/atlantis
+terraform init
+terraform plan
+terraform apply
+```
+
+배포 완료 후 ALB DNS Name을 확인합니다:
+
+```bash
+terraform output alb_dns_name
+# 예시: atlantis-prod-123456789.ap-northeast-2.elb.amazonaws.com
+```
+
+### 2. GitHub App 생성
+
+**⚠️ 중요**: 각 사용자는 자신의 Organization/계정에 맞는 GitHub App을 새로 생성해야 합니다.
+
+1. **GitHub Settings 접속**
+   - Organization 사용 시: `https://github.com/organizations/{your-org}/settings/apps`
+   - 개인 계정: `https://github.com/settings/apps`
+
+2. **"New GitHub App" 클릭**
+
+3. **기본 정보 입력**
+   ```
+   App name: Atlantis (또는 원하는 이름)
+   Homepage URL: https://{your-atlantis-domain}
+   Webhook URL: https://{your-atlantis-domain}/events
+   Webhook secret: (생성한 Secret 값 입력, Secrets Manager에서 확인)
+   ```
+
+4. **Repository permissions 설정**
+   - **Contents**: Read & Write
+   - **Pull requests**: Read & Write
+   - **Issues**: Write
+   - **Webhooks**: Read & Write
+
+5. **Subscribe to events 선택**
+   - ✅ Pull request
+   - ✅ Pull request review
+   - ✅ Pull request review comment
+   - ✅ Push
+   - ✅ Issue comment
+
+6. **"Create GitHub App" 클릭**
+
+### 3. GitHub App 설치
+
+GitHub App 생성 후 설치:
+
+1. App 설정 페이지에서 **"Install App"** 클릭
+2. Organization 또는 개인 계정 선택
+3. **Repository access** 선택:
+   - "All repositories" 또는
+   - "Only select repositories" (infrastructure, 서비스 레포지토리 선택)
+4. **"Install"** 클릭
+
+### 4. Secrets Manager 업데이트
+
+GitHub App 생성 후 다음 정보를 Secrets Manager에 저장:
+
+```bash
+# App ID 확인 (GitHub App 설정 페이지에서)
+APP_ID="your-app-id"
+
+# Installation ID 확인
+# https://github.com/settings/installations → 설치한 App 클릭 → URL에서 확인
+# 예: github.com/settings/installations/12345678
+INSTALLATION_ID="your-installation-id"
+
+# Private Key 생성
+# GitHub App 설정 → "Generate a private key" → .pem 파일 다운로드
+
+# Secrets Manager 업데이트
+aws secretsmanager put-secret-value \
+  --secret-id atlantis/github-app-v2-prod \
+  --secret-string '{
+    "app_id": "'$APP_ID'",
+    "installation_id": "'$INSTALLATION_ID'",
+    "private_key": "-----BEGIN RSA PRIVATE KEY-----\n...\n-----END RSA PRIVATE KEY-----"
+  }' \
+  --region ap-northeast-2
+```
+
+### 5. Atlantis 재시작
+
+Secrets 업데이트 후 Atlantis 서비스 재시작:
+
+```bash
+aws ecs update-service \
+  --cluster atlantis-prod \
+  --service atlantis-prod \
+  --force-new-deployment \
+  --region ap-northeast-2
+```
+
+### 6. 동작 확인
+
+테스트 PR 생성 후 확인:
+
+1. Infrastructure 레포지토리에서 테스트 브랜치 생성
+2. 사소한 변경 후 PR 생성
+3. PR에 코멘트 작성: `atlantis plan`
+4. Atlantis가 자동으로 `terraform plan` 실행하고 결과를 PR 코멘트로 남기는지 확인
+
+**📖 자세한 내용**: [Atlantis 운영 가이드](docs/guides/atlantis-operations-guide.md)
+
+---
+
 ## 📂 프로젝트 구조
 
 ```
@@ -180,7 +298,7 @@ infrastructure/
 
 ```bash
 # 1. Feature 브랜치 생성
-git checkout -b feature/KAN-XXX-description
+git checkout -b feature/XXX-description
 
 # 2. Terraform 코드 작성
 cd terraform/network
@@ -193,8 +311,8 @@ terraform plan
 
 # 4. 커밋 및 푸시
 git add .
-git commit -m "feat: Add VPC peering configuration (KAN-XXX)"
-git push origin feature/KAN-XXX-description
+git commit -m "feat: Add VPC peering configuration "
+git push origin feature/XXX-description
 
 # 5. Pull Request 생성
 # GitHub에서 PR 생성 → Atlantis가 자동으로 terraform plan 실행
@@ -313,8 +431,6 @@ Lambda 기반 자동 로테이션 시스템:
 - [ECS Memory Critical](docs/runbooks/ecs-memory-critical.md) - 메모리 크리티컬 알림
 - [ECS Task Count Zero](docs/runbooks/ecs-task-count-zero.md) - 태스크 실패 대응
 
-**Slack 알림**: `#platform-alerts` 채널
-
 ---
 
 ## 🤝 기여 가이드
@@ -336,7 +452,7 @@ PR 생성 전 다음을 확인하세요:
 
 ```bash
 # 형식
-<type>: <subject> (JIRA-XXX)
+<type>: <subject>
 
 # 타입
 feat: 새로운 기능
@@ -346,8 +462,8 @@ refactor: 코드 리팩토링
 test: 테스트 추가/수정
 
 # 예제
-feat: Add Shared RDS connection for FileFlow (KAN-147)
-fix: Correct KMS key reference in S3 module (KAN-155)
+feat: Add Shared RDS connection for FileFlow 
+fix: Correct KMS key reference in S3 module
 docs: Update hybrid infrastructure guide
 ```
 
@@ -358,22 +474,14 @@ docs: Update hybrid infrastructure guide
 ### 문제 발생 시
 
 1. **트러블슈팅 가이드**: [hybrid-08-troubleshooting-guide.md](docs/guides/hybrid-08-troubleshooting-guide.md)
-2. **FAQ**: 트러블슈팅 가이드 내 포함
-3. **Slack**: `#platform-support` 채널
-4. **Email**: platform@ryuqqq.com
-
-### 긴급 인시던트
-
-- **P0/P1**: Slack `#platform-alerts` 채널로 즉시 알림
-- **Runbook**: `/docs/runbooks/` 참조
-- **On-call**: PagerDuty 통해 담당자 호출
+2. **Email**: fbtkdals2@naver.com
+3. **Runbook**: `/docs/runbooks/` 참조
 
 ---
 
 ## 📚 추가 자료
 
 ### 내부 문서
-- [CLAUDE.md](CLAUDE.md) - Claude Code 가이드
 - [Documentation Hub](docs/README.md) - 전체 문서 인덱스
 
 ### 외부 링크
@@ -381,30 +489,13 @@ docs: Update hybrid infrastructure guide
 - [AWS Well-Architected Framework](https://aws.amazon.com/architecture/well-architected/)
 - [Atlantis Documentation](https://www.runatlantis.io/docs/)
 
-### Jira 프로젝트
-- [IN-1 - Atlantis 서버 ECS 배포](https://ryuqqq.atlassian.net/browse/IN-1)
-- [IN-100 - 재사용 가능한 표준 모듈](https://ryuqqq.atlassian.net/browse/IN-100)
-
----
-
-## 📈 통계
-
-- **Terraform 모듈**: 15개
-- **KMS 암호화 키**: 9개
-- **문서**: 50개 (Governance 10, Guides 16, Modules 6, Runbooks 3, Workflows 2, Changelogs 2)
-- **CI/CD 워크플로**: 6개 (GitHub Actions)
-- **검증 스크립트**: 7개 (tfsec, checkov, tags, encryption, naming, secrets-rotation 등)
-- **OPA 정책**: 4개 (태깅, 네이밍, 보안그룹, 공개리소스)
-- **월간 인프라 비용**: ~$1,502
-
 ---
 
 ## 📝 라이선스
 
-이 프로젝트는 Ryuqqq의 내부 인프라 코드입니다. 외부 공유 금지.
+이 프로젝트는 ryu-qqq의 인프라 관리 코드입니다.
 
 ---
 
-**Last Updated**: 2025-10-24
-
-**Maintainers**: Platform Team (@platform-team)
+**Last Updated**: 2025-10-29
+**Maintainers**: ryu-qqq

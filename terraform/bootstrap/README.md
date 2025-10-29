@@ -137,7 +137,7 @@ terraform {
 | `tfstate_bucket_name` | S3 버킷 이름 | `prod-connectly` |
 | `dynamodb_table_name` | DynamoDB 테이블 이름 | `prod-connectly-tf-lock` |
 | `service` | 서비스 이름 | `terraform-backend` |
-| `owner` | 소유자 이메일 | `platform@ryuqqq.com` |
+| `owner` | 소유자 이메일 | `fbtkdals2@naver.com` |
 | `cost_center` | 비용 센터 | `infrastructure` |
 
 ## 출력
@@ -217,5 +217,3 @@ terraform force-unlock <LOCK_ID>
 
 ## 관련 이슈
 
-- Jira: [IN-138 - Bootstrap 인프라 Terraform 코드화](https://ryuqqq.atlassian.net/browse/IN-138)
-- Epic: [IN-98 - EPIC 2: 공통 플랫폼 인프라](https://ryuqqq.atlassian.net/browse/IN-98)

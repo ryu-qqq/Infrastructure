@@ -1,0 +1,19 @@
+locals {
+  required_tags = {
+    Environment = var.environment
+    Service     = var.service_name
+    Owner       = "{{ owner | default('platform-team@ryuqqq.com') }}"
+    CostCenter  = "{{ cost_center | default('engineering') }}"
+    Lifecycle   = "{{ lifecycle | default('permanent') }}"
+    DataClass   = "{{ data_class | default('internal') }}"
+  }
+
+  name_prefix        = "${var.service_name}-${var.environment}"
+  firehose_name      = "${local.name_prefix}-logs-firehose"
+  {% if create_s3_bucket %}
+  s3_bucket_name     = "${local.name_prefix}-logs"
+  {% else %}
+  s3_bucket_name     = "{{ s3_bucket_name }}"
+  {% endif %}
+  log_group_name     = "/aws/${var.service_name}/${var.environment}"
+}

@@ -26,7 +26,10 @@ resource "aws_iam_role" "github-actions" {
             "token.actions.githubusercontent.com:aud" = "sts.amazonaws.com"
           }
           StringLike = {
-            "token.actions.githubusercontent.com:sub" = "repo:ryu-qqq/Infrastructure:*"
+            "token.actions.githubusercontent.com:sub" = [
+              "repo:ryu-qqq/Infrastructure:*",
+              "repo:ryu-qqq/fileflow:*"
+            ]
           }
         }
       }
@@ -146,6 +149,88 @@ resource "aws_iam_role_policy" "github-actions-kms" {
   })
 }
 
+# Managed Policy for FileFlow infrastructure
+resource "aws_iam_policy" "github-actions-fileflow" {
+  name        = "GitHubActionsFileFlowPolicy"
+  description = "Permissions for deploying FileFlow infrastructure"
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Sid    = "ElastiCacheManagement"
+        Effect = "Allow"
+        Action = [
+          "elasticache:*"
+        ]
+        Resource = "*"
+      },
+      {
+        Sid    = "CloudWatchLogsManagement"
+        Effect = "Allow"
+        Action = [
+          "logs:*"
+        ]
+        Resource = "*"
+      },
+      {
+        Sid    = "S3Management"
+        Effect = "Allow"
+        Action = [
+          "s3:*"
+        ]
+        Resource = "*"
+      },
+      {
+        Sid    = "SQSManagement"
+        Effect = "Allow"
+        Action = [
+          "sqs:*"
+        ]
+        Resource = "*"
+      },
+      {
+        Sid    = "ECSManagement"
+        Effect = "Allow"
+        Action = [
+          "ecs:*"
+        ]
+        Resource = "*"
+      },
+      {
+        Sid    = "ALBManagement"
+        Effect = "Allow"
+        Action = [
+          "elasticloadbalancing:*"
+        ]
+        Resource = "*"
+      },
+      {
+        Sid    = "SecurityGroupManagement"
+        Effect = "Allow"
+        Action = [
+          "ec2:*SecurityGroup*"
+        ]
+        Resource = "*"
+      }
+    ]
+  })
+
+  tags = merge(
+    local.required_tags,
+    {
+      Name      = "github-actions-fileflow-policy"
+      Component = "ci-cd"
+    }
+  )
+}
+
+# Attach FileFlow policy to GitHubActionsRole
+resource "aws_iam_role_policy_attachment" "github-actions-fileflow" {
+  role       = aws_iam_role.github-actions.name
+  policy_arn = aws_iam_policy.github-actions-fileflow.arn
+}
+
 # Policy for general AWS resource management
 resource "aws_iam_role_policy" "github-actions-resource-management" {
   name = "resource-management"
@@ -243,7 +328,9 @@ resource "aws_iam_role_policy" "github-actions-resource-management" {
         ]
         Resource = [
           "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/atlantis-*",
-          "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/*-ecs-*"
+          "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/*-ecs-*",
+          "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/*-execution-role",
+          "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/*-task-role"
         ]
       }
     ]

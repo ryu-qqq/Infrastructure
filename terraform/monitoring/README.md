@@ -48,7 +48,7 @@ monitoring/
 └── README.md                   # 이 파일
 ```
 
-## 🚀 배포 순서
+## 🚀 사용 방법 (Usage)
 
 ### 1. 전제 조건
 
@@ -1160,6 +1160,86 @@ aws ecs describe-task-definition \
 - [ ] High-cardinality labels 최소화 (예: user_id, request_id 제외)
 - [ ] Recording Rules 설정 (집계 메트릭)
 - [ ] Retention period 설정 확인 (기본 150일)
+
+## 📥 Variables
+
+이 모듈은 다음과 같은 입력 변수를 사용합니다:
+
+### 기본 설정
+| 변수 이름 | 설명 | 타입 | 기본값 | 필수 여부 |
+|-----------|------|------|--------|-----------|
+| `environment` | 환경 이름 (dev, staging, prod) | `string` | `prod` | No |
+| `aws_region` | AWS 리전 | `string` | `ap-northeast-2` | No |
+| `service` | 서비스 이름 | `string` | `monitoring` | No |
+
+### 태그 관련
+| 변수 이름 | 설명 | 타입 | 기본값 | 필수 여부 |
+|-----------|------|------|--------|-----------|
+| `owner` | 리소스 담당 팀/개인 | `string` | `platform-team` | No |
+| `cost_center` | 비용 센터 | `string` | `engineering` | No |
+| `team` | 담당 팀 | `string` | `platform-team` | No |
+
+### AMP 설정
+| 변수 이름 | 설명 | 타입 | 기본값 | 필수 여부 |
+|-----------|------|------|--------|-----------|
+| `amp_workspace_alias` | AMP 워크스페이스 별칭 | `string` | `infrastructure-metrics` | No |
+| `amp_retention_period` | 메트릭 보관 기간 (일) | `number` | `150` | No |
+| `amp_enable_logging` | CloudWatch Logs 활성화 | `bool` | `true` | No |
+
+### AMG 설정
+| 변수 이름 | 설명 | 타입 | 기본값 | 필수 여부 |
+|-----------|------|------|--------|-----------|
+| `amg_workspace_name` | AMG 워크스페이스 이름 | `string` | `infrastructure-observability` | No |
+| `amg_authentication_providers` | 인증 제공자 | `list(string)` | `["AWS_SSO"]` | No |
+| `amg_data_sources` | 데이터 소스 | `list(string)` | `["PROMETHEUS", "CLOUDWATCH"]` | No |
+
+### ADOT & 알림 설정
+| 변수 이름 | 설명 | 타입 | 기본값 | 필수 여부 |
+|-----------|------|------|--------|-----------|
+| `enable_adot_collector` | ADOT Collector 활성화 | `bool` | `true` | No |
+| `enable_ecs_alarms` | ECS CloudWatch 알람 활성화 | `bool` | `true` | No |
+| `enable_chatbot` | AWS Chatbot (Slack) 활성화 | `bool` | `false` | No |
+| `slack_workspace_id` | Slack Workspace ID | `string` | `""` | No (sensitive) |
+| `slack_channel_id` | Slack Channel ID | `string` | `""` | No (sensitive) |
+
+전체 변수 목록은 [variables.tf](./variables.tf) 파일을 참조하세요.
+
+## 📤 Outputs
+
+이 모듈은 다음과 같은 출력 값을 제공합니다:
+
+### AMP 관련
+| 출력 이름 | 설명 |
+|-----------|------|
+| `amp_workspace_id` | AMP 워크스페이스 ID |
+| `amp_workspace_arn` | AMP 워크스페이스 ARN |
+| `amp_workspace_endpoint` | AMP 엔드포인트 URL |
+| `amp_workspace_remote_write_url` | AMP remote write 엔드포인트 |
+| `amp_workspace_query_url` | AMP query 엔드포인트 |
+
+### AMG 관련
+| 출력 이름 | 설명 |
+|-----------|------|
+| `amg_workspace_id` | AMG 워크스페이스 ID |
+| `amg_workspace_arn` | AMG 워크스페이스 ARN |
+| `amg_workspace_endpoint` | Grafana 접속 URL |
+| `amg_workspace_grafana_version` | Grafana 버전 |
+
+### IAM Role 관련
+| 출력 이름 | 설명 |
+|-----------|------|
+| `ecs_amp_writer_role_arn` | ECS Task가 AMP에 쓰기 위한 IAM Role ARN |
+| `ecs_amp_writer_role_name` | ECS Task IAM Role 이름 |
+| `grafana_amp_reader_role_arn` | Grafana가 AMP에서 읽기 위한 IAM Role ARN |
+| `grafana_amp_reader_role_name` | Grafana IAM Role 이름 |
+
+### 설정 참조
+| 출력 이름 | 설명 |
+|-----------|------|
+| `adot_collector_config_template` | ADOT Collector 설정 템플릿 (JSON) |
+| `grafana_setup_info` | Grafana 데이터 소스 설정 정보 |
+
+전체 출력 목록은 [outputs.tf](./outputs.tf) 파일을 참조하세요.
 
 ## 📚 참고 자료
 

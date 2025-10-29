@@ -89,7 +89,7 @@ variable "terraform_state_bucket_prefix" {
 variable "terraform_state_lock_table" {
   description = "DynamoDB table name for Terraform state locking"
   type        = string
-  default     = "terraform-state-lock"
+  default     = "prod-connectly-tf-lock"
 }
 
 # Legacy Infrastructure Support

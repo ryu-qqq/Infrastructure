@@ -1,0 +1,202 @@
+{
+  "module": "ecs-service",
+  "version": "1.0.0",
+  "description": "ECS Service with Fargate launch type",
+  "category": "compute",
+
+  "required_components": [
+    "ecs-service",
+    "cloudwatch-log-group",
+    "security-group"
+  ],
+
+  "required_parameters": [
+    {
+      "name": "service_name",
+      "type": "string",
+      "description": "Service name (kebab-case)",
+      "validation": "^[a-z0-9-]+$",
+      "example": "api-server"
+    },
+    {
+      "name": "environment",
+      "type": "select",
+      "options": ["dev", "staging", "prod"],
+      "default": "prod",
+      "description": "Deployment environment"
+    },
+    {
+      "name": "cpu",
+      "type": "select",
+      "options": [256, 512, 1024, 2048, 4096],
+      "default": 512,
+      "description": "CPU units (1024 = 1 vCPU)"
+    },
+    {
+      "name": "memory",
+      "type": "select",
+      "options": [512, 1024, 2048, 4096, 8192, 16384],
+      "default": 1024,
+      "description": "Memory in MiB"
+    },
+    {
+      "name": "container_port",
+      "type": "number",
+      "default": 8080,
+      "description": "Container port to expose"
+    }
+  ],
+
+  "optional_parameters": [
+    {
+      "name": "desired_count",
+      "type": "number",
+      "default": 2,
+      "description": "Number of tasks to run"
+    },
+    {
+      "name": "health_check_path",
+      "type": "string",
+      "default": "/health",
+      "description": "Health check endpoint path"
+    }
+  ],
+
+  "optional_components": {
+    "database": {
+      "type": "choice",
+      "question": "데이터베이스가 필요하신가요?",
+      "options": [
+        {
+          "value": "shared-rds",
+          "label": "기존 공유 RDS 사용 (권장)",
+          "description": "비용 효율적, 운영 간편",
+          "cost_impact": "낮음",
+          "ssm_refs": [
+            "/shared/rds/db-instance-address",
+            "/shared/rds/db-instance-port",
+            "/shared/rds/master-password-secret-name"
+          ]
+        },
+        {
+          "value": "dedicated-rds",
+          "label": "전용 RDS 생성",
+          "description": "완전한 격리, 독립적 관리",
+          "cost_impact": "높음 (월 $50-500)",
+          "creates_file": "rds.tf",
+          "uses_module": "../../modules/rds",
+          "additional_parameters": ["engine", "instance_class", "allocated_storage"]
+        },
+        {
+          "value": "none",
+          "label": "데이터베이스 사용 안 함"
+        }
+      ]
+    },
+
+    "cache": {
+      "type": "choice",
+      "question": "캐시가 필요하신가요?",
+      "options": [
+        {
+          "value": "shared-elasticache",
+          "label": "기존 공유 ElastiCache 사용",
+          "description": "여러 서비스가 공유하는 캐시",
+          "cost_impact": "낮음",
+          "ssm_refs": ["/shared/elasticache/redis-endpoint"]
+        },
+        {
+          "value": "dedicated-redis",
+          "label": "전용 Redis 생성 (추천)",
+          "description": "서비스 전용 Redis 클러스터",
+          "cost_impact": "중간 (월 $30-200)",
+          "creates_file": "elasticache.tf",
+          "uses_module": "../../modules/elasticache",
+          "additional_parameters": ["node_type", "num_cache_nodes"]
+        },
+        {
+          "value": "dedicated-memcached",
+          "label": "전용 Memcached 생성",
+          "description": "서비스 전용 Memcached 클러스터",
+          "cost_impact": "중간 (월 $30-200)",
+          "creates_file": "elasticache.tf",
+          "uses_module": "../../modules/elasticache",
+          "additional_parameters": ["node_type", "num_cache_nodes"]
+        },
+        {
+          "value": "none",
+          "label": "캐시 사용 안 함"
+        }
+      ]
+    },
+
+    "storage": {
+      "type": "choice",
+      "question": "S3 스토리지가 필요하신가요?",
+      "options": [
+        {
+          "value": "dedicated-s3",
+          "label": "전용 S3 Bucket 생성",
+          "description": "파일 저장, 정적 컨텐츠 호스팅",
+          "cost_impact": "낮음 (사용량 기반)",
+          "creates_file": "s3.tf",
+          "uses_module": "../../modules/s3-bucket",
+          "additional_parameters": ["versioning", "lifecycle_rules"]
+        },
+        {
+          "value": "none",
+          "label": "S3 사용 안 함"
+        }
+      ]
+    },
+
+    "load_balancer": {
+      "type": "boolean",
+      "question": "Application Load Balancer가 필요하신가요?",
+      "default": true,
+      "description": "외부 트래픽을 받으려면 필수",
+      "creates_file": "alb.tf",
+      "uses_module": "../../modules/alb",
+      "additional_parameters": ["certificate_arn", "health_check_path"]
+    }
+  },
+
+  "shared_infrastructure_refs": [
+    {
+      "name": "vpc_id",
+      "ssm_path": "/shared/network/vpc-id",
+      "description": "VPC ID"
+    },
+    {
+      "name": "private_subnet_ids",
+      "ssm_path": "/shared/network/private-subnet-ids",
+      "description": "Private subnet IDs for ECS tasks"
+    },
+    {
+      "name": "public_subnet_ids",
+      "ssm_path": "/shared/network/public-subnet-ids",
+      "description": "Public subnet IDs for ALB",
+      "required_if": "load_balancer"
+    }
+  ],
+
+  "kms_keys": [
+    {
+      "alias": "ecs-secrets",
+      "description": "For ECS task environment variables and secrets"
+    },
+    {
+      "alias": "cloudwatch-logs",
+      "description": "For CloudWatch log encryption"
+    }
+  ],
+
+  "outputs": [
+    "ecs_service_id",
+    "ecs_service_name",
+    "security_group_id",
+    "cloudwatch_log_group_name",
+    "alb_dns_name",
+    "target_group_arn"
+  ]
+}

@@ -100,7 +100,7 @@ transit_gateway_routes = [     # TGW를 통해 라우팅할 CIDR 블록 목록
 - `transit_gateway_vpc_attachment_id`: VPC Attachment ID
 - `transit_gateway_route_table_id`: Transit Gateway 기본 라우팅 테이블 ID
 
-## 사용 예시
+## 사용 방법 (Usage)
 
 ### 기본 사용 (Transit Gateway 활성화)
 ```hcl

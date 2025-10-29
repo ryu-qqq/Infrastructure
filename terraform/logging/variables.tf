@@ -19,7 +19,7 @@ variable "environment" {
 variable "owner" {
   description = "Owner email or identifier"
   type        = string
-  default     = "platform-team@example.com"
+  default     = "fbtkdals2@naver.com"
 }
 
 variable "cost_center" {

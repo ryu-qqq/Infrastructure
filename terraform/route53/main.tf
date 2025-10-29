@@ -153,6 +153,27 @@ resource "aws_route53_health_check" "atlantis" {
 # Data source for current AWS account ID
 data "aws_caller_identity" "current" {}
 
+# ==============================================================================
+# SSM Parameter Store Exports (for cross-stack references)
+# ==============================================================================
+
+# Export Hosted Zone ID for other stacks (e.g., ACM certificate validation)
+resource "aws_ssm_parameter" "hosted-zone-id" {
+  name        = "/shared/route53/hosted-zone-id"
+  description = "Route53 Hosted Zone ID for ${var.domain_name}"
+  type        = "String"
+  value       = aws_route53_zone.primary.zone_id
+
+  tags = merge(
+    local.required_tags,
+    {
+      Name      = "ssm-route53-zone-id"
+      Component = "parameter-store"
+      Export    = "hosted-zone-id"
+    }
+  )
+}
+
 # DNS Records Management
 # Note: Existing DNS records should be imported or managed separately
 # Use the route53-record module for adding new records

@@ -60,7 +60,7 @@ resource "aws_route53_record" "certificate-validation" {
   records         = [each.value.record]
   ttl             = 60
   type            = each.value.type
-  zone_id         = data.aws_route53_zone.primary.zone_id
+  zone_id         = local.route53_zone_id
 }
 
 # Wait for certificate validation to complete
@@ -102,8 +102,19 @@ resource "aws_cloudwatch_metric_alarm" "certificate-expiration" {
   )
 }
 
-# Data source to lookup the Route53 hosted zone
-data "aws_route53_zone" "primary" {
-  name         = var.domain_name
-  private_zone = false
+# ==============================================================================
+# Route53 Zone ID Resolution (Cross-Stack Reference Pattern)
+# ==============================================================================
+
+# Lookup Route53 Hosted Zone ID from SSM Parameter Store
+# This follows the project's cross-stack reference pattern and avoids
+# requiring Route53:ListHostedZones permission for Atlantis
+data "aws_ssm_parameter" "route53-zone-id" {
+  count = var.route53_zone_id == "" ? 1 : 0
+  name  = "/shared/route53/hosted-zone-id"
+}
+
+# Use provided zone_id or lookup from SSM Parameter Store
+locals {
+  route53_zone_id = var.route53_zone_id != "" ? var.route53_zone_id : data.aws_ssm_parameter.route53-zone-id[0].value
 }

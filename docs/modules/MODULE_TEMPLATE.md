@@ -148,8 +148,6 @@ module "{module_name}" {
 ## Epic & Tasks
 
 <!-- Jira Epic 및 Task 참조 -->
-- **Epic**: [IN-100 - 재사용 가능한 표준 모듈](https://ryuqqq.atlassian.net/browse/IN-100)
-- **Task**: [IN-{XXX} - {Task 제목}](https://ryuqqq.atlassian.net/browse/IN-{XXX})
 
 ## License
 

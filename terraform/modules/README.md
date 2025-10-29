@@ -44,7 +44,7 @@ module "common_tags" {
   environment = "prod"
   service     = "api-server"
   team        = "platform-team"
-  owner       = "platform@example.com"
+  owner       = "fbtkdals2@naver.com"
   cost_center = "engineering"
 }
 ```
@@ -186,7 +186,6 @@ module "ecs" {
 
 ## 📞 문의 및 기여
 
-- **Epic**: [IN-100 - 재사용 가능한 표준 모듈](https://ryuqqq.atlassian.net/browse/IN-100)
 - **문의**: Platform Team
 - **기여 가이드**: [CONTRIBUTING.md](../../CONTRIBUTING.md)
 
