@@ -19,8 +19,9 @@ variable "domain_name" {
 }
 
 variable "route53_zone_id" {
-  description = "Route53 Hosted Zone ID for DNS validation (required for ACM certificate validation)"
+  description = "Route53 Hosted Zone ID for DNS validation. If not provided, will lookup by domain_name (requires Route53:ListHostedZones permission)"
   type        = string
+  default     = ""
 }
 
 variable "enable_expiration_alarm" {

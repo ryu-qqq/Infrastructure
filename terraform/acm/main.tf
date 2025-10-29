@@ -60,7 +60,7 @@ resource "aws_route53_record" "certificate-validation" {
   records         = [each.value.record]
   ttl             = 60
   type            = each.value.type
-  zone_id         = var.route53_zone_id
+  zone_id         = local.route53_zone_id
 }
 
 # Wait for certificate validation to complete
@@ -102,5 +102,15 @@ resource "aws_cloudwatch_metric_alarm" "certificate-expiration" {
   )
 }
 
-# Note: Route53 zone_id is now passed as a variable to avoid requiring
-# Route53:ListHostedZones permission during Terraform plan operations
+# Data source to lookup Route53 zone if zone_id not provided
+# Note: This requires Route53:ListHostedZones permission
+data "aws_route53_zone" "primary" {
+  count        = var.route53_zone_id == "" ? 1 : 0
+  name         = var.domain_name
+  private_zone = false
+}
+
+# Use provided zone_id or lookup from data source
+locals {
+  route53_zone_id = var.route53_zone_id != "" ? var.route53_zone_id : data.aws_route53_zone.primary[0].zone_id
+}
