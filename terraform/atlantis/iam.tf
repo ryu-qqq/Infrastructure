@@ -161,6 +161,7 @@ resource "aws_iam_role_policy" "atlantis-terraform-operations" {
           "elasticloadbalancing:Describe*",
           "elasticache:DescribeCacheSubnetGroups",
           "elasticache:DescribeCacheParameterGroups",
+          "elasticache:DescribeCacheParameters",
           "elasticache:DescribeCacheClusters",
           "elasticache:ListTagsForResource",
           "elasticfilesystem:Describe*",
