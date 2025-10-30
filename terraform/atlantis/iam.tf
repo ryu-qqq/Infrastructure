@@ -211,7 +211,9 @@ resource "aws_iam_role_policy" "atlantis-terraform-operations" {
         Resource = [
           "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/atlantis-*",
           "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/*-shared-*-monitoring-role",
-          "arn:aws:iam::${data.aws_caller_identity.current.account_id}:policy/atlantis-*"
+          "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/fileflow-*",
+          "arn:aws:iam::${data.aws_caller_identity.current.account_id}:policy/atlantis-*",
+          "arn:aws:iam::${data.aws_caller_identity.current.account_id}:policy/fileflow-*"
         ]
       },
       {
