@@ -49,8 +49,8 @@ instance_class = "db.t4g.small" # 2 vCPU, 2GB RAM
 # Storage Configuration
 # ============================================================================
 
-allocated_storage     = 30  # 초기 30GB
-max_allocated_storage = 200 # 최대 200GB까지 자동 확장
+allocated_storage     = 300 # 초기 300GB
+max_allocated_storage = 400 # 최대 400GB까지 자동 확장
 storage_type          = "gp3"
 
 # ============================================================================
