@@ -292,6 +292,16 @@ resource "aws_iam_role_policy" "atlantis-terraform-operations" {
           "elasticloadbalancing:ModifyTargetGroup"
         ]
         Resource = "arn:aws:elasticloadbalancing:${var.aws_region}:${data.aws_caller_identity.current.account_id}:targetgroup/fileflow-*/*"
+      },
+      {
+        Sid    = "ManageS3BucketPolicies"
+        Effect = "Allow"
+        Action = [
+          "s3:GetBucketPolicy",
+          "s3:PutBucketPolicy",
+          "s3:DeleteBucketPolicy"
+        ]
+        Resource = "arn:aws:s3:::fileflow-*"
       }
     ]
   })
