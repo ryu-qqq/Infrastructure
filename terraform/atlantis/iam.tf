@@ -224,6 +224,52 @@ resource "aws_iam_role_policy" "atlantis-terraform-operations" {
           "iam:GetOpenIDConnectProvider"
         ]
         Resource = "*"
+      },
+      {
+        Sid    = "ManageECSRoles"
+        Effect = "Allow"
+        Action = [
+          "iam:PutRolePolicy",
+          "iam:DeleteRolePolicy",
+          "iam:GetRolePolicy"
+        ]
+        Resource = "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/fileflow-prod-*"
+      },
+      {
+        Sid    = "ManageSecurityGroups"
+        Effect = "Allow"
+        Action = [
+          "ec2:CreateSecurityGroup",
+          "ec2:DeleteSecurityGroup",
+          "ec2:DescribeSecurityGroups",
+          "ec2:AuthorizeSecurityGroupIngress",
+          "ec2:AuthorizeSecurityGroupEgress",
+          "ec2:RevokeSecurityGroupIngress",
+          "ec2:RevokeSecurityGroupEgress",
+          "ec2:CreateTags"
+        ]
+        Resource = "*"
+      },
+      {
+        Sid    = "ManageCloudWatchLogs"
+        Effect = "Allow"
+        Action = [
+          "logs:CreateLogGroup",
+          "logs:DeleteLogGroup",
+          "logs:DescribeLogGroups",
+          "logs:PutRetentionPolicy",
+          "logs:TagResource"
+        ]
+        Resource = "arn:aws:logs:${var.aws_region}:${data.aws_caller_identity.current.account_id}:log-group:/aws/ecs/fileflow*"
+      },
+      {
+        Sid    = "ManageLoadBalancers"
+        Effect = "Allow"
+        Action = [
+          "elasticloadbalancing:ModifyTargetGroup",
+          "elasticloadbalancing:DescribeTargetGroups"
+        ]
+        Resource = "*"
       }
     ]
   })
