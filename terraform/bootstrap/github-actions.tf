@@ -132,9 +132,14 @@ resource "aws_iam_role_policy" "github-actions-kms" {
           "kms:DescribeKey",
           "kms:CreateGrant",
           "kms:ListGrants",
-          "kms:RevokeGrant"
+          "kms:RevokeGrant",
+          "kms:GetKeyPolicy",
+          "kms:GetKeyRotationStatus"
         ]
-        Resource = aws_kms_key.terraform-state.arn
+        Resource = [
+          aws_kms_key.terraform-state.arn,
+          "arn:aws:kms:${var.aws_region}:${data.aws_caller_identity.current.account_id}:key/*"
+        ]
       },
       {
         Sid    = "KMSList"
