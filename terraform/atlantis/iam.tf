@@ -294,12 +294,22 @@ resource "aws_iam_role_policy" "atlantis-terraform-operations" {
         Resource = "arn:aws:elasticloadbalancing:${var.aws_region}:${data.aws_caller_identity.current.account_id}:targetgroup/fileflow-*/*"
       },
       {
-        Sid    = "ManageS3BucketPolicies"
+        Sid    = "ManageS3Buckets"
         Effect = "Allow"
         Action = [
           "s3:GetBucketPolicy",
           "s3:PutBucketPolicy",
-          "s3:DeleteBucketPolicy"
+          "s3:DeleteBucketPolicy",
+          "s3:GetBucketAcl",
+          "s3:PutBucketAcl",
+          "s3:GetBucketVersioning",
+          "s3:PutBucketVersioning",
+          "s3:GetBucketLogging",
+          "s3:PutBucketLogging",
+          "s3:GetEncryptionConfiguration",
+          "s3:PutEncryptionConfiguration",
+          "s3:GetBucketPublicAccessBlock",
+          "s3:PutBucketPublicAccessBlock"
         ]
         Resource = "arn:aws:s3:::fileflow-*"
       }
