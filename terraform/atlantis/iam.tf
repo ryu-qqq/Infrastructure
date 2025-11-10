@@ -224,6 +224,74 @@ resource "aws_iam_role_policy" "atlantis-terraform-operations" {
           "iam:GetOpenIDConnectProvider"
         ]
         Resource = "*"
+      },
+      {
+        Sid    = "ManageECSRoles"
+        Effect = "Allow"
+        Action = [
+          "iam:PutRolePolicy",
+          "iam:DeleteRolePolicy",
+          "iam:GetRolePolicy"
+        ]
+        Resource = "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/fileflow-prod-*"
+      },
+      {
+        Sid    = "DescribeSecurityGroups"
+        Effect = "Allow"
+        Action = [
+          "ec2:DescribeSecurityGroups"
+        ]
+        Resource = "*"
+      },
+      {
+        Sid    = "ManageFileFlowSecurityGroups"
+        Effect = "Allow"
+        Action = [
+          "ec2:CreateSecurityGroup",
+          "ec2:DeleteSecurityGroup",
+          "ec2:AuthorizeSecurityGroupIngress",
+          "ec2:AuthorizeSecurityGroupEgress",
+          "ec2:RevokeSecurityGroupIngress",
+          "ec2:RevokeSecurityGroupEgress",
+          "ec2:CreateTags"
+        ]
+        Resource = [
+          "arn:aws:ec2:${var.aws_region}:${data.aws_caller_identity.current.account_id}:security-group/*",
+          "arn:aws:ec2:${var.aws_region}:${data.aws_caller_identity.current.account_id}:vpc/*"
+        ]
+        Condition = {
+          StringLike = {
+            "aws:RequestTag/Service" = "fileflow"
+          }
+        }
+      },
+      {
+        Sid    = "ManageCloudWatchLogs"
+        Effect = "Allow"
+        Action = [
+          "logs:CreateLogGroup",
+          "logs:DeleteLogGroup",
+          "logs:DescribeLogGroups",
+          "logs:PutRetentionPolicy",
+          "logs:TagResource"
+        ]
+        Resource = "arn:aws:logs:${var.aws_region}:${data.aws_caller_identity.current.account_id}:log-group:/aws/ecs/fileflow*"
+      },
+      {
+        Sid    = "DescribeTargetGroups"
+        Effect = "Allow"
+        Action = [
+          "elasticloadbalancing:DescribeTargetGroups"
+        ]
+        Resource = "*"
+      },
+      {
+        Sid    = "ManageFileFlowTargetGroups"
+        Effect = "Allow"
+        Action = [
+          "elasticloadbalancing:ModifyTargetGroup"
+        ]
+        Resource = "arn:aws:elasticloadbalancing:${var.aws_region}:${data.aws_caller_identity.current.account_id}:targetgroup/fileflow-*/*"
       }
     ]
   })
