@@ -13,13 +13,13 @@ variable "environment" {
 variable "tfstate_bucket_name" {
   description = "S3 bucket name for Terraform state"
   type        = string
-  default     = "prod-tfstate"
+  default     = "prod-connectly"
 }
 
 variable "dynamodb_table_name" {
   description = "DynamoDB table name for Terraform state locking"
   type        = string
-  default     = "prod-tf-lock"
+  default     = "prod-connectly-tf-lock"
 }
 
 variable "service" {

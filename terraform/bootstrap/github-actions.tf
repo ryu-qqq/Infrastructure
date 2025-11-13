@@ -73,9 +73,18 @@ resource "aws_iam_role_policy" "github-actions-terraform-state" {
         Action = [
           "dynamodb:GetItem",
           "dynamodb:PutItem",
-          "dynamodb:DeleteItem"
+          "dynamodb:DeleteItem",
+          "dynamodb:DescribeTable"
         ]
         Resource = aws_dynamodb_table.terraform-lock.arn
+      },
+      {
+        Sid    = "DynamoDBListTables"
+        Effect = "Allow"
+        Action = [
+          "dynamodb:ListTables"
+        ]
+        Resource = "*"
       }
     ]
   })
