@@ -6,7 +6,11 @@
 
 ### `/if/` 패키지 - Infrastructure 관리 커맨드
 - `/if/validate` - 모듈 검증
-- `/if/module` - 모듈 관리 및 재사용
+- `/if/module` - 모듈 관리 및 재사용 ⭐ **NEW**
+  - `/if/module list` - 사용 가능한 모듈과 버전 조회
+  - `/if/module info <module>` - 모듈 상세 정보
+  - `/if/module get <module>[@version]` - Terraform source 생성
+  - `/if/module init <module>[@version]` - 프로젝트에 모듈 설정 파일 생성
 - `/if/atlantis` - Atlantis 프로젝트 관리
 - `/if/deploy` - Atlantis 설정 배포 (Git commit & push)
 
@@ -62,9 +66,10 @@ claude code --help | grep "/if"
 
 ### 모듈 재사용
 ```bash
-/if/module list           # 사용 가능한 모듈 목록
-/if/module link alb       # ALB 모듈 심볼릭 링크 생성
-/if/module info ecs-service  # 모듈 상세 정보
+/if/module list              # 사용 가능한 모듈과 버전 목록
+/if/module info ecr          # ECR 모듈 상세 정보 및 버전
+/if/module get ecr@v1.0.0    # ECR 모듈 Terraform source 생성
+/if/module init ecr          # 현재 프로젝트에 ECR 설정 파일 생성
 ```
 
 ### Atlantis 관리
