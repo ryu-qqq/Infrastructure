@@ -5,12 +5,12 @@
 ## 실행 내용
 
 1. **프로젝트 위치 확인**
-   - infrastructure 프로젝트 경로: `/Users/sangwon-ryu/infrastructure`
+   - infrastructure 프로젝트 경로: `/path/to/infrastructure`
    - 검증 스크립트: `./scripts/validators/validate-modules.sh`
 
 2. **검증 실행**
    ```bash
-   cd /Users/sangwon-ryu/infrastructure
+   cd /path/to/infrastructure
    ./scripts/validators/validate-modules.sh [module-name]
    ```
 

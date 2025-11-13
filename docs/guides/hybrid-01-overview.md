@@ -112,7 +112,7 @@ service-c/infrastructure/  ← 서비스별 인프라
 
 - [ ] **1.1 Network 모듈 배포 확인**
   ```bash
-  cd /Users/sangwon-ryu/infrastructure/terraform/network
+  cd /path/to/infrastructure/terraform/network
   terraform init
   terraform plan
   terraform apply
@@ -122,7 +122,7 @@ service-c/infrastructure/  ← 서비스별 인프라
 
 - [ ] **1.2 KMS 모듈 배포 확인**
   ```bash
-  cd /Users/sangwon-ryu/infrastructure/terraform/kms
+  cd /path/to/infrastructure/terraform/kms
   terraform init
   terraform plan
   terraform apply
@@ -132,8 +132,8 @@ service-c/infrastructure/  ← 서비스별 인프라
 
 - [ ] **1.3 ECR 레포지토리 생성**
   ```bash
-  cd /Users/sangwon-ryu/infrastructure/terraform/ecr/[service-name]
-  # 예: cd /Users/sangwon-ryu/infrastructure/terraform/ecr/fileflow
+  cd /path/to/infrastructure/terraform/ecr/[service-name]
+  # 예: cd /path/to/infrastructure/terraform/ecr/fileflow
   terraform init
   terraform plan
   terraform apply
@@ -144,7 +144,7 @@ service-c/infrastructure/  ← 서비스별 인프라
 
 - [ ] **1.4 Shared RDS 배포 (옵션, 필요시)**
   ```bash
-  cd /Users/sangwon-ryu/infrastructure/terraform/rds
+  cd /path/to/infrastructure/terraform/rds
   terraform init
   terraform plan
   terraform apply
@@ -201,8 +201,8 @@ service-c/infrastructure/  ← 서비스별 인프라
 - [ ] **3.1 디렉토리 구조 생성**
   ```bash
   # 서비스 디렉토리 생성 (예: fileflow)
-  mkdir -p /Users/sangwon-ryu/fileflow/infrastructure/terraform
-  cd /Users/sangwon-ryu/fileflow/infrastructure/terraform
+  mkdir -p /path/to/fileflow/infrastructure/terraform
+  cd /path/to/fileflow/infrastructure/terraform
 
   # 환경별 tfvars 디렉토리 생성
   mkdir -p environments/{dev,staging,prod}
@@ -313,7 +313,7 @@ service-c/infrastructure/  ← 서비스별 인프라
 
 - [ ] **4.1 Terraform 초기화**
   ```bash
-  cd /Users/sangwon-ryu/fileflow/infrastructure/terraform
+  cd /path/to/fileflow/infrastructure/terraform
   terraform init
   ```
 
@@ -747,23 +747,23 @@ Application 프로젝트 배포에 필요한 권한:
 
 ```bash
 # 1. Network 모듈 배포
-cd /Users/sangwon-ryu/infrastructure/terraform/network
+cd /path/to/infrastructure/terraform/network
 terraform init
 terraform apply
 
 # 2. KMS 모듈 배포
-cd /Users/sangwon-ryu/infrastructure/terraform/kms
+cd /path/to/infrastructure/terraform/kms
 terraform init
 terraform apply
 
 # 3. ECR 모듈 배포 (서비스별)
-cd /Users/sangwon-ryu/infrastructure/terraform/ecr
+cd /path/to/infrastructure/terraform/ecr
 # ECR 레포지토리 생성 (예: fileflow)
 terraform init
 terraform apply
 
 # 4. Shared RDS 배포 (옵션)
-cd /Users/sangwon-ryu/infrastructure/terraform/rds
+cd /path/to/infrastructure/terraform/rds
 terraform init
 terraform apply
 ```

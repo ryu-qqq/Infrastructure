@@ -23,7 +23,7 @@
 ### Option 1: 심볼릭 링크 (권장)
 ```bash
 # if/ 패키지 전체를 심볼릭 링크로 연결
-ln -s /Users/sangwon-ryu/infrastructure/docs/claude-commands/if \
+ln -s /path/to/infrastructure/docs/claude-commands/if \
       ~/.claude/commands/if
 
 # 확인
@@ -38,7 +38,7 @@ ls -la ~/.claude/commands/if
 ### Option 2: 복사
 ```bash
 # if/ 패키지 복사
-cp -r /Users/sangwon-ryu/infrastructure/docs/claude-commands/if \
+cp -r /path/to/infrastructure/docs/claude-commands/if \
       ~/.claude/commands/
 
 # 확인
@@ -133,7 +133,7 @@ rm ~/.claude/commands/if
 **복사 사용 시**: 다시 복사 필요
 ```bash
 rm -rf ~/.claude/commands/if
-cp -r /Users/sangwon-ryu/infrastructure/docs/claude-commands/if ~/.claude/commands/
+cp -r /path/to/infrastructure/docs/claude-commands/if ~/.claude/commands/
 ```
 
 ## 🤝 기여

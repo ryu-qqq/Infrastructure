@@ -251,7 +251,7 @@ resource "aws_iam_role_policy" "crawler_secrets" {
 data "terraform_remote_state" "kms" {
   backend = "s3"
   config = {
-    bucket = "prod-connectly"
+    bucket = "prod-tfstate"
     key    = "kms/terraform.tfstate"
     region = "ap-northeast-2"
   }

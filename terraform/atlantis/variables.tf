@@ -89,20 +89,20 @@ variable "terraform_state_bucket_prefix" {
 variable "terraform_state_lock_table" {
   description = "DynamoDB table name for Terraform state locking"
   type        = string
-  default     = "prod-connectly-tf-lock"
+  default     = "prod-tfstate-tf-lock"
 }
 
 # Legacy Infrastructure Support
 variable "legacy_terraform_state_bucket" {
   description = "Legacy S3 bucket name for Terraform state (for backward compatibility)"
   type        = string
-  default     = "prod-connectly"
+  default     = "prod-tfstate"
 }
 
 variable "legacy_terraform_lock_table" {
   description = "Legacy DynamoDB table name for Terraform state locking (for backward compatibility)"
   type        = string
-  default     = "prod-connectly-tf-lock"
+  default     = "prod-tfstate-tf-lock"
 }
 
 # Network Configuration

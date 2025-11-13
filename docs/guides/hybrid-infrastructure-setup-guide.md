@@ -123,7 +123,7 @@ service-c/infrastructure/  ← 서비스별 인프라
 
 - [ ] **1.1 Network 모듈 배포 확인**
   ```bash
-  cd /Users/sangwon-ryu/infrastructure/terraform/network
+  cd /path/to/infrastructure/terraform/network
   terraform init
   terraform plan
   terraform apply
@@ -133,7 +133,7 @@ service-c/infrastructure/  ← 서비스별 인프라
 
 - [ ] **1.2 KMS 모듈 배포 확인**
   ```bash
-  cd /Users/sangwon-ryu/infrastructure/terraform/kms
+  cd /path/to/infrastructure/terraform/kms
   terraform init
   terraform plan
   terraform apply
@@ -143,8 +143,8 @@ service-c/infrastructure/  ← 서비스별 인프라
 
 - [ ] **1.3 ECR 레포지토리 생성**
   ```bash
-  cd /Users/sangwon-ryu/infrastructure/terraform/ecr/[service-name]
-  # 예: cd /Users/sangwon-ryu/infrastructure/terraform/ecr/fileflow
+  cd /path/to/infrastructure/terraform/ecr/[service-name]
+  # 예: cd /path/to/infrastructure/terraform/ecr/fileflow
   terraform init
   terraform plan
   terraform apply
@@ -155,7 +155,7 @@ service-c/infrastructure/  ← 서비스별 인프라
 
 - [ ] **1.4 Shared RDS 배포 (옵션, 필요시)**
   ```bash
-  cd /Users/sangwon-ryu/infrastructure/terraform/rds
+  cd /path/to/infrastructure/terraform/rds
   terraform init
   terraform plan
   terraform apply
@@ -212,8 +212,8 @@ service-c/infrastructure/  ← 서비스별 인프라
 - [ ] **3.1 디렉토리 구조 생성**
   ```bash
   # 서비스 디렉토리 생성 (예: fileflow)
-  mkdir -p /Users/sangwon-ryu/fileflow/infrastructure/terraform
-  cd /Users/sangwon-ryu/fileflow/infrastructure/terraform
+  mkdir -p /path/to/fileflow/infrastructure/terraform
+  cd /path/to/fileflow/infrastructure/terraform
 
   # 환경별 tfvars 디렉토리 생성
   mkdir -p environments/{dev,staging,prod}
@@ -324,7 +324,7 @@ service-c/infrastructure/  ← 서비스별 인프라
 
 - [ ] **4.1 Terraform 초기화**
   ```bash
-  cd /Users/sangwon-ryu/fileflow/infrastructure/terraform
+  cd /path/to/fileflow/infrastructure/terraform
   terraform init
   ```
 
@@ -726,7 +726,7 @@ raw.githubusercontent.com
 
 ### Infrastructure 프로젝트 역할 (중앙 관리)
 
-**위치**: `/Users/sangwon-ryu/infrastructure/terraform/`
+**위치**: `/path/to/infrastructure/terraform/`
 
 #### 관리 대상 리소스
 
@@ -784,7 +784,7 @@ raw.githubusercontent.com
 
 ### Application 프로젝트 역할 (분산 관리)
 
-**위치**: `/Users/sangwon-ryu/{service-name}/infrastructure/terraform/`
+**위치**: `/path/to/{service-name}/infrastructure/terraform/`
 
 #### 관리 대상 리소스
 
@@ -938,23 +938,23 @@ Application 프로젝트 배포에 필요한 권한:
 
 ```bash
 # 1. Network 모듈 배포
-cd /Users/sangwon-ryu/infrastructure/terraform/network
+cd /path/to/infrastructure/terraform/network
 terraform init
 terraform apply
 
 # 2. KMS 모듈 배포
-cd /Users/sangwon-ryu/infrastructure/terraform/kms
+cd /path/to/infrastructure/terraform/kms
 terraform init
 terraform apply
 
 # 3. ECR 모듈 배포 (서비스별)
-cd /Users/sangwon-ryu/infrastructure/terraform/ecr
+cd /path/to/infrastructure/terraform/ecr
 # ECR 레포지토리 생성 (예: fileflow)
 terraform init
 terraform apply
 
 # 4. Shared RDS 배포 (옵션)
-cd /Users/sangwon-ryu/infrastructure/terraform/rds
+cd /path/to/infrastructure/terraform/rds
 terraform init
 terraform apply
 ```
@@ -1511,7 +1511,7 @@ resource "aws_ssm_parameter" "shared_rds_master_secret_arn" {
 ### Step 1: 프로젝트 구조 생성
 
 ```bash
-cd /Users/sangwon-ryu/{service-name}
+cd /path/to/{service-name}
 
 # 디렉토리 생성
 mkdir -p infrastructure/terraform/{environments/{dev,staging,prod},modules}
@@ -2628,7 +2628,7 @@ curl http://<alb-dns-name>/actuator/health
 
 #### Infrastructure 프로젝트 워크플로
 
-**파일**: `/Users/sangwon-ryu/infrastructure/.github/workflows/terraform-plan.yml`
+**파일**: `/path/to/infrastructure/.github/workflows/terraform-plan.yml`
 
 ```yaml
 name: Terraform Plan
@@ -2711,7 +2711,7 @@ jobs:
           - ecr/fileflow
 ```
 
-**파일**: `/Users/sangwon-ryu/infrastructure/.github/workflows/terraform-apply.yml`
+**파일**: `/path/to/infrastructure/.github/workflows/terraform-apply.yml`
 
 ```yaml
 name: Terraform Apply
@@ -2771,7 +2771,7 @@ jobs:
 
 #### Application 프로젝트 워크플로
 
-**파일**: `/Users/sangwon-ryu/fileflow/.github/workflows/terraform-plan.yml`
+**파일**: `/path/to/fileflow/.github/workflows/terraform-plan.yml`
 
 ```yaml
 name: Terraform Plan (FileFlow)
@@ -2842,7 +2842,7 @@ jobs:
             });
 ```
 
-**파일**: `/Users/sangwon-ryu/fileflow/.github/workflows/deploy.yml`
+**파일**: `/path/to/fileflow/.github/workflows/deploy.yml`
 
 ```yaml
 name: Deploy FileFlow
@@ -4123,7 +4123,7 @@ Error: error reading SSM Parameter (/shared/network/vpc-id): ParameterNotFound
 
 ```bash
 # 1. Infrastructure 프로젝트로 이동
-cd /Users/sangwon-ryu/infrastructure/terraform/network
+cd /path/to/infrastructure/terraform/network
 
 # 2. Outputs에 SSM Parameter export가 있는지 확인
 cat outputs.tf | grep aws_ssm_parameter
@@ -4191,7 +4191,7 @@ aws kms get-key-policy \
   --policy-name default
 
 # 3. KMS key 정책에 서비스 principal 추가 (Infrastructure 프로젝트)
-cd /Users/sangwon-ryu/infrastructure/terraform/kms
+cd /path/to/infrastructure/terraform/kms
 
 # main.tf의 KMS key 정책에 추가:
 # - S3 key: s3.amazonaws.com
@@ -4240,11 +4240,11 @@ Error: Module not installed
 
 ```bash
 # 1. Infrastructure 프로젝트에서 모듈 복사
-cp -r /Users/sangwon-ryu/infrastructure/terraform/modules/{alb,ecs-service,elasticache,s3-bucket,sqs} \
-      /Users/sangwon-ryu/{service-name}/infrastructure/terraform/modules/
+cp -r /path/to/infrastructure/terraform/modules/{alb,ecs-service,elasticache,s3-bucket,sqs} \
+      /path/to/{service-name}/infrastructure/terraform/modules/
 
 # 2. Terraform 재초기화
-cd /Users/sangwon-ryu/{service-name}/infrastructure/terraform
+cd /path/to/{service-name}/infrastructure/terraform
 terraform init
 ```
 
@@ -4720,13 +4720,13 @@ terraform destroy -target=aws_db_instance.fileflow
 
 ```bash
 # Infrastructure 프로젝트에서 VPC 재생성
-cd /Users/sangwon-ryu/infrastructure/terraform/network
+cd /path/to/infrastructure/terraform/network
 terraform apply
 # 새로운 VPC ID: vpc-new123
 # SSM Parameter /shared/network/vpc-id 자동 업데이트
 
 # Application 프로젝트에서 Plan 실행
-cd /Users/sangwon-ryu/fileflow/infrastructure/terraform
+cd /path/to/fileflow/infrastructure/terraform
 terraform plan
 
 # 출력:
@@ -4779,8 +4779,8 @@ infrastructure/
 **방법 1: 모듈 복사** (권장)
 ```bash
 # Infrastructure 프로젝트에서 Application 프로젝트로 복사
-cp -r /Users/sangwon-ryu/infrastructure/terraform/modules/{alb,ecs-service,elasticache,s3-bucket,sqs} \
-      /Users/sangwon-ryu/fileflow/infrastructure/terraform/modules/
+cp -r /path/to/infrastructure/terraform/modules/{alb,ecs-service,elasticache,s3-bucket,sqs} \
+      /path/to/fileflow/infrastructure/terraform/modules/
 
 # Application Terraform에서 사용
 module "storage_bucket" {
@@ -4821,7 +4821,7 @@ module "storage_bucket" {
 
 ### Infrastructure 프로젝트
 
-**위치**: `/Users/sangwon-ryu/infrastructure/terraform/`
+**위치**: `/path/to/infrastructure/terraform/`
 
 ```
 infrastructure/terraform/
@@ -4901,7 +4901,7 @@ infrastructure/terraform/
 
 ### Application 프로젝트 (예: FileFlow)
 
-**위치**: `/Users/sangwon-ryu/fileflow/infrastructure/terraform/`
+**위치**: `/path/to/fileflow/infrastructure/terraform/`
 
 ```
 fileflow/
@@ -5121,18 +5121,18 @@ fileflow/
 ## 참고 자료
 
 ### 내부 문서
-- **Infrastructure 프로젝트**: `/Users/sangwon-ryu/infrastructure/CLAUDE.md`
-- **FileFlow 마이그레이션 계획**: `/Users/sangwon-ryu/infrastructure/FILEFLOW_HYBRID_MIGRATION.md`
-- **FileFlow 마이그레이션 체크포인트**: `/Users/sangwon-ryu/infrastructure/FILEFLOW_MIGRATION_CHECKPOINT.md`
-- **Governance 가이드**: `/Users/sangwon-ryu/infrastructure/docs/governance/`
+- **Infrastructure 프로젝트**: `/path/to/infrastructure/CLAUDE.md`
+- **FileFlow 마이그레이션 계획**: `/path/to/infrastructure/FILEFLOW_HYBRID_MIGRATION.md`
+- **FileFlow 마이그레이션 체크포인트**: `/path/to/infrastructure/FILEFLOW_MIGRATION_CHECKPOINT.md`
+- **Governance 가이드**: `/path/to/infrastructure/docs/governance/`
 
 ### Terraform 모듈
-- **공통 모듈**: `/Users/sangwon-ryu/infrastructure/terraform/modules/`
-- **모듈 개발 가이드**: `/Users/sangwon-ryu/infrastructure/docs/modules/`
+- **공통 모듈**: `/path/to/infrastructure/terraform/modules/`
+- **모듈 개발 가이드**: `/path/to/infrastructure/docs/modules/`
 
 ### 실제 구현 예제
-- **FileFlow 프로젝트**: `/Users/sangwon-ryu/fileflow/infrastructure/terraform/`
-- **Infrastructure 백업**: `/Users/sangwon-ryu/infrastructure/terraform/fileflow.backup-20251021-094557/`
+- **FileFlow 프로젝트**: `/path/to/fileflow/infrastructure/terraform/`
+- **Infrastructure 백업**: `/path/to/infrastructure/terraform/fileflow.backup-20251021-094557/`
 
 ### AWS 공식 문서
 - **SSM Parameter Store**: https://docs.aws.amazon.com/systems-manager/latest/userguide/systems-manager-parameter-store.html

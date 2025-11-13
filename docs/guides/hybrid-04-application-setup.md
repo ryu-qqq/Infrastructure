@@ -65,7 +65,7 @@ aws ssm get-parameters-by-path \
 ### 디렉토리 생성
 
 ```bash
-cd /Users/sangwon-ryu/{service-name}
+cd /path/to/{service-name}
 
 # 디렉토리 생성
 mkdir -p infrastructure/terraform/{environments/{dev,staging,prod},modules}
@@ -1315,7 +1315,7 @@ Error: reading SSM Parameter (/shared/network/vpc-id): ParameterNotFound
 **해결**:
 ```bash
 # Infrastructure 프로젝트에서 SSM Parameters 확인
-cd /Users/sangwon-ryu/infrastructure/terraform/network
+cd /path/to/infrastructure/terraform/network
 terraform output
 
 # SSM Parameter가 없는 경우 생성

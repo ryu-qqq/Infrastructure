@@ -173,8 +173,8 @@ aws ssm get-parameters-by-path \
 
 ```bash
 # 프로젝트 구조 생성
-mkdir -p /Users/sangwon-ryu/[service-name]/infrastructure/terraform
-cd /Users/sangwon-ryu/[service-name]/infrastructure/terraform
+mkdir -p /path/to/[service-name]/infrastructure/terraform
+cd /path/to/[service-name]/infrastructure/terraform
 
 # 환경별 디렉토리 생성
 mkdir -p environments/{dev,staging,prod}

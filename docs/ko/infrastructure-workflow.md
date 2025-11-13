@@ -110,7 +110,7 @@ Claude Code에서 `/if/` 커맨드를 사용하여 인프라를 관리할 수 �
    ```bash
    cd /path/to/your-project
    mkdir -p terraform/modules
-   ln -s /Users/sangwon-ryu/infrastructure/terraform/modules/ecs-service \
+   ln -s /path/to/infrastructure/terraform/modules/ecs-service \
          terraform/modules/ecs-service
    ```
 
@@ -133,7 +133,7 @@ Claude Code에서 `/if/` 커맨드를 사용하여 인프라를 관리할 수 �
 
 1. **모듈 디렉토리 생성**
    ```bash
-   cd /Users/sangwon-ryu/infrastructure
+   cd /path/to/infrastructure
    mkdir -p terraform/modules/my-new-module/{examples/basic,examples/advanced}
    ```
 
@@ -178,7 +178,7 @@ Claude Code에서 `/if/` 커맨드를 사용하여 인프라를 관리할 수 �
 
 1. **Terraform 구성 생성**
    ```bash
-   cd /Users/sangwon-ryu/infrastructure
+   cd /path/to/infrastructure
    mkdir -p terraform/api-server
    ```
 
@@ -313,19 +313,19 @@ Claude Code에서 `/if/` 커맨드를 사용하여 인프라를 관리할 수 �
 
 1. **절대 경로 사용**
    ```bash
-   ln -s /Users/sangwon-ryu/infrastructure/terraform/modules/ecs-service \
+   ln -s /path/to/infrastructure/terraform/modules/ecs-service \
          ./terraform/modules/ecs-service
    ```
 
 2. **심볼릭 링크 확인**
    ```bash
    ls -la terraform/modules/
-   # lrwxr-xr-x  ... ecs-service -> /Users/sangwon-ryu/infrastructure/...
+   # lrwxr-xr-x  ... ecs-service -> /path/to/infrastructure/...
    ```
 
 3. **대안: 직접 복사**
    ```bash
-   cp -r /Users/sangwon-ryu/infrastructure/terraform/modules/ecs-service \
+   cp -r /path/to/infrastructure/terraform/modules/ecs-service \
          ./terraform/modules/
    ```
 
@@ -336,7 +336,7 @@ Claude Code에서 `/if/` 커맨드를 사용하여 인프라를 관리할 수 �
 모든 스크립트는 infrastructure 프로젝트에 위치합니다:
 
 ```
-/Users/sangwon-ryu/infrastructure/
+/path/to/infrastructure/
 ├── scripts/
 │   ├── validators/
 │   │   ├── validate-modules.sh          # 모듈 검증

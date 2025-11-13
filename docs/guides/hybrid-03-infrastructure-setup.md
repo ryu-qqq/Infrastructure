@@ -21,7 +21,7 @@
 
 ## Infrastructure 디렉토리 구조
 
-**위치**: `/Users/sangwon-ryu/infrastructure/terraform/`
+**위치**: `/path/to/infrastructure/terraform/`
 
 ```
 infrastructure/terraform/
@@ -148,7 +148,7 @@ resource "aws_ssm_parameter" "data_subnet_ids" {
 ### 1. Network 모듈 초기화
 
 ```bash
-cd /Users/sangwon-ryu/infrastructure/terraform/network
+cd /path/to/infrastructure/terraform/network
 terraform init
 ```
 
@@ -321,7 +321,7 @@ resource "aws_ssm_parameter" "elasticache_key_arn" {
 ### KMS 모듈 배포
 
 ```bash
-cd /Users/sangwon-ryu/infrastructure/terraform/kms
+cd /path/to/infrastructure/terraform/kms
 terraform init
 terraform plan
 terraform apply
@@ -639,7 +639,7 @@ resource "aws_ssm_parameter" "shared_rds_master_secret_arn" {
 ### RDS 모듈 배포
 
 ```bash
-cd /Users/sangwon-ryu/infrastructure/terraform/rds
+cd /path/to/infrastructure/terraform/rds
 terraform init
 terraform plan
 terraform apply
@@ -719,7 +719,7 @@ resource "aws_ssm_parameter" "ecr_repository_arn" {
 ### ECR 모듈 배포
 
 ```bash
-cd /Users/sangwon-ryu/infrastructure/terraform/ecr/fileflow
+cd /path/to/infrastructure/terraform/ecr/fileflow
 terraform init
 terraform plan
 terraform apply

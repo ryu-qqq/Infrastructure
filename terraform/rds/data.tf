@@ -25,7 +25,7 @@ data "aws_region" "current" {}
 data "terraform_remote_state" "monitoring" {
   backend = "s3"
   config = {
-    bucket = "prod-connectly"
+    bucket = "prod-tfstate"
     key    = "monitoring/terraform.tfstate"
     region = var.aws_region
   }

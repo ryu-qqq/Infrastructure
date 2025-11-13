@@ -6,7 +6,7 @@ data "aws_caller_identity" "current" {}
 data "terraform_remote_state" "kms" {
   backend = "s3"
   config = {
-    bucket = "prod-connectly"
+    bucket = "prod-tfstate"
     key    = "kms/terraform.tfstate"
     region = "ap-northeast-2"
   }

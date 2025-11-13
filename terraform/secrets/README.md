@@ -76,7 +76,7 @@ AWS Secrets Manager를 사용한 시크릿 관리 인프라 모듈입니다.
 data "terraform_remote_state" "kms" {
   backend = "s3"
   config = {
-    bucket = "prod-connectly"
+    bucket = "prod-tfstate"
     key    = "kms/terraform.tfstate"
     region = "ap-northeast-2"
   }
@@ -85,7 +85,7 @@ data "terraform_remote_state" "kms" {
 data "terraform_remote_state" "secrets" {
   backend = "s3"
   config = {
-    bucket = "prod-connectly"
+    bucket = "prod-tfstate"
     key    = "secrets/terraform.tfstate"
     region = "ap-northeast-2"
   }

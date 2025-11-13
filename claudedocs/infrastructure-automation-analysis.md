@@ -62,7 +62,7 @@ cp -r /path/to/infrastructure/terraform/modules/ecs-service \
 
 # 또는 매번 전체 경로 참조
 module "ecs" {
-  source = "/Users/sangwon-ryu/infrastructure/terraform/modules/ecs-service"
+  source = "/path/to/infrastructure/terraform/modules/ecs-service"
 }
 ```
 
@@ -316,7 +316,7 @@ git push
 cd /path/to/my-project
 
 # 2. Claude에서 심볼릭 링크 생성 (권장)
-ln -s /Users/sangwon-ryu/infrastructure/terraform/modules/ecs-service \
+ln -s /path/to/infrastructure/terraform/modules/ecs-service \
       terraform/modules/ecs-service
 
 # 3. 모듈 사용

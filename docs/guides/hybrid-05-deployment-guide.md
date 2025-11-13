@@ -133,7 +133,7 @@ terraform plan -var-file=environments/prod/terraform.tfvars
 
 - [ ] **Network 모듈 배포 완료**
   ```bash
-  cd /Users/sangwon-ryu/infrastructure/terraform/network
+  cd /path/to/infrastructure/terraform/network
   terraform output
   ```
   - VPC ID 확인
@@ -141,14 +141,14 @@ terraform plan -var-file=environments/prod/terraform.tfvars
 
 - [ ] **KMS 모듈 배포 완료**
   ```bash
-  cd /Users/sangwon-ryu/infrastructure/terraform/kms
+  cd /path/to/infrastructure/terraform/kms
   terraform output
   ```
   - 7개 KMS Key ARN 확인
 
 - [ ] **Shared RDS 배포 완료** (사용 시)
   ```bash
-  cd /Users/sangwon-ryu/infrastructure/terraform/rds
+  cd /path/to/infrastructure/terraform/rds
   terraform output
   ```
   - RDS Endpoint 확인
@@ -156,7 +156,7 @@ terraform plan -var-file=environments/prod/terraform.tfvars
 
 - [ ] **ECR Repository 배포 완료**
   ```bash
-  cd /Users/sangwon-ryu/infrastructure/terraform/ecr/{service-name}
+  cd /path/to/infrastructure/terraform/ecr/{service-name}
   terraform output
   ```
   - ECR Repository URL 확인
@@ -472,7 +472,7 @@ echo "===== Validation Complete ====="
 
 #### Infrastructure 프로젝트 워크플로
 
-**파일**: `/Users/sangwon-ryu/infrastructure/.github/workflows/terraform-plan.yml`
+**파일**: `/path/to/infrastructure/.github/workflows/terraform-plan.yml`
 
 ```yaml
 name: Terraform Plan (Infrastructure)
@@ -555,7 +555,7 @@ jobs:
             });
 ```
 
-**파일**: `/Users/sangwon-ryu/infrastructure/.github/workflows/terraform-apply.yml`
+**파일**: `/path/to/infrastructure/.github/workflows/terraform-apply.yml`
 
 ```yaml
 name: Terraform Apply (Infrastructure)
@@ -615,7 +615,7 @@ jobs:
 
 #### Application 프로젝트 워크플로
 
-**파일**: `/Users/sangwon-ryu/{service-name}/.github/workflows/terraform-plan.yml`
+**파일**: `/path/to/{service-name}/.github/workflows/terraform-plan.yml`
 
 ```yaml
 name: Terraform Plan (Application)
@@ -686,7 +686,7 @@ jobs:
             });
 ```
 
-**파일**: `/Users/sangwon-ryu/{service-name}/.github/workflows/deploy.yml`
+**파일**: `/path/to/{service-name}/.github/workflows/deploy.yml`
 
 ```yaml
 name: Deploy Application

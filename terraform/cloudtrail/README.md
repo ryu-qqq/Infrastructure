@@ -293,7 +293,7 @@ This CloudTrail configuration supports:
 data "terraform_remote_state" "cloudtrail" {
   backend = "s3"
   config = {
-    bucket = "prod-connectly"
+    bucket = "prod-tfstate"
     key    = "cloudtrail/terraform.tfstate"
     region = "ap-northeast-2"
   }

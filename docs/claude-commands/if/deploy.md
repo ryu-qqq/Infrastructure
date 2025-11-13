@@ -10,7 +10,7 @@ Atlantis는 Git 레포지토리의 `atlantis.yaml` 파일을 읽어 프로젝트
 
 ### 1단계: 변경사항 확인
 ```bash
-cd /Users/sangwon-ryu/infrastructure
+cd /path/to/infrastructure
 
 # Git 상태 확인
 git status
@@ -103,7 +103,7 @@ atlantis plan -p ecr-prod
 
 set -e
 
-cd /Users/sangwon-ryu/infrastructure
+cd /path/to/infrastructure
 
 echo "📋 1. Checking changes..."
 git diff atlantis.yaml

@@ -242,7 +242,7 @@ terraform plan
 
 ```bash
 # 1. Infrastructure 레포에서 작업
-cd /Users/sangwon-ryu/infrastructure
+cd /path/to/infrastructure
 
 # 2. 모듈 디렉토리 생성
 mkdir -p terraform/modules/my-module/{examples/basic}
@@ -276,7 +276,7 @@ git push origin modules/ecr/v1.1.0
 
 ## 자동화 스크립트
 
-**위치**: `/Users/sangwon-ryu/infrastructure/scripts/modules/module-manager.sh`
+**위치**: `/path/to/infrastructure/scripts/modules/module-manager.sh`
 
 **직접 실행**:
 ```bash
@@ -287,7 +287,7 @@ git push origin modules/ecr/v1.1.0
 ./scripts/modules/module-manager.sh init ecr
 
 # 다른 프로젝트에서 (절대 경로 사용)
-/Users/sangwon-ryu/infrastructure/scripts/modules/module-manager.sh list
+/path/to/infrastructure/scripts/modules/module-manager.sh list
 ```
 
 ## 주의사항

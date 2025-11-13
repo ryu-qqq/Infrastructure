@@ -8,7 +8,7 @@ Terraform의 상태 파일(state)과 잠금(lock)을 안전하게 관리하기 �
 
 ## 관리 리소스
 
-### 1. S3 Bucket (`prod-connectly`)
+### 1. S3 Bucket (`prod-tfstate`)
 - **용도**: Terraform state 파일 저장소
 - **기능**:
   - 버저닝 활성화 (복구 가능)
@@ -19,7 +19,7 @@ Terraform의 상태 파일(state)과 잠금(lock)을 안전하게 관리하기 �
   - 90일 후 이전 버전 자동 삭제
   - 7일 후 미완료 멀티파트 업로드 삭제
 
-### 2. DynamoDB Table (`prod-connectly-tf-lock`)
+### 2. DynamoDB Table (`prod-tfstate-tf-lock`)
 - **용도**: Terraform state 잠금 메커니즘
 - **기능**:
   - PAY_PER_REQUEST 결제 모드
@@ -74,10 +74,10 @@ terraform apply
 
 ```bash
 # 1. S3 버킷 가져오기
-terraform import aws_s3_bucket.terraform-state prod-connectly
+terraform import aws_s3_bucket.terraform-state prod-tfstate
 
 # 2. DynamoDB 테이블 가져오기
-terraform import aws_dynamodb_table.terraform-lock prod-connectly-tf-lock
+terraform import aws_dynamodb_table.terraform-lock prod-tfstate-tf-lock
 
 # 3. KMS 키 가져오기 (기존 키의 ID를 먼저 확인해야 합니다)
 # AWS Console > KMS에서 "terraform-state" 키의 ID 확인
@@ -96,11 +96,11 @@ Bootstrap 인프라 배포 후, 다른 Terraform 프로젝트에서 다음과 �
 ```hcl
 terraform {
   backend "s3" {
-    bucket         = "prod-connectly"
+    bucket         = "prod-tfstate"
     key            = "network/terraform.tfstate"
     region         = "ap-northeast-2"
     encrypt        = true
-    dynamodb_table = "prod-connectly-tf-lock"
+    dynamodb_table = "prod-tfstate-tf-lock"
     kms_key_id     = "alias/terraform-state"
   }
 }
@@ -125,7 +125,7 @@ terraform {
 - DynamoDB: `kms_key_arn` 지정
 
 ### ✅ 네이밍 규칙
-- 리소스 이름: `kebab-case` (예: `prod-connectly`)
+- 리소스 이름: `kebab-case` (예: `prod-tfstate`)
 - 변수/로컬: `snake_case` (예: `required_tags`)
 
 ## 변수
@@ -134,8 +134,8 @@ terraform {
 |------|------|--------|
 | `aws_region` | AWS 리전 | `ap-northeast-2` |
 | `environment` | 환경 | `prod` |
-| `tfstate_bucket_name` | S3 버킷 이름 | `prod-connectly` |
-| `dynamodb_table_name` | DynamoDB 테이블 이름 | `prod-connectly-tf-lock` |
+| `tfstate_bucket_name` | S3 버킷 이름 | `prod-tfstate` |
+| `dynamodb_table_name` | DynamoDB 테이블 이름 | `prod-tfstate-tf-lock` |
 | `service` | 서비스 이름 | `terraform-backend` |
 | `owner` | 소유자 이메일 | `fbtkdals2@naver.com` |
 | `cost_center` | 비용 센터 | `infrastructure` |
@@ -177,14 +177,14 @@ terraform {
 S3 버전 목록 확인:
 ```bash
 aws s3api list-object-versions \
-  --bucket prod-connectly \
+  --bucket prod-tfstate \
   --prefix network/terraform.tfstate
 ```
 
 특정 버전 복원:
 ```bash
 aws s3api get-object \
-  --bucket prod-connectly \
+  --bucket prod-tfstate \
   --key network/terraform.tfstate \
   --version-id <VERSION_ID> \
   terraform.tfstate.backup

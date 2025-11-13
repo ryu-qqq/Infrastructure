@@ -54,7 +54,7 @@ Error: error reading SSM Parameter (/shared/network/vpc-id): ParameterNotFound
 
 ```bash
 # 1. Infrastructure 프로젝트로 이동
-cd /Users/sangwon-ryu/infrastructure/terraform/network
+cd /path/to/infrastructure/terraform/network
 
 # 2. Outputs에 SSM Parameter export가 있는지 확인
 cat outputs.tf | grep aws_ssm_parameter
@@ -136,7 +136,7 @@ aws kms get-key-policy \
   --policy-name default
 
 # 3. KMS key 정책에 서비스 principal 추가 (Infrastructure 프로젝트)
-cd /Users/sangwon-ryu/infrastructure/terraform/kms
+cd /path/to/infrastructure/terraform/kms
 
 # main.tf의 KMS key 정책에 추가:
 # - S3 key: s3.amazonaws.com
@@ -244,11 +244,11 @@ Error: Module not installed
 
 ```bash
 # 1. Infrastructure 프로젝트에서 모듈 복사
-cp -r /Users/sangwon-ryu/infrastructure/terraform/modules/{alb,ecs-service,elasticache,s3-bucket,sqs} \
-      /Users/sangwon-ryu/{service-name}/infrastructure/terraform/modules/
+cp -r /path/to/infrastructure/terraform/modules/{alb,ecs-service,elasticache,s3-bucket,sqs} \
+      /path/to/{service-name}/infrastructure/terraform/modules/
 
 # 2. Terraform 재초기화
-cd /Users/sangwon-ryu/{service-name}/infrastructure/terraform
+cd /path/to/{service-name}/infrastructure/terraform
 terraform init
 ```
 
@@ -914,13 +914,13 @@ terraform destroy -target=aws_db_instance.fileflow
 
 ```bash
 # Infrastructure 프로젝트에서 VPC 재생성
-cd /Users/sangwon-ryu/infrastructure/terraform/network
+cd /path/to/infrastructure/terraform/network
 terraform apply
 # 새로운 VPC ID: vpc-new123
 # SSM Parameter /shared/network/vpc-id 자동 업데이트
 
 # Application 프로젝트에서 Plan 실행
-cd /Users/sangwon-ryu/fileflow/infrastructure/terraform
+cd /path/to/fileflow/infrastructure/terraform
 terraform plan
 
 # 출력:
@@ -979,8 +979,8 @@ infrastructure/
 
 ```bash
 # Infrastructure 프로젝트에서 Application 프로젝트로 복사
-cp -r /Users/sangwon-ryu/infrastructure/terraform/modules/{alb,ecs-service,elasticache,s3-bucket,sqs} \
-      /Users/sangwon-ryu/fileflow/infrastructure/terraform/modules/
+cp -r /path/to/infrastructure/terraform/modules/{alb,ecs-service,elasticache,s3-bucket,sqs} \
+      /path/to/fileflow/infrastructure/terraform/modules/
 
 # Application Terraform에서 사용
 module "storage_bucket" {
@@ -1022,7 +1022,7 @@ module "storage_bucket" {
 
 ### Infrastructure 프로젝트
 
-**위치**: `/Users/sangwon-ryu/infrastructure/terraform/`
+**위치**: `/path/to/infrastructure/terraform/`
 
 ```
 infrastructure/terraform/
@@ -1104,7 +1104,7 @@ infrastructure/terraform/
 
 ### Application 프로젝트 (예: FileFlow)
 
-**위치**: `/Users/sangwon-ryu/fileflow/infrastructure/terraform/`
+**위치**: `/path/to/fileflow/infrastructure/terraform/`
 
 ```
 fileflow/
@@ -1367,7 +1367,7 @@ fileflow/
 - [모듈 개발 가이드](/docs/modules/)
 
 ### 실제 구현 예제
-- [FileFlow 프로젝트](/Users/sangwon-ryu/fileflow/infrastructure/terraform/)
+- [FileFlow 프로젝트](/path/to/fileflow/infrastructure/terraform/)
 
 ### AWS 공식 문서
 - [SSM Parameter Store](https://docs.aws.amazon.com/systems-manager/latest/userguide/systems-manager-parameter-store.html)

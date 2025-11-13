@@ -422,7 +422,7 @@ resource "aws_lb_listener" "https" {
 
 ## 자동화 스크립트
 
-**위치**: `/Users/sangwon-ryu/infrastructure/scripts/shared/shared-infra-manager.sh`
+**위치**: `/path/to/infrastructure/scripts/shared/shared-infra-manager.sh`
 
 **직접 실행**:
 ```bash
@@ -432,7 +432,7 @@ resource "aws_lb_listener" "https" {
 ./scripts/shared/shared-infra-manager.sh get rds
 
 # 다른 프로젝트에서 (절대 경로 사용)
-/Users/sangwon-ryu/infrastructure/scripts/shared/shared-infra-manager.sh list
+/path/to/infrastructure/scripts/shared/shared-infra-manager.sh list
 ```
 
 ## 주의사항

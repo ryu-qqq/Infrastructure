@@ -44,10 +44,10 @@ terraform/kms/
 ```hcl
 terraform {
   backend "s3" {
-    bucket         = "prod-connectly"
+    bucket         = "prod-tfstate"
     key            = "module-name/terraform.tfstate"
     region         = "ap-northeast-2"
-    dynamodb_table = "prod-connectly-tf-lock"
+    dynamodb_table = "prod-tfstate-tf-lock"
     encrypt        = true
     kms_key_id     = "alias/terraform-state"  # 추가
   }
@@ -138,7 +138,7 @@ resource "aws_secretsmanager_secret" "app_secret" {
 data "terraform_remote_state" "kms" {
   backend = "s3"
   config = {
-    bucket = "prod-connectly"
+    bucket = "prod-tfstate"
     key    = "kms/terraform.tfstate"
     region = "ap-northeast-2"
   }

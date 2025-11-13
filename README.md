@@ -421,7 +421,7 @@ Lambda 기반 자동 로테이션 시스템:
 
 ```bash
 # Claude Commands 설치
-ln -s /Users/sangwon-ryu/infrastructure/docs/claude-commands/if \
+ln -s /path/to/infrastructure/docs/claude-commands/if \
       ~/.claude/commands/if
 ```
 
@@ -507,11 +507,7 @@ docs: Update hybrid infrastructure guide
 
 ---
 
-## 📝 라이선스
-
-이 프로젝트는 ryu-qqq의 인프라 관리 코드입니다.
-
 ---
 
 **Last Updated**: 2025-11-13
-**Maintainers**: ryu-qqq
+**Maintainers**: ryuqqq

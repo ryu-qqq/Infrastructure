@@ -23,7 +23,7 @@ Bootstrap 인프라의 모든 주요 변경사항은 이 파일에 문서화됩�
 
 ### Added
 - Terraform Backend 인프라
-- S3 Bucket (`prod-connectly`)
+- S3 Bucket (`prod-tfstate`)
   - Terraform state 파일 저장소
   - 버저닝 활성화 (복구 가능)
   - KMS 암호화 (alias/terraform-state)
@@ -33,7 +33,7 @@ Bootstrap 인프라의 모든 주요 변경사항은 이 파일에 문서화됩�
   - Lifecycle 정책
     - 90일 후 이전 버전 자동 삭제
     - 7일 후 미완료 멀티파트 업로드 삭제
-- DynamoDB Table (`prod-connectly-tf-lock`)
+- DynamoDB Table (`prod-tfstate-tf-lock`)
   - Terraform state 잠금 메커니즘
   - PAY_PER_REQUEST 결제 모드
   - KMS 암호화

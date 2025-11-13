@@ -4,14 +4,14 @@
 
 ## Atlantis 정보
 
-- **설정 파일**: `/Users/sangwon-ryu/infrastructure/atlantis.yaml`
+- **설정 파일**: `/path/to/infrastructure/atlantis.yaml`
 - **현재 프로젝트들**: bootstrap, kms, network, secrets, rds, cloudtrail, logging, monitoring, route53, acm, atlantis, ecr-fileflow, fileflow
 
 ## 실행 가능한 작업
 
 ### 1. 현재 Atlantis 프로젝트 목록 확인
 ```bash
-cd /Users/sangwon-ryu/infrastructure
+cd /path/to/infrastructure
 grep -A 3 "^  - name:" atlantis.yaml | grep "name:"
 ```
 
@@ -37,7 +37,7 @@ grep -A 3 "^  - name:" atlantis.yaml | grep "name:"
 
 ### 3. Atlantis 설정 검증
 ```bash
-cd /Users/sangwon-ryu/infrastructure
+cd /path/to/infrastructure
 # Atlantis 설정 파일 구문 검증
 atlantis validate atlantis.yaml
 
@@ -47,7 +47,7 @@ yamllint atlantis.yaml
 
 ### 4. 프로젝트 추가 자동화 스크립트 실행
 ```bash
-cd /Users/sangwon-ryu/infrastructure
+cd /path/to/infrastructure
 ./scripts/atlantis/add-project.sh {service-name} {category} "{description}"
 ```
 

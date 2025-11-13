@@ -53,7 +53,7 @@ variable "team" {
 variable "terraform_state_bucket" {
   description = "S3 bucket name for Terraform state"
   type        = string
-  default     = "prod-connectly"
+  default     = "prod-tfstate"
 }
 
 # AMP Configuration

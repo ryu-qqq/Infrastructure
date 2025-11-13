@@ -20,7 +20,7 @@
 
 ## Infrastructure 프로젝트 역할 (중앙 관리)
 
-**위치**: `/Users/sangwon-ryu/infrastructure/terraform/`
+**위치**: `/path/to/infrastructure/terraform/`
 
 **핵심 원칙**: 공유 가능한 리소스는 중앙에서 관리하고, SSM Parameter Store를 통해 Export합니다.
 
@@ -155,7 +155,7 @@ prod-shared-mysql
 
 ## Application 프로젝트 역할 (분산 관리)
 
-**위치**: `/Users/sangwon-ryu/{service-name}/infrastructure/terraform/`
+**위치**: `/path/to/{service-name}/infrastructure/terraform/`
 
 **핵심 원칙**: 서비스 특화 리소스는 서비스 레포지토리에서 관리하고, 공유 리소스는 SSM Parameter Store를 통해 참조합니다.
 

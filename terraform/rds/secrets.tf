@@ -77,7 +77,7 @@ resource "aws_secretsmanager_secret_version" "db-master-password" {
 data "terraform_remote_state" "secrets" {
   backend = "s3"
   config = {
-    bucket = "prod-connectly"
+    bucket = "prod-tfstate"
     key    = "secrets/terraform.tfstate"
     region = var.aws_region
   }

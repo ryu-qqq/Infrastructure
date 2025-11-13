@@ -11,10 +11,10 @@ terraform {
   }
 
   backend "s3" {
-    bucket         = "prod-connectly"
+    bucket         = "prod-tfstate"
     key            = "route53/terraform.tfstate"
     region         = "ap-northeast-2"
-    dynamodb_table = "prod-connectly-tf-lock"
+    dynamodb_table = "prod-tfstate-tf-lock"
     encrypt        = true
   }
 }
