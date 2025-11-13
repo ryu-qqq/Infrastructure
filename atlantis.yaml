@@ -131,43 +131,11 @@ projects:
     apply_requirements: ["approved", "mergeable"]
     workflow: default
 
-  # Test Infrastructure for Atlantis Integration Testing
-  - name: atlantis-test
-    dir: terraform/test
-    workspace: default
-    autoplan:
-      when_modified: ["*.tf", "*.tfvars"]
-      enabled: true
-    apply_requirements: ["approved", "mergeable"]
-    workflow: default
-
   # ============================================================================
   # Container Registry (컨테이너 레지스트리)
   # ============================================================================
-
-  # ECR - FileFlow Container Registry
-  - name: ecr-fileflow-prod
-    dir: terraform/ecr/fileflow
-    workspace: default
-    autoplan:
-      when_modified: ["*.tf", "*.tfvars"]
-      enabled: true
-    apply_requirements: ["approved", "mergeable"]
-    workflow: default
-
-  # ============================================================================
-  # Application Infrastructure (애플리케이션 인프라)
-  # ============================================================================
-
-  # FileFlow - ECS Service
-  - name: fileflow-prod
-    dir: terraform/fileflow
-    workspace: default
-    autoplan:
-      when_modified: ["*.tf", "*.tfvars"]
-      enabled: true
-    # apply_requirements: ["approved", "mergeable"]  # Temporarily disabled for initial deployment
-    workflow: default
+  # ECR은 각 애플리케이션 레포에서 관리
+  # Infrastructure 레포는 ECR 모듈만 제공 (terraform/modules/ecr)
 
 
 # Workflows
