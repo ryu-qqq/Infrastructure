@@ -6,11 +6,15 @@
 
 ### `/if/` 패키지 - Infrastructure 관리 커맨드
 - `/if/validate` - 모듈 검증
-- `/if/module` - 모듈 관리 및 재사용 ⭐ **NEW**
+- `/if/module` - 모듈 관리 및 재사용
   - `/if/module list` - 사용 가능한 모듈과 버전 조회
   - `/if/module info <module>` - 모듈 상세 정보
   - `/if/module get <module>[@version]` - Terraform source 생성
   - `/if/module init <module>[@version]` - 프로젝트에 모듈 설정 파일 생성
+- `/if/shared` - 공유 인프라 참조 ⭐ **NEW**
+  - `/if/shared list` - 사용 가능한 공유 리소스 조회
+  - `/if/shared info <resource>` - 공유 리소스 상세 정보 및 SSM 파라미터
+  - `/if/shared get <resource>` - Terraform data source 코드 생성
 - `/if/atlantis` - Atlantis 프로젝트 관리
 - `/if/deploy` - Atlantis 설정 배포 (Git commit & push)
 
@@ -70,6 +74,14 @@ claude code --help | grep "/if"
 /if/module info ecr          # ECR 모듈 상세 정보 및 버전
 /if/module get ecr@v1.0.0    # ECR 모듈 Terraform source 생성
 /if/module init ecr          # 현재 프로젝트에 ECR 설정 파일 생성
+```
+
+### 공유 인프라 참조
+```bash
+/if/shared list              # 사용 가능한 공유 리소스 목록 (RDS, VPC, S3 등)
+/if/shared info rds          # RDS 상세 정보 및 SSM 파라미터
+/if/shared get rds           # RDS 참조 Terraform 코드 생성
+/if/shared get vpc           # VPC 참조 Terraform 코드 생성
 ```
 
 ### Atlantis 관리
