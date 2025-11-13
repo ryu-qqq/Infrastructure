@@ -206,8 +206,8 @@ infrastructure/
 │   ├── cloudtrail/         # 감사 로그
 │   └── bootstrap/          # 초기 인프라 부트스트랩
 ├── scripts/
-│   ├── validators/         # Terraform 검증 스크립트 (7개)
-│   ├── atlantis/           # Atlantis 운영 스크립트
+│   ├── validators/         # Terraform 검증 스크립트 (10개)
+│   ├── atlantis/           # Atlantis 운영 및 자동화 (8개)
 │   ├── hooks/              # Git hooks 설정
 │   └── policy/             # OPA 정책 헬퍼
 ├── docs/
@@ -216,6 +216,8 @@ infrastructure/
 │   ├── modules/            # 모듈 개발 가이드 (6개)
 │   ├── runbooks/           # 인시던트 대응 런북 (3개)
 │   ├── workflows/          # 워크플로 문서
+│   ├── claude-commands/    # Claude Code 커맨드 (3개)
+│   ├── ko/                 # 한글 문서
 │   └── changelogs/         # 변경 이력
 └── policies/               # OPA 정책 (8개 파일, 4개 정책)
     ├── tagging/            # 태깅 정책
@@ -268,11 +270,12 @@ infrastructure/
 
 ## 🛠️ 사용 가능한 Terraform 모듈
 
-### 핵심 모듈 (15개)
+### 핵심 모듈 (17개)
 
 | 모듈 | 설명 | 버전 |
 |------|------|------|
 | `alb` | Application Load Balancer | 1.0.0 |
+| `cloudfront` | CloudFront Distribution | 1.0.0 |
 | `cloudwatch-log-group` | CloudWatch Log Group (KMS 암호화) | 1.0.0 |
 | `common-tags` | 표준 리소스 태깅 | 1.0.0 |
 | `ecs-service` | ECS Fargate Service | 1.0.0 |
@@ -280,12 +283,13 @@ infrastructure/
 | `iam-role-policy` | IAM Role and Policy | 1.0.0 |
 | `lambda` | Lambda Function 관리 | 1.0.0 |
 | `messaging-pattern` | 메시징 패턴 (SNS+SQS) | 1.0.0 |
-| `rds` | RDS MySQL (Multi-AZ) | 1.0.0 |
+| `rds` | RDS MySQL/PostgreSQL (Multi-AZ) | 1.0.0 |
 | `route53-record` | Route53 DNS 레코드 | 1.0.0 |
 | `s3-bucket` | S3 Bucket (암호화, Lifecycle) | 1.0.0 |
 | `security-group` | Security Group Templates | 1.0.0 |
 | `sns` | SNS Topic 관리 | 1.0.0 |
 | `sqs` | SQS Queue (KMS 암호화) | 1.0.0 |
+| `vpc` | VPC 및 Network 구성 | 1.0.0 |
 | `waf` | WAF 규칙 관리 | 1.0.0 |
 
 **📖 자세한 내용**: [Modules Directory](terraform/modules/)
@@ -381,30 +385,6 @@ Lambda 기반 자동 로테이션 시스템:
 
 ---
 
-## 💰 비용 최적화
-
-### 환경별 월간 예상 비용
-
-| 환경 | ECS | RDS | 기타 | **합계** |
-|------|-----|-----|------|----------|
-| **Dev** | $11 | 공유 | $134 | **~$145/월** |
-| **Staging** | $44 | 공유 | $278 | **~$322/월** |
-| **Prod** | $132 | 공유 | $531 | **~$663/월** |
-| **Shared Infrastructure** | - | $145 | $227 | **~$372/월** |
-| **전체 합계** | | | | **~$1,502/월** |
-
-### 비용 절감 전략
-
-1. **Fargate Spot**: 70% 비용 절감 (Prod 환경 적용)
-2. **S3 Lifecycle**: Standard → IA → Glacier (80% 절감)
-3. **Shared RDS**: 여러 서비스가 하나의 RDS 공유 (50% 절감)
-4. **VPC Endpoints**: NAT Gateway 대신 사용 (90% 절감)
-5. **Reserved Instances**: 1년 약정 (30% 절감)
-
-**📖 자세한 내용**: [운영 가이드 - 비용 최적화](docs/guides/hybrid-07-operations-guide.md#1-비용-예측-및-최적화)
-
----
-
 ## 📊 모니터링
 
 ### CloudWatch 알람
@@ -433,6 +413,43 @@ Lambda 기반 자동 로테이션 시스템:
 
 ---
 
+## 🧰 개발자 도구
+
+### Claude Code 통합
+
+이 프로젝트는 **Claude Code** 커맨드를 제공하여 개발 효율을 높입니다:
+
+```bash
+# Claude Commands 설치
+ln -s /Users/sangwon-ryu/infrastructure/docs/claude-commands/if \
+      ~/.claude/commands/if
+```
+
+**사용 가능한 커맨드**:
+- `/if/validate` - 모듈 검증 (필수 파일, terraform validate, governance 체크)
+- `/if/module` - 모듈 관리 및 재사용 (심볼릭 링크 생성)
+- `/if/atlantis` - Atlantis 프로젝트 자동 추가
+
+**📖 자세한 내용**: [Claude Commands 설치 가이드](docs/claude-commands/INSTALL.md)
+
+### 자동화 스크립트
+
+```bash
+# 모든 모듈 검증
+./scripts/validators/validate-modules.sh
+
+# 특정 모듈만 검증
+./scripts/validators/validate-modules.sh alb
+
+# Atlantis에 새 프로젝트 추가 (대화형)
+./scripts/atlantis/add-project.sh
+
+# Atlantis 상태 확인
+./scripts/atlantis/check-atlantis-health.sh
+```
+
+---
+
 ## 🤝 기여 가이드
 
 ### Pull Request 체크리스트
@@ -445,7 +462,6 @@ PR 생성 전 다음을 확인하세요:
 - [ ] 보안 스캔 (tfsec, checkov) 통과
 - [ ] 필수 태그 포함 (`merge(local.required_tags)`)
 - [ ] KMS 암호화 적용
-- [ ] 관련 Jira 태스크 링크
 - [ ] 문서 업데이트 (해당 시)
 
 ### 커밋 메시지 규칙
@@ -497,5 +513,5 @@ docs: Update hybrid infrastructure guide
 
 ---
 
-**Last Updated**: 2025-10-29
+**Last Updated**: 2025-11-13
 **Maintainers**: ryu-qqq
