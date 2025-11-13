@@ -1,13 +1,137 @@
 # Infrastructure Atlantis Command
 
-**Task**: Atlantis 설정을 자동으로 관리하고 새 프로젝트를 추가합니다.
+**Task**: Multi-Repo 아키텍처에서 Atlantis 설정을 자동으로 관리합니다.
 
-## Atlantis 정보
+## Multi-Repo Atlantis 아키텍처
 
-- **설정 파일**: `/path/to/infrastructure/atlantis.yaml`
-- **현재 프로젝트들**: bootstrap, kms, network, secrets, rds, cloudtrail, logging, monitoring, route53, acm, atlantis, ecr-fileflow, fileflow
+```
+중앙 Atlantis 서버 (ECS)
+    ↓ (github.com/ryu-qqq/* 허용)
+    ├─→ Infrastructure 레포 (atlantis.yaml) - 공유 인프라
+    ├─→ FileFlow 레포 (atlantis.yaml) - FileFlow 인프라
+    └─→ API Server 레포 (atlantis.yaml) - API Server 인프라
+```
+
+**핵심 개념**:
+- 중앙 Atlantis 서버는 **모든 ryu-qqq 레포**를 허용
+- 각 레포는 **자신의 atlantis.yaml**만 관리
+- PR이 열리면 Atlantis가 해당 레포의 설정을 자동 감지
 
 ## 실행 가능한 작업
+
+### 1. 애플리케이션 레포용 Atlantis 설정 생성 ⭐ **NEW**
+
+**사용 시나리오**: FileFlow, API Server 등 애플리케이션 레포에서 사용
+
+```bash
+# FileFlow 레포에서
+cd ~/fileflow
+/if/atlantis init
+
+# 또는 직접 실행
+/path/to/infrastructure/scripts/atlantis/init-repo-atlantis.sh
+```
+
+**작동 방식**:
+1. 🔍 `terraform/` 디렉토리 자동 스캔
+2. 📋 감지된 프로젝트 표시 및 선택
+3. ✅ `atlantis.yaml` 자동 생성
+4. 📝 베스트 프랙티스 적용
+
+**출력 예시**:
+```
+🔍 Scanning terraform directories...
+
+  ✓ Found: terraform/ecr
+  ✓ Found: terraform/alb
+  ✓ Found: terraform/ecs-service
+  ⊗ Found: terraform/dev (excluded by default)
+
+📋 Detected Terraform Projects:
+
+  [x] ecr-prod (terraform/ecr)
+      Container Registry for FileFlow
+
+  [x] alb-prod (terraform/alb)
+      Application Load Balancer
+
+  [x] ecs-service-prod (terraform/ecs-service)
+      ECS Service deployment
+
+  [ ] dev (terraform/dev)
+      Development environment (usually skip)
+
+? Include selected projects in atlantis.yaml? (Y/n): y
+? Include excluded projects (dev/test)? (y/N): n
+
+✅ Generated: atlantis.yaml
+✅ Added 3 projects
+```
+
+**생성되는 atlantis.yaml**:
+```yaml
+version: 3
+
+automerge: false
+delete_source_branch_on_merge: false
+parallel_plan: true
+parallel_apply: false
+
+projects:
+  # ============================================================================
+  # Container Registry
+  # ============================================================================
+
+  # Container Registry for FileFlow
+  - name: ecr-prod
+    dir: terraform/ecr
+    workspace: default
+    autoplan:
+      when_modified: ["*.tf", "*.tfvars"]
+      enabled: true
+    apply_requirements: ["approved", "mergeable"]
+    workflow: default
+
+  # ============================================================================
+  # Load Balancing & CDN
+  # ============================================================================
+
+  # Application Load Balancer
+  - name: alb-prod
+    dir: terraform/alb
+    workspace: default
+    autoplan:
+      when_modified: ["*.tf", "*.tfvars"]
+      enabled: true
+    apply_requirements: ["approved", "mergeable"]
+    workflow: default
+
+  # ============================================================================
+  # Application Infrastructure
+  # ============================================================================
+
+  # ECS Service deployment
+  - name: ecs-service-prod
+    dir: terraform/ecs-service
+    workspace: default
+    autoplan:
+      when_modified: ["*.tf", "*.tfvars"]
+      enabled: true
+    apply_requirements: ["approved", "mergeable"]
+    workflow: default
+
+workflows:
+  default:
+    plan:
+      steps:
+        - init
+        - plan
+    apply:
+      steps:
+        - apply
+```
+
+### 2. Infrastructure 레포에 프로젝트 추가 (Legacy)
 
 ### 1. 현재 Atlantis 프로젝트 목록 확인
 ```bash
