@@ -1,0 +1,111 @@
+# ECR Repository Module
+# Creates an ECR repository with KMS encryption, image scanning, and lifecycle policies
+
+resource "aws_ecr_repository" "this" {
+  name                 = var.name
+  image_tag_mutability = var.image_tag_mutability
+
+  image_scanning_configuration {
+    scan_on_push = var.scan_on_push
+  }
+
+  encryption_configuration {
+    encryption_type = "KMS"
+    kms_key         = var.kms_key_arn
+  }
+
+  tags = merge(
+    var.common_tags,
+    {
+      Name      = "ecr-${var.name}"
+      Component = "container-registry"
+    }
+  )
+}
+
+# Lifecycle Policy
+resource "aws_ecr_lifecycle_policy" "this" {
+  count      = var.enable_lifecycle_policy ? 1 : 0
+  repository = aws_ecr_repository.this.name
+
+  policy = jsonencode({
+    rules = [
+      {
+        rulePriority = 1
+        description  = "Keep last ${var.max_image_count} tagged images"
+        selection = {
+          tagStatus     = "tagged"
+          tagPrefixList = var.lifecycle_tag_prefixes
+          countType     = "imageCountMoreThan"
+          countNumber   = var.max_image_count
+        }
+        action = {
+          type = "expire"
+        }
+      },
+      {
+        rulePriority = 2
+        description  = "Delete untagged images after ${var.untagged_image_expiry_days} days"
+        selection = {
+          tagStatus   = "untagged"
+          countType   = "sinceImagePushed"
+          countUnit   = "days"
+          countNumber = var.untagged_image_expiry_days
+        }
+        action = {
+          type = "expire"
+        }
+      }
+    ]
+  })
+}
+
+# Repository Policy (optional)
+resource "aws_ecr_repository_policy" "this" {
+  count      = var.repository_policy != null ? 1 : 0
+  repository = aws_ecr_repository.this.name
+  policy     = var.repository_policy
+}
+
+# Default repository policy for same account access
+resource "aws_ecr_repository_policy" "default" {
+  count      = var.repository_policy == null && var.enable_default_policy ? 1 : 0
+  repository = aws_ecr_repository.this.name
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Sid    = "AllowPushPull"
+        Effect = "Allow"
+        Principal = {
+          AWS = "arn:aws:iam::${data.aws_caller_identity.current.account_id}:root"
+        }
+        Action = [
+          "ecr:GetDownloadUrlForLayer",
+          "ecr:BatchGetImage",
+          "ecr:BatchCheckLayerAvailability",
+          "ecr:PutImage",
+          "ecr:InitiateLayerUpload",
+          "ecr:UploadLayerPart",
+          "ecr:CompleteLayerUpload"
+        ]
+      }
+    ]
+  })
+}
+
+# Data source for account ID
+data "aws_caller_identity" "current" {}
+
+# SSM Parameter for cross-stack reference (optional)
+resource "aws_ssm_parameter" "repository_url" {
+  count = var.create_ssm_parameter ? 1 : 0
+
+  name        = "/shared/ecr/${var.name}-repository-url"
+  type        = "String"
+  value       = aws_ecr_repository.this.repository_url
+  description = "ECR repository URL for ${var.name}"
+
+  tags = var.common_tags
+}
