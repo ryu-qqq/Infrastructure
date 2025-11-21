@@ -115,6 +115,50 @@ else
                 fi
             fi
         done
+
+        # OPA Policy Validation with Conftest
+        if command -v conftest >/dev/null 2>&1; then
+            echo -e "\n${BLUE}📜 Running OPA policy validation...${NC}"
+
+            for dir in $TF_DIRS; do
+                if [[ -f "$dir/provider.tf" ]] || [[ -f "$dir/main.tf" ]] || [[ -f "$dir/versions.tf" ]]; then
+                    echo -e "${BLUE}Validating policies: $dir${NC}"
+
+                    # Check if .terraform directory exists
+                    if [[ ! -d "$dir/.terraform" ]]; then
+                        echo -e "${YELLOW}⚠ Terraform not initialized in $dir, skipping policy validation${NC}"
+                        continue
+                    fi
+
+                    # Create temporary plan
+                    TEMP_PLAN=$(mktemp -t terraform-plan-XXXXXX)
+                    TEMP_PLAN_JSON="${TEMP_PLAN}.json"
+
+                    # Generate plan silently
+                    if terraform -chdir="$dir" plan -out="$TEMP_PLAN" >/dev/null 2>&1; then
+                        # Convert to JSON
+                        terraform -chdir="$dir" show -json "$TEMP_PLAN" > "$TEMP_PLAN_JSON"
+
+                        # Run conftest validation
+                        if conftest test "$TEMP_PLAN_JSON" --config "$GIT_ROOT/conftest.toml" >/dev/null 2>&1; then
+                            echo -e "${GREEN}✓ OPA policies passed for $dir${NC}"
+                        else
+                            echo -e "${RED}✗ OPA policy validation failed: $dir${NC}"
+                            conftest test "$TEMP_PLAN_JSON" --config "$GIT_ROOT/conftest.toml"
+                            ((ERRORS++))
+                        fi
+
+                        # Clean up
+                        rm -f "$TEMP_PLAN" "$TEMP_PLAN_JSON"
+                    else
+                        echo -e "${YELLOW}⚠ Plan creation failed for $dir, skipping policy validation${NC}"
+                    fi
+                fi
+            done
+        else
+            echo -e "${YELLOW}⚠ Conftest not installed, skipping OPA policy validation${NC}"
+            echo -e "${YELLOW}💡 Install: brew install conftest (macOS)${NC}"
+        fi
     else
         echo -e "${YELLOW}ℹ No .tf files staged for commit${NC}"
     fi

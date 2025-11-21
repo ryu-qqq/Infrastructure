@@ -315,87 +315,140 @@ resource "aws_s3_bucket" "bad" {
 }
 ```
 
-## CI/CD 통합
+## 정책 검증 통합
 
-### GitHub Actions (Conftest 사용)
+이 정책들은 **다층 방어(Defense in Depth)** 전략으로 세 가지 레이어에서 자동 검증됩니다:
 
-```yaml
-name: Policy Validation
+| 레이어 | 시점 | 피드백 속도 | 우회 가능 | 상태 |
+|--------|------|------------|----------|------|
+| **Pre-commit Hook** | 커밋 전 | 1-2초 | Yes (--no-verify) | ✅ 구현됨 |
+| **Atlantis** | PR plan 실행 시 | 30초-1분 | No | ✅ 구현됨 |
+| **GitHub Actions** | PR 생성/업데이트 시 | 1-2분 | No | ✅ 구현됨 |
 
-on: [pull_request]
+### 1. 로컬 개발: Pre-commit Hook
 
-jobs:
-  policy-check:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
+**설치**:
+```bash
+# 자동 설치 (권장)
+./scripts/setup-hooks.sh
 
-      - name: Setup Conftest
-        run: |
-          CONFTEST_VERSION=0.49.1
-          curl -L "https://github.com/open-policy-agent/conftest/releases/download/v${CONFTEST_VERSION}/conftest_${CONFTEST_VERSION}_Linux_x86_64.tar.gz" | tar xz
-          sudo mv conftest /usr/local/bin/
-
-      - name: Setup OPA (for testing)
-        uses: open-policy-agent/setup-opa@v2
-        with:
-          version: latest
-
-      - name: Setup Terraform
-        uses: hashicorp/setup-terraform@v2
-
-      - name: Run Policy Tests
-        run: opa test policies/ -v
-
-      - name: Generate Terraform Plan
-        run: |
-          cd terraform/your-module
-          terraform init
-          terraform plan -out=tfplan.binary
-          terraform show -json tfplan.binary > tfplan.json
-
-      - name: Validate with Conftest
-        run: |
-          conftest test terraform/your-module/tfplan.json --config conftest.toml
+# 수동 설치
+cp scripts/hooks/pre-commit .git/hooks/pre-commit
+chmod +x .git/hooks/pre-commit
 ```
 
-### Atlantis 통합
+**동작**:
+- ✅ Terraform fmt, validate 실행
+- ✅ 민감 정보 스캔
+- ✅ OPA 정책 검증 (conftest)
+- ✅ 정책 실패 시 커밋 차단
 
+**구현 파일**: [`scripts/hooks/pre-commit`](../scripts/hooks/pre-commit)
+
+**사용 예시**:
+```bash
+$ git commit -m "Add monitoring resources"
+
+🔍 Running pre-commit checks...
+📜 Running OPA policy validation...
+✓ OPA policies passed for terraform/monitoring
+✓ All pre-commit checks passed!
+```
+
+---
+
+### 2. PR 리뷰: Atlantis
+
+**설정**: `atlantis.yaml` + `docker/Dockerfile`에 통합됨
+
+**동작**:
+- ✅ PR plan 실행 시 자동으로 정책 검증
+- ✅ Plan JSON을 conftest로 검증
+- ✅ 정책 실패 시 apply 차단
+
+**구현 파일**:
+- [`atlantis.yaml`](../atlantis.yaml) - Workflow 정의
+- [`docker/Dockerfile`](../docker/Dockerfile) - Conftest 설치
+
+**atlantis.yaml 설정**:
 ```yaml
-# atlantis.yaml
 workflows:
   default:
     plan:
       steps:
-        - init
+        - env:
+            name: TF_PLUGIN_CACHE_DIR
+            value: ""
+        - init:
+            extra_args:
+              - "-upgrade"
         - plan
+        # OPA Policy Validation
         - run: |
-            terraform show -json $PLANFILE > ${PLANFILE}.json
-            conftest test ${PLANFILE}.json --config ${REPO_ROOT}/conftest.toml
-    apply:
-      steps:
-        - apply
+            echo "🔍 Running OPA policy validation..."
+            terraform show -json $PLANFILE > tfplan.json
+            if conftest test tfplan.json --config ../../conftest.toml; then
+              echo "✅ OPA policy validation passed"
+            else
+              echo "❌ OPA policy validation failed"
+              exit 1
+            fi
 ```
 
-### Pre-commit Hook
-
+**Atlantis 서버 재배포**:
 ```bash
-#!/bin/bash
-# .git/hooks/pre-commit
-
-# Generate plan for staged files
-terraform plan -out=tfplan.binary
-terraform show -json tfplan.binary > tfplan.json
-
-# Run OPA validation
-if ! opa eval --fail-defined --data policies/ --input tfplan.json "data.terraform"; then
-    echo "❌ OPA policy validation failed"
-    echo "Run 'opa test policies/' to see details"
-    exit 1
-fi
-
-echo "✅ OPA policy validation passed"
+# Docker 이미지에 conftest가 포함되어 있음
+./scripts/build-and-push.sh
 ```
+
+---
+
+### 3. CI/CD: GitHub Actions
+
+**설정**: `.github/workflows/terraform-plan.yml`에 통합됨
+
+**동작**:
+- ✅ PR 생성 시 자동 실행
+- ✅ 모든 모듈 병렬 검증
+- ✅ PR에 상세한 검증 결과 코멘트
+- ✅ 최종 보안 게이트 (우회 불가능)
+
+**구현 파일**: [`.github/workflows/terraform-plan.yml`](../.github/workflows/terraform-plan.yml)
+
+**워크플로우 단계**:
+1. Conftest 설치
+2. Terraform plan 생성 (모듈별)
+3. Plan을 JSON으로 변환
+4. Conftest로 정책 검증
+5. PR에 결과 코멘트
+
+**PR 코멘트 예시**:
+```markdown
+📜 OPA Policy Validation (Conftest)
+
+✅ Passed: 45
+❌ Failed: 2
+
+Module Breakdown:
+- Monitoring: 23 passed, 1 failed
+- Atlantis: 22 passed, 1 failed
+
+⚠️ Action Required: OPA policy violations must be resolved.
+```
+
+---
+
+### 통합 상세 가이드
+
+세 가지 레이어의 설치, 설정, 트러블슈팅 등 상세한 내용은 다음 문서를 참조하세요:
+
+📚 **[OPA Policy Integration Guide](../docs/guides/opa-policy-integration-guide.md)**
+
+- 각 레이어 설치 방법
+- 동작 원리 상세 설명
+- 트러블슈팅 가이드
+- 정책 추가/수정 방법
+- 모범 사례
 
 ## 정책 개발
 

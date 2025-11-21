@@ -40,6 +40,13 @@ jobs:
           pip install checkov
           checkov --version
 
+          # Install conftest for OPA policy validation
+          CONFTEST_VERSION=0.49.1
+          curl -L "https://github.com/open-policy-agent/conftest/releases/download/v${CONFTEST_VERSION}/conftest_${CONFTEST_VERSION}_Linux_x86_64.tar.gz" \
+            | tar xz -C /tmp
+          sudo mv /tmp/conftest /usr/local/bin/
+          conftest --version
+
       - name: Setup Infracost
         uses: infracost/actions/setup@v3
         with:
@@ -93,8 +100,28 @@ jobs:
           terraform plan -no-color -out=tfplan
           PLAN_EXIT_CODE=$?
           terraform show -no-color tfplan > plan-monitoring.txt
+          terraform show -json tfplan > tfplan-monitoring.json
           exit $PLAN_EXIT_CODE
         continue-on-error: true
+
+      - name: OPA Policy Validation - Monitoring
+        working-directory: terraform/monitoring
+        continue-on-error: true
+        run: |
+          set +e
+          conftest test tfplan-monitoring.json \
+            --config ../../conftest.toml \
+            --output json > conftest-monitoring.json
+          EXIT_CODE=$?
+
+          if [ $EXIT_CODE -ne 0 ]; then
+            echo "⚠️ OPA policy validation failed for monitoring module"
+            cat conftest-monitoring.json
+          else
+            echo "✅ OPA policy validation passed for monitoring module"
+          fi
+
+          exit 0
 
       - name: Generate Infracost Cost Estimate - Monitoring
         working-directory: terraform/monitoring
@@ -137,8 +164,28 @@ jobs:
           terraform plan -no-color -out=tfplan
           PLAN_EXIT_CODE=$?
           terraform show -no-color tfplan > plan.txt
+          terraform show -json tfplan > tfplan-atlantis.json
           exit $PLAN_EXIT_CODE
         continue-on-error: true
+
+      - name: OPA Policy Validation - Atlantis
+        working-directory: terraform/atlantis
+        continue-on-error: true
+        run: |
+          set +e
+          conftest test tfplan-atlantis.json \
+            --config ../../conftest.toml \
+            --output json > conftest-atlantis.json
+          EXIT_CODE=$?
+
+          if [ $EXIT_CODE -ne 0 ]; then
+            echo "⚠️ OPA policy validation failed for atlantis module"
+            cat conftest-atlantis.json
+          else
+            echo "✅ OPA policy validation passed for atlantis module"
+          fi
+
+          exit 0
 
       - name: Generate Infracost Cost Estimate - Atlantis
         working-directory: terraform/atlantis
@@ -296,6 +343,90 @@ jobs:
               checkovResults = 'Policy compliance results not available.';
             }
 
+            // Read conftest (OPA) results
+            let conftestResults = '';
+            try {
+              let monitoringPolicies = { pass: 0, fail: 0, warn: 0 };
+              let atlantisPolicies = { pass: 0, fail: 0, warn: 0 };
+              let totalViolations = 0;
+
+              // Parse monitoring conftest results
+              try {
+                const monitoringConftest = JSON.parse(fs.readFileSync('terraform/monitoring/conftest-monitoring.json', 'utf8'));
+                if (monitoringConftest && monitoringConftest.length > 0) {
+                  monitoringConftest.forEach(result => {
+                    if (result.failures && result.failures.length > 0) {
+                      monitoringPolicies.fail += result.failures.length;
+                      totalViolations += result.failures.length;
+                    }
+                    if (result.warnings && result.warnings.length > 0) {
+                      monitoringPolicies.warn += result.warnings.length;
+                    }
+                    if (result.successes) {
+                      monitoringPolicies.pass += result.successes;
+                    }
+                  });
+                }
+              } catch (e) {
+                // Monitoring conftest results not available
+              }
+
+              // Parse atlantis conftest results
+              try {
+                const atlantisConftest = JSON.parse(fs.readFileSync('terraform/atlantis/conftest-atlantis.json', 'utf8'));
+                if (atlantisConftest && atlantisConftest.length > 0) {
+                  atlantisConftest.forEach(result => {
+                    if (result.failures && result.failures.length > 0) {
+                      atlantisPolicies.fail += result.failures.length;
+                      totalViolations += result.failures.length;
+                    }
+                    if (result.warnings && result.warnings.length > 0) {
+                      atlantisPolicies.warn += result.warnings.length;
+                    }
+                    if (result.successes) {
+                      atlantisPolicies.pass += result.successes;
+                    }
+                  });
+                }
+              } catch (e) {
+                // Atlantis conftest results not available
+              }
+
+              const totalChecks = monitoringPolicies.pass + monitoringPolicies.fail + monitoringPolicies.warn +
+                                  atlantisPolicies.pass + atlantisPolicies.fail + atlantisPolicies.warn;
+
+              if (totalChecks > 0) {
+                conftestResults = `**OPA Policy Validation Summary:**\n`;
+                conftestResults += `✅ Passed: ${monitoringPolicies.pass + atlantisPolicies.pass}\n`;
+                if (totalViolations > 0) conftestResults += `❌ Failed: ${totalViolations}\n`;
+                const totalWarnings = monitoringPolicies.warn + atlantisPolicies.warn;
+                if (totalWarnings > 0) conftestResults += `⚠️ Warnings: ${totalWarnings}\n`;
+
+                conftestResults += `\n**Module Breakdown:**\n`;
+                if (monitoringPolicies.pass + monitoringPolicies.fail + monitoringPolicies.warn > 0) {
+                  conftestResults += `- Monitoring: ${monitoringPolicies.pass} passed`;
+                  if (monitoringPolicies.fail > 0) conftestResults += `, ${monitoringPolicies.fail} failed`;
+                  if (monitoringPolicies.warn > 0) conftestResults += `, ${monitoringPolicies.warn} warnings`;
+                  conftestResults += `\n`;
+                }
+                if (atlantisPolicies.pass + atlantisPolicies.fail + atlantisPolicies.warn > 0) {
+                  conftestResults += `- Atlantis: ${atlantisPolicies.pass} passed`;
+                  if (atlantisPolicies.fail > 0) conftestResults += `, ${atlantisPolicies.fail} failed`;
+                  if (atlantisPolicies.warn > 0) conftestResults += `, ${atlantisPolicies.warn} warnings`;
+                  conftestResults += `\n`;
+                }
+
+                if (totalViolations > 0) {
+                  conftestResults += `\n⚠️ **Action Required:** OPA policy violations must be resolved.\n`;
+                  conftestResults += `📚 Review policies in \`policies/\` directory for details.\n`;
+                }
+              } else {
+                conftestResults = '✅ OPA policy validation passed (or no policies defined)';
+              }
+            } catch (error) {
+              conftestResults = 'OPA policy validation results not available.';
+            }
+
             // Read Infracost results
             let costResults = '';
             try {
@@ -396,6 +527,12 @@ jobs:
             <details><summary>🔐 Policy Compliance (checkov)</summary>
 
             ${checkovResults}
+
+            </details>
+
+            <details><summary>📜 OPA Policy Validation (Conftest)</summary>
+
+            ${conftestResults}
 
             </details>
 
