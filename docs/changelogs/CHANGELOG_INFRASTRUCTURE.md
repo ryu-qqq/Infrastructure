@@ -170,11 +170,4 @@
 
 ---
 
-## 질문 또는 이슈
-
-- **문서**: `docs/` 디렉터리
-- **팀**: Infrastructure 팀
-
----
-
 **참고**: 모듈별 상세 변경 내역은 `terraform/modules/{module-name}/`의 각 모듈 `CHANGELOG.md`를 확인하세요.

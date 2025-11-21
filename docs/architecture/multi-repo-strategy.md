@@ -17,14 +17,12 @@ infrastructure/
 │   ├── kms/               # Encryption Keys
 │   ├── rds/               # Shared Database
 │   ├── ecr/               # Container Registries (모든 서비스)
-│   │   ├── fileflow/
 │   │   ├── api-server/
 │   │   └── crawler/
 │   ├── secrets/           # Secrets Manager
 │   ├── logging/           # CloudWatch Logs
 │   └── monitoring/        # CloudWatch, Prometheus
-├── atlantis.yaml          # Atlantis configuration
-└── atlantis-file-flow.yaml  # Template for FileFlow repo
+└── atlantis.yaml          # Atlantis configuration
 ```
 
 ### Application Repositories (별도 레포)
