@@ -110,7 +110,7 @@ jobs:
         run: |
           set +e
           conftest test tfplan-monitoring.json \
-            --config ../../conftest.toml \
+            --config ../../governance/configs/conftest.toml \
             --output json > conftest-monitoring.json
           EXIT_CODE=$?
 
@@ -174,7 +174,7 @@ jobs:
         run: |
           set +e
           conftest test tfplan-atlantis.json \
-            --config ../../conftest.toml \
+            --config ../../governance/configs/conftest.toml \
             --output json > conftest-atlantis.json
           EXIT_CODE=$?
 
@@ -418,7 +418,7 @@ jobs:
 
                 if (totalViolations > 0) {
                   conftestResults += `\n⚠️ **Action Required:** OPA policy violations must be resolved.\n`;
-                  conftestResults += `📚 Review policies in \`policies/\` directory for details.\n`;
+                  conftestResults += `📚 Review policies in \`governance/policies/\` directory for details.\n`;
                 }
               } else {
                 conftestResults = '✅ OPA policy validation passed (or no policies defined)';
