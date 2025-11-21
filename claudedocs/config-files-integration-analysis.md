@@ -2,6 +2,21 @@
 
 Policies, Scripts, 설정 파일들 간의 연관성과 실제 사용 여부를 종합 분석한 문서입니다.
 
+---
+
+## 📝 업데이트 이력
+
+### 2025-11-21: 설정 파일 정리 완료
+- ✅ `.tflint.hcl` 삭제 완료 (kebab-case 충돌 해결)
+- ✅ `.pre-commit-config.yaml` 삭제 완료 (혼란 제거)
+- ✅ 문서 참조 업데이트 완료:
+  - `docs/blog/04-automated-validation-pipeline.md` - scripts/hooks 사용 명시
+  - `docs/governance/CHECKOV_POLICY_GUIDE.md` - Git Hooks 통합 설명 개선
+
+**현재 상태**: 프로젝트는 `scripts/hooks/` 디렉토리의 Git hooks를 공식 방식으로 사용합니다.
+
+---
+
 ## 📋 목차
 
 - [개요](#개요)
@@ -25,8 +40,8 @@ Infrastructure 프로젝트는 **다층 거버넌스 검증** 전략을 사용�
 | **Conftest** | `conftest.toml` | OPA 정책 검증 | ✅ 3개 레이어 모두 |
 | **Checkov** | `.checkov.yml` | 컴플라이언스 스캔 | ✅ GitHub Actions |
 | **tfsec** | `.tfsec/config.yml` | 보안 스캔 | ✅ GitHub Actions |
-| **TFLint** | `.tflint.hcl` | Terraform lint | ⚠️ Pre-commit only |
-| **pre-commit** | `.pre-commit-config.yaml` | Git hooks 관리 | ⚠️ 수동 설치 필요 |
+| **TFLint** | ~~`.tflint.hcl`~~ | Terraform lint | 🗑️ **삭제됨** (kebab-case 충돌) |
+| **pre-commit** | ~~`.pre-commit-config.yaml`~~ | Git hooks 관리 | 🗑️ **삭제됨** (scripts/hooks 사용) |
 | **Infracost** | `.infracost.yml` | 비용 분석 | ✅ GitHub Actions |
 
 ---
@@ -597,58 +612,33 @@ GitHub Actions:
 
 ## 문제점 및 개선사항
 
-### 🔴 Critical Issues
+### ✅ 해결된 Critical Issues (2025-11-21)
 
-#### 1. **.tflint.hcl 네이밍 충돌** ⚠️⚠️
+#### 1. ~~**.tflint.hcl 네이밍 충돌**~~ ✅ **해결됨**
 
 **문제**:
 ```hcl
 # .tflint.hcl
-resource { format = "snake_case" }
-```
-vs
-```bash
-# 프로젝트 표준
-kebab-case (my-resource-123)
+resource { format = "snake_case" }  # 프로젝트 kebab-case 표준과 충돌
 ```
 
-**해결 방법**:
-```hcl
-# Option 1: 검증 비활성화
-resource { format = "none" }
-
-# Option 2: kebab-case로 변경 (TFLint 지원 안 함)
-# 불가능 - TFLint는 snake_case, PascalCase만 지원
-```
-
-**권장 조치**: `.tflint.hcl` 삭제 또는 네이밍 검증 비활성화
+**해결**: `.tflint.hcl` 파일 삭제 완료
+- 프로젝트는 kebab-case를 표준으로 사용
+- OPA 정책 (`policies/naming/`)과 Scripts (`check-naming.sh`)로 네이밍 검증
+- TFLint의 kebab-case 미지원으로 삭제 결정
 
 ---
 
-#### 2. **Pre-commit 설정 혼란** ⚠️⚠️
+#### 2. ~~**Pre-commit 설정 혼란**~~ ✅ **해결됨**
 
-**문제**: 두 가지 hook 방식 공존
-- `.pre-commit-config.yaml` (미사용)
-- `scripts/hooks/pre-commit` (사용 중)
+**문제**: 두 가지 hook 방식 공존으로 혼란
+- `.pre-commit-config.yaml` (파일 존재, 미사용)
+- `scripts/hooks/pre-commit` (실제 사용 중)
 
-**해결 방법**:
-
-**Option A**: Pre-commit 프레임워크 사용 (권장)
-```bash
-# 1. .pre-commit-config.yaml 정리
-# 2. pre-commit install
-# 3. scripts/hooks/ 삭제
-# 4. README 업데이트
-```
-
-**Option B**: 직접 Bash 스크립트 관리 (현재 방식)
-```bash
-# 1. .pre-commit-config.yaml 삭제
-# 2. scripts/hooks/ 유지
-# 3. README에 명시: "pre-commit 프레임워크 사용 안 함"
-```
-
-**권장 조치**: **Option B** (현재 방식이 더 유연하고 잘 작동함)
+**해결**: `.pre-commit-config.yaml` 파일 삭제 완료
+- **공식 방식**: `scripts/hooks/` 디렉토리의 Git hooks 사용
+- **설치 방법**: `./scripts/setup-hooks.sh` 실행
+- **문서 업데이트**: 모든 가이드에서 scripts/hooks 사용 명시
 
 ---
 

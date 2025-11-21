@@ -671,38 +671,42 @@ resource "aws_vpc" "main" {
 
 ## 🎓 로컬 개발 워크플로우
 
-### Pre-commit Hook 설정
+### Git Hooks 설정
+
+이 프로젝트는 `scripts/hooks/` 디렉토리의 Git hooks를 사용합니다.
 
 ```bash
-# 1. Pre-commit 설치
-pip install pre-commit
+# 1. Git hooks 설치 (한 번만 실행)
+./scripts/setup-hooks.sh
 
-# 2. .pre-commit-config.yaml 생성
-cat > .pre-commit-config.yaml <<EOF
-repos:
-  - repo: https://github.com/antonbabenko/pre-commit-terraform
-    rev: v1.83.5
-    hooks:
-      - id: terraform_fmt
-      - id: terraform_validate
-      - id: terraform_tflint
-      - id: terraform_tfsec
-      - id: terraform_checkov
-
-  - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v4.5.0
-    hooks:
-      - id: trailing-whitespace
-      - id: end-of-file-fixer
-      - id: check-yaml
-EOF
-
-# 3. Pre-commit 활성화
-pre-commit install
-
-# 4. 수동 실행 (모든 파일)
-pre-commit run --all-files
+# 설치되는 hooks:
+# - pre-commit: 커밋 전 빠른 검증 (fmt, secrets scan, validate, OPA)
+# - pre-push: 푸시 전 거버넌스 검증 (tags, encryption, naming)
 ```
+
+**커밋 시 자동 검증**:
+```bash
+git add terraform/network/main.tf
+git commit -m "Add VPC configuration"
+
+# → Pre-commit hook이 자동으로:
+# 1. terraform fmt 검사
+# 2. 민감 정보 스캔
+# 3. terraform validate
+# 4. OPA 정책 검증
+```
+
+**푸시 시 자동 검증**:
+```bash
+git push origin feature/network
+
+# → Pre-push hook이 자동으로:
+# 1. 필수 태그 검증 (check-tags.sh)
+# 2. KMS 암호화 검증 (check-encryption.sh)
+# 3. 네이밍 규칙 검증 (check-naming.sh)
+```
+
+**📖 자세한 내용**: [Scripts README](../../scripts/README.md)
 
 ### 로컬 검증 스크립트
 

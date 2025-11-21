@@ -401,34 +401,26 @@ Checkov 결과는 PR 코멘트에 자동으로 추가됩니다:
 ⚠️ **Action Required:** Medium severity issues found
 ```
 
-### Pre-commit Hook
+### Git Hooks 통합
 
-로컬에서 커밋 전 자동 검증:
-
-```yaml
-# .pre-commit-config.yaml
-- repo: https://github.com/bridgecrewio/checkov
-  rev: 3.0.0
-  hooks:
-    - id: checkov
-      args:
-        - --config-file
-        - .checkov.yml
-        - --soft-fail
-```
-
-설치 및 활성화:
+이 프로젝트는 `scripts/hooks/` 디렉토리의 Git hooks를 사용합니다.
 
 ```bash
-# Pre-commit 설치
-pip install pre-commit
+# Git hooks 설치
+./scripts/setup-hooks.sh
 
-# Hook 활성화
-pre-commit install
-
-# 수동 실행
-pre-commit run checkov --all-files
+# Pre-commit hook에서 자동 실행:
+# 1. terraform fmt
+# 2. 민감 정보 스캔
+# 3. terraform validate
+# 4. OPA 정책 검증 (conftest)
 ```
+
+**참고**: Checkov는 실행 시간이 길어 pre-commit hook에 포함되지 않습니다. 대신 다음에서 실행됩니다:
+- **GitHub Actions**: PR 생성 시 자동 실행
+- **수동 실행**: `./scripts/validators/check-checkov.sh`
+
+**📖 자세한 내용**: [Scripts README](../../scripts/README.md)
 
 ---
 
