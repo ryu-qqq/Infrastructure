@@ -1,0 +1,35 @@
+# Conftest Configuration
+# OPA policy testing configuration for Terraform
+
+# Policy directories to load
+policy = ["policies"]
+
+# Namespace for policies
+namespace = "main"
+
+# Input type
+input = "json"
+
+# Fail on warnings
+fail_on_warn = false
+
+# Output format options: stdout, json, tap, table, junit
+output = "stdout"
+
+# Combine results from all policies
+combine = true
+
+# Enable colored output
+color = true
+
+# Suppress successful tests in output
+suppress-exceptions = false
+
+# Enable tracing for debugging
+trace = false
+
+# Parser for input data
+parser = "json"
+
+# All violations should be reported
+all-namespaces = true

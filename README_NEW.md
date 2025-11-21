@@ -35,47 +35,58 @@ infrastructure/
 │   ├── kms/               # KMS 암호화 키
 │   ├── network/           # VPC, 서브넷, 보안 그룹
 │   └── rds/               # RDS 데이터베이스
-├── policies/              # OPA 정책 (거버넌스)
+├── governance/            # 🛡️ 거버넌스 시스템 (품질/보안 검증)
+│   ├── configs/           # 검증 도구 설정 (conftest, checkov, tfsec, infracost)
+│   ├── policies/          # OPA 정책 (Rego)
+│   └── hooks/             # Git hooks 참조
 ├── scripts/               # 자동화 스크립트
 ├── docs/                  # 프로젝트 문서
-└── .github/workflows/     # GitHub Actions CI/CD
+├── .github/workflows/     # GitHub Actions CI/CD
+├── policies/              # → governance/policies/ (심볼릭 링크)
+├── conftest.toml          # → governance/configs/conftest.toml (심볼릭 링크)
+├── .checkov.yml           # → governance/configs/checkov.yml (심볼릭 링크)
+├── .tfsec/                # → governance/configs/tfsec/ (심볼릭 링크)
+└── .infracost.yml         # → governance/configs/infracost.yml (심볼릭 링크)
 ```
 
 ---
 
-## 정책 및 거버넌스
+## 거버넌스 시스템
 
-### 📂 policies/
+### 🛡️ governance/
 
-Terraform 코드의 보안, 규정 준수, 네이밍 규약을 자동으로 검증하는 OPA(Open Policy Agent) 정책입니다.
+Terraform 인프라 코드의 품질, 보안, 컴플라이언스를 **4단계 레이어**에서 자동 검증하는 통합 거버넌스 시스템입니다.
 
 **왜 필요한가?**
-- 🛡️ 보안 취약점 사전 차단 (SSH/RDP 인터넷 노출 방지)
-- 🏷️ 태그 표준 강제 (비용 추적, 리소스 관리)
+- 🛡️ 보안 취약점 사전 차단 (SSH/RDP 인터넷 노출, RDS public access)
+- 🏷️ 필수 태그 강제 (비용 추적, 리소스 관리, 책임 소재)
 - 📏 네이밍 일관성 유지 (kebab-case 강제)
-- 🚫 위험한 설정 금지 (RDS public access, S3 공개 버킷)
+- 🔐 KMS 암호화 강제 (AES256 사용 금지)
+- 💰 비용 영향 분석 (30% 증가 시 자동 차단)
+- 📋 컴플라이언스 준수 (CIS AWS, PCI-DSS, HIPAA)
 
 **무엇을 검증하는가?**
-- `tagging/` - 필수 태그 7개 검증
-- `naming/` - 리소스 네이밍 규약 (kebab-case)
-- `security_groups/` - 보안 그룹 규칙
-- `public_resources/` - 공개 리소스 접근 제한
+- **OPA 정책** (policies/): 필수 태그, 네이밍, 보안 그룹, 공개 리소스
+- **보안 스캔** (tfsec): AWS 보안 모범 사례
+- **컴플라이언스** (Checkov): CIS AWS, PCI-DSS, HIPAA
+- **비용 관리** (Infracost): 비용 추적 및 임계값
 
-**자세한 내용**: [policies/README.md](./policies/README.md)
+**자세한 내용**: [governance/README.md](./governance/README.md)
 
 ---
 
-## 정책 검증 워크플로우
+## 거버넌스 검증 워크플로우
 
-OPA 정책은 세 가지 레이어에서 자동 검증됩니다 (다층 방어 전략):
+거버넌스 정책은 **4단계 레이어**에서 자동 검증됩니다 (다층 방어 전략):
 
 ### 🔍 검증 레이어
 
-| 레이어 | 시점 | 피드백 속도 | 설치/사용 |
-|--------|------|------------|----------|
-| **Pre-commit** | 커밋 전 | 1-2초 | `./scripts/setup-hooks.sh` |
-| **Atlantis** | PR plan | 30초 | 자동 (서버에 설치됨) |
-| **GitHub Actions** | PR 생성 | 1-2분 | 자동 (CI/CD 파이프라인) |
+| 레이어 | 시점 | 피드백 속도 | 검증 항목 | 우회 가능 |
+|--------|------|------------|----------|----------|
+| **Pre-commit** | 커밋 전 | 1-2초 | fmt, secrets, validate, OPA | Yes (--no-verify) |
+| **Pre-push** | 푸시 전 | 30초 | tags, encryption, naming | Yes (--no-verify) |
+| **Atlantis** | PR plan | 30초-1분 | OPA 정책 | No |
+| **GitHub Actions** | PR 생성 | 1-2분 | OPA, tfsec, Checkov, Infracost | No |
 
 ### 🚀 빠른 시작
 
@@ -152,10 +163,15 @@ terraform apply
 
 ## 관련 문서
 
+### 거버넌스
+- [거버넌스 시스템 가이드](./governance/README.md) - **시작점**
+- [OPA 정책 통합 가이드](./docs/guides/opa-policy-integration-guide.md)
+- [Checkov 정책 가이드](./docs/governance/CHECKOV_POLICY_GUIDE.md)
+
+### 개발
 - [Terraform 모듈 개발 가이드](./docs/modules/README.md)
-- [OPA 정책 가이드](./policies/README.md)
 - [Atlantis 사용 가이드](./docs/guides/atlantis-setup-guide.md)
-- [보안 가이드](./docs/guides/security-best-practices.md)
+- [Scripts 디렉토리](./scripts/README.md)
 
 ---
 
