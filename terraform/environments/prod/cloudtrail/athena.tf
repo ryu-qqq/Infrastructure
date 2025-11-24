@@ -212,6 +212,19 @@ resource "aws_glue_catalog_table" "cloudtrail" {
     name = "date"
     type = "string"
   }
+
+  tags = {
+    Name        = "cloudtrail-logs-table"
+    Component   = "athena"
+    Environment = var.environment
+    Service     = var.service_name
+    Team        = var.team
+    Owner       = var.owner
+    CostCenter  = var.cost_center
+    Project     = var.project
+    DataClass   = var.data_class
+    ManagedBy   = "terraform"
+  }
 }
 
 # Named Queries for common CloudTrail analysis
