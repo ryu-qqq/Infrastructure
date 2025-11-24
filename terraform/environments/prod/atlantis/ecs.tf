@@ -9,7 +9,7 @@ resource "aws_ecs_cluster" "atlantis" {
   }
 
   tags = merge(
-    local.common_tags,
+    local.required_tags,
     {
       Name        = "atlantis-${var.environment}"
       Component   = "atlantis"

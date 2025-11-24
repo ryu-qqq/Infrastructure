@@ -338,6 +338,7 @@ resource "aws_iam_policy" "github-actions-fileflow" {
       Lifecycle   = var.lifecycle
       DataClass   = var.data_class
       Service     = var.service
+      Team        = var.team
       ManagedBy   = "terraform"
       Project     = var.project
     },

@@ -10,19 +10,20 @@ resource "aws_subnet" "public" {
 
   # Note: Imported existing subnet - tags defined for governance compliance
   # Tags are not modified in AWS due to IAM permission constraints
-  tags = merge(
-    local.common_tags,
-    {
-      Name       = "${var.environment}-public-subnet-${count.index + 1}"
-      Type       = "Public"
-      Owner      = var.team
-      CostCenter = var.cost_center
-      Lifecycle  = var.lifecycle_stage
-      DataClass  = var.data_class
-      Service    = var.service_name
-      Component  = var.project
-    }
-  )
+  tags = {
+    Name        = "${var.environment}-public-subnet-${count.index + 1}"
+    Type        = "Public"
+    Owner       = var.team
+    CostCenter  = var.cost_center
+    Environment = var.environment
+    Lifecycle   = var.lifecycle_stage
+    DataClass   = var.data_class
+    Service     = var.service_name
+    Team        = var.team
+    ManagedBy   = "terraform"
+    Project     = var.project
+    Component   = var.project
+  }
 
   lifecycle {
     ignore_changes = [tags]
@@ -40,19 +41,20 @@ resource "aws_subnet" "private" {
 
   # Note: Imported existing subnet - tags defined for governance compliance
   # Tags are not modified in AWS due to IAM permission constraints
-  tags = merge(
-    local.common_tags,
-    {
-      Name       = "${var.environment}-private-subnet-${count.index + 1}"
-      Type       = "Private"
-      Owner      = var.team
-      CostCenter = var.cost_center
-      Lifecycle  = var.lifecycle_stage
-      DataClass  = var.data_class
-      Service    = var.service_name
-      Component  = var.project
-    }
-  )
+  tags = {
+    Name        = "${var.environment}-private-subnet-${count.index + 1}"
+    Type        = "Private"
+    Owner       = var.team
+    CostCenter  = var.cost_center
+    Environment = var.environment
+    Lifecycle   = var.lifecycle_stage
+    DataClass   = var.data_class
+    Service     = var.service_name
+    Team        = var.team
+    ManagedBy   = "terraform"
+    Project     = var.project
+    Component   = var.project
+  }
 
   lifecycle {
     ignore_changes = [tags]

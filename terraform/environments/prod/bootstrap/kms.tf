@@ -12,6 +12,7 @@ resource "aws_kms_key" "terraform-state" {
       Lifecycle   = var.lifecycle
       DataClass   = var.data_class
       Service     = var.service
+      Team        = var.team
       ManagedBy   = "terraform"
       Project     = var.project
     },

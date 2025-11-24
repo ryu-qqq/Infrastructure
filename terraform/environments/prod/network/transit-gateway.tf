@@ -13,18 +13,19 @@ resource "aws_ec2_transit_gateway" "main" {
   dns_support                     = "enable"
   vpn_ecmp_support                = "enable"
 
-  tags = merge(
-    local.common_tags,
-    {
-      Name       = "${var.environment}-transit-gateway"
-      Owner      = var.team
-      CostCenter = var.cost_center
-      Lifecycle  = var.lifecycle_stage
-      DataClass  = var.data_class
-      Service    = var.service_name
-      Component  = var.project
-    }
-  )
+  tags = {
+    Name        = "${var.environment}-transit-gateway"
+    Owner       = var.team
+    CostCenter  = var.cost_center
+    Environment = var.environment
+    Lifecycle   = var.lifecycle_stage
+    DataClass   = var.data_class
+    Service     = var.service_name
+    Team        = var.team
+    ManagedBy   = "terraform"
+    Project     = var.project
+    Component   = var.project
+  }
 
   lifecycle {
     ignore_changes = [tags]
@@ -46,18 +47,19 @@ resource "aws_ec2_transit_gateway_vpc_attachment" "main" {
   transit_gateway_default_route_table_association = true
   transit_gateway_default_route_table_propagation = true
 
-  tags = merge(
-    local.common_tags,
-    {
-      Name       = "${var.environment}-vpc-tgw-attachment"
-      Owner      = var.team
-      CostCenter = var.cost_center
-      Lifecycle  = var.lifecycle_stage
-      DataClass  = var.data_class
-      Service    = var.service_name
-      Component  = var.project
-    }
-  )
+  tags = {
+    Name        = "${var.environment}-vpc-tgw-attachment"
+    Owner       = var.team
+    CostCenter  = var.cost_center
+    Environment = var.environment
+    Lifecycle   = var.lifecycle_stage
+    DataClass   = var.data_class
+    Service     = var.service_name
+    Team        = var.team
+    ManagedBy   = "terraform"
+    Project     = var.project
+    Component   = var.project
+  }
 
   lifecycle {
     ignore_changes = [tags]

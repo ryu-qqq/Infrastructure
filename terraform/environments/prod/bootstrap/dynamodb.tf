@@ -26,6 +26,7 @@ resource "aws_dynamodb_table" "terraform-lock" {
       Lifecycle   = var.lifecycle
       DataClass   = var.data_class
       Service     = var.service
+      Team        = var.team
       ManagedBy   = "terraform"
       Project     = var.project
     },

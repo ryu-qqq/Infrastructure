@@ -72,18 +72,19 @@ resource "aws_ssm_parameter" "vpc-id" {
   type        = "String"
   value       = aws_vpc.main.id
 
-  tags = merge(
-    local.common_tags,
-    {
-      Name       = "vpc-id-export"
-      Owner      = var.team
-      CostCenter = var.cost_center
-      Lifecycle  = var.lifecycle_stage
-      DataClass  = var.data_class
-      Service    = var.service_name
-      Component  = var.project
-    }
-  )
+  tags = {
+    Name        = "vpc-id-export"
+    Owner       = var.team
+    CostCenter  = var.cost_center
+    Environment = var.environment
+    Lifecycle   = var.lifecycle_stage
+    DataClass   = var.data_class
+    Service     = var.service_name
+    Team        = var.team
+    ManagedBy   = "terraform"
+    Project     = var.project
+    Component   = var.project
+  }
 }
 
 resource "aws_ssm_parameter" "public-subnet-ids" {
@@ -92,18 +93,19 @@ resource "aws_ssm_parameter" "public-subnet-ids" {
   type        = "StringList"
   value       = join(",", aws_subnet.public[*].id)
 
-  tags = merge(
-    local.common_tags,
-    {
-      Name       = "public-subnet-ids-export"
-      Owner      = var.team
-      CostCenter = var.cost_center
-      Lifecycle  = var.lifecycle_stage
-      DataClass  = var.data_class
-      Service    = var.service_name
-      Component  = var.project
-    }
-  )
+  tags = {
+    Name        = "public-subnet-ids-export"
+    Owner       = var.team
+    CostCenter  = var.cost_center
+    Environment = var.environment
+    Lifecycle   = var.lifecycle_stage
+    DataClass   = var.data_class
+    Service     = var.service_name
+    Team        = var.team
+    ManagedBy   = "terraform"
+    Project     = var.project
+    Component   = var.project
+  }
 }
 
 resource "aws_ssm_parameter" "private-subnet-ids" {
@@ -112,16 +114,17 @@ resource "aws_ssm_parameter" "private-subnet-ids" {
   type        = "StringList"
   value       = join(",", aws_subnet.private[*].id)
 
-  tags = merge(
-    local.common_tags,
-    {
-      Name       = "private-subnet-ids-export"
-      Owner      = var.team
-      CostCenter = var.cost_center
-      Lifecycle  = var.lifecycle_stage
-      DataClass  = var.data_class
-      Service    = var.service_name
-      Component  = var.project
-    }
-  )
+  tags = {
+    Name        = "private-subnet-ids-export"
+    Owner       = var.team
+    CostCenter  = var.cost_center
+    Environment = var.environment
+    Lifecycle   = var.lifecycle_stage
+    DataClass   = var.data_class
+    Service     = var.service_name
+    Team        = var.team
+    ManagedBy   = "terraform"
+    Project     = var.project
+    Component   = var.project
+  }
 }

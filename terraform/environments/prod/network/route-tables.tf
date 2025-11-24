@@ -5,18 +5,19 @@ resource "aws_route_table" "public" {
 
   # Note: Imported existing route table - tags defined for governance compliance
   # Tags are not modified in AWS due to IAM permission constraints
-  tags = merge(
-    local.common_tags,
-    {
-      Name       = "${var.environment}-public-rt"
-      Owner      = var.team
-      CostCenter = var.cost_center
-      Lifecycle  = var.lifecycle_stage
-      DataClass  = var.data_class
-      Service    = var.service_name
-      Component  = var.project
-    }
-  )
+  tags = {
+    Name        = "${var.environment}-public-rt"
+    Owner       = var.team
+    CostCenter  = var.cost_center
+    Environment = var.environment
+    Lifecycle   = var.lifecycle_stage
+    DataClass   = var.data_class
+    Service     = var.service_name
+    Team        = var.team
+    ManagedBy   = "terraform"
+    Project     = var.project
+    Component   = var.project
+  }
 
   lifecycle {
     ignore_changes = [tags]
@@ -48,18 +49,19 @@ resource "aws_route_table" "private" {
 
   # Note: Imported existing route table - tags defined for governance compliance
   # Tags are not modified in AWS due to IAM permission constraints
-  tags = merge(
-    local.common_tags,
-    {
-      Name       = "${var.environment}-private-rt"
-      Owner      = var.team
-      CostCenter = var.cost_center
-      Lifecycle  = var.lifecycle_stage
-      DataClass  = var.data_class
-      Service    = var.service_name
-      Component  = var.project
-    }
-  )
+  tags = {
+    Name        = "${var.environment}-private-rt"
+    Owner       = var.team
+    CostCenter  = var.cost_center
+    Environment = var.environment
+    Lifecycle   = var.lifecycle_stage
+    DataClass   = var.data_class
+    Service     = var.service_name
+    Team        = var.team
+    ManagedBy   = "terraform"
+    Project     = var.project
+    Component   = var.project
+  }
 
   lifecycle {
     ignore_changes = [tags]
