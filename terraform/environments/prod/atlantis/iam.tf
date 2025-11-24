@@ -188,7 +188,11 @@ resource "aws_iam_role_policy" "atlantis-terraform-operations" {
           "ssm:GetParameter",
           "ssm:GetParameters",
           "ssm:DescribeParameters",
-          "ssm:ListTagsForResource"
+          "ssm:ListTagsForResource",
+          "route53:GetHostedZone",
+          "route53:ListHostedZones",
+          "route53:ListResourceRecordSets",
+          "route53:GetChange"
         ]
         Resource = "*"
       },
@@ -426,6 +430,19 @@ resource "aws_iam_role_policy" "atlantis-terraform-operations" {
           "ec2:DescribeSubnets"
         ]
         Resource = "*"
+      },
+      {
+        Sid    = "ManageRoute53Records"
+        Effect = "Allow"
+        Action = [
+          "route53:ChangeResourceRecordSets",
+          "route53:GetChange",
+          "route53:ListResourceRecordSets"
+        ]
+        Resource = [
+          "arn:aws:route53:::hostedzone/*",
+          "arn:aws:route53:::change/*"
+        ]
       }
     ]
   })
