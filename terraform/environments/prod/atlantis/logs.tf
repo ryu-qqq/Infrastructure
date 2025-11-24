@@ -3,7 +3,7 @@
 module "atlantis_logs" {
   source = "../../../modules/cloudwatch-log-group"
 
-  log_group_name    = "/ecs/atlantis-${var.environment}"
+  name              = "/aws/ecs/atlantis-${var.environment}/application"
   retention_in_days = 7
   kms_key_id        = null # Using default AWS managed encryption
 
