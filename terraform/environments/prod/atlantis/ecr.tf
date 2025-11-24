@@ -9,10 +9,10 @@ module "atlantis_ecr" {
   kms_key_arn          = aws_kms_key.ecr.arn
 
   # Lifecycle policy configuration
-  enable_lifecycle_policy      = true
-  max_image_count              = 10
-  lifecycle_tag_prefixes       = ["v"]
-  untagged_image_expiry_days   = 7
+  enable_lifecycle_policy    = true
+  max_image_count            = 10
+  lifecycle_tag_prefixes     = ["v"]
+  untagged_image_expiry_days = 7
 
   # Repository policy for access control
   repository_policy = jsonencode({
