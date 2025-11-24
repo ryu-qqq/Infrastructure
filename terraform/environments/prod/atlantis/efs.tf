@@ -12,11 +12,11 @@ module "atlantis_efs_sg" {
 
   custom_ingress_rules = [
     {
-      description     = "NFS from ECS tasks"
-      from_port       = 2049
-      to_port         = 2049
-      protocol        = "tcp"
-      security_groups = [module.atlantis_ecs_tasks_sg.security_group_id]
+      description              = "NFS from ECS tasks"
+      from_port                = 2049
+      to_port                  = 2049
+      protocol                 = "tcp"
+      source_security_group_id = module.atlantis_ecs_tasks_sg.security_group_id
     }
   ]
 
