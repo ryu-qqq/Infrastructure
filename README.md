@@ -59,12 +59,7 @@ infrastructure/
 │   ├── hooks/             # Git hooks
 │   └── scripts/           # 검증 스크립트 (validators, policy)
 ├── scripts/               # 운영 스크립트 (Git hooks 설치, Docker 빌드)
-├── .github/workflows/     # GitHub Actions CI/CD
-├── policies/              # → governance/policies/ (심볼릭 링크)
-├── conftest.toml          # → governance/configs/conftest.toml (심볼릭 링크)
-├── .checkov.yml           # → governance/configs/checkov.yml (심볼릭 링크)
-├── .tfsec/                # → governance/configs/tfsec/ (심볼릭 링크)
-└── .infracost.yml         # → governance/configs/infracost.yml (심볼릭 링크)
+└── .github/workflows/     # GitHub Actions CI/CD
 ```
 
 ---
