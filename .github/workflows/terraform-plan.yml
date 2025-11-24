@@ -77,11 +77,11 @@ jobs:
 
       # Monitoring Module
       - name: Terraform Format Check - Monitoring
-        working-directory: terraform/monitoring
+        working-directory: terraform/environments/prod/monitoring
         run: terraform fmt -check -recursive
 
       - name: Terraform Init - Monitoring
-        working-directory: terraform/monitoring
+        working-directory: terraform/environments/prod/monitoring
         run: |
           terraform init \
             -backend-config="bucket=prod-connectly" \
@@ -89,12 +89,12 @@ jobs:
             -backend-config="dynamodb_table=prod-connectly-tf-lock"
 
       - name: Terraform Validate - Monitoring
-        working-directory: terraform/monitoring
+        working-directory: terraform/environments/prod/monitoring
         run: terraform validate
 
       - name: Terraform Plan - Monitoring
         id: plan-monitoring
-        working-directory: terraform/monitoring
+        working-directory: terraform/environments/prod/monitoring
         run: |
           set +e
           terraform plan -no-color -out=tfplan
@@ -105,7 +105,7 @@ jobs:
         continue-on-error: true
 
       - name: OPA Policy Validation - Monitoring
-        working-directory: terraform/monitoring
+        working-directory: terraform/environments/prod/monitoring
         continue-on-error: true
         run: |
           set +e
@@ -124,7 +124,7 @@ jobs:
           exit 0
 
       - name: Generate Infracost Cost Estimate - Monitoring
-        working-directory: terraform/monitoring
+        working-directory: terraform/environments/prod/monitoring
         continue-on-error: true
         run: |
           set +e
@@ -273,7 +273,7 @@ jobs:
             // Read monitoring plan
             let monitoringPlan = '';
             try {
-              monitoringPlan = fs.readFileSync('terraform/monitoring/plan-monitoring.txt', 'utf8');
+              monitoringPlan = fs.readFileSync('terraform/environments/prod/monitoring/plan-monitoring.txt', 'utf8');
             } catch (error) {
               monitoringPlan = 'No changes or error reading plan file.';
             }
@@ -352,7 +352,7 @@ jobs:
 
               // Parse monitoring conftest results
               try {
-                const monitoringConftest = JSON.parse(fs.readFileSync('terraform/monitoring/conftest-monitoring.json', 'utf8'));
+                const monitoringConftest = JSON.parse(fs.readFileSync('terraform/environments/prod/monitoring/conftest-monitoring.json', 'utf8'));
                 if (monitoringConftest && monitoringConftest.length > 0) {
                   monitoringConftest.forEach(result => {
                     if (result.failures && result.failures.length > 0) {
