@@ -23,7 +23,7 @@ resource "aws_s3_bucket" "this" {
   object_lock_enabled = var.enable_object_lock
 
   tags = merge(
-    module.tags.tags,
+    local.required_tags,
     {
       Name = var.bucket_name
     }
@@ -218,7 +218,7 @@ resource "aws_cloudwatch_metric_alarm" "bucket-size" {
   alarm_actions = var.alarm_actions
 
   tags = merge(
-    module.tags.tags,
+    local.required_tags,
     {
       Name = "${var.bucket_name}-size-alarm"
     }
@@ -248,7 +248,7 @@ resource "aws_cloudwatch_metric_alarm" "object-count" {
   alarm_actions = var.alarm_actions
 
   tags = merge(
-    module.tags.tags,
+    local.required_tags,
     {
       Name = "${var.bucket_name}-object-count-alarm"
     }

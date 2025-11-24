@@ -22,7 +22,7 @@ resource "aws_cloudwatch_log_group" "this" {
   kms_key_id        = var.kms_key_id
 
   tags = merge(
-    module.tags.tags,
+    local.required_tags,
     {
       Name          = var.name
       LogType       = var.log_type

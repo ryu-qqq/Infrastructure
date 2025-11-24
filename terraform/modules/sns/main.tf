@@ -17,6 +17,8 @@ module "tags" {
 }
 
 locals {
+  # Required tags for governance compliance
+  required_tags = local.required_tags
   # Generate topic name with .fifo suffix for FIFO topics
   topic_name = var.fifo_topic ? "${var.name}.fifo" : var.name
 }
@@ -35,7 +37,7 @@ resource "aws_sns_topic" "this" {
   delivery_policy = var.delivery_policy
 
   tags = merge(
-    module.tags.tags,
+    local.required_tags,
     {
       Name         = local.topic_name
       TopicType    = var.fifo_topic ? "FIFO" : "Standard"
@@ -92,7 +94,7 @@ resource "aws_cloudwatch_metric_alarm" "messages-published" {
   ok_actions    = var.alarm_ok_actions
 
   tags = merge(
-    module.tags.tags,
+    local.required_tags,
     {
       Name      = "${local.topic_name}-messages-published-low"
       AlarmType = "MessagesPublished"
@@ -123,7 +125,7 @@ resource "aws_cloudwatch_metric_alarm" "notifications-failed" {
   ok_actions    = var.alarm_ok_actions
 
   tags = merge(
-    module.tags.tags,
+    local.required_tags,
     {
       Name      = "${local.topic_name}-notifications-failed"
       AlarmType = "NotificationsFailed"

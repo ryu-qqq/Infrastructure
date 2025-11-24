@@ -27,7 +27,7 @@ resource "aws_elasticache_subnet_group" "this" {
   subnet_ids = var.subnet_ids
 
   tags = merge(
-    module.tags.tags,
+    local.required_tags,
     {
       Name = "${var.cluster_id}-subnet-group"
     }
@@ -53,7 +53,7 @@ resource "aws_elasticache_parameter_group" "this" {
   }
 
   tags = merge(
-    module.tags.tags,
+    local.required_tags,
     {
       Name = "${var.cluster_id}-parameter-group"
     }
@@ -120,7 +120,7 @@ resource "aws_elasticache_replication_group" "redis" {
   }
 
   tags = merge(
-    module.tags.tags,
+    local.required_tags,
     {
       Name = var.replication_group_id
     }
@@ -176,7 +176,7 @@ resource "aws_elasticache_cluster" "memcached-or-single-redis" {
   }
 
   tags = merge(
-    module.tags.tags,
+    local.required_tags,
     {
       Name = var.cluster_id
     }
@@ -210,7 +210,7 @@ resource "aws_cloudwatch_metric_alarm" "cpu" {
   alarm_actions = var.alarm_actions
 
   tags = merge(
-    module.tags.tags,
+    local.required_tags,
     {
       Name = "${var.cluster_id}-cpu-alarm"
     }
@@ -240,7 +240,7 @@ resource "aws_cloudwatch_metric_alarm" "memory" {
   alarm_actions = var.alarm_actions
 
   tags = merge(
-    module.tags.tags,
+    local.required_tags,
     {
       Name = "${var.cluster_id}-memory-alarm"
     }
@@ -270,7 +270,7 @@ resource "aws_cloudwatch_metric_alarm" "connections" {
   alarm_actions = var.alarm_actions
 
   tags = merge(
-    module.tags.tags,
+    local.required_tags,
     {
       Name = "${var.cluster_id}-connections-alarm"
     }

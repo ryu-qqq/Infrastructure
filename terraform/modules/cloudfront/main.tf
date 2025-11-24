@@ -201,7 +201,7 @@ resource "aws_cloudfront_distribution" "this" {
   }
 
   tags = merge(
-    module.tags.tags,
+    local.required_tags,
     {
       Name        = var.comment
       Description = "CloudFront Distribution - ${var.comment}"

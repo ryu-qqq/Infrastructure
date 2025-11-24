@@ -21,7 +21,7 @@ resource "aws_cloudwatch_log_group" "this" {
   retention_in_days = var.log_retention_days
 
   tags = merge(
-    module.tags.tags,
+    local.required_tags,
     {
       Name        = "/ecs/${var.name}"
       Description = "CloudWatch log group for ECS service ${var.name}"
@@ -83,7 +83,7 @@ resource "aws_ecs_task_definition" "this" {
   ])
 
   tags = merge(
-    module.tags.tags,
+    local.required_tags,
     {
       Name        = var.name
       Description = "ECS task definition for ${var.name}"
@@ -137,7 +137,7 @@ resource "aws_ecs_service" "this" {
   enable_execute_command = var.enable_execute_command
 
   tags = merge(
-    module.tags.tags,
+    local.required_tags,
     {
       Name        = var.name
       Description = "ECS service for ${var.name}"

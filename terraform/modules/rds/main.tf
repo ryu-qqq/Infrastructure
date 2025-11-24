@@ -19,7 +19,7 @@ resource "aws_db_subnet_group" "this" {
   subnet_ids = var.subnet_ids
 
   tags = merge(
-    module.tags.tags,
+    local.required_tags,
     {
       Name        = "${var.identifier}-subnet-group"
       Description = "DB subnet group for RDS instance ${var.identifier}"
@@ -43,7 +43,7 @@ resource "aws_db_parameter_group" "this" {
   }
 
   tags = merge(
-    module.tags.tags,
+    local.required_tags,
     {
       Name        = "${var.identifier}-params"
       Description = "DB parameter group for RDS instance ${var.identifier}"
@@ -115,7 +115,7 @@ resource "aws_db_instance" "this" {
   deletion_protection = var.deletion_protection
 
   tags = merge(
-    module.tags.tags,
+    local.required_tags,
     {
       Name        = var.identifier
       Description = "RDS instance ${var.identifier} (${var.engine} ${var.engine_version})"

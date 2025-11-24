@@ -25,7 +25,7 @@ resource "aws_cloudwatch_event_rule" "this" {
   state               = var.enabled ? "ENABLED" : "DISABLED"
 
   tags = merge(
-    module.tags.tags,
+    local.required_tags,
     {
       Name = var.name
     }
@@ -129,7 +129,7 @@ resource "aws_iam_role" "eventbridge" {
   })
 
   tags = merge(
-    module.tags.tags,
+    local.required_tags,
     {
       Name = "${var.name}-eventbridge-role"
     }

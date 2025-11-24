@@ -40,7 +40,7 @@ resource "aws_lb" "this" {
   }
 
   tags = merge(
-    module.tags.tags,
+    local.required_tags,
     {
       Name        = var.name
       Description = "Application Load Balancer ${var.name}"
@@ -84,7 +84,7 @@ resource "aws_lb_target_group" "this" {
   }
 
   tags = merge(
-    module.tags.tags,
+    local.required_tags,
     {
       Name        = "${var.name}-${each.key}"
       Description = "Target group for ${var.name} - ${each.key}"
@@ -149,7 +149,7 @@ resource "aws_lb_listener" "http" {
   }
 
   tags = merge(
-    module.tags.tags,
+    local.required_tags,
     {
       Name        = "${var.name}-http-${each.key}"
       Description = "HTTP listener for ${var.name}"
@@ -192,7 +192,7 @@ resource "aws_lb_listener" "https" {
   }
 
   tags = merge(
-    module.tags.tags,
+    local.required_tags,
     {
       Name        = "${var.name}-https-${each.key}"
       Description = "HTTPS listener for ${var.name}"
@@ -269,7 +269,7 @@ resource "aws_lb_listener_rule" "this" {
   }
 
   tags = merge(
-    module.tags.tags,
+    local.required_tags,
     {
       Name        = "${var.name}-rule-${each.key}"
       Description = "Listener rule for ${var.name} - ${each.key}"

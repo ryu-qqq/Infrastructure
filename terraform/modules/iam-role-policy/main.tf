@@ -27,7 +27,7 @@ resource "aws_iam_role" "this" {
   permissions_boundary = var.permissions_boundary
 
   tags = merge(
-    module.tags.tags,
+    local.required_tags,
     {
       Name      = var.role_name
       Component = "iam-role"

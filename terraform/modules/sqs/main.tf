@@ -17,6 +17,8 @@ module "tags" {
 }
 
 locals {
+  # Required tags for governance compliance
+  required_tags = local.required_tags
   # Generate queue name with .fifo suffix for FIFO queues
   queue_name     = var.fifo_queue ? "${var.name}.fifo" : var.name
   dlq_queue_name = var.fifo_queue ? "${var.name}-dlq.fifo" : "${var.name}-dlq"
@@ -38,7 +40,7 @@ resource "aws_sqs_queue" "dlq" {
   message_retention_seconds = var.dlq_message_retention_seconds
 
   tags = merge(
-    module.tags.tags,
+    local.required_tags,
     {
       Name         = local.dlq_queue_name
       QueueType    = var.fifo_queue ? "FIFO" : "Standard"
@@ -82,7 +84,7 @@ resource "aws_sqs_queue" "this" {
   fifo_throughput_limit = var.fifo_queue ? var.fifo_throughput_limit : null
 
   tags = merge(
-    module.tags.tags,
+    local.required_tags,
     {
       Name         = local.queue_name
       QueueType    = var.fifo_queue ? "FIFO" : "Standard"
@@ -124,7 +126,7 @@ resource "aws_cloudwatch_metric_alarm" "message-age" {
   ok_actions    = var.alarm_ok_actions
 
   tags = merge(
-    module.tags.tags,
+    local.required_tags,
     {
       Name      = "${local.queue_name}-message-age-high"
       AlarmType = "MessageAge"
@@ -155,7 +157,7 @@ resource "aws_cloudwatch_metric_alarm" "messages-visible" {
   ok_actions    = var.alarm_ok_actions
 
   tags = merge(
-    module.tags.tags,
+    local.required_tags,
     {
       Name      = "${local.queue_name}-messages-visible-high"
       AlarmType = "MessagesVisible"
@@ -186,7 +188,7 @@ resource "aws_cloudwatch_metric_alarm" "dlq-messages" {
   ok_actions    = var.alarm_ok_actions
 
   tags = merge(
-    module.tags.tags,
+    local.required_tags,
     {
       Name      = "${local.dlq_queue_name}-messages-visible"
       AlarmType = "DLQMessages"

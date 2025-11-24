@@ -30,7 +30,7 @@ resource "aws_ecr_repository" "this" {
   }
 
   tags = merge(
-    module.tags.tags,
+    local.required_tags,
     {
       Name      = "ecr-${var.name}"
       Component = "container-registry"
@@ -122,5 +122,5 @@ resource "aws_ssm_parameter" "repository_url" {
   value       = aws_ecr_repository.this.repository_url
   description = "ECR repository URL for ${var.name}"
 
-  tags = module.tags.tags
+  tags = local.required_tags
 }
