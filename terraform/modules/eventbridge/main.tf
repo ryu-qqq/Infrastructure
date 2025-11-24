@@ -17,6 +17,11 @@ module "tags" {
   additional_tags = var.additional_tags
 }
 
+locals {
+  # Required tags for governance compliance
+  required_tags = module.tags.tags
+}
+
 resource "aws_cloudwatch_event_rule" "this" {
   name                = var.name
   description         = var.description

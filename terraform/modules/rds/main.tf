@@ -13,6 +13,11 @@ module "tags" {
   additional_tags = var.additional_tags
 }
 
+locals {
+  # Required tags for governance compliance
+  required_tags = module.tags.tags
+}
+
 # DB Subnet Group
 resource "aws_db_subnet_group" "this" {
   name       = "${var.identifier}-subnet-group"

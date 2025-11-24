@@ -13,6 +13,11 @@ module "tags" {
   additional_tags = var.additional_tags
 }
 
+locals {
+  # Required tags for governance compliance
+  required_tags = module.tags.tags
+}
+
 # CloudWatch Log Group for Container Logs
 resource "aws_cloudwatch_log_group" "this" {
   count = var.log_configuration == null ? 1 : 0

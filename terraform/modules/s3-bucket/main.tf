@@ -16,6 +16,11 @@ module "tags" {
   additional_tags = var.additional_tags
 }
 
+locals {
+  # Required tags for governance compliance
+  required_tags = module.tags.tags
+}
+
 # S3 Bucket
 #tfsec:ignore:AVD-AWS-0089 Logging is optional and controlled by user configuration
 resource "aws_s3_bucket" "this" {

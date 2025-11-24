@@ -16,6 +16,11 @@ module "tags" {
   additional_tags = var.additional_tags
 }
 
+locals {
+  # Required tags for governance compliance
+  required_tags = module.tags.tags
+}
+
 # CloudFront Distribution
 #tfsec:ignore:AVD-AWS-0010 Logging is optional and controlled by user configuration
 resource "aws_cloudfront_distribution" "this" {

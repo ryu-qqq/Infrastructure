@@ -16,6 +16,11 @@ module "tags" {
   additional_tags = var.additional_tags
 }
 
+locals {
+  # Required tags for governance compliance
+  required_tags = module.tags.tags
+}
+
 resource "aws_cloudwatch_log_group" "this" {
   name              = var.name
   retention_in_days = var.retention_in_days

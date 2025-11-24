@@ -15,6 +15,11 @@ module "tags" {
   additional_tags = var.additional_tags
 }
 
+locals {
+  # Required tags for governance compliance
+  required_tags = module.tags.tags
+}
+
 # ============================================================================
 # IAM Role
 # ============================================================================

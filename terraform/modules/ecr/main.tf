@@ -16,6 +16,11 @@ module "tags" {
   additional_tags = var.additional_tags
 }
 
+locals {
+  # Required tags for governance compliance
+  required_tags = module.tags.tags
+}
+
 resource "aws_ecr_repository" "this" {
   name                 = var.name
   image_tag_mutability = var.image_tag_mutability
