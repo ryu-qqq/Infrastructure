@@ -8,7 +8,7 @@ on:
       - 'terraform/**'
       - '.github/workflows/terraform-*.yml'
       # Exclude atlantis directory - managed by Atlantis server
-      - '!terraform/atlantis/**'
+      - '!terraform/environments/prod/atlantis/**'
 
 permissions:
   contents: read
@@ -148,20 +148,20 @@ jobs:
 
       # Atlantis Module
       - name: Terraform Format Check - Atlantis
-        working-directory: terraform/atlantis
+        working-directory: terraform/environments/prod/atlantis
         run: terraform fmt -check -recursive
 
       - name: Terraform Init - Atlantis
-        working-directory: terraform/atlantis
+        working-directory: terraform/environments/prod/atlantis
         run: terraform init
 
       - name: Terraform Validate - Atlantis
-        working-directory: terraform/atlantis
+        working-directory: terraform/environments/prod/atlantis
         run: terraform validate
 
       - name: Terraform Plan - Atlantis
         id: plan
-        working-directory: terraform/atlantis
+        working-directory: terraform/environments/prod/atlantis
         run: |
           set +e
           terraform plan -no-color -out=tfplan
@@ -172,12 +172,12 @@ jobs:
         continue-on-error: true
 
       - name: OPA Policy Validation - Atlantis
-        working-directory: terraform/atlantis
+        working-directory: terraform/environments/prod/atlantis
         continue-on-error: true
         run: |
           set +e
           conftest test tfplan-atlantis.json \
-            --config ../../governance/configs/conftest.toml \
+            --config ../../../../governance/configs/conftest.toml \
             --output json > conftest-atlantis.json
           EXIT_CODE=$?
 
@@ -191,7 +191,7 @@ jobs:
           exit 0
 
       - name: Generate Infracost Cost Estimate - Atlantis
-        working-directory: terraform/atlantis
+        working-directory: terraform/environments/prod/atlantis
         continue-on-error: true
         run: |
           set +e
@@ -284,7 +284,7 @@ jobs:
             // Read atlantis plan
             let atlantisPlan = '';
             try {
-              atlantisPlan = fs.readFileSync('terraform/atlantis/plan.txt', 'utf8');
+              atlantisPlan = fs.readFileSync('terraform/environments/prod/atlantis/plan.txt', 'utf8');
             } catch (error) {
               atlantisPlan = 'No changes or error reading plan file.';
             }
@@ -376,7 +376,7 @@ jobs:
 
               // Parse atlantis conftest results
               try {
-                const atlantisConftest = JSON.parse(fs.readFileSync('terraform/atlantis/conftest-atlantis.json', 'utf8'));
+                const atlantisConftest = JSON.parse(fs.readFileSync('terraform/environments/prod/atlantis/conftest-atlantis.json', 'utf8'));
                 if (atlantisConftest && atlantisConftest.length > 0) {
                   atlantisConftest.forEach(result => {
                     if (result.failures && result.failures.length > 0) {
