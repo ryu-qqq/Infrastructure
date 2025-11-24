@@ -83,7 +83,7 @@ output "private_route_table_ids" {
 # SSM Parameter Store Exports for Cross-Stack References
 # ============================================================================
 
-resource "aws_ssm_parameter" "vpc_id" {
+resource "aws_ssm_parameter" "vpc-id" {
   name        = "/shared/${var.project_name}/network/vpc-id"
   description = "VPC ID for cross-stack references"
   type        = "String"
@@ -98,7 +98,7 @@ resource "aws_ssm_parameter" "vpc_id" {
   )
 }
 
-resource "aws_ssm_parameter" "vpc_cidr" {
+resource "aws_ssm_parameter" "vpc-cidr" {
   name        = "/shared/${var.project_name}/network/vpc-cidr"
   description = "VPC CIDR block for cross-stack references"
   type        = "String"
@@ -113,7 +113,7 @@ resource "aws_ssm_parameter" "vpc_cidr" {
   )
 }
 
-resource "aws_ssm_parameter" "public_subnet_ids" {
+resource "aws_ssm_parameter" "public-subnet-ids" {
   name        = "/shared/${var.project_name}/network/public-subnet-ids"
   description = "Public subnet IDs for cross-stack references"
   type        = "StringList"
@@ -128,7 +128,7 @@ resource "aws_ssm_parameter" "public_subnet_ids" {
   )
 }
 
-resource "aws_ssm_parameter" "private_subnet_ids" {
+resource "aws_ssm_parameter" "private-subnet-ids" {
   name        = "/shared/${var.project_name}/network/private-subnet-ids"
   description = "Private subnet IDs for cross-stack references"
   type        = "StringList"

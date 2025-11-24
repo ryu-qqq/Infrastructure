@@ -136,7 +136,7 @@ resource "aws_iam_role" "eventbridge" {
   )
 }
 
-resource "aws_iam_role_policy" "eventbridge_ecs" {
+resource "aws_iam_role_policy" "eventbridge-ecs" {
   count = var.target_type == "ecs" ? 1 : 0
 
   name = "${var.name}-ecs-run-task"

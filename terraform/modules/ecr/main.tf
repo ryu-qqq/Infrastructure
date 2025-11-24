@@ -114,7 +114,7 @@ resource "aws_ecr_repository_policy" "default" {
 data "aws_caller_identity" "current" {}
 
 # SSM Parameter for cross-stack reference (optional)
-resource "aws_ssm_parameter" "repository_url" {
+resource "aws_ssm_parameter" "repository-url" {
   count = var.create_ssm_parameter ? 1 : 0
 
   name        = "/shared/ecr/${var.name}-repository-url"

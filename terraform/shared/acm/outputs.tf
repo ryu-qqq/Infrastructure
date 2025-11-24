@@ -36,7 +36,7 @@ output "subject_alternative_names" {
 # SSM Parameters for Cross-Stack References
 # ============================================================================
 
-resource "aws_ssm_parameter" "certificate_arn" {
+resource "aws_ssm_parameter" "certificate-arn" {
   name        = "/shared/${var.project_name}/certificate/${local.cert_name}/arn"
   description = "ACM certificate ARN for cross-stack references"
   type        = "String"
@@ -51,7 +51,7 @@ resource "aws_ssm_parameter" "certificate_arn" {
   )
 }
 
-resource "aws_ssm_parameter" "certificate_domain" {
+resource "aws_ssm_parameter" "certificate-domain" {
   name        = "/shared/${var.project_name}/certificate/${local.cert_name}/domain"
   description = "Certificate domain name for cross-stack references"
   type        = "String"

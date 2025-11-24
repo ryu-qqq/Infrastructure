@@ -57,7 +57,7 @@ output "security_group_id" {
 # SSM Parameters for Cross-Stack References
 # ============================================================================
 
-resource "aws_ssm_parameter" "db_endpoint" {
+resource "aws_ssm_parameter" "db-endpoint" {
   name        = "/shared/${var.project_name}/database/${var.db_identifier}/endpoint"
   description = "Database endpoint for cross-stack references"
   type        = "String"
@@ -72,7 +72,7 @@ resource "aws_ssm_parameter" "db_endpoint" {
   )
 }
 
-resource "aws_ssm_parameter" "db_address" {
+resource "aws_ssm_parameter" "db-address" {
   name        = "/shared/${var.project_name}/database/${var.db_identifier}/address"
   description = "Database address for cross-stack references"
   type        = "String"
@@ -87,7 +87,7 @@ resource "aws_ssm_parameter" "db_address" {
   )
 }
 
-resource "aws_ssm_parameter" "db_port" {
+resource "aws_ssm_parameter" "db-port" {
   name        = "/shared/${var.project_name}/database/${var.db_identifier}/port"
   description = "Database port for cross-stack references"
   type        = "String"
@@ -102,7 +102,7 @@ resource "aws_ssm_parameter" "db_port" {
   )
 }
 
-resource "aws_ssm_parameter" "db_name" {
+resource "aws_ssm_parameter" "db-name" {
   name        = "/shared/${var.project_name}/database/${var.db_identifier}/database-name"
   description = "Database name for cross-stack references"
   type        = "String"
@@ -120,7 +120,7 @@ resource "aws_ssm_parameter" "db_name" {
 # NOTE: 기존 RDS는 Secrets Manager를 사용하지 않으므로 secret-arn SSM Parameter는 생성하지 않음
 # 새로운 RDS 생성 시에는 manage_master_user_password = true가 설정되어 secret이 자동 생성됨
 
-resource "aws_ssm_parameter" "security_group_id" {
+resource "aws_ssm_parameter" "security-group-id" {
   name        = "/shared/${var.project_name}/database/${var.db_identifier}/security-group-id"
   description = "Database security group ID for cross-stack references"
   type        = "String"

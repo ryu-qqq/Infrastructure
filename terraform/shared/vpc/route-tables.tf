@@ -20,7 +20,7 @@ resource "aws_route_table" "public" {
 }
 
 # Public Route - Internet Gateway
-resource "aws_route" "public_internet" {
+resource "aws_route" "public-internet" {
   route_table_id         = aws_route_table.public.id
   destination_cidr_block = "0.0.0.0/0"
   gateway_id             = aws_internet_gateway.main.id
@@ -59,7 +59,7 @@ resource "aws_route_table" "private" {
 }
 
 # Private Route - NAT Gateway
-resource "aws_route" "private_nat" {
+resource "aws_route" "private-nat" {
   count = var.enable_nat_gateway ? (var.single_nat_gateway ? 1 : local.az_count) : 0
 
   route_table_id         = aws_route_table.private[count.index].id

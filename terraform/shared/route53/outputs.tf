@@ -26,7 +26,7 @@ output "domain_name" {
 # SSM Parameters for Cross-Stack References
 # ============================================================================
 
-resource "aws_ssm_parameter" "zone_id" {
+resource "aws_ssm_parameter" "zone-id" {
   name        = "/shared/${var.project_name}/dns/${local.zone_name}/zone-id"
   description = "Route53 hosted zone ID for cross-stack references"
   type        = "String"
@@ -41,7 +41,7 @@ resource "aws_ssm_parameter" "zone_id" {
   )
 }
 
-resource "aws_ssm_parameter" "name_servers" {
+resource "aws_ssm_parameter" "name-servers" {
   name        = "/shared/${var.project_name}/dns/${local.zone_name}/name-servers"
   description = "Route53 name servers for cross-stack references"
   type        = "StringList"
