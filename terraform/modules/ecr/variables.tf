@@ -107,7 +107,7 @@ variable "additional_tags" {
 variable "image_tag_mutability" {
   description = "Image tag mutability setting (MUTABLE or IMMUTABLE)"
   type        = string
-  default     = "MUTABLE"
+  default     = "IMMUTABLE"
 
   validation {
     condition     = contains(["MUTABLE", "IMMUTABLE"], var.image_tag_mutability)

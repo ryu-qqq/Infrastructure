@@ -20,8 +20,9 @@ resource "aws_db_instance" "main" {
   storage_throughput    = var.storage_type == "gp3" ? var.storage_throughput : null
 
   # Credentials (use AWS Secrets Manager)
-  username               = "admin"
+  username                    = "admin"
   manage_master_user_password = true
+  iam_database_authentication_enabled = true
 
   # Network configuration
   db_subnet_group_name   = "prod-shared-mysql-subnet-group"  # 기존 리소스 직접 참조 (import 불가)

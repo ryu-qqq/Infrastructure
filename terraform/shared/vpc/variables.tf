@@ -140,3 +140,9 @@ variable "single_nat_gateway" {
   type        = bool
   default     = false
 }
+
+variable "flow_logs_kms_key_id" {
+  description = "KMS key ID for VPC Flow Logs encryption (optional)"
+  type        = string
+  default     = null
+}

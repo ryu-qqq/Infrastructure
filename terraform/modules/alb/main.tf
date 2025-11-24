@@ -28,6 +28,7 @@ resource "aws_lb" "this" {
   enable_http2               = var.enable_http2
   idle_timeout               = var.idle_timeout
   ip_address_type            = var.ip_address_type
+  drop_invalid_header_fields = true
 
   # Access logs configuration
   dynamic "access_logs" {

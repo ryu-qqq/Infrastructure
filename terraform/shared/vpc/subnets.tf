@@ -2,6 +2,7 @@
 # Public Subnets
 # ============================================================================
 
+#tfsec:ignore:AVD-AWS-0164 Public subnets require public IP assignment by design
 resource "aws_subnet" "public" {
   count = local.az_count
 

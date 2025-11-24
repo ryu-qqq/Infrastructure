@@ -389,7 +389,7 @@ variable "port" {
 variable "deletion_protection" {
   description = "If true, the database cannot be deleted"
   type        = bool
-  default     = false
+  default     = true
 }
 
 variable "apply_immediately" {
