@@ -3,42 +3,16 @@
 module "atlantis_ecr" {
   source = "../../../modules/ecr"
 
-  repository_name      = "atlantis"
+  name                 = "atlantis"
   image_tag_mutability = "MUTABLE"
   scan_on_push         = true
   kms_key_arn          = aws_kms_key.ecr.arn
 
-  # Lifecycle policy for image retention
-  lifecycle_policy = jsonencode({
-    rules = [
-      {
-        rulePriority = 1
-        description  = "Keep last 10 images"
-        selection = {
-          tagStatus     = "tagged"
-          tagPrefixList = ["v"]
-          countType     = "imageCountMoreThan"
-          countNumber   = 10
-        }
-        action = {
-          type = "expire"
-        }
-      },
-      {
-        rulePriority = 2
-        description  = "Remove untagged images after 7 days"
-        selection = {
-          tagStatus   = "untagged"
-          countType   = "sinceImagePushed"
-          countUnit   = "days"
-          countNumber = 7
-        }
-        action = {
-          type = "expire"
-        }
-      }
-    ]
-  })
+  # Lifecycle policy configuration
+  enable_lifecycle_policy      = true
+  max_image_count              = 10
+  lifecycle_tag_prefixes       = ["v"]
+  untagged_image_expiry_days   = 7
 
   # Repository policy for access control
   repository_policy = jsonencode({
