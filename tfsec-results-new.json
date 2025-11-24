@@ -1,0 +1,144 @@
+{
+	"results": [
+		{
+			"rule_id": "AVD-AWS-0053",
+			"long_id": "aws-elb-alb-not-public",
+			"rule_description": "Load balancer is exposed to the internet.",
+			"rule_provider": "aws",
+			"rule_service": "elb",
+			"impact": "The load balancer is exposed on the internet",
+			"resolution": "Switch to an internal load balancer or add a tfsec ignore",
+			"links": [
+				"https://aquasecurity.github.io/tfsec/v1.28.14/checks/aws/elb/alb-not-public/",
+				"https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/lb"
+			],
+			"description": "Load balancer is exposed publicly.",
+			"severity": "HIGH",
+			"warning": false,
+			"status": 0,
+			"resource": "aws_lb.this",
+			"location": {
+				"filename": "/Users/sangwon-ryu/infrastructure/terraform/modules/alb/main.tf",
+				"start_line": 22,
+				"end_line": 22
+			}
+		},
+		{
+			"rule_id": "AVD-AWS-0017",
+			"long_id": "aws-cloudwatch-log-group-customer-key",
+			"rule_description": "CloudWatch log groups should be encrypted using CMK",
+			"rule_provider": "aws",
+			"rule_service": "cloudwatch",
+			"impact": "Log data may be leaked if the logs are compromised. No auditing of who have viewed the logs.",
+			"resolution": "Enable CMK encryption of CloudWatch Log Groups",
+			"links": [
+				"https://aquasecurity.github.io/tfsec/v1.28.14/checks/aws/cloudwatch/log-group-customer-key/",
+				"https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/cloudwatch_log_group#kms_key_id"
+			],
+			"description": "Log group is not encrypted.",
+			"severity": "LOW",
+			"warning": false,
+			"status": 0,
+			"resource": "aws_cloudwatch_log_group.this[0]",
+			"location": {
+				"filename": "/Users/sangwon-ryu/infrastructure/terraform/modules/ecs-service/main.tf",
+				"start_line": 17,
+				"end_line": 30
+			}
+		},
+		{
+			"rule_id": "AVD-AWS-0066",
+			"long_id": "aws-lambda-enable-tracing",
+			"rule_description": "Lambda functions should have X-Ray tracing enabled",
+			"rule_provider": "aws",
+			"rule_service": "lambda",
+			"impact": "Without full tracing enabled it is difficult to trace the flow of logs",
+			"resolution": "Enable tracing",
+			"links": [
+				"https://aquasecurity.github.io/tfsec/v1.28.14/checks/aws/lambda/enable-tracing/",
+				"https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/lambda_function#mode"
+			],
+			"description": "Function does not have tracing enabled.",
+			"severity": "LOW",
+			"warning": false,
+			"status": 0,
+			"resource": "aws_lambda_function.this",
+			"location": {
+				"filename": "/Users/sangwon-ryu/infrastructure/terraform/modules/lambda/main.tf",
+				"start_line": 160,
+				"end_line": 268
+			}
+		},
+		{
+			"rule_id": "AVD-AWS-0133",
+			"long_id": "aws-rds-enable-performance-insights",
+			"rule_description": "Enable Performance Insights to detect potential problems",
+			"rule_provider": "aws",
+			"rule_service": "rds",
+			"impact": "Without adequate monitoring, performance related issues may go unreported and potentially lead to compromise.",
+			"resolution": "Enable performance insights",
+			"links": [
+				"https://aquasecurity.github.io/tfsec/v1.28.14/checks/aws/rds/enable-performance-insights/",
+				"https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/rds_cluster_instance#performance_insights_kms_key_id",
+				"https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/db_instance#performance_insights_kms_key_id"
+			],
+			"description": "Instance does not have performance insights enabled.",
+			"severity": "LOW",
+			"warning": false,
+			"status": 0,
+			"resource": "aws_db_instance.this",
+			"location": {
+				"filename": "/Users/sangwon-ryu/infrastructure/terraform/modules/rds/main.tf",
+				"start_line": 108,
+				"end_line": 108
+			}
+		},
+		{
+			"rule_id": "AVD-AWS-0099",
+			"long_id": "aws-ec2-add-description-to-security-group",
+			"rule_description": "Missing description for security group.",
+			"rule_provider": "aws",
+			"rule_service": "ec2",
+			"impact": "Descriptions provide context for the firewall rule reasons",
+			"resolution": "Add descriptions for all security groups",
+			"links": [
+				"https://aquasecurity.github.io/tfsec/v1.28.14/checks/aws/ec2/add-description-to-security-group/",
+				"https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/security_group",
+				"https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/security_group_rule"
+			],
+			"description": "Security group explicitly uses the default description.",
+			"severity": "LOW",
+			"warning": false,
+			"status": 0,
+			"resource": "aws_security_group.this",
+			"location": {
+				"filename": "/Users/sangwon-ryu/infrastructure/terraform/modules/security-group/main.tf",
+				"start_line": 19,
+				"end_line": 19
+			}
+		},
+		{
+			"rule_id": "AVD-AWS-0057",
+			"long_id": "aws-iam-no-policy-wildcards",
+			"rule_description": "IAM policy should avoid use of wildcards and instead apply the principle of least privilege",
+			"rule_provider": "aws",
+			"rule_service": "iam",
+			"impact": "Overly permissive policies may grant access to sensitive resources",
+			"resolution": "Specify the exact permissions required, and to which resources they should apply instead of using wildcards.",
+			"links": [
+				"https://aquasecurity.github.io/tfsec/v1.28.14/checks/aws/iam/no-policy-wildcards/",
+				"https://registry.terraform.io/providers/hashicorp/aws/latest/docs/data-sources/iam_policy_document"
+			],
+			"description": "IAM policy document uses sensitive action 'logs:CreateLogGroup' on wildcarded resource '*'",
+			"severity": "HIGH",
+			"warning": false,
+			"status": 0,
+			"resource": "aws_iam_role_policy.vpc-flow-logs",
+			"location": {
+				"filename": "/Users/sangwon-ryu/infrastructure/terraform/shared/vpc/vpc.tf",
+				"start_line": 71,
+				"end_line": 71
+			}
+		}
+	]
+}

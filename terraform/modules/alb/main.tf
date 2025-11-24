@@ -17,6 +17,7 @@ module "tags" {
 }
 
 # Application Load Balancer
+#tfsec:ignore:AVD-AWS-0053 ALB exposure (internal/public) is controlled by var.internal
 resource "aws_lb" "this" {
   name               = var.name
   internal           = var.internal
