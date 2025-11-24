@@ -23,7 +23,7 @@ resource "aws_dynamodb_table" "terraform-lock" {
       Owner       = var.owner
       CostCenter  = var.cost_center
       Environment = var.environment
-      Lifecycle   = var.lifecycle
+      Lifecycle   = var.resource_lifecycle
       DataClass   = var.data_class
       Service     = var.service
       Team        = var.team

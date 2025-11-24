@@ -63,13 +63,13 @@ variable "data_class" {
   }
 }
 
-variable "lifecycle" {
+variable "resource_lifecycle" {
   description = "Resource lifecycle (temporary, permanent)"
   type        = string
   default     = "permanent"
 
   validation {
-    condition     = contains(["temporary", "permanent"], var.lifecycle)
+    condition     = contains(["temporary", "permanent"], var.resource_lifecycle)
     error_message = "Lifecycle must be one of: temporary, permanent."
   }
 }

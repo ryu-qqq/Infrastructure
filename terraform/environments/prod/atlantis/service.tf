@@ -17,7 +17,7 @@ resource "aws_ecs_service" "atlantis" {
 
   # Load balancer configuration
   load_balancer {
-    target_group_arn = module.atlantis_alb.target_group_arn
+    target_group_arn = module.atlantis_alb.target_group_arns["atlantis"]
     container_name   = "atlantis"
     container_port   = var.atlantis_container_port
   }

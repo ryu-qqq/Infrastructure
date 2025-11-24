@@ -8,8 +8,9 @@ module "atlantis_efs_sg" {
   name        = "atlantis-efs-${var.environment}"
   description = "Security group for Atlantis EFS mount targets"
   vpc_id      = var.vpc_id
+  type        = "custom"
 
-  ingress_rules = [
+  custom_ingress_rules = [
     {
       description     = "NFS from ECS tasks"
       from_port       = 2049
@@ -19,15 +20,8 @@ module "atlantis_efs_sg" {
     }
   ]
 
-  egress_rules = [
-    {
-      description = "Allow all outbound traffic"
-      from_port   = 0
-      to_port     = 0
-      protocol    = "-1"
-      cidr_blocks = ["0.0.0.0/0"]
-    }
-  ]
+  # Enable default egress (0.0.0.0/0)
+  enable_default_egress = true
 
   # Tags
   environment  = var.environment

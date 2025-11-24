@@ -1,6 +1,6 @@
 # S3 bucket for Terraform state using s3-bucket module
 module "terraform_state_bucket" {
-  source = "../../modules/s3-bucket"
+  source = "../../../modules/s3-bucket"
 
   bucket_name  = var.tfstate_bucket_name
   environment  = var.environment

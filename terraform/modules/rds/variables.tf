@@ -190,8 +190,8 @@ variable "max_allocated_storage" {
   default     = 100
 
   validation {
-    condition     = var.max_allocated_storage == 0 || (var.max_allocated_storage >= var.allocated_storage && var.max_allocated_storage <= 65536)
-    error_message = "Max allocated storage must be 0 (disabled) or between allocated_storage and 65536 GiB"
+    condition     = var.max_allocated_storage == 0 || (var.max_allocated_storage > 0 && var.max_allocated_storage <= 65536)
+    error_message = "Max allocated storage must be 0 (disabled) or between 1 and 65536 GiB"
   }
 }
 
@@ -218,7 +218,7 @@ variable "storage_throughput" {
   default     = null
 
   validation {
-    condition     = var.storage_throughput == null || (var.storage_throughput >= 125 && var.storage_throughput <= 1000)
+    condition     = var.storage_throughput == null ? true : (var.storage_throughput >= 125 && var.storage_throughput <= 1000)
     error_message = "Storage throughput must be between 125 and 1000 MiB/s for gp3 storage"
   }
 }

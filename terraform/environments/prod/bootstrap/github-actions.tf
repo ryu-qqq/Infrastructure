@@ -12,9 +12,9 @@ data "aws_caller_identity" "current" {}
 
 # GitHub Actions IAM Role using iam-role-policy module
 module "github_actions_role" {
-  source = "../../modules/iam-role-policy"
+  source = "../../../modules/iam-role-policy"
 
-  role_name    = "GitHubActionsRole"
+  role_name    = "github-actions-role"
   description  = "IAM role for GitHub Actions workflows to deploy infrastructure"
   environment  = var.environment
   service_name = "github-actions"
@@ -335,7 +335,7 @@ resource "aws_iam_policy" "github-actions-fileflow" {
       Owner       = var.owner
       CostCenter  = var.cost_center
       Environment = var.environment
-      Lifecycle   = var.lifecycle
+      Lifecycle   = var.resource_lifecycle
       DataClass   = var.data_class
       Service     = var.service
       Team        = var.team

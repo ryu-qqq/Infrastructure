@@ -4,8 +4,8 @@
 module "atlantis_task_execution_role" {
   source = "../../../modules/iam-role-policy"
 
-  role_name        = "atlantis-ecs-task-execution-${var.environment}"
-  role_description = "ECS task execution role for Atlantis"
+  role_name   = "atlantis-ecs-task-execution-${var.environment}"
+  description = "ECS task execution role for Atlantis"
 
   assume_role_policy = jsonencode({
     Version = "2012-10-17"
@@ -20,44 +20,6 @@ module "atlantis_task_execution_role" {
     ]
   })
 
-  # Attach AWS managed policy
-  managed_policy_arns = [
-    "arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy"
-  ]
-
-  # Inline policies
-  inline_policies = {
-    kms_decryption = jsonencode({
-      Version = "2012-10-17"
-      Statement = [
-        {
-          Effect = "Allow"
-          Action = [
-            "kms:Decrypt",
-            "kms:DescribeKey"
-          ]
-          Resource = aws_kms_key.ecr.arn
-        }
-      ]
-    })
-
-    secrets_access = jsonencode({
-      Version = "2012-10-17"
-      Statement = [
-        {
-          Effect = "Allow"
-          Action = [
-            "secretsmanager:GetSecretValue"
-          ]
-          Resource = [
-            aws_secretsmanager_secret.atlantis-github-app.arn,
-            aws_secretsmanager_secret.atlantis-webhook-secret.arn
-          ]
-        }
-      ]
-    })
-  }
-
   # Tags
   environment  = var.environment
   service_name = var.service_name
@@ -69,6 +31,54 @@ module "atlantis_task_execution_role" {
     Component   = "atlantis"
     Description = "ECS task execution role for Atlantis"
   }
+}
+
+# Attach AWS managed policy for ECS Task Execution
+resource "aws_iam_role_policy_attachment" "atlantis-task-execution-policy" {
+  role       = module.atlantis_task_execution_role.role_name
+  policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy"
+}
+
+# Inline Policy for KMS Decryption
+resource "aws_iam_role_policy" "atlantis-task-execution-kms" {
+  name = "kms-decryption"
+  role = module.atlantis_task_execution_role.role_name
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow"
+        Action = [
+          "kms:Decrypt",
+          "kms:DescribeKey"
+        ]
+        Resource = aws_kms_key.ecr.arn
+      }
+    ]
+  })
+}
+
+# Inline Policy for Secrets Manager Access
+resource "aws_iam_role_policy" "atlantis-task-execution-secrets" {
+  name = "secrets-access"
+  role = module.atlantis_task_execution_role.role_name
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow"
+        Action = [
+          "secretsmanager:GetSecretValue"
+        ]
+        Resource = [
+          aws_secretsmanager_secret.atlantis-github-app.arn,
+          aws_secretsmanager_secret.atlantis-webhook-secret.arn
+        ]
+      }
+    ]
+  })
 }
 
 # ECS Task Role

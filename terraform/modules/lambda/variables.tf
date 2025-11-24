@@ -286,7 +286,7 @@ variable "tracing_mode" {
   default     = null
 
   validation {
-    condition     = var.tracing_mode == null || contains(["Active", "PassThrough"], var.tracing_mode)
+    condition     = var.tracing_mode == null ? true : contains(["Active", "PassThrough"], var.tracing_mode)
     error_message = "Tracing mode must be Active or PassThrough"
   }
 }
@@ -298,7 +298,7 @@ variable "ephemeral_storage_size" {
   default     = null
 
   validation {
-    condition     = var.ephemeral_storage_size == null || (var.ephemeral_storage_size >= 512 && var.ephemeral_storage_size <= 10240)
+    condition     = var.ephemeral_storage_size == null ? true : (var.ephemeral_storage_size >= 512 && var.ephemeral_storage_size <= 10240)
     error_message = "Ephemeral storage size must be between 512 and 10240 MB"
   }
 }

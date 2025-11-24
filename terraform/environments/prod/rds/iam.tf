@@ -3,7 +3,7 @@
 module "rds_monitoring_role" {
   count = var.enable_enhanced_monitoring ? 1 : 0
 
-  source = "../../modules/iam-role-policy"
+  source = "../../../modules/iam-role-policy"
 
   role_name = "${local.name_prefix}-monitoring-role"
   assume_role_policy = jsonencode({

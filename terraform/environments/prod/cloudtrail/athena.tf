@@ -19,18 +19,6 @@ resource "aws_athena_workgroup" "cloudtrail" {
     }
   }
 
-  tags = {
-    Name        = var.athena_workgroup_name
-    Component   = "athena"
-    Environment = var.environment
-    Service     = var.service_name
-    Team        = var.team
-    Owner       = var.owner
-    CostCenter  = var.cost_center
-    Project     = var.project
-    DataClass   = var.data_class
-    ManagedBy   = "terraform"
-  }
 }
 
 # Glue Database for CloudTrail logs
@@ -40,18 +28,6 @@ resource "aws_glue_catalog_database" "cloudtrail" {
 
   description = "Database for CloudTrail log analysis"
 
-  tags = {
-    Name        = var.athena_database_name
-    Component   = "athena"
-    Environment = var.environment
-    Service     = var.service_name
-    Team        = var.team
-    Owner       = var.owner
-    CostCenter  = var.cost_center
-    Project     = var.project
-    DataClass   = var.data_class
-    ManagedBy   = "terraform"
-  }
 }
 
 # Glue Table for CloudTrail logs
@@ -213,18 +189,7 @@ resource "aws_glue_catalog_table" "cloudtrail" {
     type = "string"
   }
 
-  tags = {
-    Name        = "cloudtrail-logs-table"
-    Component   = "athena"
-    Environment = var.environment
-    Service     = var.service_name
-    Team        = var.team
-    Owner       = var.owner
-    CostCenter  = var.cost_center
-    Project     = var.project
-    DataClass   = var.data_class
-    ManagedBy   = "terraform"
-  }
+  # Note: aws_glue_catalog_table does not support tags
 }
 
 # Named Queries for common CloudTrail analysis
@@ -250,18 +215,6 @@ resource "aws_athena_named_query" "unauthorized-api-calls" {
 
   description = "Find unauthorized API calls in the last 7 days"
 
-  tags = {
-    Name        = "unauthorized-api-calls"
-    Component   = "athena"
-    Environment = var.environment
-    Service     = var.service_name
-    Team        = var.team
-    Owner       = var.owner
-    CostCenter  = var.cost_center
-    Project     = var.project
-    DataClass   = var.data_class
-    ManagedBy   = "terraform"
-  }
 }
 
 resource "aws_athena_named_query" "root-account-usage" {
@@ -285,18 +238,6 @@ resource "aws_athena_named_query" "root-account-usage" {
 
   description = "Find root account usage in the last 30 days"
 
-  tags = {
-    Name        = "root-account-usage"
-    Component   = "athena"
-    Environment = var.environment
-    Service     = var.service_name
-    Team        = var.team
-    Owner       = var.owner
-    CostCenter  = var.cost_center
-    Project     = var.project
-    DataClass   = var.data_class
-    ManagedBy   = "terraform"
-  }
 }
 
 resource "aws_athena_named_query" "console-login-failures" {
@@ -321,18 +262,6 @@ resource "aws_athena_named_query" "console-login-failures" {
 
   description = "Find failed console login attempts in the last 7 days"
 
-  tags = {
-    Name        = "console-login-failures"
-    Component   = "athena"
-    Environment = var.environment
-    Service     = var.service_name
-    Team        = var.team
-    Owner       = var.owner
-    CostCenter  = var.cost_center
-    Project     = var.project
-    DataClass   = var.data_class
-    ManagedBy   = "terraform"
-  }
 }
 
 resource "aws_athena_named_query" "iam-policy-changes" {
@@ -361,16 +290,4 @@ resource "aws_athena_named_query" "iam-policy-changes" {
 
   description = "Find IAM policy changes in the last 30 days"
 
-  tags = {
-    Name        = "iam-policy-changes"
-    Component   = "athena"
-    Environment = var.environment
-    Service     = var.service_name
-    Team        = var.team
-    Owner       = var.owner
-    CostCenter  = var.cost_center
-    Project     = var.project
-    DataClass   = var.data_class
-    ManagedBy   = "terraform"
-  }
 }

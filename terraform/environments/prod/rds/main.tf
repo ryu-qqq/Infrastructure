@@ -1,7 +1,7 @@
 # RDS MySQL Instance using rds module
 
 module "rds" {
-  source = "../../modules/rds"
+  source = "../../../modules/rds"
 
   # Required variables
   identifier     = local.name_prefix

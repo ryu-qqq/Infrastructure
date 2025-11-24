@@ -24,5 +24,5 @@ output "registry_id" {
 
 output "ssm_parameter_arn" {
   description = "ARN of the SSM parameter storing repository URL"
-  value       = var.create_ssm_parameter ? aws_ssm_parameter.repository_url[0].arn : null
+  value       = var.create_ssm_parameter ? aws_ssm_parameter.repository-url[0].arn : null
 }

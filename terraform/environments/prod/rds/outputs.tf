@@ -54,9 +54,9 @@ output "db_security_group_id" {
   value       = module.rds_security_group.security_group_id
 }
 
-output "db_subnet_group_name" {
+output "db_subnet_group_id" {
   description = "DB subnet group name"
-  value       = module.rds.db_subnet_group_name
+  value       = module.rds.db_subnet_group_id
 }
 
 output "db_parameter_group_name" {

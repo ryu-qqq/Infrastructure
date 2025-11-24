@@ -1,7 +1,7 @@
 # RDS Security Group using security-group module
 
 module "rds_security_group" {
-  source = "../../modules/security-group"
+  source = "../../../modules/security-group"
 
   name        = "${local.name_prefix}-sg"
   description = "Security group for shared MySQL RDS instance"
