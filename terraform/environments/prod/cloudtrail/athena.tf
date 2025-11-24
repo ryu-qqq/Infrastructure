@@ -249,6 +249,19 @@ resource "aws_athena_named_query" "unauthorized-api-calls" {
   SQL
 
   description = "Find unauthorized API calls in the last 7 days"
+
+  tags = {
+    Name        = "unauthorized-api-calls"
+    Component   = "athena"
+    Environment = var.environment
+    Service     = var.service_name
+    Team        = var.team
+    Owner       = var.owner
+    CostCenter  = var.cost_center
+    Project     = var.project
+    DataClass   = var.data_class
+    ManagedBy   = "terraform"
+  }
 }
 
 resource "aws_athena_named_query" "root-account-usage" {
@@ -271,6 +284,19 @@ resource "aws_athena_named_query" "root-account-usage" {
   SQL
 
   description = "Find root account usage in the last 30 days"
+
+  tags = {
+    Name        = "root-account-usage"
+    Component   = "athena"
+    Environment = var.environment
+    Service     = var.service_name
+    Team        = var.team
+    Owner       = var.owner
+    CostCenter  = var.cost_center
+    Project     = var.project
+    DataClass   = var.data_class
+    ManagedBy   = "terraform"
+  }
 }
 
 resource "aws_athena_named_query" "console-login-failures" {
@@ -294,6 +320,19 @@ resource "aws_athena_named_query" "console-login-failures" {
   SQL
 
   description = "Find failed console login attempts in the last 7 days"
+
+  tags = {
+    Name        = "console-login-failures"
+    Component   = "athena"
+    Environment = var.environment
+    Service     = var.service_name
+    Team        = var.team
+    Owner       = var.owner
+    CostCenter  = var.cost_center
+    Project     = var.project
+    DataClass   = var.data_class
+    ManagedBy   = "terraform"
+  }
 }
 
 resource "aws_athena_named_query" "iam-policy-changes" {
@@ -321,4 +360,17 @@ resource "aws_athena_named_query" "iam-policy-changes" {
   SQL
 
   description = "Find IAM policy changes in the last 30 days"
+
+  tags = {
+    Name        = "iam-policy-changes"
+    Component   = "athena"
+    Environment = var.environment
+    Service     = var.service_name
+    Team        = var.team
+    Owner       = var.owner
+    CostCenter  = var.cost_center
+    Project     = var.project
+    DataClass   = var.data_class
+    ManagedBy   = "terraform"
+  }
 }
