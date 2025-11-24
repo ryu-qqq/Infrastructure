@@ -3,8 +3,8 @@
 # ============================================================================
 
 resource "aws_security_group" "main" {
-  name        = "prod-shared-mysql-sg"  # 기존 리소스 이름 유지
-  description = "Security group for shared MySQL RDS instance"  # 기존 description 유지
+  name        = "prod-shared-mysql-sg"                         # 기존 리소스 이름 유지
+  description = "Security group for shared MySQL RDS instance" # 기존 description 유지
   vpc_id      = var.vpc_id
 
   tags = merge(
@@ -21,8 +21,8 @@ resource "aws_security_group" "main" {
       tags,
       name,
       description,
-      ingress,  # 기존 inline rules 보존
-      egress    # 기존 inline rules 보존
+      ingress, # 기존 inline rules 보존
+      egress   # 기존 inline rules 보존
     ]
   }
 }

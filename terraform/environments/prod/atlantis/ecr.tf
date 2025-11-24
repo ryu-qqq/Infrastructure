@@ -78,11 +78,11 @@ module "atlantis_ecr" {
   })
 
   # Tags
-  environment = var.environment
+  environment  = var.environment
   service_name = var.service_name
-  team        = var.team
-  owner       = var.owner
-  cost_center = var.cost_center
+  team         = var.team
+  owner        = var.owner
+  cost_center  = var.cost_center
 
   additional_tags = {
     Component   = "atlantis"

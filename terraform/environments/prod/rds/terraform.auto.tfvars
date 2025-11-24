@@ -42,7 +42,7 @@ allowed_cidr_blocks = [
 # ============================================================================
 
 identifier     = "shared-mysql"
-mysql_version  = "8.0.42" # Auto-upgraded by AWS
+mysql_version  = "8.0.42"       # Auto-upgraded by AWS
 instance_class = "db.t4g.small" # 2 vCPU, 2GB RAM
 
 # ============================================================================

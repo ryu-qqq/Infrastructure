@@ -5,7 +5,7 @@
 resource "aws_iam_role" "monitoring" {
   count = var.monitoring_interval > 0 ? 1 : 0
 
-  name        = "prod-shared-mysql-monitoring-role"  # 기존 리소스 이름 유지
+  name        = "prod-shared-mysql-monitoring-role" # 기존 리소스 이름 유지
   description = "IAM role for RDS Enhanced Monitoring"
 
   assume_role_policy = jsonencode({

@@ -2,14 +2,14 @@
 module "terraform_state_bucket" {
   source = "../../modules/s3-bucket"
 
-  bucket_name = var.tfstate_bucket_name
-  environment = var.environment
+  bucket_name  = var.tfstate_bucket_name
+  environment  = var.environment
   service_name = var.service
-  team        = var.team
-  owner       = var.owner
-  cost_center = var.cost_center
-  project     = var.project
-  data_class  = var.data_class
+  team         = var.team
+  owner        = var.owner
+  cost_center  = var.cost_center
+  project      = var.project
+  data_class   = var.data_class
 
   # Encryption configuration
   kms_key_id = aws_kms_key.terraform-state.arn

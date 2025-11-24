@@ -45,7 +45,7 @@ output "db_master_user_secret_arn" {
 
 output "db_subnet_group_name" {
   description = "DB subnet group name"
-  value       = "prod-shared-mysql-subnet-group"  # 기존 리소스 직접 참조 (import 불가)
+  value       = "prod-shared-mysql-subnet-group" # 기존 리소스 직접 참조 (import 불가)
 }
 
 output "security_group_id" {

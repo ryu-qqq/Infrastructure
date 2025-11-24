@@ -70,9 +70,9 @@ resource "aws_vpc_endpoint" "s3" {
   tags = merge(
     local.required_tags,
     {
-      Name        = "s3-gateway-endpoint"
-      Component   = "vpc-endpoints"
-      Purpose     = "Cost optimization for S3 access"
+      Name      = "s3-gateway-endpoint"
+      Component = "vpc-endpoints"
+      Purpose   = "Cost optimization for S3 access"
     }
   )
 }
@@ -89,9 +89,9 @@ resource "aws_vpc_endpoint" "ecr-api" {
   tags = merge(
     local.required_tags,
     {
-      Name        = "ecr-api-endpoint"
-      Component   = "vpc-endpoints"
-      Purpose     = "ECS container image pull optimization"
+      Name      = "ecr-api-endpoint"
+      Component = "vpc-endpoints"
+      Purpose   = "ECS container image pull optimization"
     }
   )
 }
@@ -108,9 +108,9 @@ resource "aws_vpc_endpoint" "ecr-dkr" {
   tags = merge(
     local.required_tags,
     {
-      Name        = "ecr-dkr-endpoint"
-      Component   = "vpc-endpoints"
-      Purpose     = "ECS Docker registry access optimization"
+      Name      = "ecr-dkr-endpoint"
+      Component = "vpc-endpoints"
+      Purpose   = "ECS Docker registry access optimization"
     }
   )
 }
@@ -127,9 +127,9 @@ resource "aws_vpc_endpoint" "secretsmanager" {
   tags = merge(
     local.required_tags,
     {
-      Name        = "secretsmanager-endpoint"
-      Component   = "vpc-endpoints"
-      Purpose     = "Secure secrets access from private subnets"
+      Name      = "secretsmanager-endpoint"
+      Component = "vpc-endpoints"
+      Purpose   = "Secure secrets access from private subnets"
     }
   )
 }
@@ -146,9 +146,9 @@ resource "aws_vpc_endpoint" "logs" {
   tags = merge(
     local.required_tags,
     {
-      Name        = "logs-endpoint"
-      Component   = "vpc-endpoints"
-      Purpose     = "CloudWatch Logs optimization"
+      Name      = "logs-endpoint"
+      Component = "vpc-endpoints"
+      Purpose   = "CloudWatch Logs optimization"
     }
   )
 }

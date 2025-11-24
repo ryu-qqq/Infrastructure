@@ -20,12 +20,12 @@ resource "aws_db_instance" "main" {
   storage_throughput    = var.storage_type == "gp3" ? var.storage_throughput : null
 
   # Credentials (use AWS Secrets Manager)
-  username                    = "admin"
-  manage_master_user_password = true
+  username                            = "admin"
+  manage_master_user_password         = true
   iam_database_authentication_enabled = true
 
   # Network configuration
-  db_subnet_group_name   = "prod-shared-mysql-subnet-group"  # 기존 리소스 직접 참조 (import 불가)
+  db_subnet_group_name   = "prod-shared-mysql-subnet-group" # 기존 리소스 직접 참조 (import 불가)
   vpc_security_group_ids = [aws_security_group.main.id]
   publicly_accessible    = var.publicly_accessible
   port                   = local.db_port
@@ -41,7 +41,7 @@ resource "aws_db_instance" "main" {
   deletion_protection     = var.deletion_protection
 
   # Parameter and option groups
-  parameter_group_name = "prod-shared-mysql-params"  # 기존 리소스 직접 참조 (import 불가)
+  parameter_group_name = "prod-shared-mysql-params" # 기존 리소스 직접 참조 (import 불가)
 
   # Monitoring
   enabled_cloudwatch_logs_exports       = var.enabled_cloudwatch_logs_exports
@@ -67,12 +67,12 @@ resource "aws_db_instance" "main" {
   lifecycle {
     ignore_changes = [
       tags,
-      master_user_secret,      # Import 시 비밀번호 관련
-      latest_restorable_time,  # 자동 업데이트되는 속성
-      username,                # 기존 사용자명 보존
-      manage_master_user_password,  # 기존 비밀번호 관리 방식 보존
-      db_subnet_group_name,    # 기존 Subnet Group 사용 (import 불가)
-      parameter_group_name     # 기존 Parameter Group 사용 (import 불가)
+      master_user_secret,          # Import 시 비밀번호 관련
+      latest_restorable_time,      # 자동 업데이트되는 속성
+      username,                    # 기존 사용자명 보존
+      manage_master_user_password, # 기존 비밀번호 관리 방식 보존
+      db_subnet_group_name,        # 기존 Subnet Group 사용 (import 불가)
+      parameter_group_name         # 기존 Parameter Group 사용 (import 불가)
     ]
   }
 }
