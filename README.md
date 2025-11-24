@@ -73,26 +73,26 @@ infrastructure/
 
 ### 🧩 재사용 가능한 인프라 컴포넌트
 
-이 프로젝트는 **18개의 프로덕션 레디 Terraform 모듈**을 제공합니다 (평균 품질 점수: 90.7/100).
+18개의 프로덕션 레디 Terraform 모듈을 제공합니다.
 
 #### 왜 모듈을 사용해야 하나요?
 
-- ✅ **코드 60-90% 감소**: 반복적인 코드 제거
+- ✅ **반복 코드 제거**: 표준화된 컴포넌트 재사용
 - ✅ **자동 거버넌스 준수**: KMS 암호화, 필수 태그, 네이밍 강제
 - ✅ **검증된 베스트 프랙티스**: Validation, Preconditions, Health Checks 내장
 - ✅ **일관성 보장**: 모든 스택에서 동일한 설정 사용
 
 #### 핵심 모듈
 
-| 모듈 | 용도 | 품질 점수 | 코드 감소 |
-|------|------|-----------|----------|
-| **ecr** | Container Registry | 95/100 | **91% ↓** |
-| **security-group** | 네트워크 보안 (ALB, ECS, RDS) | 92/100 | **87% ↓** |
-| **ecs-service** | ECS Fargate 서비스 | 90/100 | **86% ↓** |
-| **alb** | Application Load Balancer | 90/100 | **85% ↓** |
-| **iam-role-policy** | IAM 권한 관리 | 95/100 | **81% ↓** |
-| **common-tags** | 태그 표준화 | 85/100 | ✅ 사용 중 |
-| **cloudwatch-log-group** | 로그 관리 | 88/100 | ✅ 사용 중 |
+| 모듈 | 용도 |
+|------|------|
+| **ecr** | Container Registry |
+| **security-group** | 네트워크 보안 (ALB, ECS, RDS) |
+| **ecs-service** | ECS Fargate 서비스 |
+| **alb** | Application Load Balancer |
+| **iam-role-policy** | IAM 권한 관리 |
+| **common-tags** | 태그 표준화 |
+| **cloudwatch-log-group** | 로그 관리 |
 
 #### 빠른 시작 (v1.0.0 패턴)
 
@@ -146,23 +146,21 @@ module "sg_alb" {
 
 #### 프로덕션 환경 (prod)
 
-**11개의 독립적인 스택**으로 구성되어 있으며, 각 스택은 독립적인 상태 파일을 관리합니다.
+11개의 독립적인 스택으로 구성되어 있으며, 각 스택은 독립적인 상태 파일을 관리합니다.
 
-| 카테고리 | 스택 | 설명 | 월 비용 |
-|---------|------|------|---------|
-| **Foundation** | network | VPC, 서브넷, NAT Gateway | ~$35 |
-| | kms | 암호화 키 관리 | ~$5 |
-| **Security** | atlantis | Terraform 자동화 (ECS) | ~$40 |
-| **Application** | ecs-cluster | Fargate 클러스터 | ~$0 |
-| | alb | 로드 밸런서 | ~$25 |
-| | fileflow-prod-api-server | API 서버 (ECS) | ~$50 |
-| | rds | PostgreSQL (db.t4g.micro) | ~$15 |
-| | redis | ElastiCache (cache.t4g.micro) | ~$12 |
-| | sqs | 메시지 큐 | ~$0 |
-| | eventbridge | 스케줄러 | ~$0 |
-| | ecr | Container Registry | ~$3 |
-
-**총 월 비용**: $185-240 (실제: $319-422, NAT Gateway 트래픽 포함)
+| 카테고리 | 스택 | 설명 |
+|---------|------|------|
+| **Foundation** | network | VPC, 서브넷, NAT Gateway |
+| | kms | 암호화 키 관리 |
+| **Security** | atlantis | Terraform 자동화 (ECS) |
+| **Application** | ecs-cluster | Fargate 클러스터 |
+| | alb | 로드 밸런서 |
+| | fileflow-prod-api-server | API 서버 (ECS) |
+| | rds | PostgreSQL (db.t4g.micro) |
+| | redis | ElastiCache (cache.t4g.micro) |
+| | sqs | 메시지 큐 |
+| | eventbridge | 스케줄러 |
+| | ecr | Container Registry |
 
 #### Backend 구성
 
@@ -263,17 +261,15 @@ Terraform 인프라 코드의 품질, 보안, 컴플라이언스를 **4단계 �
 
 **왜 필요한가?**
 - 🛡️ 보안 취약점 사전 차단 (SSH/RDP 인터넷 노출, RDS public access)
-- 🏷️ 필수 태그 강제 (비용 추적, 리소스 관리, 책임 소재)
+- 🏷️ 필수 태그 강제 (리소스 관리, 책임 소재)
 - 📏 네이밍 일관성 유지 (kebab-case 강제)
 - 🔐 KMS 암호화 강제 (AES256 사용 금지)
-- 💰 비용 영향 분석 (30% 증가 시 자동 차단)
 - 📋 컴플라이언스 준수 (CIS AWS, PCI-DSS, HIPAA)
 
 **무엇을 검증하는가?**
 - **OPA 정책** (policies/): 필수 태그, 네이밍, 보안 그룹, 공개 리소스
 - **보안 스캔** (tfsec): AWS 보안 모범 사례
 - **컴플라이언스** (Checkov): CIS AWS, PCI-DSS, HIPAA
-- **비용 관리** (Infracost): 비용 추적 및 임계값
 
 **자세한 내용**: [governance/README.md](./governance/README.md)
 
@@ -285,12 +281,12 @@ Terraform 인프라 코드의 품질, 보안, 컴플라이언스를 **4단계 �
 
 ### 🔍 검증 레이어
 
-| 레이어 | 시점 | 피드백 속도 | 검증 항목 | 우회 가능 |
-|--------|------|------------|----------|----------|
-| **Pre-commit** | 커밋 전 | 1-2초 | fmt, secrets, validate, OPA | Yes (--no-verify) |
-| **Pre-push** | 푸시 전 | 30초 | tags, encryption, naming | Yes (--no-verify) |
-| **Atlantis** | PR plan | 30초-1분 | OPA 정책 | No |
-| **GitHub Actions** | PR 생성 | 1-2분 | OPA, tfsec, Checkov, Infracost | No |
+| 레이어 | 시점 | 검증 항목 | 우회 가능 |
+|--------|------|----------|----------|
+| **Pre-commit** | 커밋 전 | fmt, secrets, validate, OPA | Yes (--no-verify) |
+| **Pre-push** | 푸시 전 | tags, encryption, naming | Yes (--no-verify) |
+| **Atlantis** | PR plan | OPA 정책 | No |
+| **GitHub Actions** | PR 생성 | OPA, tfsec, Checkov | No |
 
 ### 🚀 빠른 시작
 
