@@ -36,11 +36,18 @@ module "atlantis_ecs_tasks_sg" {
   name        = "atlantis-ecs-tasks-${var.environment}"
   description = "Security group for Atlantis ECS tasks"
   vpc_id      = var.vpc_id
-  type        = "ecs"
+  type        = "custom"
 
-  # ECS Configuration
-  ecs_ingress_from_alb_sg_id = module.atlantis_alb_sg.security_group_id
-  ecs_container_port         = var.atlantis_container_port
+  # Custom ingress rule from ALB
+  custom_ingress_rules = [
+    {
+      description              = "Allow traffic from ALB to ECS container"
+      from_port                = var.atlantis_container_port
+      to_port                  = var.atlantis_container_port
+      protocol                 = "tcp"
+      source_security_group_id = module.atlantis_alb_sg.security_group_id
+    }
+  ]
 
   # Enable default egress
   enable_default_egress = true
