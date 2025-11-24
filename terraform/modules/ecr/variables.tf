@@ -11,12 +11,13 @@ variable "name" {
 }
 
 variable "kms_key_arn" {
-  description = "ARN of the KMS key for ECR encryption"
+  description = "ARN of the KMS key for ECR encryption (null = AES256 encryption)"
   type        = string
+  default     = null
 
   validation {
-    condition     = can(regex("^arn:aws:kms:", var.kms_key_arn))
-    error_message = "KMS key ARN must be a valid ARN starting with 'arn:aws:kms:'."
+    condition     = var.kms_key_arn == null || can(regex("^arn:aws:kms:", var.kms_key_arn))
+    error_message = "KMS key ARN must be null or a valid ARN starting with 'arn:aws:kms:'."
   }
 }
 

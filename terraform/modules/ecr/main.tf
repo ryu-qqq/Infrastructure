@@ -30,7 +30,7 @@ resource "aws_ecr_repository" "this" {
   }
 
   encryption_configuration {
-    encryption_type = "KMS"
+    encryption_type = var.kms_key_arn != null ? "KMS" : "AES256"
     kms_key         = var.kms_key_arn
   }
 
