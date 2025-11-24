@@ -136,7 +136,9 @@ resource "aws_iam_role_policy" "atlantis-terraform-operations" {
           "arn:aws:s3:::${var.terraform_state_bucket_prefix}-*",
           "arn:aws:s3:::${var.terraform_state_bucket_prefix}-*/*",
           "arn:aws:s3:::${var.legacy_terraform_state_bucket}",
-          "arn:aws:s3:::${var.legacy_terraform_state_bucket}/*"
+          "arn:aws:s3:::${var.legacy_terraform_state_bucket}/*",
+          "arn:aws:s3:::prod-connectly",
+          "arn:aws:s3:::prod-connectly/*"
         ]
       },
       {
@@ -149,7 +151,8 @@ resource "aws_iam_role_policy" "atlantis-terraform-operations" {
         ]
         Resource = [
           "arn:aws:dynamodb:*:${data.aws_caller_identity.current.account_id}:table/${var.terraform_state_lock_table}",
-          "arn:aws:dynamodb:*:${data.aws_caller_identity.current.account_id}:table/${var.legacy_terraform_lock_table}"
+          "arn:aws:dynamodb:*:${data.aws_caller_identity.current.account_id}:table/${var.legacy_terraform_lock_table}",
+          "arn:aws:dynamodb:*:${data.aws_caller_identity.current.account_id}:table/prod-connectly-tf-lock"
         ]
       },
       {
@@ -444,6 +447,7 @@ resource "aws_iam_role_policy" "atlantis-terraform-operations" {
           "arn:aws:route53:::hostedzone/*",
           "arn:aws:route53:::change/*"
         ]
+        # Required for CrawlingHub ecs-web-api DNS management
       }
     ]
   })
