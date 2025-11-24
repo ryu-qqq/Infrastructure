@@ -65,6 +65,8 @@ module "github_actions_role" {
               "s3:DeleteObject"
             ]
             Resource = [
+              "arn:aws:s3:::prod-connectly",
+              "arn:aws:s3:::prod-connectly/*",
               module.terraform_state_bucket.bucket_arn,
               "${module.terraform_state_bucket.bucket_arn}/*"
             ]
@@ -78,7 +80,10 @@ module "github_actions_role" {
               "dynamodb:DeleteItem",
               "dynamodb:DescribeTable"
             ]
-            Resource = aws_dynamodb_table.terraform-lock.arn
+            Resource = [
+              "arn:aws:dynamodb:${var.aws_region}:${data.aws_caller_identity.current.account_id}:table/prod-connectly-tf-lock",
+              aws_dynamodb_table.terraform-lock.arn
+            ]
           },
           {
             Sid    = "DynamoDBListTables"
