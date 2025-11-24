@@ -18,7 +18,7 @@ module "tags" {
 
 locals {
   # Required tags for governance compliance
-  required_tags = local.required_tags
+  required_tags = module.tags.tags
   # Generate topic name with .fifo suffix for FIFO topics
   topic_name = var.fifo_topic ? "${var.name}.fifo" : var.name
 }

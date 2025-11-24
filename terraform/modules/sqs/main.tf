@@ -18,7 +18,7 @@ module "tags" {
 
 locals {
   # Required tags for governance compliance
-  required_tags = local.required_tags
+  required_tags = module.tags.tags
   # Generate queue name with .fifo suffix for FIFO queues
   queue_name     = var.fifo_queue ? "${var.name}.fifo" : var.name
   dlq_queue_name = var.fifo_queue ? "${var.name}-dlq.fifo" : "${var.name}-dlq"

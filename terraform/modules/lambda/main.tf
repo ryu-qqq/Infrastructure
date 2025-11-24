@@ -18,7 +18,7 @@ module "tags" {
 
 locals {
   # Required tags for governance compliance
-  required_tags = local.required_tags
+  required_tags = module.tags.tags
   # Lambda function name with naming convention
   function_name = var.function_name != "" ? var.function_name : "${var.service}-${var.environment}-${var.name}"
 }
