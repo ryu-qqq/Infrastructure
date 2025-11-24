@@ -75,8 +75,8 @@ module "atlantis_task_execution_role" {
 module "atlantis_task_role" {
   source = "../../../modules/iam-role-policy"
 
-  role_name        = "atlantis-ecs-task-${var.environment}"
-  role_description = "ECS task role for Atlantis Terraform operations"
+  role_name   = "atlantis-ecs-task-${var.environment}"
+  description = "ECS task role for Atlantis Terraform operations"
 
   assume_role_policy = jsonencode({
     Version = "2012-10-17"
@@ -91,340 +91,6 @@ module "atlantis_task_role" {
     ]
   })
 
-  # Inline policies for Atlantis Terraform operations
-  inline_policies = {
-    terraform_operations = jsonencode({
-      Version = "2012-10-17"
-      Statement = [
-        {
-          Sid    = "TerraformStateAccess"
-          Effect = "Allow"
-          Action = [
-            "s3:ListBucket",
-            "s3:GetObject",
-            "s3:PutObject",
-            "s3:DeleteObject"
-          ]
-          Resource = [
-            "arn:aws:s3:::${var.terraform_state_bucket_prefix}-*",
-            "arn:aws:s3:::${var.terraform_state_bucket_prefix}-*/*",
-            "arn:aws:s3:::${var.legacy_terraform_state_bucket}",
-            "arn:aws:s3:::${var.legacy_terraform_state_bucket}/*"
-          ]
-        },
-        {
-          Sid    = "DynamoDBLocking"
-          Effect = "Allow"
-          Action = [
-            "dynamodb:GetItem",
-            "dynamodb:PutItem",
-            "dynamodb:DeleteItem"
-          ]
-          Resource = [
-            "arn:aws:dynamodb:*:${data.aws_caller_identity.current.account_id}:table/${var.terraform_state_lock_table}",
-            "arn:aws:dynamodb:*:${data.aws_caller_identity.current.account_id}:table/${var.legacy_terraform_lock_table}"
-          ]
-        },
-        {
-          Sid    = "TerraformPlanOperations"
-          Effect = "Allow"
-          Action = [
-            "ec2:Describe*",
-            "ecs:Describe*",
-            "ecr:Describe*",
-            "elasticloadbalancing:Describe*",
-            "elasticache:DescribeCacheSubnetGroups",
-            "elasticache:DescribeCacheParameterGroups",
-            "elasticache:DescribeCacheParameters",
-            "elasticache:DescribeCacheClusters",
-            "elasticache:ListTagsForResource",
-            "elasticfilesystem:Describe*",
-            "kms:Describe*",
-            "kms:List*",
-            "kms:GetKeyPolicy",
-            "kms:GetKeyRotationStatus",
-            "logs:Describe*",
-            "logs:ListTagsForResource",
-            "rds:DescribeDBSubnetGroups",
-            "rds:DescribeDBParameterGroups",
-            "rds:DescribeDBParameters",
-            "rds:DescribeDBInstances",
-            "rds:ListTagsForResource",
-            "secretsmanager:DescribeSecret",
-            "secretsmanager:GetResourcePolicy",
-            "secretsmanager:GetSecretValue",
-            "secretsmanager:ListSecretVersionIds",
-            "s3:List*",
-            "sqs:GetQueueAttributes",
-            "sqs:GetQueueUrl",
-            "sqs:ListQueues",
-            "sqs:ListQueueTags",
-            "ssm:GetParameter",
-            "ssm:GetParameters",
-            "ssm:DescribeParameters",
-            "ssm:ListTagsForResource"
-          ]
-          Resource = "*"
-        },
-        {
-          Sid    = "IAMReadOnlyForTerraformResources"
-          Effect = "Allow"
-          Action = [
-            "iam:GetRole",
-            "iam:GetRolePolicy",
-            "iam:GetPolicy",
-            "iam:GetPolicyVersion",
-            "iam:ListRoles",
-            "iam:ListRolePolicies",
-            "iam:ListAttachedRolePolicies",
-            "iam:ListPolicyVersions",
-            "iam:ListOpenIDConnectProviders",
-            "iam:GetOpenIDConnectProvider"
-          ]
-          Resource = "*"
-        },
-        {
-          Sid    = "ManageECSRoles"
-          Effect = "Allow"
-          Action = [
-            "iam:PutRolePolicy",
-            "iam:DeleteRolePolicy",
-            "iam:GetRolePolicy"
-          ]
-          Resource = "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/fileflow-prod-*"
-        },
-        {
-          Sid    = "ManageSecurityGroups"
-          Effect = "Allow"
-          Action = [
-            "ec2:DescribeSecurityGroups",
-            "ec2:CreateSecurityGroup",
-            "ec2:DeleteSecurityGroup",
-            "ec2:AuthorizeSecurityGroupIngress",
-            "ec2:AuthorizeSecurityGroupEgress",
-            "ec2:RevokeSecurityGroupIngress",
-            "ec2:RevokeSecurityGroupEgress",
-            "ec2:CreateTags",
-            "ec2:DeleteTags"
-          ]
-          Resource = [
-            "arn:aws:ec2:${var.aws_region}:${data.aws_caller_identity.current.account_id}:security-group/*",
-            "arn:aws:ec2:${var.aws_region}:${data.aws_caller_identity.current.account_id}:vpc/*"
-          ]
-        },
-        {
-          Sid    = "ManageCloudWatchLogs"
-          Effect = "Allow"
-          Action = [
-            "logs:CreateLogGroup",
-            "logs:DeleteLogGroup",
-            "logs:DescribeLogGroups",
-            "logs:PutRetentionPolicy",
-            "logs:DeleteRetentionPolicy",
-            "logs:TagResource",
-            "logs:TagLogGroup",
-            "logs:UntagLogGroup",
-            "logs:CreateLogStream",
-            "logs:PutLogEvents"
-          ]
-          Resource = "*"
-        },
-        {
-          Sid    = "ManageTargetGroups"
-          Effect = "Allow"
-          Action = [
-            "elasticloadbalancing:DescribeTargetGroups",
-            "elasticloadbalancing:ModifyTargetGroup"
-          ]
-          Resource = "*"
-        },
-        {
-          Sid    = "ManageS3Buckets"
-          Effect = "Allow"
-          Action = [
-            "s3:GetBucketPolicy",
-            "s3:PutBucketPolicy",
-            "s3:DeleteBucketPolicy",
-            "s3:GetBucketAcl",
-            "s3:PutBucketAcl",
-            "s3:GetBucketVersioning",
-            "s3:PutBucketVersioning",
-            "s3:GetBucketLogging",
-            "s3:PutBucketLogging",
-            "s3:GetEncryptionConfiguration",
-            "s3:PutEncryptionConfiguration",
-            "s3:GetBucketPublicAccessBlock",
-            "s3:PutBucketPublicAccessBlock"
-          ]
-          Resource = "arn:aws:s3:::fileflow-*"
-        },
-        {
-          Sid    = "ManageElastiCache"
-          Effect = "Allow"
-          Action = [
-            "elasticache:CreateCacheSubnetGroup",
-            "elasticache:DeleteCacheSubnetGroup",
-            "elasticache:ModifyCacheSubnetGroup",
-            "elasticache:CreateReplicationGroup",
-            "elasticache:DeleteReplicationGroup",
-            "elasticache:ModifyReplicationGroup",
-            "elasticache:AddTagsToResource",
-            "elasticache:RemoveTagsFromResource",
-            "elasticache:CreateCacheParameterGroup",
-            "elasticache:DeleteCacheParameterGroup",
-            "elasticache:ModifyCacheParameterGroup",
-            "elasticache:DescribeReplicationGroups"
-          ]
-          Resource = "*"
-        },
-        {
-          Sid    = "ManageSQS"
-          Effect = "Allow"
-          Action = [
-            "sqs:CreateQueue",
-            "sqs:DeleteQueue",
-            "sqs:SetQueueAttributes",
-            "sqs:TagQueue",
-            "sqs:UntagQueue"
-          ]
-          Resource = "arn:aws:sqs:${var.aws_region}:${data.aws_caller_identity.current.account_id}:*"
-        },
-        {
-          Sid    = "ManageCloudWatchAlarms"
-          Effect = "Allow"
-          Action = [
-            "cloudwatch:PutMetricAlarm",
-            "cloudwatch:DeleteAlarms",
-            "cloudwatch:DescribeAlarms",
-            "cloudwatch:TagResource",
-            "cloudwatch:UntagResource"
-          ]
-          Resource = "arn:aws:cloudwatch:${var.aws_region}:${data.aws_caller_identity.current.account_id}:alarm:*"
-        },
-        {
-          Sid    = "ManageECS"
-          Effect = "Allow"
-          Action = [
-            "ecs:CreateCluster",
-            "ecs:DeleteCluster",
-            "ecs:UpdateCluster",
-            "ecs:RegisterTaskDefinition",
-            "ecs:DeregisterTaskDefinition",
-            "ecs:CreateService",
-            "ecs:UpdateService",
-            "ecs:DeleteService",
-            "ecs:TagResource",
-            "ecs:UntagResource"
-          ]
-          Resource = "*"
-        },
-        {
-          Sid    = "ManageIAMRoles"
-          Effect = "Allow"
-          Action = [
-            "iam:CreateRole",
-            "iam:DeleteRole",
-            "iam:AttachRolePolicy",
-            "iam:DetachRolePolicy",
-            "iam:PutRolePolicy",
-            "iam:DeleteRolePolicy",
-            "iam:PassRole",
-            "iam:TagRole",
-            "iam:UntagRole"
-          ]
-          Resource = [
-            "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/fileflow-*",
-            "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/atlantis-*"
-          ]
-        },
-        {
-          Sid    = "ManageLoadBalancers"
-          Effect = "Allow"
-          Action = [
-            "elasticloadbalancing:CreateLoadBalancer",
-            "elasticloadbalancing:DeleteLoadBalancer",
-            "elasticloadbalancing:CreateTargetGroup",
-            "elasticloadbalancing:DeleteTargetGroup",
-            "elasticloadbalancing:CreateListener",
-            "elasticloadbalancing:DeleteListener",
-            "elasticloadbalancing:ModifyListener",
-            "elasticloadbalancing:ModifyTargetGroupAttributes",
-            "elasticloadbalancing:ModifyLoadBalancerAttributes",
-            "elasticloadbalancing:AddTags",
-            "elasticloadbalancing:RemoveTags"
-          ]
-          Resource = "*"
-        },
-        {
-          Sid    = "ManageECR"
-          Effect = "Allow"
-          Action = [
-            "ecr:CreateRepository",
-            "ecr:DeleteRepository",
-            "ecr:PutLifecyclePolicy",
-            "ecr:DeleteLifecyclePolicy",
-            "ecr:SetRepositoryPolicy",
-            "ecr:DeleteRepositoryPolicy",
-            "ecr:TagResource",
-            "ecr:UntagResource"
-          ]
-          Resource = "arn:aws:ecr:${var.aws_region}:${data.aws_caller_identity.current.account_id}:repository/*"
-        },
-        {
-          Sid    = "ManageRDS"
-          Effect = "Allow"
-          Action = [
-            "rds:CreateDBInstance",
-            "rds:DeleteDBInstance",
-            "rds:ModifyDBInstance",
-            "rds:CreateDBSubnetGroup",
-            "rds:DeleteDBSubnetGroup",
-            "rds:CreateDBParameterGroup",
-            "rds:DeleteDBParameterGroup",
-            "rds:ModifyDBParameterGroup",
-            "rds:AddTagsToResource",
-            "rds:RemoveTagsFromResource"
-          ]
-          Resource = "*"
-        },
-        {
-          Sid    = "ManageVPC"
-          Effect = "Allow"
-          Action = [
-            "ec2:CreateVpc",
-            "ec2:DeleteVpc",
-            "ec2:ModifyVpcAttribute",
-            "ec2:CreateSubnet",
-            "ec2:DeleteSubnet",
-            "ec2:DescribeVpcs",
-            "ec2:DescribeSubnets"
-          ]
-          Resource = "*"
-        }
-      ]
-    })
-
-    efs_access = jsonencode({
-      Version = "2012-10-17"
-      Statement = [
-        {
-          Effect = "Allow"
-          Action = [
-            "elasticfilesystem:ClientMount",
-            "elasticfilesystem:ClientWrite",
-            "elasticfilesystem:ClientRootAccess"
-          ]
-          Resource = aws_efs_file_system.atlantis.arn
-          Condition = {
-            StringEquals = {
-              "elasticfilesystem:AccessPointArn" = aws_efs_access_point.atlantis.arn
-            }
-          }
-        }
-      ]
-    })
-  }
-
   # Tags
   environment  = var.environment
   service_name = var.service_name
@@ -436,6 +102,349 @@ module "atlantis_task_role" {
     Component   = "atlantis"
     Description = "ECS task role for Atlantis Terraform operations"
   }
+}
+
+# Inline Policy for Terraform Operations
+resource "aws_iam_role_policy" "atlantis_terraform_operations" {
+  name = "terraform-operations"
+  role = module.atlantis_task_role.role_name
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Sid    = "TerraformStateAccess"
+        Effect = "Allow"
+        Action = [
+          "s3:ListBucket",
+          "s3:GetObject",
+          "s3:PutObject",
+          "s3:DeleteObject"
+        ]
+        Resource = [
+          "arn:aws:s3:::${var.terraform_state_bucket_prefix}-*",
+          "arn:aws:s3:::${var.terraform_state_bucket_prefix}-*/*",
+          "arn:aws:s3:::${var.legacy_terraform_state_bucket}",
+          "arn:aws:s3:::${var.legacy_terraform_state_bucket}/*"
+        ]
+      },
+      {
+        Sid    = "DynamoDBLocking"
+        Effect = "Allow"
+        Action = [
+          "dynamodb:GetItem",
+          "dynamodb:PutItem",
+          "dynamodb:DeleteItem"
+        ]
+        Resource = [
+          "arn:aws:dynamodb:*:${data.aws_caller_identity.current.account_id}:table/${var.terraform_state_lock_table}",
+          "arn:aws:dynamodb:*:${data.aws_caller_identity.current.account_id}:table/${var.legacy_terraform_lock_table}"
+        ]
+      },
+      {
+        Sid    = "TerraformPlanOperations"
+        Effect = "Allow"
+        Action = [
+          "ec2:Describe*",
+          "ecs:Describe*",
+          "ecr:Describe*",
+          "elasticloadbalancing:Describe*",
+          "elasticache:DescribeCacheSubnetGroups",
+          "elasticache:DescribeCacheParameterGroups",
+          "elasticache:DescribeCacheParameters",
+          "elasticache:DescribeCacheClusters",
+          "elasticache:ListTagsForResource",
+          "elasticfilesystem:Describe*",
+          "kms:Describe*",
+          "kms:List*",
+          "kms:GetKeyPolicy",
+          "kms:GetKeyRotationStatus",
+          "logs:Describe*",
+          "logs:ListTagsForResource",
+          "rds:DescribeDBSubnetGroups",
+          "rds:DescribeDBParameterGroups",
+          "rds:DescribeDBParameters",
+          "rds:DescribeDBInstances",
+          "rds:ListTagsForResource",
+          "secretsmanager:DescribeSecret",
+          "secretsmanager:GetResourcePolicy",
+          "secretsmanager:GetSecretValue",
+          "secretsmanager:ListSecretVersionIds",
+          "s3:List*",
+          "sqs:GetQueueAttributes",
+          "sqs:GetQueueUrl",
+          "sqs:ListQueues",
+          "sqs:ListQueueTags",
+          "ssm:GetParameter",
+          "ssm:GetParameters",
+          "ssm:DescribeParameters",
+          "ssm:ListTagsForResource"
+        ]
+        Resource = "*"
+      },
+      {
+        Sid    = "IAMReadOnlyForTerraformResources"
+        Effect = "Allow"
+        Action = [
+          "iam:GetRole",
+          "iam:GetRolePolicy",
+          "iam:GetPolicy",
+          "iam:GetPolicyVersion",
+          "iam:ListRoles",
+          "iam:ListRolePolicies",
+          "iam:ListAttachedRolePolicies",
+          "iam:ListPolicyVersions",
+          "iam:ListOpenIDConnectProviders",
+          "iam:GetOpenIDConnectProvider"
+        ]
+        Resource = "*"
+      },
+      {
+        Sid    = "ManageECSRoles"
+        Effect = "Allow"
+        Action = [
+          "iam:PutRolePolicy",
+          "iam:DeleteRolePolicy",
+          "iam:GetRolePolicy"
+        ]
+        Resource = "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/fileflow-prod-*"
+      },
+      {
+        Sid    = "ManageSecurityGroups"
+        Effect = "Allow"
+        Action = [
+          "ec2:DescribeSecurityGroups",
+          "ec2:CreateSecurityGroup",
+          "ec2:DeleteSecurityGroup",
+          "ec2:AuthorizeSecurityGroupIngress",
+          "ec2:AuthorizeSecurityGroupEgress",
+          "ec2:RevokeSecurityGroupIngress",
+          "ec2:RevokeSecurityGroupEgress",
+          "ec2:CreateTags",
+          "ec2:DeleteTags"
+        ]
+        Resource = [
+          "arn:aws:ec2:${var.aws_region}:${data.aws_caller_identity.current.account_id}:security-group/*",
+          "arn:aws:ec2:${var.aws_region}:${data.aws_caller_identity.current.account_id}:vpc/*"
+        ]
+      },
+      {
+        Sid    = "ManageCloudWatchLogs"
+        Effect = "Allow"
+        Action = [
+          "logs:CreateLogGroup",
+          "logs:DeleteLogGroup",
+          "logs:DescribeLogGroups",
+          "logs:PutRetentionPolicy",
+          "logs:DeleteRetentionPolicy",
+          "logs:TagResource",
+          "logs:TagLogGroup",
+          "logs:UntagLogGroup",
+          "logs:CreateLogStream",
+          "logs:PutLogEvents"
+        ]
+        Resource = "*"
+      },
+      {
+        Sid    = "ManageTargetGroups"
+        Effect = "Allow"
+        Action = [
+          "elasticloadbalancing:DescribeTargetGroups",
+          "elasticloadbalancing:ModifyTargetGroup"
+        ]
+        Resource = "*"
+      },
+      {
+        Sid    = "ManageS3Buckets"
+        Effect = "Allow"
+        Action = [
+          "s3:GetBucketPolicy",
+          "s3:PutBucketPolicy",
+          "s3:DeleteBucketPolicy",
+          "s3:GetBucketAcl",
+          "s3:PutBucketAcl",
+          "s3:GetBucketVersioning",
+          "s3:PutBucketVersioning",
+          "s3:GetBucketLogging",
+          "s3:PutBucketLogging",
+          "s3:GetEncryptionConfiguration",
+          "s3:PutEncryptionConfiguration",
+          "s3:GetBucketPublicAccessBlock",
+          "s3:PutBucketPublicAccessBlock"
+        ]
+        Resource = "arn:aws:s3:::fileflow-*"
+      },
+      {
+        Sid    = "ManageElastiCache"
+        Effect = "Allow"
+        Action = [
+          "elasticache:CreateCacheSubnetGroup",
+          "elasticache:DeleteCacheSubnetGroup",
+          "elasticache:ModifyCacheSubnetGroup",
+          "elasticache:CreateReplicationGroup",
+          "elasticache:DeleteReplicationGroup",
+          "elasticache:ModifyReplicationGroup",
+          "elasticache:AddTagsToResource",
+          "elasticache:RemoveTagsFromResource",
+          "elasticache:CreateCacheParameterGroup",
+          "elasticache:DeleteCacheParameterGroup",
+          "elasticache:ModifyCacheParameterGroup",
+          "elasticache:DescribeReplicationGroups"
+        ]
+        Resource = "*"
+      },
+      {
+        Sid    = "ManageSQS"
+        Effect = "Allow"
+        Action = [
+          "sqs:CreateQueue",
+          "sqs:DeleteQueue",
+          "sqs:SetQueueAttributes",
+          "sqs:TagQueue",
+          "sqs:UntagQueue"
+        ]
+        Resource = "arn:aws:sqs:${var.aws_region}:${data.aws_caller_identity.current.account_id}:*"
+      },
+      {
+        Sid    = "ManageCloudWatchAlarms"
+        Effect = "Allow"
+        Action = [
+          "cloudwatch:PutMetricAlarm",
+          "cloudwatch:DeleteAlarms",
+          "cloudwatch:DescribeAlarms",
+          "cloudwatch:TagResource",
+          "cloudwatch:UntagResource"
+        ]
+        Resource = "arn:aws:cloudwatch:${var.aws_region}:${data.aws_caller_identity.current.account_id}:alarm:*"
+      },
+      {
+        Sid    = "ManageECS"
+        Effect = "Allow"
+        Action = [
+          "ecs:CreateCluster",
+          "ecs:DeleteCluster",
+          "ecs:UpdateCluster",
+          "ecs:RegisterTaskDefinition",
+          "ecs:DeregisterTaskDefinition",
+          "ecs:CreateService",
+          "ecs:UpdateService",
+          "ecs:DeleteService",
+          "ecs:TagResource",
+          "ecs:UntagResource"
+        ]
+        Resource = "*"
+      },
+      {
+        Sid    = "ManageIAMRoles"
+        Effect = "Allow"
+        Action = [
+          "iam:CreateRole",
+          "iam:DeleteRole",
+          "iam:AttachRolePolicy",
+          "iam:DetachRolePolicy",
+          "iam:PutRolePolicy",
+          "iam:DeleteRolePolicy",
+          "iam:PassRole",
+          "iam:TagRole",
+          "iam:UntagRole"
+        ]
+        Resource = [
+          "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/fileflow-*",
+          "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/atlantis-*"
+        ]
+      },
+      {
+        Sid    = "ManageLoadBalancers"
+        Effect = "Allow"
+        Action = [
+          "elasticloadbalancing:CreateLoadBalancer",
+          "elasticloadbalancing:DeleteLoadBalancer",
+          "elasticloadbalancing:CreateTargetGroup",
+          "elasticloadbalancing:DeleteTargetGroup",
+          "elasticloadbalancing:CreateListener",
+          "elasticloadbalancing:DeleteListener",
+          "elasticloadbalancing:ModifyListener",
+          "elasticloadbalancing:ModifyTargetGroupAttributes",
+          "elasticloadbalancing:ModifyLoadBalancerAttributes",
+          "elasticloadbalancing:AddTags",
+          "elasticloadbalancing:RemoveTags"
+        ]
+        Resource = "*"
+      },
+      {
+        Sid    = "ManageECR"
+        Effect = "Allow"
+        Action = [
+          "ecr:CreateRepository",
+          "ecr:DeleteRepository",
+          "ecr:PutLifecyclePolicy",
+          "ecr:DeleteLifecyclePolicy",
+          "ecr:SetRepositoryPolicy",
+          "ecr:DeleteRepositoryPolicy",
+          "ecr:TagResource",
+          "ecr:UntagResource"
+        ]
+        Resource = "arn:aws:ecr:${var.aws_region}:${data.aws_caller_identity.current.account_id}:repository/*"
+      },
+      {
+        Sid    = "ManageRDS"
+        Effect = "Allow"
+        Action = [
+          "rds:CreateDBInstance",
+          "rds:DeleteDBInstance",
+          "rds:ModifyDBInstance",
+          "rds:CreateDBSubnetGroup",
+          "rds:DeleteDBSubnetGroup",
+          "rds:CreateDBParameterGroup",
+          "rds:DeleteDBParameterGroup",
+          "rds:ModifyDBParameterGroup",
+          "rds:AddTagsToResource",
+          "rds:RemoveTagsFromResource"
+        ]
+        Resource = "*"
+      },
+      {
+        Sid    = "ManageVPC"
+        Effect = "Allow"
+        Action = [
+          "ec2:CreateVpc",
+          "ec2:DeleteVpc",
+          "ec2:ModifyVpcAttribute",
+          "ec2:CreateSubnet",
+          "ec2:DeleteSubnet",
+          "ec2:DescribeVpcs",
+          "ec2:DescribeSubnets"
+        ]
+        Resource = "*"
+      }
+    ]
+  })
+}
+
+# Inline Policy for EFS Access
+resource "aws_iam_role_policy" "atlantis_efs_access" {
+  name = "efs-access"
+  role = module.atlantis_task_role.role_name
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow"
+        Action = [
+          "elasticfilesystem:ClientMount",
+          "elasticfilesystem:ClientWrite",
+          "elasticfilesystem:ClientRootAccess"
+        ]
+        Resource = aws_efs_file_system.atlantis.arn
+        Condition = {
+          StringEquals = {
+            "elasticfilesystem:AccessPointArn" = aws_efs_access_point.atlantis.arn
+          }
+        }
+      }
+    ]
+  })
 }
 
 # Outputs
