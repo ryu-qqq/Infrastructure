@@ -128,7 +128,7 @@ resource "aws_ecs_task_definition" "atlantis" {
   ])
 
   tags = merge(
-    local.common_tags,
+    local.required_tags,
     {
       Name        = "atlantis-${var.environment}"
       Component   = "atlantis"

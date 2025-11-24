@@ -64,7 +64,7 @@ resource "aws_efs_file_system" "atlantis" {
   }
 
   tags = merge(
-    local.common_tags,
+    local.required_tags,
     {
       Name        = "atlantis-${var.environment}"
       Component   = "atlantis"
@@ -105,7 +105,7 @@ resource "aws_efs_access_point" "atlantis" {
   }
 
   tags = merge(
-    local.common_tags,
+    local.required_tags,
     {
       Name        = "atlantis-${var.environment}"
       Component   = "atlantis"

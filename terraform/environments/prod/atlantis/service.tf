@@ -43,7 +43,7 @@ resource "aws_ecs_service" "atlantis" {
   propagate_tags          = "SERVICE"
 
   tags = merge(
-    local.common_tags,
+    local.required_tags,
     {
       Name        = "atlantis-${var.environment}"
       Component   = "atlantis"

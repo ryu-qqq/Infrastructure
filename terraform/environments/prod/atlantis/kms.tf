@@ -10,7 +10,7 @@ resource "aws_kms_key" "ecr" {
   enable_key_rotation     = true
 
   tags = merge(
-    local.common_tags,
+    local.required_tags,
     {
       Name      = "ecr-atlantis"
       Component = "atlantis"
@@ -85,7 +85,7 @@ resource "aws_kms_key" "efs" {
   enable_key_rotation     = true
 
   tags = merge(
-    local.common_tags,
+    local.required_tags,
     {
       Name      = "efs-atlantis"
       Component = "atlantis"

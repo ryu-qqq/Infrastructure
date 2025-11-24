@@ -7,7 +7,7 @@ resource "aws_secretsmanager_secret" "atlantis-github-app" {
   recovery_window_in_days = 0 # Force immediate deletion to allow recreation
 
   tags = merge(
-    local.common_tags,
+    local.required_tags,
     {
       Name        = "atlantis-github-app-${var.environment}"
       Component   = "atlantis"
@@ -32,7 +32,7 @@ resource "aws_secretsmanager_secret" "atlantis-webhook-secret" {
   recovery_window_in_days = 0 # Force immediate deletion to allow recreation
 
   tags = merge(
-    local.common_tags,
+    local.required_tags,
     {
       Name        = "atlantis-webhook-secret-${var.environment}"
       Component   = "atlantis"

@@ -68,7 +68,7 @@ resource "aws_vpc_endpoint" "s3" {
   route_table_ids   = data.aws_route_tables.private.ids
 
   tags = merge(
-    local.common_tags,
+    local.required_tags,
     {
       Name        = "s3-gateway-endpoint"
       Component   = "vpc-endpoints"
@@ -87,7 +87,7 @@ resource "aws_vpc_endpoint" "ecr-api" {
   private_dns_enabled = true
 
   tags = merge(
-    local.common_tags,
+    local.required_tags,
     {
       Name        = "ecr-api-endpoint"
       Component   = "vpc-endpoints"
@@ -106,7 +106,7 @@ resource "aws_vpc_endpoint" "ecr-dkr" {
   private_dns_enabled = true
 
   tags = merge(
-    local.common_tags,
+    local.required_tags,
     {
       Name        = "ecr-dkr-endpoint"
       Component   = "vpc-endpoints"
@@ -125,7 +125,7 @@ resource "aws_vpc_endpoint" "secretsmanager" {
   private_dns_enabled = true
 
   tags = merge(
-    local.common_tags,
+    local.required_tags,
     {
       Name        = "secretsmanager-endpoint"
       Component   = "vpc-endpoints"
@@ -144,7 +144,7 @@ resource "aws_vpc_endpoint" "logs" {
   private_dns_enabled = true
 
   tags = merge(
-    local.common_tags,
+    local.required_tags,
     {
       Name        = "logs-endpoint"
       Component   = "vpc-endpoints"
