@@ -444,6 +444,7 @@ resource "aws_iam_role_policy" "atlantis-terraform-operations" {
           "arn:aws:route53:::hostedzone/*",
           "arn:aws:route53:::change/*"
         ]
+        # Required for CrawlingHub ecs-web-api DNS management
       }
     ]
   })
