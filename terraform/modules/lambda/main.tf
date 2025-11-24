@@ -23,21 +23,6 @@ locals {
   function_name = var.function_name != "" ? var.function_name : "${var.service}-${var.environment}-${var.name}"
 }
 
-# Validate deployment source configuration
-check "deployment_source_exclusive" {
-  assert {
-    condition     = var.filename == null || var.s3_bucket == null
-    error_message = "'filename' (for local file) and 's3_bucket' (for S3) are mutually exclusive. Please specify only one deployment method."
-  }
-}
-
-check "local_deployment_requires_hash" {
-  assert {
-    condition     = var.filename == null || var.source_code_hash != null
-    error_message = "When using 'filename' for local deployment, 'source_code_hash' must also be provided to track changes."
-  }
-}
-
 # IAM Role for Lambda Function
 resource "aws_iam_role" "lambda" {
   count = var.create_role ? 1 : 0
@@ -193,6 +178,16 @@ resource "aws_lambda_function" "this" {
     precondition {
       condition     = var.filename != null || (var.s3_bucket != null && var.s3_key != null)
       error_message = "Either 'filename' or both 's3_bucket' and 's3_key' must be provided for the Lambda function's source code."
+    }
+
+    precondition {
+      condition     = var.filename == null || var.s3_bucket == null
+      error_message = "'filename' (for local file) and 's3_bucket' (for S3) are mutually exclusive. Please specify only one deployment method."
+    }
+
+    precondition {
+      condition     = var.filename == null || var.source_code_hash != null
+      error_message = "When using 'filename' for local deployment, 'source_code_hash' must also be provided to track changes."
     }
   }
 
