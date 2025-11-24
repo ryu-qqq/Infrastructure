@@ -1,4 +1,5 @@
 # IAM Roles and Policies for Atlantis ECS Tasks using modules
+# Updated: Added Route53 permissions for DNS record management
 
 # ECS Task Execution Role
 module "atlantis_task_execution_role" {
