@@ -140,11 +140,11 @@ else
                         terraform -chdir="$dir" show -json "$TEMP_PLAN" > "$TEMP_PLAN_JSON"
 
                         # Run conftest validation
-                        if conftest test "$TEMP_PLAN_JSON" --config "$GIT_ROOT/conftest.toml" >/dev/null 2>&1; then
+                        if conftest test "$TEMP_PLAN_JSON" --config "$GIT_ROOT/governance/configs/conftest.toml" >/dev/null 2>&1; then
                             echo -e "${GREEN}✓ OPA policies passed for $dir${NC}"
                         else
                             echo -e "${RED}✗ OPA policy validation failed: $dir${NC}"
-                            conftest test "$TEMP_PLAN_JSON" --config "$GIT_ROOT/conftest.toml"
+                            conftest test "$TEMP_PLAN_JSON" --config "$GIT_ROOT/governance/configs/conftest.toml"
                             ((ERRORS++))
                         fi
 

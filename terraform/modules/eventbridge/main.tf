@@ -2,6 +2,21 @@
 # EventBridge Rule and Target
 # ========================================
 
+# Common Tags Module
+module "tags" {
+  source = "../common-tags"
+
+  environment = var.environment
+  service     = var.service_name
+  team        = var.team
+  owner       = var.owner
+  cost_center = var.cost_center
+  project     = var.project
+  data_class  = var.data_class
+
+  additional_tags = var.additional_tags
+}
+
 resource "aws_cloudwatch_event_rule" "this" {
   name                = var.name
   description         = var.description
@@ -10,7 +25,7 @@ resource "aws_cloudwatch_event_rule" "this" {
   state               = var.enabled ? "ENABLED" : "DISABLED"
 
   tags = merge(
-    var.common_tags,
+    module.tags.tags,
     {
       Name = var.name
     }
@@ -114,7 +129,7 @@ resource "aws_iam_role" "eventbridge" {
   })
 
   tags = merge(
-    var.common_tags,
+    module.tags.tags,
     {
       Name = "${var.name}-eventbridge-role"
     }

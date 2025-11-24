@@ -48,12 +48,24 @@ governance/
 │   ├── tagging/                # 필수 태그
 │   ├── security_groups/        # 보안 그룹 규칙
 │   └── public_resources/       # 공개 리소스 제한
-└── hooks/                       # 🪝 Git hooks 참조
-    ├── pre-commit              # 커밋 전 빠른 검증
-    └── pre-push                # 푸시 전 거버넌스 검증
+├── hooks/                       # 🪝 Git hooks
+│   ├── pre-commit              # 커밋 전 빠른 검증
+│   └── pre-push                # 푸시 전 거버넌스 검증
+└── scripts/                     # 🛠️ 거버넌스 검증 스크립트
+    ├── validators/             # 검증 스크립트
+    │   ├── check-tags.sh
+    │   ├── check-encryption.sh
+    │   ├── check-naming.sh
+    │   ├── check-tfsec.sh
+    │   ├── check-checkov.sh
+    │   └── validate-terraform-file.sh
+    └── policy/                 # 정책 검증 스크립트
+        └── run-conftest.sh
 ```
 
-**참고**: 프로젝트 루트의 `conftest.toml`, `.checkov.yml`, `.tfsec/`, `.infracost.yml`, `policies/`는 모두 이 디렉토리를 가리키는 심볼릭 링크입니다.
+**참고**:
+- 프로젝트 루트의 `conftest.toml`, `.checkov.yml`, `.tfsec/`, `.infracost.yml`, `policies/`는 모두 이 디렉토리를 가리키는 심볼릭 링크입니다.
+- 실제 검증 스크립트는 `governance/scripts/` 에서 관리됩니다.
 
 ---
 
@@ -196,7 +208,7 @@ skip-check:
 
 **수동 실행**:
 ```bash
-./scripts/validators/check-checkov.sh terraform/monitoring
+./governance/scripts/validators/check-checkov.sh terraform/monitoring
 ```
 
 **참고**: Pre-commit hook에서는 실행 시간이 길어 제외됩니다.
@@ -226,7 +238,7 @@ skip-check:
 
 **수동 실행**:
 ```bash
-./scripts/validators/check-tfsec.sh terraform/monitoring
+./governance/scripts/validators/check-tfsec.sh terraform/monitoring
 ```
 
 ---
@@ -424,13 +436,13 @@ resource "aws_s3_bucket_acl" "example" {
 
 ### `hooks/pre-commit` - 커밋 전 빠른 검증 ⚡
 
-**위치**: `governance/hooks/pre-commit` (참조용, 실제는 `scripts/hooks/pre-commit`)
+**위치**: `governance/hooks/pre-commit`
 
 **검증 항목**:
 1. Terraform fmt (자동 수정)
 2. 민감 정보 스캔
 3. Terraform validate
-4. OPA 정책 검증
+4. OPA 정책 검증 (Conftest)
 
 **실행 시간**: 1-2초
 
@@ -439,16 +451,18 @@ resource "aws_s3_bucket_acl" "example" {
 ./scripts/setup-hooks.sh
 ```
 
+이 스크립트는 `governance/hooks/pre-commit` 파일을 `.git/hooks/pre-commit`으로 복사합니다.
+
 ---
 
 ### `hooks/pre-push` - 푸시 전 거버넌스 검증 🛡️
 
-**위치**: `governance/hooks/pre-push` (참조용, 실제는 `scripts/hooks/pre-push`)
+**위치**: `governance/hooks/pre-push`
 
 **검증 항목**:
-1. 필수 태그 검증
-2. KMS 암호화 검증
-3. 네이밍 규약 검증
+1. 필수 태그 검증 (`governance/scripts/validators/check-tags.sh`)
+2. KMS 암호화 검증 (`governance/scripts/validators/check-encryption.sh`)
+3. 네이밍 규약 검증 (`governance/scripts/validators/check-naming.sh`)
 
 **실행 시간**: 30초
 
@@ -456,6 +470,8 @@ resource "aws_s3_bucket_acl" "example" {
 ```bash
 ./scripts/setup-hooks.sh
 ```
+
+이 스크립트는 `governance/hooks/pre-push` 파일을 `.git/hooks/pre-push`로 복사합니다.
 
 ---
 
@@ -525,30 +541,33 @@ terraform show -json tfplan > tfplan.json
 conftest test tfplan.json --config ../../conftest.toml
 
 # 스크립트로 검증
-./scripts/policy/run-conftest.sh terraform/monitoring
+./governance/scripts/policy/run-conftest.sh terraform/monitoring
 ```
 
 ### 보안 스캔
 
 ```bash
 # tfsec
-./scripts/validators/check-tfsec.sh terraform/monitoring
+./governance/scripts/validators/check-tfsec.sh terraform/monitoring
 
 # Checkov
-./scripts/validators/check-checkov.sh terraform/monitoring
+./governance/scripts/validators/check-checkov.sh terraform/monitoring
 ```
 
 ### 거버넌스 검증
 
 ```bash
 # 필수 태그
-./scripts/validators/check-tags.sh terraform/monitoring
+./governance/scripts/validators/check-tags.sh terraform/monitoring
 
 # KMS 암호화
-./scripts/validators/check-encryption.sh terraform/monitoring
+./governance/scripts/validators/check-encryption.sh terraform/monitoring
 
 # 네이밍 규약
-./scripts/validators/check-naming.sh terraform/monitoring
+./governance/scripts/validators/check-naming.sh terraform/monitoring
+
+# 단일 파일 검증 (Claude Code hook용)
+./governance/scripts/validators/validate-terraform-file.sh terraform/monitoring/main.tf
 ```
 
 ### 비용 분석
@@ -725,10 +744,7 @@ deny[msg] {
 ## 관련 문서
 
 - [Scripts 디렉토리](../scripts/README.md) - 검증 스크립트 상세 가이드
-- [OPA Policy Integration Guide](../docs/guides/opa-policy-integration-guide.md) - OPA 통합 가이드
-- [Atlantis Setup Guide](../docs/guides/atlantis-setup-guide.md) - Atlantis 설정 가이드
-- [Infrastructure Governance](../docs/governance/infrastructure_governance.md) - 거버넌스 표준
-- [Checkov Policy Guide](../docs/governance/CHECKOV_POLICY_GUIDE.md) - Checkov 정책 가이드
+- [Atlantis 인프라](../terraform/environments/prod/atlantis/README.md) - Atlantis 배포 및 운영
 
 ---
 

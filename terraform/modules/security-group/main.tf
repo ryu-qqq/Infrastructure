@@ -1,3 +1,18 @@
+# Common Tags Module
+module "tags" {
+  source = "../common-tags"
+
+  environment = var.environment
+  service     = var.service_name
+  team        = var.team
+  owner       = var.owner
+  cost_center = var.cost_center
+  project     = var.project
+  data_class  = var.data_class
+
+  additional_tags = var.additional_tags
+}
+
 # Security Group
 resource "aws_security_group" "this" {
   name        = var.name
@@ -7,7 +22,7 @@ resource "aws_security_group" "this" {
   revoke_rules_on_delete = var.revoke_rules_on_delete
 
   tags = merge(
-    var.common_tags,
+    module.tags.tags,
     {
       Name        = var.name
       Description = var.description
@@ -33,7 +48,7 @@ resource "aws_vpc_security_group_ingress_rule" "alb-http" {
   description       = "Allow HTTP traffic from internet"
 
   tags = merge(
-    var.common_tags,
+    module.tags.tags,
     {
       Name = "${var.name}-http-ingress-${replace(each.value, "/", "-")}"
     }
@@ -51,7 +66,7 @@ resource "aws_vpc_security_group_ingress_rule" "alb-https" {
   description       = "Allow HTTPS traffic from internet"
 
   tags = merge(
-    var.common_tags,
+    module.tags.tags,
     {
       Name = "${var.name}-https-ingress-${replace(each.value, "/", "-")}"
     }
@@ -71,7 +86,7 @@ resource "aws_vpc_security_group_ingress_rule" "ecs-from-alb" {
   description                  = "Allow traffic from ALB to ECS container"
 
   tags = merge(
-    var.common_tags,
+    module.tags.tags,
     {
       Name = "${var.name}-from-alb-ingress"
     }
@@ -89,7 +104,7 @@ resource "aws_vpc_security_group_ingress_rule" "ecs-additional" {
   description                  = "Allow traffic from additional security group"
 
   tags = merge(
-    var.common_tags,
+    module.tags.tags,
     {
       Name = "${var.name}-additional-ingress-${each.value}"
     }
@@ -109,7 +124,7 @@ resource "aws_vpc_security_group_ingress_rule" "rds-from-ecs" {
   description                  = "Allow traffic from ECS to RDS"
 
   tags = merge(
-    var.common_tags,
+    module.tags.tags,
     {
       Name = "${var.name}-from-ecs-ingress"
     }
@@ -127,7 +142,7 @@ resource "aws_vpc_security_group_ingress_rule" "rds-additional" {
   description                  = "Allow traffic from additional security group"
 
   tags = merge(
-    var.common_tags,
+    module.tags.tags,
     {
       Name = "${var.name}-additional-ingress-${each.value}"
     }
@@ -145,7 +160,7 @@ resource "aws_vpc_security_group_ingress_rule" "rds-cidr" {
   description       = "Allow traffic from CIDR block"
 
   tags = merge(
-    var.common_tags,
+    module.tags.tags,
     {
       Name = "${var.name}-cidr-ingress-${each.value}"
     }
@@ -165,7 +180,7 @@ resource "aws_vpc_security_group_ingress_rule" "vpc-endpoint-cidr" {
   description       = "Allow traffic from CIDR block to VPC endpoint"
 
   tags = merge(
-    var.common_tags,
+    module.tags.tags,
     {
       Name = "${var.name}-cidr-ingress-${each.value}"
     }
@@ -183,7 +198,7 @@ resource "aws_vpc_security_group_ingress_rule" "vpc-endpoint-sg" {
   description                  = "Allow traffic from security group to VPC endpoint"
 
   tags = merge(
-    var.common_tags,
+    module.tags.tags,
     {
       Name = "${var.name}-sg-ingress-${each.value}"
     }
@@ -207,7 +222,7 @@ resource "aws_vpc_security_group_ingress_rule" "custom" {
   description = coalesce(each.value.description, "Custom ingress rule ${each.key}")
 
   tags = merge(
-    var.common_tags,
+    module.tags.tags,
     {
       Name = "${var.name}-custom-ingress-${each.key}"
     }
@@ -236,7 +251,7 @@ resource "aws_vpc_security_group_egress_rule" "default" {
   description       = "Allow all outbound traffic"
 
   tags = merge(
-    var.common_tags,
+    module.tags.tags,
     {
       Name = "${var.name}-default-egress"
     }
@@ -260,7 +275,7 @@ resource "aws_vpc_security_group_egress_rule" "custom" {
   description = coalesce(each.value.description, "Custom egress rule ${each.key}")
 
   tags = merge(
-    var.common_tags,
+    module.tags.tags,
     {
       Name = "${var.name}-custom-egress-${each.key}"
     }

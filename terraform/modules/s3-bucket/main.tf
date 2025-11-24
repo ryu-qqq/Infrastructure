@@ -1,18 +1,19 @@
 # S3 Bucket Module
 # Provides standardized S3 bucket creation with governance compliance
 
-# Local variables
-locals {
-  # Core required tags following governance standards
-  required_tags = {
-    Environment = var.environment
-    Service     = var.service
-    Team        = var.team
-    Owner       = var.owner
-    CostCenter  = var.cost_center
-    ManagedBy   = "Terraform"
-    Project     = var.project
-  }
+# Common Tags Module
+module "tags" {
+  source = "../common-tags"
+
+  environment = var.environment
+  service     = var.service_name
+  team        = var.team
+  owner       = var.owner
+  cost_center = var.cost_center
+  project     = var.project
+  data_class  = var.data_class
+
+  additional_tags = var.additional_tags
 }
 
 # S3 Bucket
@@ -22,8 +23,7 @@ resource "aws_s3_bucket" "this" {
   object_lock_enabled = var.enable_object_lock
 
   tags = merge(
-    local.required_tags,
-    var.additional_tags,
+    module.tags.tags,
     {
       Name = var.bucket_name
     }
@@ -218,8 +218,7 @@ resource "aws_cloudwatch_metric_alarm" "bucket-size" {
   alarm_actions = var.alarm_actions
 
   tags = merge(
-    local.required_tags,
-    var.additional_tags,
+    module.tags.tags,
     {
       Name = "${var.bucket_name}-size-alarm"
     }
@@ -249,8 +248,7 @@ resource "aws_cloudwatch_metric_alarm" "object-count" {
   alarm_actions = var.alarm_actions
 
   tags = merge(
-    local.required_tags,
-    var.additional_tags,
+    module.tags.tags,
     {
       Name = "${var.bucket_name}-object-count-alarm"
     }

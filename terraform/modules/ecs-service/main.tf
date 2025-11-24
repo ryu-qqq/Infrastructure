@@ -1,3 +1,18 @@
+# Common Tags Module
+module "tags" {
+  source = "../common-tags"
+
+  environment = var.environment
+  service     = var.service_name
+  team        = var.team
+  owner       = var.owner
+  cost_center = var.cost_center
+  project     = var.project
+  data_class  = var.data_class
+
+  additional_tags = var.additional_tags
+}
+
 # CloudWatch Log Group for Container Logs
 resource "aws_cloudwatch_log_group" "this" {
   count = var.log_configuration == null ? 1 : 0
@@ -6,7 +21,7 @@ resource "aws_cloudwatch_log_group" "this" {
   retention_in_days = var.log_retention_days
 
   tags = merge(
-    var.common_tags,
+    module.tags.tags,
     {
       Name        = "/ecs/${var.name}"
       Description = "CloudWatch log group for ECS service ${var.name}"
@@ -68,7 +83,7 @@ resource "aws_ecs_task_definition" "this" {
   ])
 
   tags = merge(
-    var.common_tags,
+    module.tags.tags,
     {
       Name        = var.name
       Description = "ECS task definition for ${var.name}"
@@ -122,7 +137,7 @@ resource "aws_ecs_service" "this" {
   enable_execute_command = var.enable_execute_command
 
   tags = merge(
-    var.common_tags,
+    module.tags.tags,
     {
       Name        = var.name
       Description = "ECS service for ${var.name}"

@@ -1,17 +1,22 @@
 # SNS Topic Module
 # Creates an SNS topic with KMS encryption, subscriptions, and CloudWatch monitoring
 
-locals {
-  required_tags = {
-    Environment = var.environment
-    Service     = var.service
-    Team        = var.team
-    Owner       = var.owner
-    CostCenter  = var.cost_center
-    ManagedBy   = "Terraform"
-    Project     = var.project
-  }
+# Common Tags Module
+module "tags" {
+  source = "../common-tags"
 
+  environment = var.environment
+  service     = var.service
+  team        = var.team
+  owner       = var.owner
+  cost_center = var.cost_center
+  project     = var.project
+  data_class  = var.data_class
+
+  additional_tags = var.additional_tags
+}
+
+locals {
   # Generate topic name with .fifo suffix for FIFO topics
   topic_name = var.fifo_topic ? "${var.name}.fifo" : var.name
 }
@@ -30,13 +35,12 @@ resource "aws_sns_topic" "this" {
   delivery_policy = var.delivery_policy
 
   tags = merge(
-    local.required_tags,
+    module.tags.tags,
     {
       Name         = local.topic_name
       TopicType    = var.fifo_topic ? "FIFO" : "Standard"
       KMSEncrypted = "true"
-    },
-    var.additional_tags
+    }
   )
 }
 
@@ -88,7 +92,7 @@ resource "aws_cloudwatch_metric_alarm" "messages-published" {
   ok_actions    = var.alarm_ok_actions
 
   tags = merge(
-    local.required_tags,
+    module.tags.tags,
     {
       Name      = "${local.topic_name}-messages-published-low"
       AlarmType = "MessagesPublished"
@@ -119,7 +123,7 @@ resource "aws_cloudwatch_metric_alarm" "notifications-failed" {
   ok_actions    = var.alarm_ok_actions
 
   tags = merge(
-    local.required_tags,
+    module.tags.tags,
     {
       Name      = "${local.topic_name}-notifications-failed"
       AlarmType = "NotificationsFailed"

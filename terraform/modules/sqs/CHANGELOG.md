@@ -5,6 +5,40 @@ All notable changes to the SQS Queue Terraform module will be documented in this
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres on [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.0.0] - 2025-01-23
+
+### Changed
+
+**BREAKING CHANGE**: Refactored to use `common-tags` module pattern
+
+- **Removed**: `local.required_tags` - Now using common-tags module
+- **Added**: `data_class` variable (optional, default: "internal")
+- **Added**: Validation for all tag variables (kebab-case, email format)
+- **Changed**: `project` variable now has default value "infrastructure"
+- **Changed**: All resources now use `module.tags.tags` instead of `local.required_tags`
+
+### Migration Guide
+
+The module interface remains the same - no code changes required. Simply add the optional `data_class` parameter if needed:
+
+```hcl
+module "sqs_queue" {
+  source = "../../modules/sqs"
+
+  # ... existing parameters ...
+
+  # New optional parameter
+  data_class = "internal"  # Optional: defaults to "internal"
+}
+```
+
+### Benefits
+
+- **Governance Compliance**: Automatic enforcement through common-tags module
+- **Consistency**: Standardized tagging across all infrastructure
+- **Validation**: Built-in validation for tag values
+- **ManagedBy Tag**: Automatically adds `ManagedBy = "Terraform"` tag
+
 ## [1.0.0] - 2025-10-20
 
 ### Added

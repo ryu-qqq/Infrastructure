@@ -1,3 +1,21 @@
+# Application Load Balancer Module
+# Creates an Application Load Balancer with target groups, listeners, and routing rules
+
+# Common Tags Module
+module "tags" {
+  source = "../common-tags"
+
+  environment = var.environment
+  service     = var.service_name
+  team        = var.team
+  owner       = var.owner
+  cost_center = var.cost_center
+  project     = var.project
+  data_class  = var.data_class
+
+  additional_tags = var.additional_tags
+}
+
 # Application Load Balancer
 resource "aws_lb" "this" {
   name               = var.name
@@ -22,10 +40,11 @@ resource "aws_lb" "this" {
   }
 
   tags = merge(
-    var.common_tags,
+    module.tags.tags,
     {
       Name        = var.name
       Description = "Application Load Balancer ${var.name}"
+      Component   = "load-balancer"
     }
   )
 }
@@ -65,10 +84,11 @@ resource "aws_lb_target_group" "this" {
   }
 
   tags = merge(
-    var.common_tags,
+    module.tags.tags,
     {
       Name        = "${var.name}-${each.key}"
       Description = "Target group for ${var.name} - ${each.key}"
+      Component   = "target-group"
     }
   )
 
@@ -129,10 +149,11 @@ resource "aws_lb_listener" "http" {
   }
 
   tags = merge(
-    var.common_tags,
+    module.tags.tags,
     {
       Name        = "${var.name}-http-${each.key}"
       Description = "HTTP listener for ${var.name}"
+      Component   = "listener"
     }
   )
 }
@@ -171,10 +192,11 @@ resource "aws_lb_listener" "https" {
   }
 
   tags = merge(
-    var.common_tags,
+    module.tags.tags,
     {
       Name        = "${var.name}-https-${each.key}"
       Description = "HTTPS listener for ${var.name}"
+      Component   = "listener"
     }
   )
 }
@@ -247,10 +269,11 @@ resource "aws_lb_listener_rule" "this" {
   }
 
   tags = merge(
-    var.common_tags,
+    module.tags.tags,
     {
       Name        = "${var.name}-rule-${each.key}"
       Description = "Listener rule for ${var.name} - ${each.key}"
+      Component   = "listener-rule"
     }
   )
 }

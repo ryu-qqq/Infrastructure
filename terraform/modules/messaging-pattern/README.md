@@ -23,12 +23,16 @@ module "notification_fanout" {
   sns_topic_name = "user-notifications"
   kms_key_id     = aws_kms_key.messaging.arn
 
+  # Required tags
   environment = "dev"
   service     = "notification-service"
   team        = "platform-team"
   owner       = "fbtkdals2@naver.com"
   cost_center = "engineering"
-  project     = "user-engagement"
+
+  # Optional tags
+  project    = "user-engagement"
+  data_class = "confidential"
 
   sqs_queues = [
     { name = "email-notifications" },

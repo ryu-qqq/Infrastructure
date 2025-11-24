@@ -41,10 +41,12 @@ module "scheduler" {
     aws_iam_role.ecs_task.arn
   ]
 
-  common_tags = {
-    Environment = "prod"
-    Service     = "crawler-scheduler"
-  }
+  # 필수 태깅 변수
+  environment  = "prod"
+  service_name = "crawler-scheduler"
+  team         = "platform-team"
+  owner        = "fbtkdals2@naver.com"
+  cost_center  = "engineering"
 }
 ```
 
@@ -64,7 +66,12 @@ module "daily_report" {
   lambda_function_arn  = aws_lambda_function.report.arn
   lambda_function_name = aws_lambda_function.report.function_name
 
-  common_tags = local.common_tags
+  # 필수 태깅 변수
+  environment  = "prod"
+  service_name = "event-processor"
+  team         = "platform-team"
+  owner        = "fbtkdals2@naver.com"
+  cost_center  = "engineering"
 }
 ```
 
@@ -91,7 +98,12 @@ module "s3_trigger" {
   lambda_function_arn  = aws_lambda_function.processor.arn
   lambda_function_name = aws_lambda_function.processor.function_name
 
-  common_tags = local.common_tags
+  # 필수 태깅 변수
+  environment  = "prod"
+  service_name = "event-processor"
+  team         = "platform-team"
+  owner        = "fbtkdals2@naver.com"
+  cost_center  = "engineering"
 }
 ```
 
@@ -117,7 +129,12 @@ module "alarm_notification" {
 
   sns_topic_arn = aws_sns_topic.alerts.arn
 
-  common_tags = local.common_tags
+  # 필수 태깅 변수
+  environment  = "prod"
+  service_name = "event-processor"
+  team         = "platform-team"
+  owner        = "fbtkdals2@naver.com"
+  cost_center  = "engineering"
 }
 ```
 
@@ -141,7 +158,24 @@ module "alarm_notification" {
 | lambda_function_name | Lambda 함수 이름 | `string` | `null` | no |
 | sns_topic_arn | SNS Topic ARN | `string` | `null` | no |
 | sqs_queue_arn | SQS Queue ARN | `string` | `null` | no |
-| common_tags | 공통 태그 | `map(string)` | `{}` | no |
+
+### 필수 변수 (태깅)
+
+| Name | Description | Type | Default | Required |
+|------|-------------|------|---------|:--------:|
+| environment | 환경 이름 (dev, staging, prod) | `string` | n/a | yes |
+| service_name | 서비스 이름 (kebab-case) | `string` | n/a | yes |
+| team | 담당 팀 (kebab-case) | `string` | n/a | yes |
+| owner | 소유자 이메일 또는 식별자 | `string` | n/a | yes |
+| cost_center | 비용 센터 (kebab-case) | `string` | n/a | yes |
+
+### 선택 변수 (태깅)
+
+| Name | Description | Type | Default | Required |
+|------|-------------|------|---------|:--------:|
+| project | 프로젝트 이름 | `string` | `"infrastructure"` | no |
+| data_class | 데이터 분류 (confidential, internal, public) | `string` | `"confidential"` | no |
+| additional_tags | 추가 태그 | `map(string)` | `{}` | no |
 
 ## 출력 값
 

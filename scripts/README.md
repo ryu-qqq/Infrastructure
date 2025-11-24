@@ -4,41 +4,50 @@ Infrastructure 프로젝트의 자동화 스크립트 모음입니다.
 
 ## 📋 목차
 
-- [빠른 시작](#빠른-시작)
+- [개요](#개요)
+- [디렉토리 구조](#디렉토리-구조)
 - [핵심 스크립트](#핵심-스크립트)
-- [Validators (거버넌스 검증)](#validators-거버넌스-검증)
-- [Policy Validation (정책 검증)](#policy-validation-정책-검증)
-- [Atlantis 운영](#atlantis-운영)
-- [Git Hooks](#git-hooks)
-- [기타 도구](#기타-도구)
+  - [Git Hooks 설치](#setup-hookssh)
+  - [Docker 빌드 및 배포](#build-and-pushsh)
+- [사용 가이드](#사용-가이드)
+- [관련 문서](#관련-문서)
 
 ---
 
-## 빠른 시작
+## 개요
 
-### 최초 설정 (한 번만 실행)
+이 디렉토리는 인프라 관리를 위한 운영 및 배포 자동화 스크립트를 포함합니다.
 
-```bash
-# Git hooks 설치
-./scripts/setup-hooks.sh
+**중요**:
+- 거버넌스 관련 스크립트(validators, policy, hooks)는 [`governance/`](../governance/) 패키지로 이동되었습니다.
+- Atlantis 운영 스크립트는 [`terraform/environments/prod/atlantis/scripts/`](../terraform/environments/prod/atlantis/scripts/) 디렉토리로 이동되었습니다.
+
+### 스크립트 분류
+
+| 카테고리 | 위치 | 설명 |
+|---------|------|------|
+| **거버넌스** | `governance/scripts/` | 태그 검증, 암호화 검증, 네이밍 규약, 보안 스캔 |
+| **Git Hooks** | `governance/hooks/` | Pre-commit, Pre-push 검증 훅 |
+| **배포** | `scripts/` | Docker 이미지 빌드 및 ECR 푸시 |
+| **Atlantis 운영** | `terraform/environments/prod/atlantis/scripts/` | 헬스체크, 로그 모니터링, 재시작 |
+
+---
+
+## 디렉토리 구조
+
+```
+scripts/
+├── README.md                           # 📖 이 문서
+├── setup-hooks.sh                      # 🔧 Git hooks 설치
+└── build-and-push.sh                   # 🐳 Atlantis Docker 이미지 빌드 및 ECR 푸시
 ```
 
-### Atlantis 배포
-
-```bash
-# Docker 이미지 빌드 및 ECR 푸시
-./scripts/build-and-push.sh
-```
-
-### Atlantis 모니터링
-
-```bash
-# 헬스체크
-./scripts/atlantis/check-atlantis-health.sh prod
-
-# 로그 모니터링
-./scripts/atlantis/monitor-atlantis-logs.sh prod
-```
+**참고**:
+- 거버넌스 관련 스크립트는 `governance/` 패키지로 이동:
+  - 검증 스크립트: `governance/scripts/validators/`
+  - 정책 검증: `governance/scripts/policy/`
+  - Git Hooks: `governance/hooks/`
+- Atlantis 운영 스크립트는 `terraform/environments/prod/atlantis/scripts/` 디렉토리로 이동
 
 ---
 
@@ -49,12 +58,14 @@ Infrastructure 프로젝트의 자동화 스크립트 모음입니다.
 **역할**: Git hooks 자동 설치 및 개발 환경 검증
 
 **기능**:
-- `hooks/` 디렉토리의 hook 파일을 `.git/hooks/`로 복사
+- `governance/hooks/` 디렉토리의 hook 파일을 `.git/hooks/`로 복사
 - 필수 도구 검증 (terraform, git, bash)
 - 선택적 도구 확인 (tfsec, checkov, conftest)
+- Validator 스크립트 실행 권한 확인
 
 **사용법**:
 ```bash
+# Git hooks 설치
 ./scripts/setup-hooks.sh
 ```
 
@@ -62,477 +73,351 @@ Infrastructure 프로젝트의 자동화 스크립트 모음입니다.
 - `pre-commit`: 커밋 전 빠른 검증 (fmt, secrets scan, validate, OPA)
 - `pre-push`: 푸시 전 거버넌스 검증 (tags, encryption, naming)
 
+**참고**:
+- 실제 hook 파일은 `governance/hooks/`에서 관리됩니다
+- 검증 스크립트는 `governance/scripts/validators/`에 있습니다
+- 자세한 내용은 [governance/README.md](../governance/README.md) 참고
+
+**출력 예시**:
+```
+════════════════════════════════════════
+🔧 Git Hooks Setup for Terraform
+════════════════════════════════════════
+
+📋 Checking dependencies...
+
+✓ terraform 1.6.0
+✓ git 2.42.0
+✓ bash 5.2.15
+
+📦 Optional tools (recommended):
+
+✓ tfsec v1.28.4
+✓ checkov 3.1.34
+
+🔗 Installing Git hooks...
+
+✓ Installed: pre-commit
+✓ Installed: pre-push
+
+✅ Verifying validators...
+
+✓ check-tags.sh
+✓ check-encryption.sh
+✓ check-naming.sh
+
+════════════════════════════════════════
+📊 Installation Summary
+════════════════════════════════════════
+
+✓ Hooks installed: 2
+✓ Validators ready: 3/3
+
+✅ Git hooks successfully installed!
+
+📖 What happens now:
+  On commit: Fast checks (fmt, secrets, validate)
+  On push: Full validation (tags, encryption, naming)
+
+💡 Tips:
+  • Bypass (emergency): git commit/push --no-verify
+  • Test validators: ./governance/scripts/validators/check-*.sh
+  • Documentation: governance/README.md
+
+🎉 Ready to develop with governance!
+```
+
 ---
 
-### `build-and-push.sh` ⭐⭐⭐
+### `build-and-push.sh` ⭐⭐
 
 **역할**: Atlantis Docker 이미지 빌드 및 ECR 푸시
 
 **기능**:
-- Atlantis Docker 이미지 빌드 (Conftest 포함)
+- Atlantis 공식 이미지 기반 커스텀 이미지 빌드
+- Conftest와 Terraform 추가 설치
+- Multi-architecture 지원 (amd64, arm64)
 - ECR 로그인 및 이미지 푸시
-- 3가지 태그 전략 적용
+- 3-tag 전략: `git-SHA`, `latest`, `YYYYMMDD-HHMMSS`
 
 **사용법**:
 ```bash
-# 기본 사용
+# 기본 빌드 (latest Atlantis version)
 ./scripts/build-and-push.sh
 
-# 커스텀 버전/태그
-ATLANTIS_VERSION=v0.30.0 CUSTOM_TAG=prod ./scripts/build-and-push.sh
+# 특정 Atlantis 버전 지정
+ATLANTIS_VERSION=v0.30.0 ./scripts/build-and-push.sh
+
+# 커스텀 태그 지정
+CUSTOM_TAG=prod ./scripts/build-and-push.sh
+
+# 빌드만 수행 (푸시 건너뛰기)
+SKIP_PUSH=true ./scripts/build-and-push.sh
 ```
 
 **환경 변수**:
-- `AWS_REGION`: AWS 리전 (기본: ap-northeast-2)
-- `AWS_ACCOUNT_ID`: AWS 계정 ID (자동 감지)
-- `ATLANTIS_VERSION`: Atlantis 버전 (기본: v0.28.1)
-- `CUSTOM_TAG`: 커스텀 태그 (기본: latest)
+- `ATLANTIS_VERSION`: Atlantis 버전 (default: `v0.30.0`)
+- `AWS_ACCOUNT_ID`: AWS 계정 ID (default: 자동 감지)
+- `AWS_REGION`: AWS 리전 (default: `ap-northeast-2`)
+- `ECR_REPOSITORY`: ECR 저장소 이름 (default: `ecr-atlantis`)
+- `CUSTOM_TAG`: 추가 태그 (optional)
+- `SKIP_PUSH`: 푸시 건너뛰기 (optional, `true`로 설정)
 
----
-
-## Validators (거버넌스 검증)
-
-### `validators/check-tags.sh` ⭐⭐⭐
-
-**역할**: Terraform 리소스의 필수 태그 검증
-
-**검증 항목**:
-- 7개 필수 태그: `Environment`, `Service`, `Team`, `Owner`, `CostCenter`, `ManagedBy`, `Project`
-- `merge(local.required_tags)` 패턴 사용 여부
-
-**사용법**:
+**사용 예시**:
 ```bash
-./scripts/validators/check-tags.sh [terraform_directory]
+# 1. 로컬 테스트 빌드
+SKIP_PUSH=true ./scripts/build-and-push.sh
 
-# 예시
-./scripts/validators/check-tags.sh terraform/monitoring
+# 2. Production 배포
+ATLANTIS_VERSION=v0.30.0 CUSTOM_TAG=prod ./scripts/build-and-push.sh
+
+# 3. Staging 배포
+CUSTOM_TAG=staging ./scripts/build-and-push.sh
 ```
 
-**자동 실행**: `pre-push` hook에서 자동 실행
-
----
-
-### `validators/check-encryption.sh` ⭐⭐⭐
-
-**역할**: KMS 암호화 사용 검증 (AES256 사용 금지)
-
-**검증 대상**:
-- **ECR**: `encryption_type = "KMS"` + `kms_key`
-- **S3**: `sse_algorithm = "aws:kms"`
-- **RDS**: `storage_encrypted = true` + `kms_key_id`
-- **EBS**: `encrypted = true` + `kms_key_id`
-
-**사용법**:
-```bash
-./scripts/validators/check-encryption.sh [terraform_directory]
-
-# 예시
-./scripts/validators/check-encryption.sh terraform/atlantis
+**푸시되는 태그**:
+```
+{AWS_ACCOUNT_ID}.dkr.ecr.{REGION}.amazonaws.com/ecr-atlantis:abc1234      # git commit SHA
+{AWS_ACCOUNT_ID}.dkr.ecr.{REGION}.amazonaws.com/ecr-atlantis:latest       # 최신 이미지
+{AWS_ACCOUNT_ID}.dkr.ecr.{REGION}.amazonaws.com/ecr-atlantis:20250124-143022  # 빌드 시각
+{AWS_ACCOUNT_ID}.dkr.ecr.{REGION}.amazonaws.com/ecr-atlantis:prod         # 커스텀 태그 (optional)
 ```
 
-**자동 실행**: `pre-push` hook에서 자동 실행
+**출력 예시**:
+```
+════════════════════════════════════════
+🐳 Atlantis Docker Build & Push
+════════════════════════════════════════
 
----
+📋 Configuration:
+  Atlantis Version: v0.30.0
+  AWS Account: 123456789012
+  AWS Region: ap-northeast-2
+  ECR Repository: ecr-atlantis
+  Git SHA: abc1234
+  Timestamp: 20250124-143022
 
-### `validators/check-naming.sh` ⭐⭐⭐
+🔨 Building Docker image...
 
-**역할**: Terraform 네이밍 규약 검증
+[+] Building 45.2s (12/12) FINISHED
+ => [internal] load build definition from Dockerfile
+ => => transferring dockerfile: 856B
+ ...
 
-**규칙**:
-- **Resources**: kebab-case (예: `my-resource-123`)
-- **Variables/Outputs/Locals**: snake_case (예: `my_variable_123`)
+✅ Build completed successfully!
 
-**사용법**:
-```bash
-./scripts/validators/check-naming.sh [terraform_directory]
+🔐 Logging in to ECR...
 
-# 예시
-./scripts/validators/check-naming.sh terraform/network
+Login Succeeded
+
+📦 Tagging images...
+
+✓ Tagged: 123456789012.dkr.ecr.ap-northeast-2.amazonaws.com/ecr-atlantis:abc1234
+✓ Tagged: 123456789012.dkr.ecr.ap-northeast-2.amazonaws.com/ecr-atlantis:latest
+✓ Tagged: 123456789012.dkr.ecr.ap-northeast-2.amazonaws.com/ecr-atlantis:20250124-143022
+
+🚀 Pushing images to ECR...
+
+The push refers to repository [123456789012.dkr.ecr.ap-northeast-2.amazonaws.com/ecr-atlantis]
+abc1234: digest: sha256:... size: 2415
+
+✅ All images pushed successfully!
+
+📊 Summary:
+  Repository: 123456789012.dkr.ecr.ap-northeast-2.amazonaws.com/ecr-atlantis
+  Tags pushed: 3
+    - abc1234
+    - latest
+    - 20250124-143022
+
+🎉 Deployment ready!
 ```
 
-**자동 실행**: `pre-push` hook에서 자동 실행
+**Dockerfile 내용**:
+```dockerfile
+FROM ghcr.io/runatlantis/atlantis:${ATLANTIS_VERSION}
 
----
+# Install conftest for OPA policy validation
+RUN apk add --no-cache curl && \
+    curl -L https://github.com/open-policy-agent/conftest/releases/download/v0.45.0/conftest_0.45.0_Linux_x86_64.tar.gz \
+    | tar xz -C /usr/local/bin && \
+    chmod +x /usr/local/bin/conftest
 
-### `validators/check-tfsec.sh` ⭐⭐
-
-**역할**: tfsec 보안 스캔 실행
-
-**사용법**:
-```bash
-./scripts/validators/check-tfsec.sh [terraform_directory]
+# Install additional Terraform versions (optional)
+# RUN terraform --version
 ```
 
-**자동 실행**: GitHub Actions (`infra-checks.yml`)
+**참고**:
+- ECR 저장소가 없으면 자동으로 생성됩니다
+- 이미지 스캔은 ECR 푸시 후 자동으로 실행됩니다 (취약점 검사)
+- CI/CD에서 사용 시 AWS 인증이 필요합니다
+- Multi-architecture 빌드는 Docker Buildx를 사용합니다
 
 ---
 
-### `validators/check-checkov.sh` ⭐⭐
+## 사용 가이드
 
-**역할**: Checkov 컴플라이언스 스캔 실행
-
-**사용법**:
-```bash
-./scripts/validators/check-checkov.sh [terraform_directory]
-```
-
-**자동 실행**: GitHub Actions (`infra-checks.yml`)
-
----
-
-### `validators/validate-terraform-file.sh` ⭐
-
-**역할**: 단일 Terraform 파일 검증 (Claude Code hook용)
-
-**검증 내용**:
-- Terraform fmt
-- Terraform validate
-- 민감 정보 스캔
-
-**사용법**:
-```bash
-./scripts/validators/validate-terraform-file.sh <file.tf>
-
-# 예시
-./scripts/validators/validate-terraform-file.sh terraform/monitoring/main.tf
-```
-
-**자동 실행**: Claude Code `.claude/hooks.json`
-
----
-
-### `validators/check-secrets-rotation.sh` ⚠️
-
-**역할**: Secrets Manager 비밀 로테이션 검증
-
-**상태**: 현재 미사용
-
----
-
-### `validators/validate-modules.sh` ⚠️
-
-**역할**: Terraform 모듈 검증
-
-**상태**: 현재 미사용
-
----
-
-## Policy Validation (정책 검증)
-
-### `policy/run-conftest.sh` ⭐⭐
-
-**역할**: OPA 정책 검증 (Conftest) 로컬 실행
-
-**기능**:
-- OPA 정책 단위 테스트 실행
-- Terraform plan을 JSON으로 변환
-- Conftest로 정책 검증
-- 4개 정책 카테고리 검증:
-  - `policies/naming`
-  - `policies/tagging`
-  - `policies/security_groups`
-  - `policies/public_resources`
-
-**사용법**:
-```bash
-./scripts/policy/run-conftest.sh [terraform_directory]
-
-# 예시
-./scripts/policy/run-conftest.sh terraform/
-```
-
-**참고**: CI/CD에서는 inline 방식으로 실행되므로, 이 스크립트는 주로 로컬 테스트용입니다.
-
----
-
-## Atlantis 운영
-
-### `atlantis/check-atlantis-health.sh` ⭐⭐
-
-**역할**: Atlantis 서버 헬스체크
-
-**확인 항목**:
-- ECS Service 상태
-- Running Tasks 상태
-- ALB Target Health
-- 최근 에러 로그 (최근 10분)
-- 최근 활동 요약 (webhook, plan, apply 카운트)
-
-**사용법**:
-```bash
-./scripts/atlantis/check-atlantis-health.sh [환경]
-
-# 예시
-./scripts/atlantis/check-atlantis-health.sh prod
-```
-
----
-
-### `atlantis/monitor-atlantis-logs.sh` ⭐⭐
-
-**역할**: Atlantis 로그 실시간 모니터링
-
-**기능**:
-- CloudWatch Logs 실시간 tail
-- 필터링 옵션 지원
-
-**사용법**:
-```bash
-# 전체 로그
-./scripts/atlantis/monitor-atlantis-logs.sh prod
-
-# 에러 로그만
-./scripts/atlantis/monitor-atlantis-logs.sh prod error
-
-# 특정 프로젝트 관련
-./scripts/atlantis/monitor-atlantis-logs.sh prod FileFlow
-```
-
----
-
-### `atlantis/restart-atlantis.sh` ⭐
-
-**역할**: Atlantis ECS 서비스 재시작
-
-**사용법**:
-```bash
-./scripts/atlantis/restart-atlantis.sh [환경]
-
-# 예시
-./scripts/atlantis/restart-atlantis.sh prod
-```
-
----
-
-### `atlantis/export-atlantis-logs.sh` ⚠️
-
-**역할**: Atlantis 로그 내보내기 (로그 백업/분석용)
-
-**상태**: 사용 빈도 낮음
-
----
-
-### `atlantis/add-project.sh` ⚠️
-
-**역할**: Atlantis에 새 프로젝트 추가
-
-**상태**: 현재 미사용 (`atlantis.yaml` 직접 편집 선호)
-
----
-
-### `atlantis/deploy-config.sh` ⚠️
-
-**역할**: Atlantis 설정 배포
-
-**상태**: 현재 미사용 (`build-and-push.sh` 사용)
-
----
-
-### `atlantis/init-repo-atlantis.sh` ⚠️
-
-**역할**: Atlantis 저장소 초기화
-
-**상태**: 초기 설정 완료됨 (현재 미사용)
-
----
-
-## Git Hooks
-
-### `hooks/pre-commit` ⭐⭐⭐
-
-**역할**: 커밋 전 빠른 검증 (1-2초)
-
-**검증 항목**:
-1. Terraform fmt (자동 수정)
-2. 민감 정보 스캔 (패스워드, API 키 등)
-3. Terraform validate
-4. OPA 정책 검증 (Conftest)
-
-**설치 방법**:
-```bash
-./scripts/setup-hooks.sh
-```
-
-**우회 방법** (긴급 상황에만):
-```bash
-git commit --no-verify -m "Emergency fix"
-```
-
----
-
-### `hooks/pre-push` ⭐⭐
-
-**역할**: 푸시 전 거버넌스 검증 (30초-1분)
-
-**검증 항목**:
-1. `check-tags.sh` - 필수 태그 검증
-2. `check-encryption.sh` - KMS 암호화 검증
-3. `check-naming.sh` - 네이밍 규약 검증
-
-**설치 방법**:
-```bash
-./scripts/setup-hooks.sh
-```
-
-**우회 방법** (긴급 상황에만):
-```bash
-git push --no-verify
-```
-
----
-
-## 기타 도구
-
-### `modules/module-manager.sh` ⚠️
-
-**역할**: Terraform 모듈 관리 도구
-
-**상태**: 현재 미사용
-
----
-
-### `shared/shared-infra-manager.sh` ⚠️
-
-**역할**: 공유 인프라 관리 도구
-
-**상태**: 현재 미사용
-
----
-
-### `check-terraform-docs.sh` ⚠️
-
-**역할**: Terraform 문서 검증
-
-**상태**: 현재 미사용
-
----
-
-### `generate-terraform-docs.sh` ⚠️
-
-**역할**: Terraform 문서 자동 생성
-
-**상태**: 현재 미사용
-
----
-
-### `import-existing-resources.sh` ⚠️
-
-**역할**: 기존 AWS 리소스를 Terraform으로 import
-
-**상태**: 일회성 마이그레이션 도구 (현재 미사용)
-
----
-
-## 📊 스크립트 사용 빈도
-
-| 아이콘 | 의미 |
-|--------|------|
-| ⭐⭐⭐ | 매우 중요, 자주 사용 |
-| ⭐⭐ | 중요, 가끔 사용 |
-| ⭐ | 보조 도구 |
-| ⚠️ | 미사용 또는 deprecated |
-
----
-
-## 🔄 통합 워크플로우
-
-### 로컬 개발
+### 로컬 개발 워크플로우
 
 ```bash
-# 1. 최초 설정
+# 1. 저장소 클론 및 Git hooks 설치
+git clone <repository>
+cd infrastructure
 ./scripts/setup-hooks.sh
 
-# 2. 코드 작성
+# 2. Terraform 작업
 cd terraform/monitoring
 terraform init
-terraform fmt
-terraform validate
+terraform plan
 
 # 3. 커밋 (pre-commit hook 자동 실행)
-git add main.tf
-git commit -m "Add monitoring resources"
-# → fmt, secrets scan, validate, OPA policy 자동 검증
+git add .
+git commit -m "feat: Add CloudWatch alarm"
 
 # 4. 푸시 (pre-push hook 자동 실행)
 git push origin feature/monitoring
-# → tags, encryption, naming 자동 검증
 ```
 
-### Atlantis 배포
+### Atlantis 배포 워크플로우
 
 ```bash
-# 1. Docker 이미지 빌드 및 푸시
-./scripts/build-and-push.sh
+# 1. Atlantis Docker 이미지 빌드
+ATLANTIS_VERSION=v0.30.0 ./scripts/build-and-push.sh
 
-# 2. ECS 서비스 업데이트
-cd terraform/atlantis
+# 2. Terraform apply (별도 작업)
+cd terraform/environments/prod/atlantis
 terraform apply
 
-# 3. 헬스체크
-./scripts/atlantis/check-atlantis-health.sh prod
+# 3. Atlantis 운영 스크립트는 다음 위치에서 사용:
+cd terraform/environments/prod/atlantis/scripts
+./check-atlantis-health.sh
+./monitor-atlantis-logs.sh
 ```
 
-### Atlantis 운영
+### 거버넌스 검증 워크플로우
 
 ```bash
-# 실시간 로그 모니터링
-./scripts/atlantis/monitor-atlantis-logs.sh prod
+# 1. 개별 validator 수동 실행
+./governance/scripts/validators/check-tags.sh terraform/monitoring
+./governance/scripts/validators/check-encryption.sh terraform/monitoring
+./governance/scripts/validators/check-naming.sh terraform/monitoring
 
-# 에러 로그만 확인
-./scripts/atlantis/monitor-atlantis-logs.sh prod error
+# 2. 보안 스캔 수동 실행
+./governance/scripts/validators/check-tfsec.sh terraform/monitoring
+./governance/scripts/validators/check-checkov.sh terraform/monitoring
 
-# 헬스체크
-./scripts/atlantis/check-atlantis-health.sh prod
+# 3. OPA 정책 검증
+./governance/scripts/policy/run-conftest.sh terraform/monitoring
 ```
+
+---
+
+## 문제 해결
+
+### Git Hooks 관련
+
+**문제**: Hooks가 실행되지 않음
+```bash
+# 해결책: 실행 권한 확인
+ls -la .git/hooks/pre-commit
+chmod +x .git/hooks/pre-commit
+```
+
+**문제**: Validator 스크립트 권한 오류
+```bash
+# 해결책: 검증 스크립트에 실행 권한 부여
+chmod +x governance/scripts/validators/*.sh
+```
+
+**문제**: 긴급 상황에서 검증 우회 필요
+```bash
+# 해결책: --no-verify 플래그 사용 (신중하게 사용)
+git commit --no-verify -m "emergency fix"
+git push --no-verify
+```
+
+### Docker 빌드 관련
+
+**문제**: ECR 로그인 실패
+```bash
+# 해결책: AWS 인증 확인
+aws sts get-caller-identity
+aws ecr get-login-password --region ap-northeast-2
+```
+
+**문제**: Multi-architecture 빌드 실패
+```bash
+# 해결책: Docker Buildx 설정
+docker buildx create --use
+docker buildx inspect --bootstrap
+```
+
+**문제**: 빌드 캐시 문제
+```bash
+# 해결책: 캐시 없이 빌드
+docker build --no-cache -t atlantis .
+```
+
+---
+
+## 거버넌스 빠른 참조
+
+### 검증 계층
+
+1. **Pre-commit (로컬)**: 커밋 전 빠른 검증
+   - `terraform fmt`
+   - Secrets 스캔
+   - `terraform validate`
+   - OPA 정책 검증
+
+2. **Pre-push (로컬)**: 푸시 전 거버넌스 검증
+   - 필수 태그 검증
+   - KMS 암호화 검증
+   - 네이밍 규약 검증
+
+3. **Atlantis (서버)**: PR 생성 시 자동 검증
+   - `terraform plan`
+   - Conftest 정책 검증
+   - 비용 분석 (Infracost)
+
+4. **GitHub Actions (CI)**: PR 검증 및 머지 후 배포
+   - tfsec 보안 스캔
+   - Checkov 규정 준수 검증
+   - Terraform apply 및 배포
+
+### 거버넌스 규칙
+
+**필수 태그** (모든 리소스):
+- `Owner`: 소유자 이메일
+- `CostCenter`: 비용 센터
+- `Environment`: dev/staging/prod
+- `Lifecycle`: 리소스 수명주기
+- `DataClass`: 데이터 분류
+- `Service`: 서비스 이름
+
+**KMS 암호화** (필수):
+- 모든 암호화는 고객 관리형 KMS 키 사용
+- AES256 사용 금지 (AWS 관리형 키)
+
+**네이밍 규약**:
+- 리소스: `kebab-case` (예: `ecr-atlantis`)
+- Variables/Locals: `snake_case` (예: `aws_region`)
+
+**보안**:
+- 하드코딩된 시크릿 금지
+- Public 리소스는 명시적 승인 필요
+- 보안 그룹은 최소 권한 원칙
+
+자세한 내용은 [governance/README.md](../governance/README.md)를 참고하세요.
 
 ---
 
 ## 📚 관련 문서
 
-- [OPA Policy Integration Guide](../docs/guides/opa-policy-integration-guide.md)
-- [Atlantis Setup Guide](../docs/guides/atlantis-setup-guide.md)
-- [Infrastructure Governance](../docs/governance/infrastructure_governance.md)
-- [Detailed Scripts Analysis](../claudedocs/scripts-analysis.md) (Claude 분석 보고서)
+- [Governance README](../governance/README.md) - 거버넌스 검증 상세 가이드
+- [Atlantis Scripts](../terraform/environments/prod/atlantis/scripts/README.md) - Atlantis 운영 스크립트 상세 문서
 
 ---
 
-## 🛠️ 트러블슈팅
-
-### Git hooks가 실행되지 않음
-
-```bash
-# hooks 재설치
-./scripts/setup-hooks.sh
-
-# hook 파일 권한 확인
-ls -la .git/hooks/pre-commit
-ls -la .git/hooks/pre-push
-
-# 실행 권한 부여
-chmod +x .git/hooks/pre-commit
-chmod +x .git/hooks/pre-push
-```
-
-### Conftest not found
-
-```bash
-# macOS
-brew install conftest
-
-# Linux
-CONFTEST_VERSION=0.49.1
-curl -L "https://github.com/open-policy-agent/conftest/releases/download/v${CONFTEST_VERSION}/conftest_${CONFTEST_VERSION}_Linux_x86_64.tar.gz" \
-  | tar xz -C /tmp
-sudo mv /tmp/conftest /usr/local/bin/
-```
-
-### Terraform not initialized
-
-```bash
-cd terraform/your-module
-terraform init
-```
-
----
-
-**Last Updated**: 2025-11-21
+**Last Updated**: 2025-11-24
+**Version**: 3.0.0 (Atlantis 스크립트 이동 및 docs 패키지 제거)

@@ -1,17 +1,22 @@
 # SQS Queue Module
 # Creates an SQS queue with optional DLQ, KMS encryption, and CloudWatch monitoring
 
-locals {
-  required_tags = {
-    Environment = var.environment
-    Service     = var.service
-    Team        = var.team
-    Owner       = var.owner
-    CostCenter  = var.cost_center
-    ManagedBy   = "Terraform"
-    Project     = var.project
-  }
+# Common Tags Module
+module "tags" {
+  source = "../common-tags"
 
+  environment = var.environment
+  service     = var.service
+  team        = var.team
+  owner       = var.owner
+  cost_center = var.cost_center
+  project     = var.project
+  data_class  = var.data_class
+
+  additional_tags = var.additional_tags
+}
+
+locals {
   # Generate queue name with .fifo suffix for FIFO queues
   queue_name     = var.fifo_queue ? "${var.name}.fifo" : var.name
   dlq_queue_name = var.fifo_queue ? "${var.name}-dlq.fifo" : "${var.name}-dlq"
@@ -33,14 +38,13 @@ resource "aws_sqs_queue" "dlq" {
   message_retention_seconds = var.dlq_message_retention_seconds
 
   tags = merge(
-    local.required_tags,
+    module.tags.tags,
     {
       Name         = local.dlq_queue_name
       QueueType    = var.fifo_queue ? "FIFO" : "Standard"
       QueueRole    = "DLQ"
       KMSEncrypted = "true"
-    },
-    var.additional_tags
+    }
   )
 }
 
@@ -78,15 +82,14 @@ resource "aws_sqs_queue" "this" {
   fifo_throughput_limit = var.fifo_queue ? var.fifo_throughput_limit : null
 
   tags = merge(
-    local.required_tags,
+    module.tags.tags,
     {
       Name         = local.queue_name
       QueueType    = var.fifo_queue ? "FIFO" : "Standard"
       QueueRole    = "Main"
       KMSEncrypted = "true"
       DLQEnabled   = var.enable_dlq ? "true" : "false"
-    },
-    var.additional_tags
+    }
   )
 }
 
@@ -121,7 +124,7 @@ resource "aws_cloudwatch_metric_alarm" "message-age" {
   ok_actions    = var.alarm_ok_actions
 
   tags = merge(
-    local.required_tags,
+    module.tags.tags,
     {
       Name      = "${local.queue_name}-message-age-high"
       AlarmType = "MessageAge"
@@ -152,7 +155,7 @@ resource "aws_cloudwatch_metric_alarm" "messages-visible" {
   ok_actions    = var.alarm_ok_actions
 
   tags = merge(
-    local.required_tags,
+    module.tags.tags,
     {
       Name      = "${local.queue_name}-messages-visible-high"
       AlarmType = "MessagesVisible"
@@ -183,7 +186,7 @@ resource "aws_cloudwatch_metric_alarm" "dlq-messages" {
   ok_actions    = var.alarm_ok_actions
 
   tags = merge(
-    local.required_tags,
+    module.tags.tags,
     {
       Name      = "${local.dlq_queue_name}-messages-visible"
       AlarmType = "DLQMessages"

@@ -1,879 +1,476 @@
-# ECR (Elastic Container Registry) Terraform 구성
+# ECR 모듈
 
-AWS ECR을 사용한 컨테이너 이미지 레지스트리 인프라 구성입니다. 각 서비스별 ECR 리포지토리를 관리하며, KMS 암호화, 이미지 스캔, 라이프사이클 정책을 포함합니다.
+AWS Elastic Container Registry(ECR)를 생성하고 관리하는 Terraform 모듈입니다. KMS 암호화, 이미지 스캔, 라이프사이클 정책을 포함한 완전한 컨테이너 레지스트리 솔루션을 제공합니다.
 
-## 📋 목차
+## 주요 기능
 
-- [개요](#개요)
-- [구성 요소](#구성-요소)
-- [사용 방법](#사용-방법)
-- [서비스별 리포지토리](#서비스별-리포지토리)
-- [보안 고려사항](#보안-고려사항)
-- [관련 문서](#관련-문서)
+- **KMS 암호화**: 고객 관리형 KMS 키를 사용한 저장 데이터 암호화 (필수)
+- **이미지 스캔**: 푸시 시 자동 보안 취약점 스캔
+- **라이프사이클 관리**: 태그된/태그되지 않은 이미지 자동 정리
+- **리포지토리 정책**: 사용자 정의 또는 기본 계정 접근 정책
+- **SSM 파라미터**: 크로스 스택 참조를 위한 자동 SSM 파라미터 생성
+- **태그 관리**: common-tags 모듈과 통합된 표준화된 리소스 태깅
+- **유효성 검사**: 입력 값 검증으로 잘못된 구성 방지
 
----
+## 사용법
 
-## 개요
-
-이 디렉토리는 AWS ECR 리포지토리 인프라를 관리합니다. 각 서비스(FileFlow 등)는 독립적인 서브디렉토리로 구성되어 있으며, 표준화된 보안 및 관리 정책을 적용합니다.
-
-### 주요 특징
-
-- ✅ **KMS 암호화**: 모든 이미지는 고객 관리형 KMS 키로 암호화
-- ✅ **자동 이미지 스캔**: 푸시 시 보안 취약점 자동 스캔
-- ✅ **라이프사이클 관리**: 이미지 보존 정책으로 스토리지 비용 최적화
-- ✅ **크로스 스택 참조**: SSM Parameter Store를 통한 안전한 리소스 참조
-- ✅ **표준 태그**: 거버넌스 요구사항 준수 (Owner, CostCenter 등)
-
----
-
-## 구성 요소
-
-### 디렉토리 구조
-
-```
-terraform/ecr/
-├── README.md              # 이 파일
-├── CHANGELOG.md           # 변경 이력
-└── fileflow/              # FileFlow 서비스 ECR
-    ├── main.tf            # ECR 리포지토리, 라이프사이클 정책, 접근 정책
-    ├── variables.tf       # 입력 변수
-    ├── outputs.tf         # 출력값 및 SSM Parameter 저장
-    ├── locals.tf          # 로컬 변수 및 태그
-    ├── data.tf            # 데이터 소스 (KMS 키, Account ID)
-    └── provider.tf        # Provider 설정
-```
-
-### 서브디렉토리별 설명
-
-각 서비스는 독립적인 디렉토리로 관리됩니다:
-
-- **fileflow/**: FileFlow 애플리케이션용 ECR 리포지토리
-
----
-
-## 사용 방법
-
-### 1. 사전 요구사항
-
-- AWS CLI 구성 완료
-- Terraform >= 1.5.0
-- 적절한 IAM 권한 (ECR, KMS, SSM Parameter Store)
-- **의존성**: KMS 키가 SSM Parameter Store에 사전 등록되어야 함
-  - `/shared/kms/ecs-secrets-key-arn`
-
-### 2. 새 서비스 ECR 리포지토리 추가
-
-#### Step 1: 서브디렉토리 생성
-
-```bash
-# 새 서비스용 디렉토리 생성
-cd terraform/ecr
-mkdir <service-name>
-cd <service-name>
-```
-
-#### Step 2: Terraform 파일 작성
-
-기존 `fileflow/` 디렉토리를 템플릿으로 사용:
-
-```bash
-# fileflow 디렉토리를 템플릿으로 복사
-cp -r ../fileflow/* .
-
-# 서비스명에 맞게 수정
-# - locals.tf의 repository_name 변경
-# - variables.tf의 기본값 검토
-# - outputs.tf의 SSM Parameter 경로 변경
-```
-
-#### Step 3: 초기화 및 배포
-
-```bash
-terraform init
-terraform fmt
-terraform validate
-terraform plan
-terraform apply
-```
-
-### 3. 기존 리포지토리 관리
-
-#### FileFlow ECR 배포
-
-```bash
-cd terraform/ecr/fileflow
-terraform init
-terraform plan
-terraform apply
-```
-
-#### 이미지 푸시
-
-```bash
-# ECR 로그인
-aws ecr get-login-password --region ap-northeast-2 | \
-  docker login --username AWS --password-stdin <account-id>.dkr.ecr.ap-northeast-2.amazonaws.com
-
-# 이미지 빌드
-docker build -t fileflow:latest .
-
-# 이미지 태그
-docker tag fileflow:latest <account-id>.dkr.ecr.ap-northeast-2.amazonaws.com/fileflow:latest
-
-# 이미지 푸시
-docker push <account-id>.dkr.ecr.ap-northeast-2.amazonaws.com/fileflow:latest
-```
-
----
-
-## 서비스별 리포지토리
-
-### FileFlow ECR
-
-**위치**: `terraform/ecr/fileflow/`
-
-**설명**: FileFlow 애플리케이션 컨테이너 이미지 저장소
-
-**주요 리소스**:
-- **ECR Repository**: `fileflow`
-- **암호화**: KMS (고객 관리형 키)
-- **이미지 스캔**: 활성화 (푸시 시)
-- **라이프사이클**:
-  - `v*` 태그 이미지: 최대 30개 유지
-  - 언태그 이미지: 7일 후 자동 삭제
-
-**Variables**:
-
-| 변수 | 설명 | 기본값 | 타입 |
-|------|------|--------|------|
-| `aws_region` | AWS 리전 | `ap-northeast-2` | string |
-| `environment` | 환경 이름 | `prod` | string |
-| `owner` | 리소스 소유자 | `fbtkdals2@naver.com` | string |
-| `cost_center` | 비용 센터 | `engineering` | string |
-| `lifecycle_stage` | 라이프사이클 단계 | `production` | string |
-| `data_class` | 데이터 분류 | `confidential` | string |
-| `image_tag_mutability` | 이미지 태그 변경 가능 여부 | `MUTABLE` | string |
-| `scan_on_push` | 푸시 시 이미지 스캔 활성화 | `true` | bool |
-| `lifecycle_policy_max_image_count` | 최대 이미지 개수 | `30` | number |
-
-**Outputs**:
-
-| 출력 | 설명 |
-|------|------|
-| `repository_url` | ECR 리포지토리 URL |
-| `repository_arn` | ECR 리포지토리 ARN |
-| `repository_name` | ECR 리포지토리 이름 |
-| `registry_id` | 레지스트리 ID |
-
-**SSM Parameter Exports**:
-- `/shared/ecr/fileflow-repository-url`: 리포지토리 URL (다른 스택에서 참조용)
-
----
-
-## 보안 고려사항
-
-### 1. KMS 암호화
-
-모든 ECR 리포지토리는 **고객 관리형 KMS 키**로 암호화됩니다:
+### 기본 사용
 
 ```hcl
-encryption_configuration {
-  encryption_type = "KMS"
-  kms_key         = data.aws_ssm_parameter.ecs-secrets-key-arn.value
+module "app_ecr" {
+  source = "../../modules/ecr"
+
+  name        = "api-server"
+  kms_key_arn = aws_kms_key.ecr.arn
+
+  # 필수 태그
+  environment  = "prod"
+  service_name = "api-server"
+  team         = "platform-team"
+  owner        = "platform@example.com"
+  cost_center  = "engineering"
 }
 ```
 
-**중요**: KMS 키는 사전에 생성되어 SSM Parameter Store에 저장되어야 합니다.
-
-### 2. 이미지 스캔
-
-푸시 시 자동 이미지 스캔이 활성화되어 있습니다:
+### 고급 구성
 
 ```hcl
-image_scanning_configuration {
-  scan_on_push = true
+module "advanced_ecr" {
+  source = "../../modules/ecr"
+
+  name                 = "data-processor"
+  kms_key_arn          = aws_kms_key.ecr.arn
+  image_tag_mutability = "IMMUTABLE"
+  scan_on_push         = true
+
+  # 태그 정보
+  environment  = "prod"
+  service_name = "data-processor"
+  team         = "data-team"
+  owner        = "data-team@example.com"
+  cost_center  = "data-analytics"
+  project      = "ml-pipeline"
+  data_class   = "confidential"
+
+  # 라이프사이클 정책 커스터마이징
+  enable_lifecycle_policy     = true
+  max_image_count             = 50
+  lifecycle_tag_prefixes      = ["v", "release", "stable"]
+  untagged_image_expiry_days  = 3
+
+  # 추가 태그
+  additional_tags = {
+    Component   = "ml-training"
+    ManagedBy   = "terraform"
+  }
 }
 ```
 
-**권장사항**:
-- 스캔 결과를 정기적으로 검토
-- HIGH 및 CRITICAL 취약점은 즉시 수정
-- 취약점이 있는 이미지는 프로덕션 배포 금지
-
-### 3. 리포지토리 접근 정책
-
-기본적으로 **동일 AWS 계정 내**에서만 접근 가능합니다:
+### 사용자 정의 리포지토리 정책
 
 ```hcl
-Principal = {
-  AWS = [
-    "arn:aws:iam::${account_id}:root"
-  ]
-}
-```
+module "cross_account_ecr" {
+  source = "../../modules/ecr"
 
-**크로스 계정 접근이 필요한 경우**:
-- Repository Policy에 대상 계정 ARN 추가
-- 대상 계정의 IAM Role/User에 ECR 권한 부여
+  name        = "shared-images"
+  kms_key_arn = aws_kms_key.ecr.arn
 
-### 4. 라이프사이클 정책
+  # 필수 태그
+  environment  = "prod"
+  service_name = "shared-registry"
+  team         = "platform-team"
+  owner        = "devops@example.com"
+  cost_center  = "shared-services"
 
-스토리지 비용 최적화를 위한 자동 이미지 정리:
-
-**정책 1**: 태그된 이미지 (`v*`)
-- 최대 30개 유지
-- 오래된 이미지부터 자동 삭제
-
-**정책 2**: 언태그 이미지
-- 7일 후 자동 삭제
-
-**권장사항**:
-- 프로덕션 이미지는 반드시 시맨틱 버전 태그 사용 (예: `v1.0.0`)
-- 빌드 중간 이미지는 태그하지 않음 (자동 정리됨)
-
-### 5. SSM Parameter 크로스 스택 참조
-
-직접 리소스 참조 대신 SSM Parameter를 사용합니다:
-
-```hcl
-# 다른 스택에서 ECR URL 참조
-data "aws_ssm_parameter" "fileflow_ecr" {
-  name = "/shared/ecr/fileflow-repository-url"
-}
-```
-
-**장점**:
-- 스택 간 직접 의존성 제거
-- 독립적인 배포 가능
-- 순환 의존성 방지
-
-### 6. IAM 권한 최소화
-
-**ECR 접근 권한은 최소한으로 제한**:
-
-```hcl
-# ❌ 잘못된 예: 과도한 권한
-{
-  "Effect": "Allow",
-  "Action": "ecr:*",
-  "Resource": "*"
-}
-
-# ✅ 올바른 예: 필요한 권한만 부여
-{
-  "Effect": "Allow",
-  "Action": [
-    "ecr:GetAuthorizationToken",
-    "ecr:BatchCheckLayerAvailability",
-    "ecr:GetDownloadUrlForLayer",
-    "ecr:BatchGetImage"
-  ],
-  "Resource": "arn:aws:ecr:ap-northeast-2:ACCOUNT_ID:repository/fileflow"
-}
-```
-
-**ECS Task Role 권한** (Pull만 필요):
-```bash
-# IAM 정책 확인
-aws iam get-role-policy \
-  --role-name ecs-task-execution-role \
-  --policy-name ecr-pull-policy \
-  --region ap-northeast-2
-```
-
-**CI/CD Pipeline 권한** (Push 필요):
-```hcl
-resource "aws_iam_policy" "ecr_push" {
-  name = "ecr-push-policy"
-
-  policy = jsonencode({
+  # 크로스 계정 접근을 위한 사용자 정의 정책
+  enable_default_policy = false
+  repository_policy = jsonencode({
     Version = "2012-10-17"
     Statement = [
       {
+        Sid    = "AllowCrossAccountPull"
         Effect = "Allow"
+        Principal = {
+          AWS = [
+            "arn:aws:iam::111111111111:root",
+            "arn:aws:iam::222222222222:root"
+          ]
+        }
         Action = [
-          "ecr:GetAuthorizationToken"
+          "ecr:GetDownloadUrlForLayer",
+          "ecr:BatchGetImage",
+          "ecr:BatchCheckLayerAvailability"
         ]
-        Resource = "*"
-      },
-      {
-        Effect = "Allow"
-        Action = [
-          "ecr:PutImage",
-          "ecr:InitiateLayerUpload",
-          "ecr:UploadLayerPart",
-          "ecr:CompleteLayerUpload"
-        ]
-        Resource = "arn:aws:ecr:ap-northeast-2:ACCOUNT_ID:repository/fileflow"
       }
     ]
   })
 }
 ```
 
-### 7. 취약점 스캔 모니터링
+### 최소 구성 (개발 환경)
 
-**스캔 결과 확인 및 알람 설정**:
+```hcl
+module "dev_ecr" {
+  source = "../../modules/ecr"
+
+  name        = "dev-app"
+  kms_key_arn = aws_kms_key.ecr.arn
+
+  environment  = "dev"
+  service_name = "dev-app"
+  team         = "dev-team"
+  owner        = "dev@example.com"
+  cost_center  = "development"
+
+  # 개발 환경 설정
+  image_tag_mutability       = "MUTABLE"
+  max_image_count            = 10
+  untagged_image_expiry_days = 1
+}
+```
+
+## 입력 변수
+
+### 필수 변수
+
+| 이름 | 타입 | 설명 | 제약사항 |
+|------|------|------|----------|
+| `name` | string | ECR 리포지토리 이름 | 소문자/숫자로 시작, 최대 256자 |
+| `kms_key_arn` | string | ECR 암호화용 KMS 키 ARN | 유효한 KMS ARN 형식 |
+| `environment` | string | 환경 이름 | dev, staging, prod 중 하나 |
+| `service_name` | string | 서비스 이름 | kebab-case 형식 |
+| `team` | string | 담당 팀 | kebab-case 형식 |
+| `owner` | string | 리소스 소유자 | 이메일 또는 kebab-case ID |
+| `cost_center` | string | 비용 센터 | kebab-case 형식 |
+
+### 선택 변수 (태그)
+
+| 이름 | 타입 | 기본값 | 설명 |
+|------|------|--------|------|
+| `project` | string | "infrastructure" | 프로젝트 이름 |
+| `data_class` | string | "confidential" | 데이터 분류 (confidential, internal, public) |
+| `additional_tags` | map(string) | {} | 추가 태그 맵 |
+
+### 선택 변수 (리포지토리 구성)
+
+| 이름 | 타입 | 기본값 | 설명 |
+|------|------|--------|------|
+| `image_tag_mutability` | string | "MUTABLE" | 이미지 태그 변경 가능 여부 (MUTABLE, IMMUTABLE) |
+| `scan_on_push` | bool | true | 푸시 시 이미지 스캔 활성화 |
+
+### 선택 변수 (라이프사이클 정책)
+
+| 이름 | 타입 | 기본값 | 설명 | 제약사항 |
+|------|------|--------|------|----------|
+| `enable_lifecycle_policy` | bool | true | 라이프사이클 정책 활성화 | - |
+| `max_image_count` | number | 30 | 유지할 최대 태그 이미지 수 | 1-1000 |
+| `lifecycle_tag_prefixes` | list(string) | ["v"] | 라이프사이클 정책 태그 접두사 | - |
+| `untagged_image_expiry_days` | number | 7 | 태그 없는 이미지 삭제 일수 | 1-365 |
+
+### 선택 변수 (리포지토리 정책)
+
+| 이름 | 타입 | 기본값 | 설명 |
+|------|------|--------|------|
+| `repository_policy` | string | null | 사용자 정의 리포지토리 정책 JSON |
+| `enable_default_policy` | bool | true | 기본 계정 접근 정책 활성화 |
+
+### 선택 변수 (크로스 스택 참조)
+
+| 이름 | 타입 | 기본값 | 설명 |
+|------|------|--------|------|
+| `create_ssm_parameter` | bool | true | SSM 파라미터 생성 여부 |
+
+## 출력 값
+
+| 이름 | 설명 | 사용 예시 |
+|------|------|-----------|
+| `repository_url` | ECR 리포지토리 URL | Docker 푸시/풀 작업 |
+| `repository_arn` | ECR 리포지토리 ARN | IAM 정책 참조 |
+| `repository_name` | ECR 리포지토리 이름 | 스크립트 참조 |
+| `registry_id` | 레지스트리 ID (AWS 계정 ID) | 크로스 계정 설정 |
+| `ssm_parameter_arn` | SSM 파라미터 ARN | 크로스 스택 참조 |
+
+## 출력 값 사용 예시
+
+```hcl
+# Docker 빌드 및 푸시
+output "ecr_login_command" {
+  value = "aws ecr get-login-password --region ${var.region} | docker login --username AWS --password-stdin ${module.app_ecr.repository_url}"
+}
+
+# ECS 태스크 정의에서 이미지 참조
+resource "aws_ecs_task_definition" "app" {
+  container_definitions = jsonencode([{
+    name  = "app"
+    image = "${module.app_ecr.repository_url}:latest"
+  }])
+}
+
+# 다른 스택에서 SSM 파라미터로 참조
+data "aws_ssm_parameter" "app_ecr_url" {
+  name = "/shared/ecr/api-server-repository-url"
+}
+```
+
+## 거버넌스 준수
+
+이 모듈은 프로젝트의 거버넌스 표준을 준수합니다:
+
+### 필수 태그
+- `Owner`: 리소스 소유자 식별
+- `CostCenter`: 비용 추적 및 청구
+- `Environment`: 환경 분리 (dev/staging/prod)
+- `Lifecycle`: 리소스 수명 주기 관리
+- `DataClass`: 데이터 분류 수준
+- `Service`: 서비스 식별
+
+### KMS 암호화
+- 모든 ECR 리포지토리는 고객 관리형 KMS 키로 암호화됩니다
+- AES256 암호화는 사용하지 않습니다
+- KMS 키는 자동 로테이션이 활성화되어야 합니다
+
+### 네이밍 규칙
+- 리포지토리 이름: kebab-case (예: `api-server`, `data-processor`)
+- 변수 및 로컬: snake_case (예: `kms_key_arn`, `service_name`)
+
+### 보안 스캔
+- 푸시 시 자동 이미지 스캔 활성화 (기본값)
+- 취약점 발견 시 알림 설정 권장
+
+## 라이프사이클 정책 상세
+
+모듈은 두 가지 라이프사이클 규칙을 자동으로 생성합니다:
+
+### 규칙 1: 태그된 이미지 정리
+- **우선순위**: 1
+- **동작**: 지정된 태그 접두사를 가진 이미지 중 `max_image_count`를 초과하는 오래된 이미지 삭제
+- **기본값**: 30개 이미지 유지
+- **태그 접두사**: `["v"]` (커스터마이징 가능)
+
+### 규칙 2: 태그 없는 이미지 정리
+- **우선순위**: 2
+- **동작**: 지정된 일수 이상 된 태그 없는 이미지 삭제
+- **기본값**: 7일 후 삭제
+
+### 라이프사이클 정책 비활성화
+
+```hcl
+module "no_lifecycle_ecr" {
+  source = "../../modules/ecr"
+
+  name        = "long-term-storage"
+  kms_key_arn = aws_kms_key.ecr.arn
+
+  environment  = "prod"
+  service_name = "archive"
+  team         = "ops-team"
+  owner        = "ops@example.com"
+  cost_center  = "operations"
+
+  enable_lifecycle_policy = false
+}
+```
+
+## 리포지토리 정책
+
+### 기본 정책 (Same Account)
+`enable_default_policy = true`일 때, 동일 AWS 계정 내에서 전체 ECR 작업을 허용하는 정책이 자동 생성됩니다:
+
+- `ecr:GetDownloadUrlForLayer`
+- `ecr:BatchGetImage`
+- `ecr:BatchCheckLayerAvailability`
+- `ecr:PutImage`
+- `ecr:InitiateLayerUpload`
+- `ecr:UploadLayerPart`
+- `ecr:CompleteLayerUpload`
+
+### 사용자 정의 정책
+크로스 계정 접근이나 특정 권한 제어가 필요한 경우 `repository_policy` 변수로 사용자 정의 정책을 제공합니다.
+
+## SSM 파라미터 통합
+
+`create_ssm_parameter = true`일 때, 모듈은 자동으로 SSM 파라미터를 생성합니다:
+
+- **파라미터 이름**: `/shared/ecr/{repository-name}-repository-url`
+- **값**: ECR 리포지토리 URL
+- **타입**: String
+- **용도**: 크로스 스택 참조, 외부 스크립트에서 접근
+
+```bash
+# CLI로 리포지토리 URL 조회
+aws ssm get-parameter --name "/shared/ecr/api-server-repository-url" --query "Parameter.Value" --output text
+```
+
+## 운영 가이드
+
+### 이미지 푸시 워크플로우
+
+```bash
+# 1. ECR 로그인
+aws ecr get-login-password --region ap-northeast-2 | \
+  docker login --username AWS --password-stdin ${REPOSITORY_URL}
+
+# 2. 이미지 빌드
+docker build -t api-server:v1.2.3 .
+
+# 3. 이미지 태그
+docker tag api-server:v1.2.3 ${REPOSITORY_URL}:v1.2.3
+docker tag api-server:v1.2.3 ${REPOSITORY_URL}:latest
+
+# 4. 이미지 푸시
+docker push ${REPOSITORY_URL}:v1.2.3
+docker push ${REPOSITORY_URL}:latest
+```
+
+### 이미지 스캔 결과 조회
 
 ```bash
 # 스캔 결과 확인
 aws ecr describe-image-scan-findings \
-  --repository-name fileflow \
-  --image-id imageTag=latest \
-  --region ap-northeast-2 \
-  --query 'imageScanFindings.{Critical:findingSeverityCounts.CRITICAL,High:findingSeverityCounts.HIGH,Medium:findingSeverityCounts.MEDIUM}'
-
-# CRITICAL/HIGH 취약점만 필터링
-aws ecr describe-image-scan-findings \
-  --repository-name fileflow \
-  --image-id imageTag=latest \
-  --region ap-northeast-2 \
-  --query 'imageScanFindings.findings[?severity==`CRITICAL` || severity==`HIGH`]'
-```
-
-**EventBridge를 통한 자동 알람**:
-```hcl
-resource "aws_cloudwatch_event_rule" "ecr_scan_finding" {
-  name        = "ecr-critical-vulnerability-found"
-  description = "Trigger when ECR finds CRITICAL vulnerabilities"
-
-  event_pattern = jsonencode({
-    source      = ["aws.ecr"]
-    detail-type = ["ECR Image Scan"]
-    detail = {
-      finding-severity-counts = {
-        CRITICAL = [{
-          numeric = [">", 0]
-        }]
-      }
-    }
-  })
-}
-
-resource "aws_cloudwatch_event_target" "sns" {
-  rule      = aws_cloudwatch_event_rule.ecr_scan_finding.name
-  target_id = "SendToSNS"
-  arn       = aws_sns_topic.security_alerts.arn
-}
-```
-
-**CI/CD에서 취약점 검증**:
-```yaml
-# GitHub Actions 예시
-- name: Scan for vulnerabilities
-  run: |
-    SCAN_FINDINGS=$(aws ecr describe-image-scan-findings \
-      --repository-name fileflow \
-      --image-id imageTag=${{ github.sha }} \
-      --region ap-northeast-2 \
-      --query 'imageScanFindings.findingSeverityCounts.CRITICAL')
-
-    if [ "$SCAN_FINDINGS" != "null" ] && [ "$SCAN_FINDINGS" -gt 0 ]; then
-      echo "❌ CRITICAL vulnerabilities found!"
-      exit 1
-    fi
-```
-
-### 8. 이미지 서명 및 검증
-
-**Docker Content Trust (DCT) 활성화**:
-
-```bash
-# 이미지 서명 활성화
-export DOCKER_CONTENT_TRUST=1
-export DOCKER_CONTENT_TRUST_SERVER=https://notary.docker.io
-
-# 서명된 이미지 Push
-docker push 646886795421.dkr.ecr.ap-northeast-2.amazonaws.com/fileflow:v1.0.0
-
-# 서명 검증
-docker trust inspect 646886795421.dkr.ecr.ap-northeast-2.amazonaws.com/fileflow:v1.0.0
-```
-
-**AWS Signer를 통한 이미지 서명** (엔터프라이즈):
-```hcl
-resource "aws_signer_signing_profile" "ecr" {
-  platform_id = "Notation-OCI-SHA384-ECDSA"
-  name        = "ecr-image-signing"
-
-  signature_validity_period {
-    value = 5
-    type  = "YEARS"
-  }
-}
-
-# ECS Task Definition에서 서명된 이미지만 허용
-resource "aws_ecs_task_definition" "app" {
-  container_definitions = jsonencode([{
-    image = "646886795421.dkr.ecr.ap-northeast-2.amazonaws.com/fileflow:v1.0.0@sha256:abc123..."
-  }])
-}
-```
-
-### 9. 감사 로그 및 모니터링
-
-**CloudTrail을 통한 ECR API 호출 추적**:
-
-```bash
-# ECR 이미지 Pull 이력
-aws cloudtrail lookup-events \
-  --lookup-attributes AttributeKey=ResourceType,AttributeValue=AWS::ECR::Repository \
-  --region ap-northeast-2 \
-  --max-results 50 \
-  --query 'Events[?EventName==`BatchGetImage`]'
-
-# ECR 이미지 Push 이력
-aws cloudtrail lookup-events \
-  --lookup-attributes AttributeKey=ResourceType,AttributeValue=AWS::ECR::Repository \
-  --region ap-northeast-2 \
-  --max-results 50 \
-  --query 'Events[?EventName==`PutImage`]'
-
-# 리포지토리 삭제 시도
-aws cloudtrail lookup-events \
-  --lookup-attributes AttributeKey=ResourceType,AttributeValue=AWS::ECR::Repository \
-  --region ap-northeast-2 \
-  --max-results 50 \
-  --query 'Events[?EventName==`DeleteRepository`]'
-```
-
-**CloudWatch Alarms for 비정상 활동**:
-```hcl
-resource "aws_cloudwatch_log_metric_filter" "ecr_unauthorized_access" {
-  name           = "ecr-unauthorized-access"
-  log_group_name = "/aws/cloudtrail/logs"
-
-  pattern = "{ ($.eventSource = ecr.amazonaws.com) && ($.errorCode = AccessDenied) }"
-
-  metric_transformation {
-    name      = "ECRUnauthorizedAttempts"
-    namespace = "ECR/Security"
-    value     = "1"
-  }
-}
-
-resource "aws_cloudwatch_metric_alarm" "ecr_unauthorized_access" {
-  alarm_name          = "ecr-unauthorized-access-attempts"
-  comparison_operator = "GreaterThanThreshold"
-  evaluation_periods  = "1"
-  metric_name         = "ECRUnauthorizedAttempts"
-  namespace           = "ECR/Security"
-  period              = "300"
-  statistic           = "Sum"
-  threshold           = "5"
-  alarm_description   = "ECR unauthorized access attempts > 5 in 5 minutes"
-  alarm_actions       = [aws_sns_topic.security_alerts.arn]
-}
-```
-
-### 10. 보안 체크리스트
-
-#### 배포 전 필수 확인
-- [ ] **KMS 암호화**: 모든 리포지토리가 고객 관리형 KMS 키 사용
-- [ ] **이미지 스캔**: `scan_on_push = true` 활성화
-- [ ] **IAM 권한**: 최소 권한 원칙 적용 (불필요한 `ecr:*` 제거)
-- [ ] **리포지토리 정책**: 필요한 계정/서비스만 접근 허용
-- [ ] **라이프사이클 정책**: 자동 이미지 정리 정책 설정
-- [ ] **이미지 불변성**: `image_tag_mutability = "IMMUTABLE"` (프로덕션)
-
-#### 운영 중 주기적 점검
-- [ ] **취약점 스캔**: CRITICAL/HIGH 취약점 즉시 수정 (매주)
-- [ ] **CloudTrail 로그**: 비정상적인 Push/Pull 활동 확인 (매주)
-- [ ] **IAM Access Analyzer**: 과도한 ECR 권한 검출 (매월)
-- [ ] **오래된 이미지**: 라이프사이클 정책 작동 확인 (매월)
-- [ ] **크로스 계정 접근**: 리포지토리 정책 검토 (분기별)
-- [ ] **KMS 키 회전**: 자동 키 회전 활성화 상태 확인 (분기별)
-
-#### CI/CD 파이프라인 보안
-- [ ] **이미지 태그**: 시맨틱 버전 태그 사용 (`v1.0.0`, `v1.0.1`)
-- [ ] **취약점 검증**: 배포 전 CRITICAL 취약점 차단
-- [ ] **이미지 서명**: Docker Content Trust 또는 AWS Signer 사용
-- [ ] **Digest 고정**: 프로덕션 배포 시 SHA256 digest 사용
-- [ ] **비밀 정보**: Dockerfile에 secrets/credentials 포함 금지
-- [ ] **베이스 이미지**: 신뢰할 수 있는 공식 이미지만 사용
-
-#### 보안 사고 대응
-- [ ] **격리 절차**: 취약한 이미지 즉시 태그 제거 또는 삭제
-- [ ] **Rollback**: 이전 안전한 이미지로 즉시 롤백
-- [ ] **통지**: 보안팀 및 관련 팀에 즉시 알림
-- [ ] **조사**: CloudTrail 로그 분석 및 영향 범위 파악
-
----
-
-## 리소스 태그
-
-모든 리소스는 다음 필수 태그를 포함합니다:
-
-```hcl
-tags = merge(
-  local.required_tags,
-  {
-    Name      = "ecr-${local.repository_name}"
-    Component = "container-registry"
-  }
-)
-```
-
-**필수 태그** (거버넌스 요구사항):
-- `Owner`: 리소스 소유자 (이메일)
-- `CostCenter`: 비용 센터
-- `Environment`: 환경 (dev, staging, prod)
-- `Lifecycle`: 라이프사이클 단계
-- `DataClass`: 데이터 분류 수준
-- `Service`: 서비스 이름
-
----
-
-## Troubleshooting
-
-### 1. Docker 이미지 푸시 실패
-
-**증상**: `denied: User: ... is not authorized to perform: ecr:PutImage`
-
-**확인 방법**:
-```bash
-# ECR 리포지토리 존재 확인
-aws ecr describe-repositories \
-  --repository-names fileflow \
-  --region ap-northeast-2
-
-# 현재 Docker 로그인 상태 확인
-cat ~/.docker/config.json
-```
-
-**해결 방법**:
-
-1. **ECR 로그인 다시 수행** (12시간 유효):
-   ```bash
-   aws ecr get-login-password --region ap-northeast-2 | \
-     docker login --username AWS --password-stdin \
-     646886795421.dkr.ecr.ap-northeast-2.amazonaws.com
-   ```
-
-2. **IAM 권한 확인**:
-   필요한 권한:
-   - `ecr:GetAuthorizationToken`
-   - `ecr:BatchCheckLayerAvailability`
-   - `ecr:InitiateLayerUpload`
-   - `ecr:UploadLayerPart`
-   - `ecr:CompleteLayerUpload`
-   - `ecr:PutImage`
-
-3. **네트워크 연결 확인**:
-   ```bash
-   # ECR 엔드포인트 연결 테스트
-   telnet 646886795421.dkr.ecr.ap-northeast-2.amazonaws.com 443
-   ```
-
-4. **이미지 태그 형식 확인**:
-   ```bash
-   # 올바른 태그 형식
-   docker tag myapp:latest 646886795421.dkr.ecr.ap-northeast-2.amazonaws.com/fileflow:latest
-   docker push 646886795421.dkr.ecr.ap-northeast-2.amazonaws.com/fileflow:latest
-   ```
-
-### 2. ECS Task에서 이미지 풀링 실패
-
-**증상**: `CannotPullContainerError: Error response from daemon`
-
-**확인 방법**:
-```bash
-# ECS Task 실패 이유 확인
-aws ecs describe-tasks \
-  --cluster <cluster-name> \
-  --tasks <task-id> \
-  --region ap-northeast-2 \
-  --query 'tasks[0].stoppedReason'
-
-# Task Execution Role 확인
-aws iam get-role \
-  --role-name <task-execution-role> \
-  --query 'Role.AssumeRolePolicyDocument'
-```
-
-**해결 방법**:
-
-1. **Task Execution Role에 ECR 권한 추가**:
-   ```json
-   {
-     "Effect": "Allow",
-     "Action": [
-       "ecr:GetAuthorizationToken",
-       "ecr:BatchCheckLayerAvailability",
-       "ecr:GetDownloadUrlForLayer",
-       "ecr:BatchGetImage"
-     ],
-     "Resource": "*"
-   }
-   ```
-
-2. **KMS 키 복호화 권한 추가**:
-   ```json
-   {
-     "Effect": "Allow",
-     "Action": [
-       "kms:Decrypt"
-     ],
-     "Resource": "arn:aws:kms:ap-northeast-2:646886795421:key/*"
-   }
-   ```
-
-3. **VPC 엔드포인트 확인** (Private subnet 사용 시):
-   ```bash
-   # ECR VPC 엔드포인트 확인 (API 및 DKR 모두 필요)
-   aws ec2 describe-vpc-endpoints \
-     --filters "Name=service-name,Values=com.amazonaws.ap-northeast-2.ecr.api" \
-     --region ap-northeast-2
-
-   aws ec2 describe-vpc-endpoints \
-     --filters "Name=service-name,Values=com.amazonaws.ap-northeast-2.ecr.dkr" \
-     --region ap-northeast-2
-
-   # S3 Gateway 엔드포인트 (이미지 레이어 저장)
-   aws ec2 describe-vpc-endpoints \
-     --filters "Name=service-name,Values=com.amazonaws.ap-northeast-2.s3" \
-     --region ap-northeast-2
-   ```
-
-4. **이미지 존재 여부 확인**:
-   ```bash
-   # 해당 태그의 이미지가 실제로 존재하는지 확인
-   aws ecr describe-images \
-     --repository-name fileflow \
-     --image-ids imageTag=latest \
-     --region ap-northeast-2
-   ```
-
-### 3. KMS 암호화 키 접근 권한 문제
-
-**증상**: `AccessDeniedException: User is not authorized to perform: kms:Decrypt`
-
-**확인 방법**:
-```bash
-# KMS 키 정보 확인
-aws kms describe-key \
-  --key-id alias/ecr-fileflow \
-  --region ap-northeast-2
-
-# KMS 키 정책 확인
-aws kms get-key-policy \
-  --key-id alias/ecr-fileflow \
-  --policy-name default \
+  --repository-name api-server \
+  --image-id imageTag=v1.2.3 \
   --region ap-northeast-2
 ```
 
-**해결 방법**:
+### 라이프사이클 정책 테스트
 
-1. **ECS Task Execution Role에 KMS 복호화 권한 추가**:
-   ```json
-   {
-     "Effect": "Allow",
-     "Action": [
-       "kms:Decrypt",
-       "kms:DescribeKey"
-     ],
-     "Resource": "arn:aws:kms:ap-northeast-2:646886795421:key/<key-id>"
-   }
-   ```
-
-2. **KMS 키 정책에 서비스 권한 확인**:
-   - ECR 서비스가 KMS 키를 사용할 수 있는지 확인
-   - ECS 서비스가 KMS 키를 복호화할 수 있는지 확인
-
-### 4. 이미지 스캔 실패 또는 누락
-
-**증상**: 이미지 푸시 후 스캔이 실행되지 않거나 실패함
-
-**확인 방법**:
-```bash
-# 스캔 상태 확인
-aws ecr describe-image-scan-findings \
-  --repository-name fileflow \
-  --image-id imageTag=latest \
-  --region ap-northeast-2
-
-# 스캔 이력 확인
-aws ecr describe-images \
-  --repository-name fileflow \
-  --image-ids imageTag=latest \
-  --region ap-northeast-2 \
-  --query 'imageDetails[0].imageScanStatus'
-```
-
-**해결 방법**:
-
-1. **수동으로 스캔 시작**:
-   ```bash
-   aws ecr start-image-scan \
-     --repository-name fileflow \
-     --image-id imageTag=latest \
-     --region ap-northeast-2
-   ```
-
-2. **Scan on Push 설정 확인**:
-   ```bash
-   aws ecr put-image-scanning-configuration \
-     --repository-name fileflow \
-     --image-scanning-configuration scanOnPush=true \
-     --region ap-northeast-2
-   ```
-
-3. **스캔 제한 확인**:
-   - ECR은 이미지당 하루 1회만 스캔 가능
-   - 24시간 후 다시 시도하거나 새 이미지 태그 사용
-
-### 5. 라이프사이클 정책이 작동하지 않음
-
-**증상**: 오래된 이미지가 자동 삭제되지 않음
-
-**확인 방법**:
 ```bash
 # 현재 라이프사이클 정책 확인
 aws ecr get-lifecycle-policy \
-  --repository-name fileflow \
+  --repository-name api-server \
   --region ap-northeast-2
 
-# 이미지 개수 확인
-aws ecr list-images \
-  --repository-name fileflow \
-  --region ap-northeast-2 \
-  --query 'length(imageIds)'
+# 라이프사이클 정책 미리보기 (실제 삭제 안 함)
+aws ecr get-lifecycle-policy-preview \
+  --repository-name api-server \
+  --region ap-northeast-2
 ```
 
-**해결 방법**:
+## 보안 고려사항
 
-1. **라이프사이클 정책 테스트**:
-   ```bash
-   # Dry run으로 정책 테스트 (실제 삭제 안 함)
-   aws ecr start-lifecycle-policy-preview \
-     --repository-name fileflow \
-     --region ap-northeast-2
-   ```
+### 이미지 취약점 스캔
+- 푸시 시 자동 스캔 활성화 (기본값)
+- 정기적으로 스캔 결과 검토 및 조치
+- 중요도 높은 취약점에 대한 CloudWatch 알람 설정 권장
 
-2. **정책 재적용**:
-   ```bash
-   # Terraform으로 정책 재설정
-   terraform apply -target=aws_ecr_lifecycle_policy.fileflow
-   ```
+### 접근 제어
+- 최소 권한 원칙 적용
+- 프로덕션 환경은 읽기 전용 접근 제한 고려
+- 크로스 계정 접근 시 조건 기반 정책 사용
 
-3. **이미지 태그 확인**:
-   - Untagged 이미지는 즉시 정리됨
-   - Tagged 이미지는 개수 기준(imageCountMoreThan: 10)으로 관리
+### 암호화
+- 고객 관리형 KMS 키 사용 필수
+- KMS 키 자동 로테이션 활성화 권장
+- 키 정책에서 필요한 서비스만 접근 허용
 
-### 6. 디스크 용량 부족 (빌드 환경)
+### 감사 로깅
+- CloudTrail로 ECR API 호출 추적
+- 이미지 푸시/풀 이벤트 모니터링
+- 의심스러운 활동 패턴 감지
 
-**증상**: `no space left on device` 오류 발생
+## 비용 최적화
 
-**확인 방법**:
+### 스토리지 비용
+- 라이프사이클 정책으로 불필요한 이미지 자동 삭제
+- `max_image_count` 및 `untagged_image_expiry_days` 적절히 조정
+- 환경별로 다른 보존 정책 적용
+
+### 데이터 전송 비용
+- 동일 리전 내 VPC 엔드포인트 사용 (NAT Gateway 비용 절감)
+- 크로스 리전 복제 시 비용 고려
+
+### 모니터링
+```hcl
+# CloudWatch 메트릭으로 리포지토리 크기 모니터링
+resource "aws_cloudwatch_metric_alarm" "ecr_size" {
+  alarm_name          = "ecr-${module.app_ecr.repository_name}-size"
+  comparison_operator = "GreaterThanThreshold"
+  evaluation_periods  = "1"
+  metric_name         = "RepositorySizeInBytes"
+  namespace           = "AWS/ECR"
+  period              = "86400"
+  statistic           = "Average"
+  threshold           = "10737418240"  # 10GB
+
+  dimensions = {
+    RepositoryName = module.app_ecr.repository_name
+  }
+}
+```
+
+## 문제 해결
+
+### 일반적인 문제
+
+**문제**: `RequestError: send request failed`
+- **원인**: 네트워크 연결 문제 또는 ECR 엔드포인트 접근 불가
+- **해결**: VPC 엔드포인트 설정 확인, 보안 그룹 규칙 검토
+
+**문제**: `denied: Your authorization token has expired`
+- **원인**: ECR 로그인 토큰 만료 (12시간 유효)
+- **해결**: `aws ecr get-login-password` 명령 재실행
+
+**문제**: `RepositoryPolicyNotFoundException`
+- **원인**: `enable_default_policy = false` 및 `repository_policy = null`
+- **해결**: 둘 중 하나는 활성화 필요
+
+**문제**: KMS 키 접근 거부
+- **원인**: ECR 서비스 주체가 KMS 키 정책에 없음
+- **해결**: KMS 키 정책에 `ecr.amazonaws.com` 서비스 주체 추가
+
+### 디버깅 팁
+
 ```bash
-# Docker 디스크 사용량 확인
-docker system df
+# ECR 리포지토리 상세 정보 확인
+aws ecr describe-repositories --repository-names api-server
 
-# 미사용 리소스 상세 확인
-docker system df -v
+# 이미지 목록 조회
+aws ecr list-images --repository-name api-server
+
+# 리포지토리 정책 확인
+aws ecr get-repository-policy --repository-name api-server
 ```
 
-**해결 방법**:
-```bash
-# 빌드 캐시 정리
-docker builder prune -f
+## 제약사항
 
-# 미사용 이미지 정리
-docker image prune -a -f
+- 리포지토리 이름은 생성 후 변경 불가 (재생성 필요)
+- KMS 키는 동일 리전에 있어야 함
+- 라이프사이클 정책은 최대 50개 규칙까지 지원
+- 이미지 태그는 최대 300개까지 가능
+- 동시 푸시 제한: 동일 태그에 대해 분당 10회
 
-# 전체 시스템 정리 (주의!)
-docker system prune -a -f --volumes
-```
+## 요구사항
 
-### 7. 일반적인 체크리스트
+### Terraform 버전
+- Terraform >= 1.0
 
-ECR 배포 및 사용 시 확인 사항:
+### 프로바이더 버전
+- AWS Provider >= 4.0
 
-- [ ] ECR 리포지토리 정상 생성됨
-- [ ] KMS 암호화 활성화됨 (`alias/ecr-fileflow`)
-- [ ] Scan on Push 활성화됨
-- [ ] 라이프사이클 정책 적용됨 (최근 10개 버전 유지)
-- [ ] SSM Parameter Store에 리포지토리 URL 저장됨
-- [ ] Docker 로그인 성공
-- [ ] 이미지 푸시 성공
-- [ ] 이미지 스캔 완료 (취약점 확인)
-- [ ] ECS Task에서 이미지 풀링 성공
-- [ ] Task Execution Role IAM 권한 올바르게 설정됨
+### 필수 리소스
+- 고객 관리형 KMS 키 (ECR 암호화용)
+- IAM 권한: ECR 리포지토리 생성, 정책 관리, SSM 파라미터 생성
 
----
+## 관련 모듈
 
-## Variables
+- `common-tags`: 표준화된 리소스 태깅
+- `kms`: KMS 키 생성 및 관리
+- `iam-role-policy`: ECR 접근을 위한 IAM 역할
 
-다음은 FileFlow ECR 리포지토리 구성에 사용되는 입력 변수입니다.
+## 참고 자료
 
-| Name | Description | Type | Default | Required |
-|------|-------------|------|---------|----------|
-| aws_region | AWS region for ECR repository | string | `ap-northeast-2` | No |
-| environment | Environment name (dev, staging, prod) | string | `prod` | No |
-| owner | Owner of the resources | string | `fbtkdals2@naver.com` | No |
-| cost_center | Cost center for billing | string | `engineering` | No |
-| lifecycle_stage | Lifecycle stage of the resources | string | `production` | No |
-| data_class | Data classification level | string | `confidential` | No |
-| image_tag_mutability | Image tag mutability setting (MUTABLE or IMMUTABLE) | string | `MUTABLE` | No |
-| scan_on_push | Enable image scanning on push | bool | `true` | No |
-| lifecycle_policy_max_image_count | Maximum number of images to keep | number | `30` | No |
+- [AWS ECR 공식 문서](https://docs.aws.amazon.com/ecr/)
+- [ECR 라이프사이클 정책](https://docs.aws.amazon.com/AmazonECR/latest/userguide/LifecyclePolicies.html)
+- [ECR 보안 모범 사례](https://docs.aws.amazon.com/AmazonECR/latest/userguide/security-best-practices.html)
 
----
+## 라이선스
 
-## Outputs
+이 모듈은 내부 인프라 프로젝트의 일부입니다.
 
-다음은 FileFlow ECR 리포지토리에서 출력되는 값들입니다.
+## 작성자
 
-| Name | Description |
-|------|-------------|
-| repository_url | The URL of the ECR repository |
-| repository_arn | The ARN of the ECR repository |
-| repository_name | The name of the ECR repository |
-| registry_id | The registry ID where the repository was created |
+Platform Team
 
-**SSM Parameter Store 참조**:
-- `/shared/ecr/fileflow-repository-url` - FileFlow ECR repository URL (크로스 스택 참조용)
+## 변경 이력
 
----
-
-## 관련 문서
-
-### 내부 문서
-- [Infrastructure Governance](../../docs/governance/infrastructure_governance.md) - 태그 표준, KMS 전략
-- [Tagging Standards](../../docs/governance/TAGGING_STANDARDS.md) - 필수 태그 요구사항
-- [KMS Strategy](../../docs/guides/kms-strategy.md) - KMS 키 관리 전략
-
-### AWS 공식 문서
-- [Amazon ECR User Guide](https://docs.aws.amazon.com/ecr/)
-- [ECR Encryption at Rest](https://docs.aws.amazon.com/AmazonECR/latest/userguide/encryption-at-rest.html)
-- [ECR Image Scanning](https://docs.aws.amazon.com/AmazonECR/latest/userguide/image-scanning.html)
-- [ECR Lifecycle Policies](https://docs.aws.amazon.com/AmazonECR/latest/userguide/LifecyclePolicies.html)
-
----
-
-## 다음 단계
-
-### 현재 구성된 리소스
-- ✅ FileFlow ECR 리포지토리
-- ✅ KMS 암호화
-- ✅ 이미지 스캔
-- ✅ 라이프사이클 정책
-- ✅ SSM Parameter 크로스 스택 참조
-
-### 추가 계획
-- [ ] 추가 서비스용 ECR 리포지토리 생성 (필요 시)
-- [ ] 이미지 스캔 결과 CloudWatch 알람 연동
-- [ ] 리포지토리 메트릭 모니터링 대시보드
-
----
-
-## 관련 Epic 및 Task
-
-- **Epic**: 관련 Epic 정보 추가 필요
-- **Jira**: 관련 Jira Task 추가 필요
-
----
-
-**Last Updated**: 2025-01-22
-**Maintained By**: Platform Team
+변경 사항은 [CHANGELOG.md](CHANGELOG.md)를 참조하세요.

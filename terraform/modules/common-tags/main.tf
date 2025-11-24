@@ -2,13 +2,23 @@
 # Provides standardized tagging schema for all AWS resources
 
 locals {
-  # Core required tags following governance standards
+  # Environment to Lifecycle mapping
+  lifecycle_mapping = {
+    prod    = "production"
+    staging = "staging"
+    dev     = "development"
+  }
+
+  lifecycle = lookup(local.lifecycle_mapping, var.environment, "temporary")
+
+  # Core required tags following governance standards (8 required tags)
   required_tags = {
-    Environment = var.environment
-    Service     = var.service
-    Team        = var.team
     Owner       = var.owner
     CostCenter  = var.cost_center
+    Environment = var.environment
+    Lifecycle   = local.lifecycle
+    DataClass   = var.data_class
+    Service     = var.service
     ManagedBy   = var.managed_by
     Project     = var.project
   }

@@ -1,17 +1,22 @@
 # Lambda Function Module
 # Creates AWS Lambda function with IAM role, VPC config, CloudWatch Logs, DLQ, and versioning support
 
-locals {
-  required_tags = {
-    Environment = var.environment
-    Service     = var.service
-    Team        = var.team
-    Owner       = var.owner
-    CostCenter  = var.cost_center
-    ManagedBy   = "Terraform"
-    Project     = var.project
-  }
+# Common Tags Module
+module "tags" {
+  source = "../common-tags"
 
+  environment = var.environment
+  service     = var.service
+  team        = var.team
+  owner       = var.owner
+  cost_center = var.cost_center
+  project     = var.project
+  data_class  = var.data_class
+
+  additional_tags = var.additional_tags
+}
+
+locals {
   # Lambda function name with naming convention
   function_name = var.function_name != "" ? var.function_name : "${var.service}-${var.environment}-${var.name}"
 }
@@ -52,7 +57,7 @@ resource "aws_iam_role" "lambda" {
   })
 
   tags = merge(
-    local.required_tags,
+    module.tags.tags,
     {
       Name      = "${local.function_name}-role"
       Component = "iam-role"
@@ -111,7 +116,7 @@ resource "aws_iam_policy" "dlq" {
   })
 
   tags = merge(
-    local.required_tags,
+    module.tags.tags,
     {
       Name      = "${local.function_name}-dlq-policy"
       Component = "iam-policy"
@@ -135,7 +140,7 @@ resource "aws_cloudwatch_log_group" "lambda" {
   kms_key_id        = var.log_kms_key_id
 
   tags = merge(
-    local.required_tags,
+    module.tags.tags,
     {
       Name          = "/aws/lambda/${local.function_name}"
       LogType       = "lambda"
@@ -155,7 +160,7 @@ resource "aws_sqs_queue" "dlq" {
   kms_master_key_id          = var.dlq_kms_key_id
 
   tags = merge(
-    local.required_tags,
+    module.tags.tags,
     {
       Name         = "${local.function_name}-dlq"
       Component    = "dead-letter-queue"
@@ -247,15 +252,14 @@ resource "aws_lambda_function" "this" {
   publish = var.publish
 
   tags = merge(
-    local.required_tags,
+    module.tags.tags,
     {
       Name       = local.function_name
       Runtime    = var.runtime
       Handler    = var.handler
       MemorySize = tostring(var.memory_size)
       Timeout    = tostring(var.timeout)
-    },
-    var.additional_tags
+    }
   )
 
   depends_on = [
@@ -283,15 +287,7 @@ resource "aws_lambda_alias" "this" {
     }
   }
 
-  tags = merge(
-    local.required_tags,
-    {
-      Name            = "${local.function_name}-${each.key}"
-      AliasName       = each.key
-      FunctionName    = local.function_name
-      FunctionVersion = each.value.function_version
-    }
-  )
+  # Note: Lambda aliases do not support tags
 }
 
 # Lambda Permission for invoking from other AWS services

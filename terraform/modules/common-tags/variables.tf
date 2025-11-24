@@ -65,6 +65,16 @@ variable "project" {
   }
 }
 
+variable "data_class" {
+  description = "Data classification level (confidential, internal, public)"
+  type        = string
+  default     = "confidential"
+  validation {
+    condition     = contains(["confidential", "internal", "public"], var.data_class)
+    error_message = "Data class must be one of: confidential, internal, public."
+  }
+}
+
 # Optional Tags
 
 variable "additional_tags" {

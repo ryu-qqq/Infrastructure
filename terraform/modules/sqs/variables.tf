@@ -2,33 +2,75 @@
 
 # Required Tags Variables
 variable "environment" {
-  description = "Environment name (e.g., dev, staging, prod)"
+  description = "Environment name (dev, staging, prod)"
   type        = string
+
+  validation {
+    condition     = contains(["dev", "staging", "prod"], var.environment)
+    error_message = "Environment must be one of: dev, staging, prod."
+  }
 }
 
 variable "service" {
-  description = "Service name that uses this SQS queue"
+  description = "Service name that uses this SQS queue (kebab-case)"
   type        = string
+
+  validation {
+    condition     = can(regex("^[a-z][a-z0-9-]*[a-z0-9]$", var.service))
+    error_message = "Service name must use kebab-case (lowercase letters, numbers, hyphens only)."
+  }
 }
 
 variable "team" {
-  description = "Team responsible for this SQS queue"
+  description = "Team responsible for this SQS queue (kebab-case)"
   type        = string
+
+  validation {
+    condition     = can(regex("^[a-z][a-z0-9-]*[a-z0-9]$", var.team))
+    error_message = "Team must use kebab-case (lowercase letters, numbers, hyphens only)."
+  }
 }
 
 variable "owner" {
   description = "Owner email or identifier"
   type        = string
+
+  validation {
+    condition     = can(regex("^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$", var.owner)) || can(regex("^[a-z][a-z0-9-]*[a-z0-9]$", var.owner))
+    error_message = "Owner must be a valid email address or kebab-case identifier."
+  }
 }
 
 variable "cost_center" {
-  description = "Cost center for billing"
+  description = "Cost center for billing (kebab-case)"
   type        = string
+
+  validation {
+    condition     = can(regex("^[a-z][a-z0-9-]*[a-z0-9]$", var.cost_center))
+    error_message = "Cost center must use kebab-case (lowercase letters, numbers, hyphens only)."
+  }
 }
 
 variable "project" {
   description = "Project name"
   type        = string
+  default     = "infrastructure"
+
+  validation {
+    condition     = can(regex("^[a-z][a-z0-9-]*[a-z0-9]$", var.project))
+    error_message = "Project must use kebab-case (lowercase letters, numbers, hyphens only)."
+  }
+}
+
+variable "data_class" {
+  description = "Data classification level (confidential, internal, public)"
+  type        = string
+  default     = "internal"
+
+  validation {
+    condition     = contains(["confidential", "internal", "public"], var.data_class)
+    error_message = "Data class must be one of: confidential, internal, public."
+  }
 }
 
 # SQS Queue Configuration

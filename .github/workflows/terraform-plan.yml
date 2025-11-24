@@ -64,14 +64,14 @@ jobs:
       - name: Run Governance Validators
         run: |
           echo "🔍 Running governance validators..."
-          chmod +x scripts/validators/*.sh
+          chmod +x governance/scripts/validators/*.sh
 
           # Run all validators
-          ./scripts/validators/check-tags.sh
-          ./scripts/validators/check-encryption.sh
-          ./scripts/validators/check-naming.sh
-          ./scripts/validators/check-tfsec.sh
-          ./scripts/validators/check-checkov.sh
+          ./governance/scripts/validators/check-tags.sh
+          ./governance/scripts/validators/check-encryption.sh
+          ./governance/scripts/validators/check-naming.sh
+          ./governance/scripts/validators/check-tfsec.sh
+          ./governance/scripts/validators/check-checkov.sh
 
           echo "✅ All governance checks passed!"
 

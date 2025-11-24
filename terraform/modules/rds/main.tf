@@ -1,10 +1,25 @@
+# Common Tags Module
+module "tags" {
+  source = "../common-tags"
+
+  environment = var.environment
+  service     = var.service_name
+  team        = var.team
+  owner       = var.owner
+  cost_center = var.cost_center
+  project     = var.project
+  data_class  = var.data_class
+
+  additional_tags = var.additional_tags
+}
+
 # DB Subnet Group
 resource "aws_db_subnet_group" "this" {
   name       = "${var.identifier}-subnet-group"
   subnet_ids = var.subnet_ids
 
   tags = merge(
-    var.common_tags,
+    module.tags.tags,
     {
       Name        = "${var.identifier}-subnet-group"
       Description = "DB subnet group for RDS instance ${var.identifier}"
@@ -28,7 +43,7 @@ resource "aws_db_parameter_group" "this" {
   }
 
   tags = merge(
-    var.common_tags,
+    module.tags.tags,
     {
       Name        = "${var.identifier}-params"
       Description = "DB parameter group for RDS instance ${var.identifier}"
@@ -100,7 +115,7 @@ resource "aws_db_instance" "this" {
   deletion_protection = var.deletion_protection
 
   tags = merge(
-    var.common_tags,
+    module.tags.tags,
     {
       Name        = var.identifier
       Description = "RDS instance ${var.identifier} (${var.engine} ${var.engine_version})"

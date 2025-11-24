@@ -8,6 +8,67 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+-
+
+### Changed
+-
+
+### Fixed
+-
+
+## [2.0.0] - 2025-11-23
+
+### BREAKING CHANGES
+- **Removed `var.common_tags`**: Module now uses internal `common-tags` module
+- **Added Required Variables**: Must provide `environment`, `service_name`, `team`, `owner`, `cost_center`
+- **Module Dependency**: Now requires `../common-tags` module to be available
+
+### Added
+- Internal integration with `common-tags` module for standardized tagging
+- New required variables: `environment`, `service_name`, `team`, `owner`, `cost_center`
+- New optional variables: `project`, `data_class`, `additional_tags`
+- Automatic tag validation through `common-tags` module
+- Support for additional custom tags via `additional_tags` variable
+
+### Changed
+- Tagging pattern: `var.common_tags` → `module.tags.tags`
+- All RDS resources now use tags from internal `common-tags` module
+- DB Subnet Group, DB Parameter Group, and DB Instance tags updated
+- Variable organization: Separated tagging variables from RDS configuration
+
+### Migration Guide
+**Before (v1.x)**:
+```hcl
+module "rds" {
+  source = "../../modules/rds"
+
+  identifier = "mydb"
+  engine     = "postgres"
+  # ... other RDS variables ...
+  common_tags = module.common_tags.tags
+}
+```
+
+**After (v2.x)**:
+```hcl
+module "rds" {
+  source = "../../modules/rds"
+
+  identifier = "mydb"
+  engine     = "postgres"
+  # ... other RDS variables ...
+
+  environment  = "prod"
+  service_name = "api-server"
+  team         = "platform-team"
+  owner        = "platform@example.com"
+  cost_center  = "engineering"
+}
+```
+
+## [1.0.0] - 2024-11-13
+
+### Added
 - Initial release of RDS module
 - Support for multiple database engines (MySQL, PostgreSQL, MariaDB, Oracle, SQL Server)
 - DB Subnet Group management

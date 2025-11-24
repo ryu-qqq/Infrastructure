@@ -1,5 +1,20 @@
 # IAM Role with configurable policies for ECS, RDS, Secrets Manager, S3, and CloudWatch Logs
 
+# Common Tags Module
+module "tags" {
+  source = "../common-tags"
+
+  environment = var.environment
+  service     = var.service_name
+  team        = var.team
+  owner       = var.owner
+  cost_center = var.cost_center
+  project     = var.project
+  data_class  = var.data_class
+
+  additional_tags = var.additional_tags
+}
+
 # ============================================================================
 # IAM Role
 # ============================================================================
@@ -12,9 +27,10 @@ resource "aws_iam_role" "this" {
   permissions_boundary = var.permissions_boundary
 
   tags = merge(
-    var.common_tags,
+    module.tags.tags,
     {
-      Name = var.role_name
+      Name      = var.role_name
+      Component = "iam-role"
     }
   )
 }

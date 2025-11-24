@@ -1,3 +1,21 @@
+# CloudFront Distribution Module
+# Creates a CloudFront CDN distribution with origins, cache behaviors, and SSL/TLS configuration
+
+# Common Tags Module
+module "tags" {
+  source = "../common-tags"
+
+  environment = var.environment
+  service     = var.service_name
+  team        = var.team
+  owner       = var.owner
+  cost_center = var.cost_center
+  project     = var.project
+  data_class  = var.data_class
+
+  additional_tags = var.additional_tags
+}
+
 # CloudFront Distribution
 resource "aws_cloudfront_distribution" "this" {
   comment             = var.comment
@@ -183,10 +201,11 @@ resource "aws_cloudfront_distribution" "this" {
   }
 
   tags = merge(
-    var.common_tags,
+    module.tags.tags,
     {
       Name        = var.comment
       Description = "CloudFront Distribution - ${var.comment}"
+      Component   = "cdn"
     }
   )
 }
