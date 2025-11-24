@@ -21,6 +21,9 @@ module "tags" {
 # ==============================================================================
 
 locals {
+  # Required tags for governance compliance
+  required_tags = module.tags.tags
+
   metric_name = var.metric_name != null ? var.metric_name : var.name
 
   # Managed rule groups
@@ -289,7 +292,7 @@ resource "aws_wafv2_web_acl" "this" {
   }
 
   tags = merge(
-    module.tags.tags,
+    local.required_tags,
     {
       Name        = var.name
       Description = "WAF WebACL ${var.name}"
