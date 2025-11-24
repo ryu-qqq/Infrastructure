@@ -105,7 +105,7 @@ module "atlantis_task_role" {
 }
 
 # Inline Policy for Terraform Operations
-resource "aws_iam_role_policy" "atlantis_terraform_operations" {
+resource "aws_iam_role_policy" "atlantis-terraform-operations" {
   name = "terraform-operations"
   role = module.atlantis_task_role.role_name
 
@@ -422,7 +422,7 @@ resource "aws_iam_role_policy" "atlantis_terraform_operations" {
 }
 
 # Inline Policy for EFS Access
-resource "aws_iam_role_policy" "atlantis_efs_access" {
+resource "aws_iam_role_policy" "atlantis-efs-access" {
   name = "efs-access"
   role = module.atlantis_task_role.role_name
 
