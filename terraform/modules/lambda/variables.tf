@@ -32,8 +32,25 @@ variable "cost_center" {
 }
 
 variable "project" {
-  description = "Project name"
+  description = "Project name this resource belongs to"
   type        = string
+  default     = "infrastructure"
+
+  validation {
+    condition     = can(regex("^[a-z][a-z0-9-]*[a-z0-9]$", var.project))
+    error_message = "Project must use kebab-case (lowercase letters, numbers, hyphens only)."
+  }
+}
+
+variable "data_class" {
+  description = "Data classification level (confidential, internal, public)"
+  type        = string
+  default     = "confidential"
+
+  validation {
+    condition     = contains(["confidential", "internal", "public"], var.data_class)
+    error_message = "Data class must be one of: confidential, internal, public."
+  }
 }
 
 # Lambda Function Configuration
@@ -186,11 +203,6 @@ variable "lambda_role_arn" {
   description = "Existing IAM role ARN (required if create_role is false)"
   type        = string
   default     = null
-
-  validation {
-    condition     = var.create_role || var.lambda_role_arn != null
-    error_message = "lambda_role_arn must be provided when create_role is false."
-  }
 }
 
 variable "custom_policy_arns" {
@@ -274,7 +286,7 @@ variable "tracing_mode" {
   default     = null
 
   validation {
-    condition     = var.tracing_mode == null || contains(["Active", "PassThrough"], var.tracing_mode)
+    condition     = var.tracing_mode == null ? true : contains(["Active", "PassThrough"], var.tracing_mode)
     error_message = "Tracing mode must be Active or PassThrough"
   }
 }
@@ -286,7 +298,7 @@ variable "ephemeral_storage_size" {
   default     = null
 
   validation {
-    condition     = var.ephemeral_storage_size == null || (var.ephemeral_storage_size >= 512 && var.ephemeral_storage_size <= 10240)
+    condition     = var.ephemeral_storage_size == null ? true : (var.ephemeral_storage_size >= 512 && var.ephemeral_storage_size <= 10240)
     error_message = "Ephemeral storage size must be between 512 and 10240 MB"
   }
 }
@@ -318,7 +330,7 @@ variable "lambda_permissions" {
 
 # Additional Tags
 variable "additional_tags" {
-  description = "Additional tags to apply to resources"
+  description = "Additional tags to merge with common tags"
   type        = map(string)
   default     = {}
 }

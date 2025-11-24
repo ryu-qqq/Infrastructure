@@ -127,7 +127,31 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-No unreleased changes at this time.
+### Changed
+- **BREAKING**: Replaced `common_tags` variable with individual tagging variables
+- Module now integrates common-tags module internally for standardized tagging
+- Required tagging variables: `environment`, `service_name`, `team`, `owner`, `cost_center`
+- Optional tagging variables: `project`, `data_class`, `additional_tags`
+- All resources now automatically receive standardized tags from common-tags module
+
+### Migration Guide
+Replace:
+```hcl
+module "elasticache" {
+  common_tags = module.common_tags.tags
+}
+```
+
+With:
+```hcl
+module "elasticache" {
+  environment  = "prod"
+  service_name = "cache-service"
+  team         = "platform-team"
+  owner        = "owner@example.com"
+  cost_center  = "engineering"
+}
+```
 
 ---
 

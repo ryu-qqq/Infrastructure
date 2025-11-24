@@ -1,8 +1,29 @@
 # ==============================================================================
+# Common Tags Module
+# ==============================================================================
+
+module "tags" {
+  source = "../common-tags"
+
+  environment = var.environment
+  service     = var.service_name
+  team        = var.team
+  owner       = var.owner
+  cost_center = var.cost_center
+  project     = var.project
+  data_class  = var.data_class
+
+  additional_tags = var.additional_tags
+}
+
+# ==============================================================================
 # Local Values
 # ==============================================================================
 
 locals {
+  # Required tags for governance compliance
+  required_tags = module.tags.tags
+
   metric_name = var.metric_name != null ? var.metric_name : var.name
 
   # Managed rule groups
@@ -271,7 +292,7 @@ resource "aws_wafv2_web_acl" "this" {
   }
 
   tags = merge(
-    var.common_tags,
+    local.required_tags,
     {
       Name        = var.name
       Description = "WAF WebACL ${var.name}"

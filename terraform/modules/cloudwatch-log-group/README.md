@@ -18,16 +18,6 @@
 ### Basic Example
 
 ```hcl
-module "common_tags" {
-  source = "../../modules/common-tags"
-
-  environment = "prod"
-  service     = "logging"
-  team        = "platform-team"
-  owner       = "fbtkdals2@naver.com"
-  cost_center = "infrastructure"
-}
-
 module "application_logs" {
   source = "../../modules/cloudwatch-log-group"
 
@@ -35,7 +25,13 @@ module "application_logs" {
   retention_in_days  = 14
   kms_key_id         = aws_kms_key.cloudwatch_logs.arn
   log_type           = "application"
-  common_tags        = module.common_tags.tags
+
+  # Required tagging variables
+  environment  = "prod"
+  service_name = "api-server"
+  team         = "platform-team"
+  owner        = "platform@example.com"
+  cost_center  = "engineering"
 }
 ```
 
@@ -49,7 +45,13 @@ module "error_logs" {
   retention_in_days  = 90
   kms_key_id         = aws_kms_key.cloudwatch_logs.arn
   log_type           = "errors"
-  common_tags        = module.common_tags.tags
+
+  # Required tagging variables
+  environment  = "prod"
+  service_name = "api-server"
+  team         = "platform-team"
+  owner        = "platform@example.com"
+  cost_center  = "engineering"
 
   # Sentry integration (future)
   sentry_sync_status    = "pending"  # "enabled" when Lambda is ready
@@ -73,7 +75,13 @@ module "llm_logs" {
   retention_in_days  = 60
   kms_key_id         = aws_kms_key.cloudwatch_logs.arn
   log_type           = "llm"
-  common_tags        = module.common_tags.tags
+
+  # Required tagging variables
+  environment  = "prod"
+  service_name = "api-server"
+  team         = "platform-team"
+  owner        = "platform@example.com"
+  cost_center  = "engineering"
 
   # Langfuse integration (future)
   langfuse_sync_status    = "pending"
@@ -92,17 +100,47 @@ module "lambda_logs" {
   retention_in_days  = 14
   kms_key_id         = aws_kms_key.cloudwatch_logs.arn
   log_type           = "application"
-  common_tags        = module.common_tags.tags
+
+  # Required tagging variables
+  environment  = "prod"
+  service_name = "secrets-rotation"
+  team         = "platform-team"
+  owner        = "platform@example.com"
+  cost_center  = "engineering"
 }
 ```
 
 ## Inputs
 
+### Required Variables
+
 | Name | Description | Type | Default | Required |
 |------|-------------|------|---------|----------|
 | `name` | CloudWatch Log Group name (must follow naming convention) | `string` | - | yes |
 | `retention_in_days` | Number of days to retain logs | `number` | - | yes |
-| `common_tags` | Common tags from common-tags module | `map(string)` | - | yes |
+
+### Required Variables - Tagging
+
+| Name | Description | Type | Default | Required |
+|------|-------------|------|---------|----------|
+| `environment` | 환경 이름 (dev, staging, prod) | `string` | - | yes |
+| `service_name` | 서비스 이름 (kebab-case) | `string` | - | yes |
+| `team` | 담당 팀 (kebab-case) | `string` | - | yes |
+| `owner` | 리소스 소유자 (이메일 또는 kebab-case) | `string` | - | yes |
+| `cost_center` | 비용 센터 (kebab-case) | `string` | - | yes |
+
+### Optional Variables - Tagging
+
+| Name | Description | Type | Default | Required |
+|------|-------------|------|---------|----------|
+| `project` | 프로젝트 이름 | `string` | `"infrastructure"` | no |
+| `data_class` | 데이터 분류 (confidential, internal, public) | `string` | `"confidential"` | no |
+| `additional_tags` | 추가 태그 | `map(string)` | `{}` | no |
+
+### Optional Variables - Configuration
+
+| Name | Description | Type | Default | Required |
+|------|-------------|------|---------|----------|
 | `kms_key_id` | ARN of KMS key for encryption | `string` | `null` | no |
 | `log_type` | Type of logs (application, errors, llm, etc.) | `string` | `"application"` | no |
 | `export_to_s3_enabled` | Whether S3 export is enabled | `bool` | `false` | no |
@@ -171,16 +209,17 @@ Invalid inputs will fail at `terraform plan` stage with clear error messages.
 
 All log groups automatically receive:
 
-**From common_tags module:**
-- `Environment`
-- `Service`
-- `Team`
-- `Owner`
-- `CostCenter`
-- `ManagedBy`
-- `Project`
+**공통 태그 (common-tags 모듈에서):**
+- `Environment` - 환경 이름
+- `Service` - 서비스 이름
+- `Team` - 담당 팀
+- `Owner` - 리소스 소유자
+- `CostCenter` - 비용 센터
+- `ManagedBy` - 관리 방법 (항상 "Terraform")
+- `Project` - 프로젝트 이름
+- `DataClass` - 데이터 분류
 
-**Module-specific tags:**
+**모듈별 태그:**
 - `Name` - Log group name
 - `LogType` - Type of logs (application, errors, llm, etc.)
 - `RetentionDays` - Retention period
@@ -188,6 +227,7 @@ All log groups automatically receive:
 - `ExportToS3` - S3 export status
 - `SentrySync` - Sentry integration status
 - `LangfuseSync` - Langfuse integration status
+- `Component` - 컴포넌트 타입 (log-group)
 
 ## Future Enhancements
 

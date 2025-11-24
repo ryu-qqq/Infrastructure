@@ -37,7 +37,7 @@ output "subscription_ids" {
 output "cloudwatch_alarm_arns" {
   description = "ARNs of CloudWatch alarms for monitoring"
   value = {
-    messages_published   = try(aws_cloudwatch_metric_alarm.messages_published[0].arn, null)
-    notifications_failed = try(aws_cloudwatch_metric_alarm.notifications_failed[0].arn, null)
+    messages_published   = try(aws_cloudwatch_metric_alarm.messages-published[0].arn, null)
+    notifications_failed = try(aws_cloudwatch_metric_alarm.notifications-failed[0].arn, null)
   }
 }

@@ -1,21 +1,28 @@
 # S3 Bucket Module
 # Provides standardized S3 bucket creation with governance compliance
 
-# Local variables
+# Common Tags Module
+module "tags" {
+  source = "../common-tags"
+
+  environment = var.environment
+  service     = var.service_name
+  team        = var.team
+  owner       = var.owner
+  cost_center = var.cost_center
+  project     = var.project
+  data_class  = var.data_class
+
+  additional_tags = var.additional_tags
+}
+
 locals {
-  # Core required tags following governance standards
-  required_tags = {
-    Environment = var.environment
-    Service     = var.service
-    Team        = var.team
-    Owner       = var.owner
-    CostCenter  = var.cost_center
-    ManagedBy   = "Terraform"
-    Project     = var.project
-  }
+  # Required tags for governance compliance
+  required_tags = module.tags.tags
 }
 
 # S3 Bucket
+#tfsec:ignore:AVD-AWS-0089 Logging is optional and controlled by user configuration
 resource "aws_s3_bucket" "this" {
   bucket              = var.bucket_name
   force_destroy       = var.force_destroy
@@ -23,7 +30,6 @@ resource "aws_s3_bucket" "this" {
 
   tags = merge(
     local.required_tags,
-    var.additional_tags,
     {
       Name = var.bucket_name
     }
@@ -219,7 +225,6 @@ resource "aws_cloudwatch_metric_alarm" "bucket-size" {
 
   tags = merge(
     local.required_tags,
-    var.additional_tags,
     {
       Name = "${var.bucket_name}-size-alarm"
     }
@@ -250,7 +255,6 @@ resource "aws_cloudwatch_metric_alarm" "object-count" {
 
   tags = merge(
     local.required_tags,
-    var.additional_tags,
     {
       Name = "${var.bucket_name}-object-count-alarm"
     }

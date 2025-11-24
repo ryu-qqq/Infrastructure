@@ -7,6 +7,67 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.0.0] - 2025-01-23
+
+### Changed
+
+**BREAKING CHANGE**: Refactored to use `common-tags` module pattern
+
+- **Removed**: `var.common_tags` variable
+- **Added**: Individual tag variables (required):
+  - `environment` (string, required): Environment name (dev, staging, prod)
+  - `service_name` (string, required): Service name (kebab-case)
+  - `team` (string, required): Team responsible for the resource
+  - `owner` (string, required): Email or identifier of the resource owner
+  - `cost_center` (string, required): Cost center for billing
+- **Added**: Optional tag variables:
+  - `project` (string, default: "infrastructure"): Project name
+  - `data_class` (string, default: "confidential"): Data classification level (WAF defaults to confidential)
+  - `additional_tags` (map(string), default: {}): Additional tags to merge
+
+### Migration Guide
+
+**Before**:
+```hcl
+module "waf" {
+  source = "../../modules/waf"
+
+  name  = "my-waf"
+  scope = "REGIONAL"
+
+  common_tags = module.common_tags.tags
+}
+```
+
+**After**:
+```hcl
+module "waf" {
+  source = "../../modules/waf"
+
+  name  = "my-waf"
+  scope = "REGIONAL"
+
+  # Required tags
+  environment  = "prod"
+  service_name = "api-server"
+  team         = "platform-team"
+  owner        = "platform@example.com"
+  cost_center  = "engineering"
+
+  # Optional tags
+  project     = "infrastructure"  # default
+  data_class  = "confidential"    # default for WAF
+}
+```
+
+### Benefits
+
+- **Governance Compliance**: Automatic enforcement through common-tags module
+- **Consistency**: Standardized tagging across all infrastructure
+- **Validation**: Built-in validation for tag values
+- **ManagedBy Tag**: Automatically adds `ManagedBy = "Terraform"` tag
+- **Security Focus**: WAF defaults to "confidential" data class for security-sensitive resources
+
 ## [1.0.0] - 2025-10-18
 
 ### Added

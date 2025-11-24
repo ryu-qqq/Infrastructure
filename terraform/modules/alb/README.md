@@ -1,98 +1,59 @@
-# ALB (Application Load Balancer) Terraform Module
+# ALB (Application Load Balancer) 모듈
 
-AWS Application Load Balancer를 배포하고 관리하기 위한 재사용 가능한 Terraform 모듈입니다. ALB, Target Groups, Listeners, Listener Rules를 포함한 완전한 로드 밸런싱 스택을 제공합니다.
+AWS Application Load Balancer를 생성하고 관리하는 Terraform 모듈입니다. Target Group, HTTP/HTTPS Listener, Listener Rule을 포함한 완전한 ALB 구성을 지원합니다.
 
-## Features
+## 주요 기능
 
-- ✅ Application Load Balancer 자동 생성
-- ✅ 다중 Target Group 지원
-- ✅ HTTP/HTTPS Listener 구성
-- ✅ SSL/TLS 인증서 관리 (ACM 통합)
-- ✅ 경로 기반 라우팅 (Path-based routing)
-- ✅ 호스트 기반 라우팅 (Host-based routing)
-- ✅ Health Check 커스터마이징
-- ✅ Session Stickiness (쿠키 기반)
-- ✅ Access Logs (S3 연동)
-- ✅ HTTP to HTTPS 자동 리다이렉트
-- ✅ 포괄적인 변수 검증
-- ✅ 표준화된 태그 자동 적용
+- **ALB 생성**: Internet-facing 또는 Internal ALB 지원
+- **Target Group 관리**: 다중 Target Group 생성 및 헬스체크 구성
+- **HTTP/HTTPS Listener**: 포트 및 프로토콜별 리스너 구성
+- **경로 기반 라우팅**: Path Pattern 및 Host Header 기반 Listener Rule
+- **액세스 로그**: S3 버킷으로 액세스 로그 전송 (선택)
+- **Session Stickiness**: Cookie 기반 세션 고정 지원
+- **보안**: 최신 TLS 정책 (TLS 1.3) 기본 적용
+- **태그 관리**: common-tags 모듈을 통한 표준화된 태그 관리
+- **검증**: 입력값 검증 및 lifecycle precondition을 통한 구성 검증
 
-## Usage
+## 사용 방법
 
-### Basic Example
+### 기본 사용 예제
 
 ```hcl
-# 기본 ALB with HTTP to HTTPS redirect
 module "alb" {
   source = "../../modules/alb"
 
-  name       = "my-alb"
+  # 기본 설정
+  name       = "api-server-alb"
   vpc_id     = "vpc-xxxxx"
   subnet_ids = ["subnet-xxxxx", "subnet-yyyyy"]
 
   security_group_ids = [aws_security_group.alb.id]
+  internal           = false
 
-  # HTTP Listener with redirect
-  http_listeners = {
-    default = {
-      port     = 80
-      protocol = "HTTP"
-      default_action = {
-        type = "redirect"
-        redirect = {
-          port        = "443"
-          protocol    = "HTTPS"
-          status_code = "HTTP_301"
-        }
-      }
-    }
-  }
-
-  # Target Group
+  # Target Group 정의
   target_groups = {
-    app = {
-      port     = 8080
-      protocol = "HTTP"
+    api = {
+      port        = 8080
+      protocol    = "HTTP"
+      target_type = "ip"
 
       health_check = {
-        enabled             = true
         path                = "/health"
-        healthy_threshold   = 2
+        healthy_threshold   = 3
         unhealthy_threshold = 2
-        timeout             = 3
+        timeout             = 5
         interval            = 30
         matcher             = "200"
       }
     }
   }
 
-  common_tags = {
-    Environment = "production"
-    Service     = "api"
-    ManagedBy   = "Terraform"
-  }
-}
-```
-
-### Advanced Example with HTTPS and Path-based Routing
-
-```hcl
-module "alb" {
-  source = "../../modules/alb"
-
-  name       = "production-alb"
-  vpc_id     = var.vpc_id
-  subnet_ids = var.public_subnet_ids
-
-  security_group_ids = [aws_security_group.alb.id]
-  enable_http2       = true
-  idle_timeout       = 120
-
-  # HTTP Listener - Redirect to HTTPS
+  # HTTP Listener (HTTPS로 리다이렉트)
   http_listeners = {
     default = {
       port     = 80
       protocol = "HTTP"
+
       default_action = {
         type = "redirect"
         redirect = {
@@ -109,51 +70,76 @@ module "alb" {
     default = {
       port            = 443
       protocol        = "HTTPS"
-      certificate_arn = data.aws_acm_certificate.selected.arn
+      certificate_arn = "arn:aws:acm:ap-northeast-2:xxxxx:certificate/xxxxx"
       ssl_policy      = "ELBSecurityPolicy-TLS13-1-2-2021-06"
 
       default_action = {
         type             = "forward"
-        target_group_key = "primary"
+        target_group_key = "api"
       }
     }
   }
 
-  # Multiple Target Groups
+  # 태그 설정
+  environment  = "prod"
+  service_name = "api-server"
+  team         = "platform-team"
+  owner        = "platform@example.com"
+  cost_center  = "engineering"
+}
+```
+
+### 경로 기반 라우팅 예제
+
+```hcl
+module "alb" {
+  source = "../../modules/alb"
+
+  name       = "web-alb"
+  vpc_id     = "vpc-xxxxx"
+  subnet_ids = ["subnet-xxxxx", "subnet-yyyyy"]
+
+  security_group_ids = [aws_security_group.alb.id]
+
+  # 다중 Target Group
   target_groups = {
-    primary = {
-      port     = 8080
-      protocol = "HTTP"
+    web = {
+      port        = 3000
+      protocol    = "HTTP"
+      target_type = "ip"
 
       health_check = {
-        path     = "/health"
-        interval = 30
-        timeout  = 5
-        matcher  = "200"
-      }
-
-      stickiness = {
-        enabled         = true
-        cookie_duration = 86400 # 24 hours
+        path = "/health"
       }
     }
-
     api = {
-      port     = 9090
-      protocol = "HTTP"
+      port        = 8080
+      protocol    = "HTTP"
+      target_type = "ip"
 
       health_check = {
-        path     = "/api/health"
-        interval = 15
-        timeout  = 3
-        matcher  = "200,201"
+        path = "/api/health"
       }
     }
   }
 
-  # Path-based routing
+  # HTTPS Listener
+  https_listeners = {
+    default = {
+      port            = 443
+      protocol        = "HTTPS"
+      certificate_arn = "arn:aws:acm:ap-northeast-2:xxxxx:certificate/xxxxx"
+
+      default_action = {
+        type             = "forward"
+        target_group_key = "web"  # 기본: Web으로 라우팅
+      }
+    }
+  }
+
+  # Listener Rules (경로 기반 라우팅)
   listener_rules = {
-    api_routing = {
+    api_route = {
       listener_key = "default"
       priority     = 100
 
@@ -172,248 +158,60 @@ module "alb" {
     }
   }
 
-  # Access Logs
-  access_logs = {
-    bucket  = "my-alb-logs-bucket"
-    enabled = true
-    prefix  = "production-alb"
-  }
-
-  common_tags = {
-    Environment = "production"
-    Service     = "api"
-    ManagedBy   = "Terraform"
-  }
+  # 태그 설정
+  environment  = "prod"
+  service_name = "web-app"
+  team         = "frontend-team"
+  owner        = "frontend@example.com"
+  cost_center  = "engineering"
 }
 ```
 
-### Complete Example
-
-전체 기능을 활용한 실제 운영 시나리오는 [examples/advanced](./examples/advanced/) 디렉터리를 참조하세요.
-
-## Inputs
-
-### Required Variables
-
-| Name | Description | Type | Default | Required |
-|------|-------------|------|---------|----------|
-| `name` | ALB 이름 (최대 32자) | `string` | - | yes |
-| `subnet_ids` | ALB가 배포될 서브넷 ID 목록 (최소 2개, 다른 AZ) | `list(string)` | - | yes |
-| `vpc_id` | ALB가 생성될 VPC ID | `string` | - | yes |
-
-### Optional Variables - ALB Configuration
-
-| Name | Description | Type | Default | Required |
-|------|-------------|------|---------|----------|
-| `common_tags` | 모든 리소스에 적용할 공통 태그 | `map(string)` | `{}` | no |
-| `enable_deletion_protection` | 삭제 방지 활성화 | `bool` | `false` | no |
-| `enable_http2` | HTTP/2 활성화 | `bool` | `true` | no |
-| `idle_timeout` | 연결 유휴 타임아웃 (초, 1-4000) | `number` | `60` | no |
-| `internal` | 내부 ALB 여부 (false = internet-facing) | `bool` | `false` | no |
-| `ip_address_type` | IP 주소 타입 (ipv4 또는 dualstack) | `string` | `"ipv4"` | no |
-| `security_group_ids` | ALB에 연결할 보안 그룹 ID 목록 | `list(string)` | `[]` | no |
-
-### Optional Variables - Target Groups
-
-| Name | Description | Type | Default | Required |
-|------|-------------|------|---------|----------|
-| `target_groups` | Target Group 구성 맵 | `map(object)` | `{}` | no |
-
-Target Group 객체 구조:
-- `port` - 대상 포트 (required)
-- `protocol` - 프로토콜 (HTTP, HTTPS) (default: "HTTP")
-- `target_type` - 대상 타입 (ip, instance, lambda) (default: "ip")
-- `deregistration_delay` - 등록 해제 대기 시간 (초) (default: 300)
-- `health_check` - Health check 설정
-  - `enabled` - Health check 활성화 (default: true)
-  - `healthy_threshold` - 정상 임계값 (2-10) (default: 3)
-  - `interval` - Health check 간격 (초, 5-300) (default: 30)
-  - `matcher` - 정상 응답 코드 (default: "200")
-  - `path` - Health check 경로 (default: "/health")
-  - `protocol` - Health check 프로토콜 (default: "HTTP")
-  - `timeout` - 타임아웃 (초, 2-120) (default: 5)
-  - `unhealthy_threshold` - 비정상 임계값 (2-10) (default: 2)
-- `stickiness` - Session stickiness 설정
-  - `enabled` - Stickiness 활성화 (default: false)
-  - `type` - Stickiness 타입 (lb_cookie) (default: "lb_cookie")
-  - `cookie_duration` - 쿠키 유지 시간 (초) (default: 86400)
-
-### Optional Variables - Listeners
-
-| Name | Description | Type | Default | Required |
-|------|-------------|------|---------|----------|
-| `http_listeners` | HTTP Listener 구성 맵 | `map(object)` | `{}` | no |
-| `https_listeners` | HTTPS Listener 구성 맵 | `map(object)` | `{}` | no |
-
-HTTP Listener 객체 구조:
-- `port` - 리스너 포트 (default: 80)
-- `protocol` - 프로토콜 (HTTP) (default: "HTTP")
-- `default_action` - 기본 액션
-  - `type` - 액션 타입 (forward, redirect, fixed-response)
-  - `target_group_key` - 대상 Target Group 키 (type이 forward인 경우)
-  - `redirect` - 리다이렉트 설정 (type이 redirect인 경우)
-  - `fixed_response` - 고정 응답 설정 (type이 fixed-response인 경우)
-
-HTTPS Listener 객체 구조:
-- `port` - 리스너 포트 (default: 443)
-- `protocol` - 프로토콜 (HTTPS) (default: "HTTPS")
-- `certificate_arn` - ACM 인증서 ARN (required)
-- `ssl_policy` - SSL 보안 정책 (default: "ELBSecurityPolicy-TLS13-1-2-2021-06")
-- `default_action` - 기본 액션
-
-### Optional Variables - Listener Rules
-
-| Name | Description | Type | Default | Required |
-|------|-------------|------|---------|----------|
-| `listener_rules` | Listener Rule 구성 맵 (경로/호스트 기반 라우팅) | `map(object)` | `{}` | no |
-
-Listener Rule 객체 구조:
-- `listener_key` - 연결할 리스너 키 (required)
-- `priority` - 규칙 우선순위 (1-50000) (required)
-- `conditions` - 조건 목록
-  - `path_pattern` - 경로 패턴 목록 (예: ["/api/*"])
-  - `host_header` - 호스트 헤더 목록 (예: ["example.com"])
-- `actions` - 액션 목록
-  - `type` - 액션 타입 (forward, redirect, fixed-response)
-  - `target_group_key` - 대상 Target Group 키
-
-### Optional Variables - Access Logs
-
-| Name | Description | Type | Default | Required |
-|------|-------------|------|---------|----------|
-| `access_logs` | Access Logs 구성 | `object` | `null` | no |
-
-Access Logs 객체 구조:
-- `bucket` - S3 버킷 이름 (required)
-- `enabled` - Access logs 활성화 (default: true)
-- `prefix` - S3 키 prefix (optional)
-
-## Outputs
-
-### ALB Outputs
-
-| Name | Description |
-|------|-------------|
-| `alb_arn` | ALB ARN |
-| `alb_arn_suffix` | ALB ARN suffix (CloudWatch 메트릭용) |
-| `alb_dns_name` | ALB DNS 이름 |
-| `alb_id` | ALB ID |
-| `alb_zone_id` | ALB Route53 호스팅 영역 ID (alias 레코드용) |
-
-### Target Group Outputs
-
-| Name | Description |
-|------|-------------|
-| `target_group_arns` | Target Group ARN 맵 |
-| `target_group_arn_suffixes` | Target Group ARN suffix 맵 (CloudWatch 메트릭용) |
-| `target_group_ids` | Target Group ID 맵 |
-| `target_group_names` | Target Group 이름 맵 |
-
-### Listener Outputs
-
-| Name | Description |
-|------|-------------|
-| `http_listener_arns` | HTTP Listener ARN 맵 |
-| `http_listener_ids` | HTTP Listener ID 맵 |
-| `https_listener_arns` | HTTPS Listener ARN 맵 |
-| `https_listener_ids` | HTTPS Listener ID 맵 |
-
-### Listener Rule Outputs
-
-| Name | Description |
-|------|-------------|
-| `listener_rule_arns` | Listener Rule ARN 맵 |
-| `listener_rule_ids` | Listener Rule ID 맵 |
-
-## Resource Types
-
-이 모듈은 다음 AWS 리소스를 생성합니다:
-
-- `aws_lb.this` - Application Load Balancer
-- `aws_lb_target_group.this` - Target Groups (map)
-- `aws_lb_listener.http` - HTTP Listeners (map)
-- `aws_lb_listener.https` - HTTPS Listeners (map)
-- `aws_lb_listener_rule.this` - Listener Rules (map)
-
-## Validation Rules
-
-모듈은 다음 항목을 자동으로 검증합니다:
-
-- ✅ ALB 이름 규칙 (영숫자, 하이픈만, 최대 32자)
-- ✅ 최소 2개 서브넷 (고가용성)
-- ✅ VPC ID 형식 (vpc- prefix)
-- ✅ 유휴 타임아웃 범위 (1-4000초)
-- ✅ IP 주소 타입 (ipv4 또는 dualstack)
-- ✅ Health check 타임아웃 < 간격
-- ✅ Lambda 타겟은 HTTP 프로토콜만 사용
-
-유효하지 않은 입력은 `terraform plan` 단계에서 명확한 에러 메시지와 함께 실패합니다.
-
-## Tags Applied
-
-모든 리소스는 자동으로 다음 태그를 받습니다:
-
-**공통 태그 (사용자 제공):**
-- 사용자가 `common_tags`로 전달한 모든 태그
-
-**모듈별 태그:**
-- `Name` - 리소스 이름
-- `Description` - 리소스 설명
-
-## Examples Directory
-
-추가 사용 예제는 [examples/](./examples/) 디렉터리를 참조하세요:
-
-- [basic/](./examples/basic/) - 최소 설정 예제 (HTTP redirect)
-- [advanced/](./examples/advanced/) - 고급 기능 활용 예제 (HTTPS, 다중 Target Group, 경로 기반 라우팅)
-
-## Requirements
-
-| Name | Version |
-|------|---------|
-| terraform | >= 1.5.0 |
-| aws | >= 5.0.0 |
-
-## Related Documentation
-
-- [모듈 디렉터리 구조](../../../docs/MODULES_DIRECTORY_STRUCTURE.md)
-- [모듈 표준 가이드](../../../docs/MODULE_STANDARDS_GUIDE.md)
-- [AWS ALB Documentation](https://docs.aws.amazon.com/elasticloadbalancing/latest/application/)
-- [Target Group Documentation](https://docs.aws.amazon.com/elasticloadbalancing/latest/application/load-balancer-target-groups.html)
-
-## Changelog
-
-변경 이력은 [CHANGELOG.md](./CHANGELOG.md)를 참조하세요.
-
-## Epic & Tasks
-
-
-## License
-
-Internal use only - Infrastructure Team
-
----
-
-## Advanced Configuration
-
-### HTTPS with ACM Certificate
+### 세션 고정 및 액세스 로그 예제
 
 ```hcl
-data "aws_acm_certificate" "selected" {
-  domain   = "example.com"
-  statuses = ["ISSUED"]
-}
-
 module "alb" {
   source = "../../modules/alb"
-  # ...
+
+  name       = "session-alb"
+  vpc_id     = "vpc-xxxxx"
+  subnet_ids = ["subnet-xxxxx", "subnet-yyyyy"]
+
+  security_group_ids = [aws_security_group.alb.id]
+
+  # 액세스 로그 활성화
+  access_logs = {
+    bucket  = "my-alb-logs-bucket"
+    enabled = true
+    prefix  = "alb-logs"
+  }
+
+  # Target Group with Stickiness
+  target_groups = {
+    app = {
+      port                 = 8080
+      protocol             = "HTTP"
+      target_type          = "ip"
+      deregistration_delay = 30
+
+      health_check = {
+        path = "/health"
+      }
+
+      # Session Stickiness 활성화
+      stickiness = {
+        enabled         = true
+        type            = "lb_cookie"
+        cookie_duration = 86400  # 1일
+      }
+    }
+  }
 
   https_listeners = {
     default = {
       port            = 443
       protocol        = "HTTPS"
-      certificate_arn = data.aws_acm_certificate.selected.arn
-      ssl_policy      = "ELBSecurityPolicy-TLS13-1-2-2021-06"
+      certificate_arn = "arn:aws:acm:ap-northeast-2:xxxxx:certificate/xxxxx"
 
       default_action = {
         type             = "forward"
@@ -421,135 +219,162 @@ module "alb" {
       }
     }
   }
+
+  # 태그 설정
+  environment  = "prod"
+  service_name = "session-app"
+  team         = "platform-team"
+  owner        = "platform@example.com"
+  cost_center  = "engineering"
 }
 ```
 
-### Multiple Target Groups with Path-based Routing
+## Variables
 
-```hcl
-module "alb" {
-  source = "../../modules/alb"
-  # ...
+### 필수 Variables
 
-  target_groups = {
-    web = {
-      port = 8080
-      health_check = { path = "/" }
-    }
-    api = {
-      port = 9090
-      health_check = { path = "/api/health" }
-    }
-    admin = {
-      port = 8081
-      health_check = { path = "/admin/health" }
-    }
-  }
+| 변수명 | 타입 | 설명 |
+|--------|------|------|
+| `name` | `string` | ALB 이름 (영숫자와 하이픈만, 최대 32자) |
+| `subnet_ids` | `list(string)` | ALB가 배치될 서브넷 ID 목록 (최소 2개, 다른 가용영역) |
+| `vpc_id` | `string` | ALB가 생성될 VPC ID |
+| `environment` | `string` | 환경 이름 (`dev`, `staging`, `prod`) |
+| `service_name` | `string` | 서비스 이름 (kebab-case) |
+| `team` | `string` | 담당 팀 이름 (kebab-case) |
+| `owner` | `string` | 리소스 소유자 (이메일 또는 kebab-case 식별자) |
+| `cost_center` | `string` | 비용 센터 (kebab-case) |
 
-  listener_rules = {
-    api_routing = {
-      listener_key = "default"
-      priority     = 100
-      conditions = [{ path_pattern = ["/api/*"] }]
-      actions = [{ type = "forward", target_group_key = "api" }]
-    }
-    admin_routing = {
-      listener_key = "default"
-      priority     = 200
-      conditions = [{ path_pattern = ["/admin/*"] }]
-      actions = [{ type = "forward", target_group_key = "admin" }]
-    }
-  }
-}
-```
+### 선택 Variables (ALB 설정)
 
-### Host-based Routing
+| 변수명 | 타입 | 기본값 | 설명 |
+|--------|------|--------|------|
+| `internal` | `bool` | `false` | Internal ALB 여부 (false: Internet-facing) |
+| `enable_deletion_protection` | `bool` | `false` | 삭제 방지 활성화 |
+| `enable_http2` | `bool` | `true` | HTTP/2 활성화 |
+| `idle_timeout` | `number` | `60` | 유휴 연결 타임아웃 (초, 1-4000) |
+| `ip_address_type` | `string` | `"ipv4"` | IP 주소 타입 (`ipv4`, `dualstack`) |
+| `security_group_ids` | `list(string)` | `[]` | ALB에 연결할 보안 그룹 ID 목록 |
+| `access_logs` | `object` | `null` | 액세스 로그 설정 (bucket, enabled, prefix) |
 
-```hcl
-listener_rules = {
-  app_domain = {
-    listener_key = "default"
-    priority     = 300
-    conditions = [
-      {
-        host_header = ["app.example.com", "www.example.com"]
-      }
-    ]
-    actions = [
-      {
-        type             = "forward"
-        target_group_key = "primary"
-      }
-    ]
-  }
-}
-```
+### 선택 Variables (Target Group)
 
-### Session Stickiness
+| 변수명 | 타입 | 기본값 | 설명 |
+|--------|------|--------|------|
+| `target_groups` | `map(object)` | `{}` | Target Group 구성 맵 |
+| ↳ `port` | `number` | - | Target 포트 |
+| ↳ `protocol` | `string` | `"HTTP"` | 프로토콜 (HTTP, HTTPS) |
+| ↳ `target_type` | `string` | `"ip"` | Target 타입 (ip, instance, lambda) |
+| ↳ `deregistration_delay` | `number` | `300` | 등록 해제 지연 시간 (초) |
+| ↳ `health_check` | `object` | `{}` | 헬스체크 설정 |
+| ↳↳ `enabled` | `bool` | `true` | 헬스체크 활성화 |
+| ↳↳ `healthy_threshold` | `number` | `3` | 정상 판정 횟수 |
+| ↳↳ `unhealthy_threshold` | `number` | `2` | 비정상 판정 횟수 |
+| ↳↳ `interval` | `number` | `30` | 헬스체크 간격 (초) |
+| ↳↳ `timeout` | `number` | `5` | 헬스체크 타임아웃 (초) |
+| ↳↳ `path` | `string` | `"/health"` | 헬스체크 경로 |
+| ↳↳ `matcher` | `string` | `"200"` | 정상 응답 코드 |
+| ↳↳ `protocol` | `string` | `"HTTP"` | 헬스체크 프로토콜 |
+| ↳ `stickiness` | `object` | `{}` | Session Stickiness 설정 |
+| ↳↳ `enabled` | `bool` | `false` | Stickiness 활성화 |
+| ↳↳ `type` | `string` | `"lb_cookie"` | Stickiness 타입 |
+| ↳↳ `cookie_duration` | `number` | `86400` | 쿠키 유지 시간 (초) |
 
-```hcl
-target_groups = {
-  app = {
-    port = 8080
-    stickiness = {
-      enabled         = true
-      type            = "lb_cookie"
-      cookie_duration = 86400  # 24 hours
-    }
-  }
-}
-```
+### 선택 Variables (Listener)
 
-## Troubleshooting
+| 변수명 | 타입 | 기본값 | 설명 |
+|--------|------|--------|------|
+| `http_listeners` | `map(object)` | `{}` | HTTP Listener 구성 맵 |
+| ↳ `port` | `number` | `80` | 리스너 포트 |
+| ↳ `protocol` | `string` | `"HTTP"` | 프로토콜 |
+| ↳ `default_action` | `object` | - | 기본 액션 (forward, redirect, fixed-response) |
+| `https_listeners` | `map(object)` | `{}` | HTTPS Listener 구성 맵 |
+| ↳ `port` | `number` | `443` | 리스너 포트 |
+| ↳ `protocol` | `string` | `"HTTPS"` | 프로토콜 |
+| ↳ `certificate_arn` | `string` | - | ACM 인증서 ARN (필수) |
+| ↳ `ssl_policy` | `string` | `"ELBSecurityPolicy-TLS13-1-2-2021-06"` | SSL 정책 |
+| ↳ `default_action` | `object` | - | 기본 액션 (forward, fixed-response) |
 
-### Target가 Unhealthy 상태
+### 선택 Variables (Listener Rule)
 
-**증상**: Target Group에 등록된 타겟이 계속 Unhealthy
+| 변수명 | 타입 | 기본값 | 설명 |
+|--------|------|--------|------|
+| `listener_rules` | `map(object)` | `{}` | Listener Rule 구성 맵 |
+| ↳ `listener_key` | `string` | - | Listener 키 (http_listeners 또는 https_listeners의 키) |
+| ↳ `priority` | `number` | - | 우선순위 (1-50000) |
+| ↳ `conditions` | `list(object)` | - | 조건 목록 (path_pattern, host_header) |
+| ↳ `actions` | `list(object)` | - | 액션 목록 (forward, redirect, fixed-response) |
 
-**해결**:
-1. Health check 경로가 올바른지 확인 (`/health` 엔드포인트 구현 확인)
-2. Health check 타임아웃과 간격 조정
-3. 보안 그룹 규칙 확인 (ALB → Target 트래픽 허용)
-4. Target의 애플리케이션 로그 확인
+### 선택 Variables (태그)
 
-### HTTPS 리스너 생성 실패
+| 변수명 | 타입 | 기본값 | 설명 |
+|--------|------|--------|------|
+| `project` | `string` | `"infrastructure"` | 프로젝트 이름 (kebab-case) |
+| `data_class` | `string` | `"internal"` | 데이터 분류 (`confidential`, `internal`, `public`) |
+| `additional_tags` | `map(string)` | `{}` | 추가 태그 맵 |
 
-**증상**: ACM 인증서 관련 에러
+## Outputs
 
-**해결**:
-1. 인증서가 발급 완료 상태인지 확인 (status = ISSUED)
-2. 인증서가 올바른 리전에 있는지 확인
-3. ALB가 인증서 도메인에 맞는 서브넷에 있는지 확인
+### ALB Outputs
 
-### 경로 기반 라우팅이 작동하지 않음
+| 출력명 | 설명 |
+|--------|------|
+| `alb_arn` | ALB ARN |
+| `alb_arn_suffix` | ALB ARN Suffix (CloudWatch 메트릭용) |
+| `alb_dns_name` | ALB DNS 이름 |
+| `alb_id` | ALB ID |
+| `alb_zone_id` | ALB Hosted Zone ID (Route53 Alias 레코드용) |
 
-**증상**: 모든 요청이 기본 Target Group으로 전달됨
+### Target Group Outputs
 
-**해결**:
-1. Listener Rule의 우선순위(priority) 확인
-2. 경로 패턴이 올바른지 확인 (`/api/*` vs `/api*`)
-3. Listener Rule이 올바른 리스너에 연결되었는지 확인
+| 출력명 | 설명 |
+|--------|------|
+| `target_group_arns` | Target Group 키-ARN 맵 |
+| `target_group_arn_suffixes` | Target Group 키-ARN Suffix 맵 (CloudWatch 메트릭용) |
+| `target_group_ids` | Target Group 키-ID 맵 |
+| `target_group_names` | Target Group 키-이름 맵 |
 
-## Security Considerations
+### Listener Outputs
 
-- 퍼블릭 서브넷에 ALB 배포 (internet-facing)
-- HTTPS 사용 강제 (HTTP → HTTPS 리다이렉트)
-- 최신 TLS 보안 정책 사용 (TLS 1.3)
-- 보안 그룹으로 인바운드 트래픽 제한
-- Access Logs 활성화하여 모니터링 강화
-- WAF 통합 고려 (DDoS 방어)
+| 출력명 | 설명 |
+|--------|------|
+| `http_listener_arns` | HTTP Listener 키-ARN 맵 |
+| `http_listener_ids` | HTTP Listener 키-ID 맵 |
+| `https_listener_arns` | HTTPS Listener 키-ARN 맵 |
+| `https_listener_ids` | HTTPS Listener 키-ID 맵 |
 
-## Performance Considerations
+### Listener Rule Outputs
 
-- Health check 간격 최적화 (너무 빈번하면 부하)
-- Connection draining 시간 적절히 설정
-- HTTP/2 활성화 (기본 활성화)
-- Session stickiness 사용 시 트래픽 분산 고려
-- 적절한 idle timeout 설정
+| 출력명 | 설명 |
+|--------|------|
+| `listener_rule_arns` | Listener Rule 키-ARN 맵 |
+| `listener_rule_ids` | Listener Rule 키-ID 맵 |
 
-## Cost Optimization
+## 생성되는 리소스
 
-- 불필요한 Target Group 제거
-- Access Logs S3 수명 주기 정책 설정
-- Idle connection 타임아웃 최적화
-- Target 수 최소화 (적절한 인스턴스 크기 선택)
+- `aws_lb`: Application Load Balancer
+- `aws_lb_target_group`: Target Group (target_groups 맵에 정의된 각 항목마다 생성)
+- `aws_lb_listener`: HTTP Listener (http_listeners 맵에 정의된 각 항목마다 생성)
+- `aws_lb_listener`: HTTPS Listener (https_listeners 맵에 정의된 각 항목마다 생성)
+- `aws_lb_listener_rule`: Listener Rule (listener_rules 맵에 정의된 각 항목마다 생성)
+
+## 주의사항
+
+- ALB는 최소 2개 이상의 가용영역에 걸쳐 있는 서브넷이 필요합니다
+- HTTPS Listener 사용 시 ACM 인증서 ARN이 필수입니다
+- Lambda Target Type은 HTTP 프로토콜만 지원합니다
+- Health Check timeout은 interval보다 작아야 합니다
+- Listener Rule의 priority는 1-50000 범위이며 중복될 수 없습니다
+- 기본 SSL 정책은 TLS 1.3을 지원하는 최신 정책입니다 (ELBSecurityPolicy-TLS13-1-2-2021-06)
+
+## 버전 요구사항
+
+- Terraform >= 1.0
+- AWS Provider >= 4.0
+
+## 라이선스
+
+MIT
+
+## 작성자
+
+Platform Team

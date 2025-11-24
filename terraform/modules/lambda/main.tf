@@ -1,34 +1,26 @@
 # Lambda Function Module
 # Creates AWS Lambda function with IAM role, VPC config, CloudWatch Logs, DLQ, and versioning support
 
-locals {
-  required_tags = {
-    Environment = var.environment
-    Service     = var.service
-    Team        = var.team
-    Owner       = var.owner
-    CostCenter  = var.cost_center
-    ManagedBy   = "Terraform"
-    Project     = var.project
-  }
+# Common Tags Module
+module "tags" {
+  source = "../common-tags"
 
+  environment = var.environment
+  service     = var.service
+  team        = var.team
+  owner       = var.owner
+  cost_center = var.cost_center
+  project     = var.project
+  data_class  = var.data_class
+
+  additional_tags = var.additional_tags
+}
+
+locals {
+  # Required tags for governance compliance
+  required_tags = module.tags.tags
   # Lambda function name with naming convention
   function_name = var.function_name != "" ? var.function_name : "${var.service}-${var.environment}-${var.name}"
-}
-
-# Validate deployment source configuration
-check "deployment_source_exclusive" {
-  assert {
-    condition     = var.filename == null || var.s3_bucket == null
-    error_message = "'filename' (for local file) and 's3_bucket' (for S3) are mutually exclusive. Please specify only one deployment method."
-  }
-}
-
-check "local_deployment_requires_hash" {
-  assert {
-    condition     = var.filename == null || var.source_code_hash != null
-    error_message = "When using 'filename' for local deployment, 'source_code_hash' must also be provided to track changes."
-  }
 }
 
 # IAM Role for Lambda Function
@@ -187,6 +179,16 @@ resource "aws_lambda_function" "this" {
       condition     = var.filename != null || (var.s3_bucket != null && var.s3_key != null)
       error_message = "Either 'filename' or both 's3_bucket' and 's3_key' must be provided for the Lambda function's source code."
     }
+
+    precondition {
+      condition     = var.filename == null || var.s3_bucket == null
+      error_message = "'filename' (for local file) and 's3_bucket' (for S3) are mutually exclusive. Please specify only one deployment method."
+    }
+
+    precondition {
+      condition     = var.filename == null || var.source_code_hash != null
+      error_message = "When using 'filename' for local deployment, 'source_code_hash' must also be provided to track changes."
+    }
   }
 
   # Runtime configuration
@@ -254,8 +256,7 @@ resource "aws_lambda_function" "this" {
       Handler    = var.handler
       MemorySize = tostring(var.memory_size)
       Timeout    = tostring(var.timeout)
-    },
-    var.additional_tags
+    }
   )
 
   depends_on = [
@@ -283,15 +284,7 @@ resource "aws_lambda_alias" "this" {
     }
   }
 
-  tags = merge(
-    local.required_tags,
-    {
-      Name            = "${local.function_name}-${each.key}"
-      AliasName       = each.key
-      FunctionName    = local.function_name
-      FunctionVersion = each.value.function_version
-    }
-  )
+  # Note: Lambda aliases do not support tags
 }
 
 # Lambda Permission for invoking from other AWS services

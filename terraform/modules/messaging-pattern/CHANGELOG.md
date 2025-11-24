@@ -5,6 +5,69 @@ All notable changes to the Messaging Pattern Terraform module will be documented
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.0.0] - 2025-11-23
+
+### Changed
+- **BREAKING**: Migrated to common-tags module pattern for standardized tagging
+- **BREAKING**: Removed local.required_tags (now using module.tags.tags)
+- **BREAKING**: Added required variable: `data_class` for data classification
+- Added optional variable defaults: `project` (default: "infrastructure"), `data_class` (default: "confidential")
+- Updated SNS and SQS submodule calls to pass `data_class` variable
+- Simplified `additional_tags` handling in submodule calls (Pattern and SubscribedTopic tags only)
+
+### Added
+- Integration with common-tags module for standardized governance
+- Validation rules for `project` and `data_class` variables
+- Support for data classification tagging (confidential, internal, public)
+
+### Migration Guide
+
+#### Before (v1.x)
+```hcl
+module "notification_fanout" {
+  source = "../../modules/messaging-pattern"
+
+  sns_topic_name = "user-notifications"
+  kms_key_id     = aws_kms_key.messaging.arn
+
+  environment = "dev"
+  service     = "notification-service"
+  team        = "platform-team"
+  owner       = "fbtkdals2@naver.com"
+  cost_center = "engineering"
+  project     = "user-engagement"
+
+  # ... sqs_queues config
+}
+```
+
+#### After (v2.x)
+```hcl
+module "notification_fanout" {
+  source = "../../modules/messaging-pattern"
+
+  sns_topic_name = "user-notifications"
+  kms_key_id     = aws_kms_key.messaging.arn
+
+  # Required tags (same as before)
+  environment = "dev"
+  service     = "notification-service"
+  team        = "platform-team"
+  owner       = "fbtkdals2@naver.com"
+  cost_center = "engineering"
+
+  # Optional tags (now with defaults and validation)
+  project    = "user-engagement"
+  data_class = "confidential"  # NEW: explicitly specify or use default
+
+  additional_tags = {
+    Component = "messaging"
+  }
+
+  # ... sqs_queues config
+}
+```
+
 ## [1.0.0] - 2025-10-20
 
 ### Added

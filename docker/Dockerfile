@@ -15,6 +15,14 @@ RUN apk add --no-cache \
     bash \
     curl
 
+# Install conftest for OPA policy validation
+ARG CONFTEST_VERSION=0.49.1
+RUN curl -L "https://github.com/open-policy-agent/conftest/releases/download/v${CONFTEST_VERSION}/conftest_${CONFTEST_VERSION}_Linux_x86_64.tar.gz" \
+    | tar xz -C /tmp && \
+    mv /tmp/conftest /usr/local/bin/ && \
+    chmod +x /usr/local/bin/conftest && \
+    conftest --version
+
 # Install terraform versions (optional - can use tfenv or similar)
 # Atlantis comes with terraform pre-installed
 

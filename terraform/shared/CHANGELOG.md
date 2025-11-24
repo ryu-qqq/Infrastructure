@@ -1,68 +1,111 @@
-# 변경 이력
+# Shared Infrastructure Changelog
 
-shared 인프라의 모든 주요 변경사항은 이 파일에 문서화됩니다.
+Import 기반 공유 리소스 관리를 위한 변경 이력입니다.
 
-형식은 [Keep a Changelog](https://keepachangelog.com/ko/1.0.0/)를 기반으로 하며,
-이 프로젝트는 [Semantic Versioning](https://semver.org/lang/ko/)을 준수합니다.
-
-## [Unreleased]
+## [1.3.0] - 2025-11-23
 
 ### Added
--
+- **ACM Certificate Import**: `*.set-of.com` 와일드카드 인증서 Import 완료
+  - ARN: `arn:aws:acm:ap-northeast-2:646886795421:certificate/4241052f-dc09-4be1-8e4b-08902fce4729`
+  - SSM Parameters: `/shared/connectly/certificate/wildcard-set-of.com/*`
+  - Lifecycle management: tags, tags_all ignore로 IAM 권한 제약 우회
+
+- **Route53 Hosted Zone Import**: `set-of.com` 퍼블릭 호스팅 존 Import 완료
+  - Zone ID: `Z104656329CL6XBYE8OIJ`
+  - SSM Parameters: `/shared/connectly/dns/set-of-com/*`
+  - Name servers 4개 자동 추출 및 SSM 저장
 
 ### Changed
--
+- **IAM Policy Update**: TerraformFileFlowPolicy v10으로 업데이트
+  - `route53:*`, `acm:*`, `ssm:*`, `rds:*` 전체 권한 추가
+  - Import 시 ListTagsForResource 권한 오류 해결
+
+- **Provider Configuration**: Import 시나리오에 맞춰 조정
+  - `skip_requesting_account_id = true` 추가
+  - `default_tags` 비활성화 (tags_all 충돌 방지)
 
 ### Fixed
--
+- **ACM Tag Validation**: 와일드카드 도메인 태그 검증 오류 수정
+  - Domain 태그를 tags merge에서 제거
+  - lifecycle ignore_changes에 tags, tags_all 추가
 
-### Security
--
+- **Route53 Permission Issues**: ListTagsForResource 권한 오류 해결
+  - IAM 정책 업데이트로 완전 해결
+  - ignore_tags 설정으로는 해결 불가 확인
 
-## [1.0.0] - 2025-10-22
+### Documentation
+- **shared/README.md**: Import 기반 아키텍처로 전면 재작성
+  - 4개 Import 리소스 상세 문서화 (ACM, Route53, RDS, VPC)
+  - 실제 SSM Parameter 경로 및 사용 예시 추가
+  - Import 프로세스 단계별 가이드 작성
+  - Troubleshooting 섹션 추가 (태그 권한, SSM 조회 실패 등)
+
+## [1.2.0] - 2025-11-22
 
 ### Added
-- SSM Parameter Store 크로스 스택 참조 아키텍처
-- KMS 암호화 키 공유 패턴
-  - `/shared/kms/cloudwatch-logs-key-arn` - CloudWatch Logs 암호화 키
-  - `/shared/kms/secrets-manager-key-arn` - Secrets Manager 암호화 키
-  - `/shared/kms/rds-key-arn` - RDS 데이터베이스 암호화 키
-  - `/shared/kms/s3-key-arn` - S3 버킷 암호화 키
-  - `/shared/kms/sqs-key-arn` - SQS 큐 암호화 키
-  - `/shared/kms/ssm-key-arn` - SSM Parameter Store 암호화 키
-  - `/shared/kms/elasticache-key-arn` - ElastiCache 암호화 키
-  - `/shared/kms/ecs-secrets-key-arn` - ECS 비밀 관리 암호화 키
-- 네트워크 인프라 공유 패턴
-  - `/shared/network/vpc-id` - VPC ID
-  - `/shared/network/public-subnet-ids` - 퍼블릭 서브넷 ID 목록
-  - `/shared/network/private-subnet-ids` - 프라이빗 서브넷 ID 목록
-- ECR 리포지토리 URL 공유
-  - `/shared/ecr/fileflow-repository-url` - FileFlow ECR 리포지토리 URL
-- RDS 데이터베이스 정보 공유
-  - `/shared/rds/db-instance-id` - RDS 인스턴스 ID
-  - `/shared/rds/address` - RDS 엔드포인트 주소
-  - `/shared/rds/port` - RDS 포트 번호
-  - `/shared/rds/security-group-id` - RDS 보안 그룹 ID
-  - `/shared/rds/master-password-secret-name` - 마스터 비밀번호 Secrets Manager 이름
-- Secrets Manager 비밀 공유
-  - `/shared/secrets/atlantis-webhook-secret-arn` - Atlantis 웹훅 비밀 ARN
-  - `/shared/secrets/atlantis-github-token-arn` - Atlantis GitHub 토큰 ARN
-- 표준 태그 규정 준수
-  - Owner, CostCenter, Environment, Lifecycle, DataClass
-- 독립적인 스택 배포 기능
-- 간접 참조를 통한 순환 종속성 방지
+- **RDS Instance Import**: `prod-shared-mysql` RDS 인스턴스 Import 완료
+  - MySQL 8.0.35, db.t3.medium
+  - Multi-AZ 구성, 100GB gp3 스토리지
+  - SSM Parameters: `/shared/connectly/rds/*`
 
-### Architecture
-- 리소스 공유를 위한 Producer-Consumer 패턴
-- 중앙 리소스 레지스트리로서의 SSM Parameter Store
-- Terraform 스택 간 느슨한 결합
-- 버전 독립적인 크로스 스택 참조
+- **VPC Import**: `prod-shared-vpc` VPC Import 완료
+  - CIDR: 10.0.0.0/16
+  - Multi-AZ 구성 (ap-northeast-2a, 2b, 2c)
+  - SSM Parameters: `/shared/connectly/vpc/*`
 
-### Security
-- 모든 공유 리소스는 고객 관리형 KMS 키로 암호화
-- SSM Parameter 접근 제어를 위한 IAM 정책
-- 공유 리소스에 대한 최소 권한 접근
-- Terraform 코드 내 하드코딩된 비밀 없음
+### Changed
+- **Backend Configuration**: S3 backend 버킷명 수정
+  - `prod-connectly-tfstate` → `prod-connectly`
+  - DynamoDB 테이블: `prod-connectly-tf-lock`
 
-[Unreleased]: https://github.com/ryuqqq/infrastructure/compare/shared/v1.0.0...HEAD
-[1.0.0]: https://github.com/ryuqqq/infrastructure/releases/tag/shared/v1.0.0
+## [1.1.0] - 2025-11-20
+
+### Added
+- **Template Structure**: 재사용 가능한 Terraform 템플릿 구조 확립
+  - `templates/` 디렉토리: 신규 리소스 생성용
+  - `shared/` 디렉토리: 기존 리소스 Import용
+  - Import 자동화 스크립트 (`import.sh`)
+
+### Changed
+- **SSM Parameter Naming**: 네이밍 규칙 표준화
+  - 패턴: `/shared/{project}/{category}/{resource-name}/{attribute}`
+  - 예시: `/shared/connectly/certificate/wildcard-set-of.com/arn`
+
+## [1.0.0] - 2025-11-15
+
+### Added
+- **Initial Setup**: Shared 인프라 디렉토리 구조 생성
+  - Terraform backend 설정 (S3 + DynamoDB)
+  - 공통 변수 및 로컬 값 정의
+  - 필수 태그 정책 적용
+
+### Documentation
+- Shared 리소스 관리 가이드 초안 작성
+- Import vs 신규 생성 전략 문서화
+
+---
+
+## Legend
+
+- **Added**: 새로운 기능 또는 리소스 추가
+- **Changed**: 기존 기능 또는 구성 변경
+- **Fixed**: 버그 수정 또는 오류 해결
+- **Removed**: 기능 또는 리소스 제거
+- **Deprecated**: 향후 제거 예정
+- **Security**: 보안 관련 변경
+- **Documentation**: 문서 업데이트
+
+## Import History Summary
+
+| 리소스 타입 | 리소스 ID | Import 날짜 | 상태 |
+|-----------|----------|------------|------|
+| ACM Certificate | *.set-of.com | 2025-11-23 | ✅ Active |
+| Route53 Zone | set-of.com | 2025-11-23 | ✅ Active |
+| RDS Instance | prod-shared-mysql | 2025-11-22 | ✅ Active |
+| VPC | prod-shared-vpc | 2025-11-22 | ✅ Active |
+
+## Versioning Policy
+
+- **Major (X.0.0)**: Breaking changes, 아키텍처 전면 변경
+- **Minor (x.X.0)**: 새로운 리소스 Import, 주요 기능 추가
+- **Patch (x.x.X)**: 버그 수정, 문서 업데이트, 마이너 설정 변경

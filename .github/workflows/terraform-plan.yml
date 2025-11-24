@@ -8,7 +8,7 @@ on:
       - 'terraform/**'
       - '.github/workflows/terraform-*.yml'
       # Exclude atlantis directory - managed by Atlantis server
-      - '!terraform/atlantis/**'
+      - '!terraform/environments/prod/atlantis/**'
 
 permissions:
   contents: read
@@ -32,13 +32,23 @@ jobs:
 
       - name: Install Security Scanners
         run: |
-          # Install tfsec via official installation script
-          curl -s https://raw.githubusercontent.com/aquasecurity/tfsec/master/scripts/install_linux.sh | bash
+          # Install tfsec from GitHub releases
+          TFSEC_VERSION=1.28.1
+          curl -sSLo tfsec "https://github.com/aquasecurity/tfsec/releases/download/v${TFSEC_VERSION}/tfsec-linux-amd64"
+          chmod +x tfsec
+          sudo mv tfsec /usr/local/bin/
           tfsec --version
 
           # Install checkov via pip
           pip install checkov
           checkov --version
+
+          # Install conftest for OPA policy validation
+          CONFTEST_VERSION=0.49.1
+          curl -L "https://github.com/open-policy-agent/conftest/releases/download/v${CONFTEST_VERSION}/conftest_${CONFTEST_VERSION}_Linux_x86_64.tar.gz" \
+            | tar xz -C /tmp
+          sudo mv /tmp/conftest /usr/local/bin/
+          conftest --version
 
       - name: Setup Infracost
         uses: infracost/actions/setup@v3
@@ -57,24 +67,24 @@ jobs:
       - name: Run Governance Validators
         run: |
           echo "🔍 Running governance validators..."
-          chmod +x scripts/validators/*.sh
+          chmod +x governance/scripts/validators/*.sh
 
           # Run all validators
-          ./scripts/validators/check-tags.sh
-          ./scripts/validators/check-encryption.sh
-          ./scripts/validators/check-naming.sh
-          ./scripts/validators/check-tfsec.sh
-          ./scripts/validators/check-checkov.sh
+          ./governance/scripts/validators/check-tags.sh
+          ./governance/scripts/validators/check-encryption.sh
+          ./governance/scripts/validators/check-naming.sh
+          ./governance/scripts/validators/check-tfsec.sh
+          ./governance/scripts/validators/check-checkov.sh
 
           echo "✅ All governance checks passed!"
 
       # Monitoring Module
       - name: Terraform Format Check - Monitoring
-        working-directory: terraform/monitoring
+        working-directory: terraform/environments/prod/monitoring
         run: terraform fmt -check -recursive
 
       - name: Terraform Init - Monitoring
-        working-directory: terraform/monitoring
+        working-directory: terraform/environments/prod/monitoring
         run: |
           terraform init \
             -backend-config="bucket=prod-connectly" \
@@ -82,22 +92,42 @@ jobs:
             -backend-config="dynamodb_table=prod-connectly-tf-lock"
 
       - name: Terraform Validate - Monitoring
-        working-directory: terraform/monitoring
+        working-directory: terraform/environments/prod/monitoring
         run: terraform validate
 
       - name: Terraform Plan - Monitoring
         id: plan-monitoring
-        working-directory: terraform/monitoring
+        working-directory: terraform/environments/prod/monitoring
         run: |
           set +e
           terraform plan -no-color -out=tfplan
           PLAN_EXIT_CODE=$?
           terraform show -no-color tfplan > plan-monitoring.txt
+          terraform show -json tfplan > tfplan-monitoring.json
           exit $PLAN_EXIT_CODE
         continue-on-error: true
 
+      - name: OPA Policy Validation - Monitoring
+        working-directory: terraform/environments/prod/monitoring
+        continue-on-error: true
+        run: |
+          set +e
+          conftest test tfplan-monitoring.json \
+            --config ../../governance/configs/conftest.toml \
+            --output json > conftest-monitoring.json
+          EXIT_CODE=$?
+
+          if [ $EXIT_CODE -ne 0 ]; then
+            echo "⚠️ OPA policy validation failed for monitoring module"
+            cat conftest-monitoring.json
+          else
+            echo "✅ OPA policy validation passed for monitoring module"
+          fi
+
+          exit 0
+
       - name: Generate Infracost Cost Estimate - Monitoring
-        working-directory: terraform/monitoring
+        working-directory: terraform/environments/prod/monitoring
         continue-on-error: true
         run: |
           set +e
@@ -118,30 +148,50 @@ jobs:
 
       # Atlantis Module
       - name: Terraform Format Check - Atlantis
-        working-directory: terraform/atlantis
+        working-directory: terraform/environments/prod/atlantis
         run: terraform fmt -check -recursive
 
       - name: Terraform Init - Atlantis
-        working-directory: terraform/atlantis
+        working-directory: terraform/environments/prod/atlantis
         run: terraform init
 
       - name: Terraform Validate - Atlantis
-        working-directory: terraform/atlantis
+        working-directory: terraform/environments/prod/atlantis
         run: terraform validate
 
       - name: Terraform Plan - Atlantis
         id: plan
-        working-directory: terraform/atlantis
+        working-directory: terraform/environments/prod/atlantis
         run: |
           set +e
           terraform plan -no-color -out=tfplan
           PLAN_EXIT_CODE=$?
           terraform show -no-color tfplan > plan.txt
+          terraform show -json tfplan > tfplan-atlantis.json
           exit $PLAN_EXIT_CODE
         continue-on-error: true
 
+      - name: OPA Policy Validation - Atlantis
+        working-directory: terraform/environments/prod/atlantis
+        continue-on-error: true
+        run: |
+          set +e
+          conftest test tfplan-atlantis.json \
+            --config ../../../../governance/configs/conftest.toml \
+            --output json > conftest-atlantis.json
+          EXIT_CODE=$?
+
+          if [ $EXIT_CODE -ne 0 ]; then
+            echo "⚠️ OPA policy validation failed for atlantis module"
+            cat conftest-atlantis.json
+          else
+            echo "✅ OPA policy validation passed for atlantis module"
+          fi
+
+          exit 0
+
       - name: Generate Infracost Cost Estimate - Atlantis
-        working-directory: terraform/atlantis
+        working-directory: terraform/environments/prod/atlantis
         continue-on-error: true
         run: |
           set +e
@@ -226,7 +276,7 @@ jobs:
             // Read monitoring plan
             let monitoringPlan = '';
             try {
-              monitoringPlan = fs.readFileSync('terraform/monitoring/plan-monitoring.txt', 'utf8');
+              monitoringPlan = fs.readFileSync('terraform/environments/prod/monitoring/plan-monitoring.txt', 'utf8');
             } catch (error) {
               monitoringPlan = 'No changes or error reading plan file.';
             }
@@ -234,7 +284,7 @@ jobs:
             // Read atlantis plan
             let atlantisPlan = '';
             try {
-              atlantisPlan = fs.readFileSync('terraform/atlantis/plan.txt', 'utf8');
+              atlantisPlan = fs.readFileSync('terraform/environments/prod/atlantis/plan.txt', 'utf8');
             } catch (error) {
               atlantisPlan = 'No changes or error reading plan file.';
             }
@@ -294,6 +344,90 @@ jobs:
               }
             } catch (error) {
               checkovResults = 'Policy compliance results not available.';
+            }
+
+            // Read conftest (OPA) results
+            let conftestResults = '';
+            try {
+              let monitoringPolicies = { pass: 0, fail: 0, warn: 0 };
+              let atlantisPolicies = { pass: 0, fail: 0, warn: 0 };
+              let totalViolations = 0;
+
+              // Parse monitoring conftest results
+              try {
+                const monitoringConftest = JSON.parse(fs.readFileSync('terraform/environments/prod/monitoring/conftest-monitoring.json', 'utf8'));
+                if (monitoringConftest && monitoringConftest.length > 0) {
+                  monitoringConftest.forEach(result => {
+                    if (result.failures && result.failures.length > 0) {
+                      monitoringPolicies.fail += result.failures.length;
+                      totalViolations += result.failures.length;
+                    }
+                    if (result.warnings && result.warnings.length > 0) {
+                      monitoringPolicies.warn += result.warnings.length;
+                    }
+                    if (result.successes) {
+                      monitoringPolicies.pass += result.successes;
+                    }
+                  });
+                }
+              } catch (e) {
+                // Monitoring conftest results not available
+              }
+
+              // Parse atlantis conftest results
+              try {
+                const atlantisConftest = JSON.parse(fs.readFileSync('terraform/environments/prod/atlantis/conftest-atlantis.json', 'utf8'));
+                if (atlantisConftest && atlantisConftest.length > 0) {
+                  atlantisConftest.forEach(result => {
+                    if (result.failures && result.failures.length > 0) {
+                      atlantisPolicies.fail += result.failures.length;
+                      totalViolations += result.failures.length;
+                    }
+                    if (result.warnings && result.warnings.length > 0) {
+                      atlantisPolicies.warn += result.warnings.length;
+                    }
+                    if (result.successes) {
+                      atlantisPolicies.pass += result.successes;
+                    }
+                  });
+                }
+              } catch (e) {
+                // Atlantis conftest results not available
+              }
+
+              const totalChecks = monitoringPolicies.pass + monitoringPolicies.fail + monitoringPolicies.warn +
+                                  atlantisPolicies.pass + atlantisPolicies.fail + atlantisPolicies.warn;
+
+              if (totalChecks > 0) {
+                conftestResults = `**OPA Policy Validation Summary:**\n`;
+                conftestResults += `✅ Passed: ${monitoringPolicies.pass + atlantisPolicies.pass}\n`;
+                if (totalViolations > 0) conftestResults += `❌ Failed: ${totalViolations}\n`;
+                const totalWarnings = monitoringPolicies.warn + atlantisPolicies.warn;
+                if (totalWarnings > 0) conftestResults += `⚠️ Warnings: ${totalWarnings}\n`;
+
+                conftestResults += `\n**Module Breakdown:**\n`;
+                if (monitoringPolicies.pass + monitoringPolicies.fail + monitoringPolicies.warn > 0) {
+                  conftestResults += `- Monitoring: ${monitoringPolicies.pass} passed`;
+                  if (monitoringPolicies.fail > 0) conftestResults += `, ${monitoringPolicies.fail} failed`;
+                  if (monitoringPolicies.warn > 0) conftestResults += `, ${monitoringPolicies.warn} warnings`;
+                  conftestResults += `\n`;
+                }
+                if (atlantisPolicies.pass + atlantisPolicies.fail + atlantisPolicies.warn > 0) {
+                  conftestResults += `- Atlantis: ${atlantisPolicies.pass} passed`;
+                  if (atlantisPolicies.fail > 0) conftestResults += `, ${atlantisPolicies.fail} failed`;
+                  if (atlantisPolicies.warn > 0) conftestResults += `, ${atlantisPolicies.warn} warnings`;
+                  conftestResults += `\n`;
+                }
+
+                if (totalViolations > 0) {
+                  conftestResults += `\n⚠️ **Action Required:** OPA policy violations must be resolved.\n`;
+                  conftestResults += `📚 Review policies in \`governance/policies/\` directory for details.\n`;
+                }
+              } else {
+                conftestResults = '✅ OPA policy validation passed (or no policies defined)';
+              }
+            } catch (error) {
+              conftestResults = 'OPA policy validation results not available.';
             }
 
             // Read Infracost results
@@ -396,6 +530,12 @@ jobs:
             <details><summary>🔐 Policy Compliance (checkov)</summary>
 
             ${checkovResults}
+
+            </details>
+
+            <details><summary>📜 OPA Policy Validation (Conftest)</summary>
+
+            ${conftestResults}
 
             </details>
 

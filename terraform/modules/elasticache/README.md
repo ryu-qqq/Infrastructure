@@ -59,16 +59,6 @@ AWS ElastiCache 클러스터를 배포하고 관리하기 위한 재사용 가�
 ### Basic Example (Single-node Redis)
 
 ```hcl
-# Common Tags Module
-module "common_tags" {
-  source = "../../modules/common-tags"
-
-  environment = "dev"
-  service     = "cache-service"
-  team        = "platform-team"
-  owner       = "fbtkdals2@naver.com"
-  cost_center = "engineering"
-}
 
 # Security Group for ElastiCache
 resource "aws_security_group" "redis" {
@@ -101,7 +91,11 @@ module "redis" {
   source = "../../modules/elasticache"
 
   # Required Configuration
-  common_tags        = module.common_tags.tags
+  environment  = "dev"
+  service_name = "cache-service"
+  team         = "platform-team"
+  owner        = "fbtkdals2@naver.com"
+  cost_center  = "engineering"
   cluster_id         = "redis-dev"
   engine             = "redis"
   engine_version     = "7.0"
@@ -174,7 +168,11 @@ module "redis_cluster" {
   source = "../../modules/elasticache"
 
   # Required Configuration
-  common_tags        = module.common_tags.tags
+  environment  = "dev"
+  service_name = "cache-service"
+  team         = "platform-team"
+  owner        = "fbtkdals2@naver.com"
+  cost_center  = "engineering"
   cluster_id         = "redis-prod"
   engine             = "redis"
   engine_version     = "7.0"
@@ -265,7 +263,11 @@ module "memcached" {
   source = "../../modules/elasticache"
 
   # Required Configuration
-  common_tags        = module.common_tags.tags
+  environment  = "dev"
+  service_name = "cache-service"
+  team         = "platform-team"
+  owner        = "fbtkdals2@naver.com"
+  cost_center  = "engineering"
   cluster_id         = "memcached-dev"
   engine             = "memcached"
   engine_version     = "1.6.6"
@@ -309,12 +311,29 @@ module "memcached" {
 
 | Name | Description | Type | Example |
 |------|-------------|------|---------|
-| `common_tags` | Common tags from common-tags module | `map(string)` | `module.common_tags.tags` |
 | `cluster_id` | Cluster identifier (lowercase, letters, numbers, hyphens) | `string` | `"redis-prod"` |
 | `engine` | Cache engine (redis or memcached) | `string` | `"redis"` |
 | `node_type` | Instance class | `string` | `"cache.t3.micro"` |
 | `subnet_ids` | List of VPC subnet IDs | `list(string)` | `["subnet-xxx", "subnet-yyy"]` |
 | `security_group_ids` | List of security group IDs | `list(string)` | `["sg-xxx"]` |
+
+### Required Variables (Tagging)
+
+| Name | Description | Type | Example |
+|------|-------------|------|---------|
+| `environment` | Environment name (dev, staging, prod) | `string` | `"prod"` |
+| `service_name` | Service name (kebab-case) | `string` | `"cache-service"` |
+| `team` | Team name (kebab-case) | `string` | `"platform-team"` |
+| `owner` | Owner email or identifier | `string` | `"owner@example.com"` |
+| `cost_center` | Cost center (kebab-case) | `string` | `"engineering"` |
+
+### Optional Variables (Tagging)
+
+| Name | Description | Type | Default |
+|------|-------------|------|---------|
+| `project` | Project name | `string` | `"infrastructure"` |
+| `data_class` | Data classification | `string` | `"confidential"` |
+| `additional_tags` | Additional tags | `map(string)` | `{}` |
 
 ### Optional Variables - Engine Configuration
 

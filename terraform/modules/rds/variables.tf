@@ -1,9 +1,88 @@
-# Required Variables
+# --- Required Variables ---
 
-variable "common_tags" {
-  description = "Common tags from common-tags module"
-  type        = map(string)
+# --- Required Variables (Tagging) ---
+
+variable "environment" {
+  description = "Environment name (dev, staging, prod)"
+  type        = string
+
+  validation {
+    condition     = contains(["dev", "staging", "prod"], var.environment)
+    error_message = "Environment must be one of: dev, staging, prod."
+  }
 }
+
+variable "service_name" {
+  description = "Service name (kebab-case, e.g., api-server, web-app)"
+  type        = string
+
+  validation {
+    condition     = can(regex("^[a-z][a-z0-9-]*[a-z0-9]$", var.service_name))
+    error_message = "Service name must use kebab-case (lowercase letters, numbers, hyphens only)."
+  }
+}
+
+variable "team" {
+  description = "Team responsible for the resource (kebab-case, e.g., platform-team)"
+  type        = string
+
+  validation {
+    condition     = can(regex("^[a-z][a-z0-9-]*[a-z0-9]$", var.team))
+    error_message = "Team must use kebab-case (lowercase letters, numbers, hyphens only)."
+  }
+}
+
+variable "owner" {
+  description = "Email or identifier of the resource owner"
+  type        = string
+
+  validation {
+    condition     = can(regex("^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$", var.owner)) || can(regex("^[a-z][a-z0-9-]*[a-z0-9]$", var.owner))
+    error_message = "Owner must be a valid email address or kebab-case identifier."
+  }
+}
+
+variable "cost_center" {
+  description = "Cost center for billing and financial tracking (kebab-case)"
+  type        = string
+
+  validation {
+    condition     = can(regex("^[a-z][a-z0-9-]*[a-z0-9]$", var.cost_center))
+    error_message = "Cost center must use kebab-case (lowercase letters, numbers, hyphens only)."
+  }
+}
+
+# --- Optional Variables (Tagging) ---
+
+variable "project" {
+  description = "Project name this resource belongs to"
+  type        = string
+  default     = "infrastructure"
+
+  validation {
+    condition     = can(regex("^[a-z][a-z0-9-]*[a-z0-9]$", var.project))
+    error_message = "Project must use kebab-case (lowercase letters, numbers, hyphens only)."
+  }
+}
+
+variable "data_class" {
+  description = "Data classification level (confidential, internal, public)"
+  type        = string
+  default     = "confidential"
+
+  validation {
+    condition     = contains(["confidential", "internal", "public"], var.data_class)
+    error_message = "Data class must be one of: confidential, internal, public."
+  }
+}
+
+variable "additional_tags" {
+  description = "Additional tags to merge with common tags"
+  type        = map(string)
+  default     = {}
+}
+
+# --- Required Variables (RDS Configuration) ---
 
 variable "db_name" {
   description = "The name of the database to create when the DB instance is created. If this parameter is not specified, no database is created. Must begin with a letter and contain only alphanumeric characters"
@@ -111,8 +190,8 @@ variable "max_allocated_storage" {
   default     = 100
 
   validation {
-    condition     = var.max_allocated_storage == 0 || (var.max_allocated_storage >= var.allocated_storage && var.max_allocated_storage <= 65536)
-    error_message = "Max allocated storage must be 0 (disabled) or between allocated_storage and 65536 GiB"
+    condition     = var.max_allocated_storage == 0 || (var.max_allocated_storage > 0 && var.max_allocated_storage <= 65536)
+    error_message = "Max allocated storage must be 0 (disabled) or between 1 and 65536 GiB"
   }
 }
 
@@ -139,7 +218,7 @@ variable "storage_throughput" {
   default     = null
 
   validation {
-    condition     = var.storage_throughput == null || (var.storage_throughput >= 125 && var.storage_throughput <= 1000)
+    condition     = var.storage_throughput == null ? true : (var.storage_throughput >= 125 && var.storage_throughput <= 1000)
     error_message = "Storage throughput must be between 125 and 1000 MiB/s for gp3 storage"
   }
 }
@@ -310,7 +389,7 @@ variable "port" {
 variable "deletion_protection" {
   description = "If true, the database cannot be deleted"
   type        = bool
-  default     = false
+  default     = true
 }
 
 variable "apply_immediately" {

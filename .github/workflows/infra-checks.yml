@@ -130,16 +130,16 @@ jobs:
         if: inputs.run_tfsec
         continue-on-error: true
         run: |
-          chmod +x scripts/validators/check-tfsec.sh
-          ./scripts/validators/check-tfsec.sh "${{ inputs.terraform_directory }}"
+          chmod +x governance/scripts/validators/check-tfsec.sh
+          ./governance/scripts/validators/check-tfsec.sh "${{ inputs.terraform_directory }}"
 
       - name: Run checkov Policy Check
         id: checkov
         if: inputs.run_checkov
         continue-on-error: true
         run: |
-          chmod +x scripts/validators/check-checkov.sh
-          ./scripts/validators/check-checkov.sh "${{ inputs.terraform_directory }}"
+          chmod +x governance/scripts/validators/check-checkov.sh
+          ./governance/scripts/validators/check-checkov.sh "${{ inputs.terraform_directory }}"
 
       # Run Conftest Policy Validation
       - name: Run Conftest Policy Validation
@@ -147,13 +147,13 @@ jobs:
         if: inputs.run_conftest
         continue-on-error: true
         run: |
-          chmod +x scripts/policy/run-conftest.sh
+          chmod +x governance/scripts/policy/run-conftest.sh
 
           # Create results file for reporting
           echo '{"passed":0,"failed":0,"warnings":0,"errors":[]}' > conftest-results.json
 
           # Run conftest
-          if ./scripts/policy/run-conftest.sh "${{ inputs.terraform_directory }}"; then
+          if ./governance/scripts/policy/run-conftest.sh "${{ inputs.terraform_directory }}"; then
             echo "status=passed" >> $GITHUB_OUTPUT
             jq '.passed = 1' conftest-results.json > conftest-results.tmp && mv conftest-results.tmp conftest-results.json
           else

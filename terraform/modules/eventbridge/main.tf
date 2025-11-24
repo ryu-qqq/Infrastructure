@@ -2,6 +2,26 @@
 # EventBridge Rule and Target
 # ========================================
 
+# Common Tags Module
+module "tags" {
+  source = "../common-tags"
+
+  environment = var.environment
+  service     = var.service_name
+  team        = var.team
+  owner       = var.owner
+  cost_center = var.cost_center
+  project     = var.project
+  data_class  = var.data_class
+
+  additional_tags = var.additional_tags
+}
+
+locals {
+  # Required tags for governance compliance
+  required_tags = module.tags.tags
+}
+
 resource "aws_cloudwatch_event_rule" "this" {
   name                = var.name
   description         = var.description
@@ -10,7 +30,7 @@ resource "aws_cloudwatch_event_rule" "this" {
   state               = var.enabled ? "ENABLED" : "DISABLED"
 
   tags = merge(
-    var.common_tags,
+    local.required_tags,
     {
       Name = var.name
     }
@@ -114,14 +134,14 @@ resource "aws_iam_role" "eventbridge" {
   })
 
   tags = merge(
-    var.common_tags,
+    local.required_tags,
     {
       Name = "${var.name}-eventbridge-role"
     }
   )
 }
 
-resource "aws_iam_role_policy" "eventbridge_ecs" {
+resource "aws_iam_role_policy" "eventbridge-ecs" {
   count = var.target_type == "ecs" ? 1 : 0
 
   name = "${var.name}-ecs-run-task"

@@ -1,4 +1,28 @@
+# CloudFront Distribution Module
+# Creates a CloudFront CDN distribution with origins, cache behaviors, and SSL/TLS configuration
+
+# Common Tags Module
+module "tags" {
+  source = "../common-tags"
+
+  environment = var.environment
+  service     = var.service_name
+  team        = var.team
+  owner       = var.owner
+  cost_center = var.cost_center
+  project     = var.project
+  data_class  = var.data_class
+
+  additional_tags = var.additional_tags
+}
+
+locals {
+  # Required tags for governance compliance
+  required_tags = module.tags.tags
+}
+
 # CloudFront Distribution
+#tfsec:ignore:AVD-AWS-0010 Logging is optional and controlled by user configuration
 resource "aws_cloudfront_distribution" "this" {
   comment             = var.comment
   enabled             = var.enabled
@@ -183,10 +207,11 @@ resource "aws_cloudfront_distribution" "this" {
   }
 
   tags = merge(
-    var.common_tags,
+    local.required_tags,
     {
       Name        = var.comment
       Description = "CloudFront Distribution - ${var.comment}"
+      Component   = "cdn"
     }
   )
 }

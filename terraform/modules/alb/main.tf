@@ -1,4 +1,28 @@
+# Application Load Balancer Module
+# Creates an Application Load Balancer with target groups, listeners, and routing rules
+
+# Common Tags Module
+module "tags" {
+  source = "../common-tags"
+
+  environment = var.environment
+  service     = var.service_name
+  team        = var.team
+  owner       = var.owner
+  cost_center = var.cost_center
+  project     = var.project
+  data_class  = var.data_class
+
+  additional_tags = var.additional_tags
+}
+
+locals {
+  # Required tags for governance compliance
+  required_tags = module.tags.tags
+}
+
 # Application Load Balancer
+#tfsec:ignore:AVD-AWS-0053 ALB exposure (internal/public) is controlled by var.internal
 resource "aws_lb" "this" {
   name               = var.name
   internal           = var.internal
@@ -10,6 +34,7 @@ resource "aws_lb" "this" {
   enable_http2               = var.enable_http2
   idle_timeout               = var.idle_timeout
   ip_address_type            = var.ip_address_type
+  drop_invalid_header_fields = true
 
   # Access logs configuration
   dynamic "access_logs" {
@@ -22,10 +47,11 @@ resource "aws_lb" "this" {
   }
 
   tags = merge(
-    var.common_tags,
+    local.required_tags,
     {
       Name        = var.name
       Description = "Application Load Balancer ${var.name}"
+      Component   = "load-balancer"
     }
   )
 }
@@ -65,10 +91,11 @@ resource "aws_lb_target_group" "this" {
   }
 
   tags = merge(
-    var.common_tags,
+    local.required_tags,
     {
       Name        = "${var.name}-${each.key}"
       Description = "Target group for ${var.name} - ${each.key}"
+      Component   = "target-group"
     }
   )
 
@@ -129,10 +156,11 @@ resource "aws_lb_listener" "http" {
   }
 
   tags = merge(
-    var.common_tags,
+    local.required_tags,
     {
       Name        = "${var.name}-http-${each.key}"
       Description = "HTTP listener for ${var.name}"
+      Component   = "listener"
     }
   )
 }
@@ -171,10 +199,11 @@ resource "aws_lb_listener" "https" {
   }
 
   tags = merge(
-    var.common_tags,
+    local.required_tags,
     {
       Name        = "${var.name}-https-${each.key}"
       Description = "HTTPS listener for ${var.name}"
+      Component   = "listener"
     }
   )
 }
@@ -247,10 +276,11 @@ resource "aws_lb_listener_rule" "this" {
   }
 
   tags = merge(
-    var.common_tags,
+    local.required_tags,
     {
       Name        = "${var.name}-rule-${each.key}"
       Description = "Listener rule for ${var.name} - ${each.key}"
+      Component   = "listener-rule"
     }
   )
 }

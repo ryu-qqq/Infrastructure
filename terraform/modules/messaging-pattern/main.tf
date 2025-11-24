@@ -1,16 +1,19 @@
 # Messaging Pattern Module - Fan-out Pattern
 # Creates SNS topic with multiple SQS queue subscriptions with filter policies
 
-locals {
-  required_tags = {
-    Environment = var.environment
-    Service     = var.service
-    Team        = var.team
-    Owner       = var.owner
-    CostCenter  = var.cost_center
-    ManagedBy   = "Terraform"
-    Project     = var.project
-  }
+# Common Tags Module
+module "tags" {
+  source = "../common-tags"
+
+  environment = var.environment
+  service     = var.service
+  team        = var.team
+  owner       = var.owner
+  cost_center = var.cost_center
+  project     = var.project
+  data_class  = var.data_class
+
+  additional_tags = var.additional_tags
 }
 
 # SNS Topic for Fan-out
@@ -39,14 +42,13 @@ module "sns_topic" {
   alarm_ok_actions         = var.alarm_ok_actions
 
   # No direct subscriptions here - managed separately below
-  subscriptions = []
+  subscriptions = {}
 
-  additional_tags = merge(
-    {
-      Pattern = "Fan-out"
-    },
-    var.additional_tags
-  )
+  # Note: SNS module will add data_class support in future version
+  additional_tags = {
+    Pattern   = "Fan-out"
+    DataClass = var.data_class
+  }
 }
 
 # SQS Queues for Fan-out subscribers
@@ -84,13 +86,12 @@ module "sqs_queues" {
   alarm_actions            = var.alarm_actions
   alarm_ok_actions         = var.alarm_ok_actions
 
-  additional_tags = merge(
-    {
-      Pattern         = "Fan-out"
-      SubscribedTopic = module.sns_topic.topic_name
-    },
-    lookup(each.value, "additional_tags", {})
-  )
+  # Note: SQS module will add data_class support in future version
+  additional_tags = {
+    Pattern         = "Fan-out"
+    SubscribedTopic = module.sns_topic.topic_name
+    DataClass       = var.data_class
+  }
 }
 
 # SQS Queue Policy to allow SNS to send messages

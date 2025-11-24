@@ -3,6 +3,26 @@
 # Supports both Redis and Memcached with encryption, Multi-AZ, and monitoring
 # ==============================================================================
 
+# Common Tags Module
+module "tags" {
+  source = "../common-tags"
+
+  environment = var.environment
+  service     = var.service_name
+  team        = var.team
+  owner       = var.owner
+  cost_center = var.cost_center
+  project     = var.project
+  data_class  = var.data_class
+
+  additional_tags = var.additional_tags
+}
+
+locals {
+  # Required tags for governance compliance
+  required_tags = module.tags.tags
+}
+
 # ==============================================================================
 # Subnet Group
 # ==============================================================================
@@ -12,7 +32,7 @@ resource "aws_elasticache_subnet_group" "this" {
   subnet_ids = var.subnet_ids
 
   tags = merge(
-    var.common_tags,
+    local.required_tags,
     {
       Name = "${var.cluster_id}-subnet-group"
     }
@@ -38,7 +58,7 @@ resource "aws_elasticache_parameter_group" "this" {
   }
 
   tags = merge(
-    var.common_tags,
+    local.required_tags,
     {
       Name = "${var.cluster_id}-parameter-group"
     }
@@ -105,7 +125,7 @@ resource "aws_elasticache_replication_group" "redis" {
   }
 
   tags = merge(
-    var.common_tags,
+    local.required_tags,
     {
       Name = var.replication_group_id
     }
@@ -161,7 +181,7 @@ resource "aws_elasticache_cluster" "memcached-or-single-redis" {
   }
 
   tags = merge(
-    var.common_tags,
+    local.required_tags,
     {
       Name = var.cluster_id
     }
@@ -195,7 +215,7 @@ resource "aws_cloudwatch_metric_alarm" "cpu" {
   alarm_actions = var.alarm_actions
 
   tags = merge(
-    var.common_tags,
+    local.required_tags,
     {
       Name = "${var.cluster_id}-cpu-alarm"
     }
@@ -225,7 +245,7 @@ resource "aws_cloudwatch_metric_alarm" "memory" {
   alarm_actions = var.alarm_actions
 
   tags = merge(
-    var.common_tags,
+    local.required_tags,
     {
       Name = "${var.cluster_id}-memory-alarm"
     }
@@ -255,7 +275,7 @@ resource "aws_cloudwatch_metric_alarm" "connections" {
   alarm_actions = var.alarm_actions
 
   tags = merge(
-    var.common_tags,
+    local.required_tags,
     {
       Name = "${var.cluster_id}-connections-alarm"
     }

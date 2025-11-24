@@ -3,7 +3,7 @@
 # setup-hooks.sh - Git Hooks Installation Script
 #
 # Installs Git hooks for Terraform governance validation.
-# Copies hooks from scripts/hooks/ to .git/hooks/
+# Copies hooks from governance/hooks/ to .git/hooks/
 #
 # Usage:
 #   ./scripts/setup-hooks.sh
@@ -42,12 +42,12 @@ if [[ ! -d ".git" ]]; then
     exit 1
 fi
 
-# Check if scripts/hooks directory exists
-if [[ ! -d "scripts/hooks" ]]; then
-    echo -e "${RED}✗ Error: scripts/hooks directory not found${NC}"
+# Check if governance/hooks directory exists
+if [[ ! -d "governance/hooks" ]]; then
+    echo -e "${RED}✗ Error: governance/hooks directory not found${NC}"
     echo -e "${YELLOW}💡 Expected structure:${NC}"
-    echo -e "${YELLOW}   scripts/hooks/pre-commit${NC}"
-    echo -e "${YELLOW}   scripts/hooks/pre-push${NC}"
+    echo -e "${YELLOW}   governance/hooks/pre-commit${NC}"
+    echo -e "${YELLOW}   governance/hooks/pre-push${NC}"
     exit 1
 fi
 
@@ -112,7 +112,7 @@ echo -e "\n${BLUE}🔗 Installing Git hooks...${NC}\n"
 
 HOOKS_INSTALLED=0
 
-for hook_file in scripts/hooks/*; do
+for hook_file in governance/hooks/*; do
     if [[ -f "$hook_file" ]]; then
         hook_name=$(basename "$hook_file")
         target_hook=".git/hooks/$hook_name"
@@ -140,7 +140,7 @@ VALIDATORS=("check-tags.sh" "check-encryption.sh" "check-naming.sh")
 VALIDATORS_OK=0
 
 for validator in "${VALIDATORS[@]}"; do
-    validator_path="scripts/validators/$validator"
+    validator_path="governance/scripts/validators/$validator"
 
     if [[ -x "$validator_path" ]]; then
         echo -e "${GREEN}✓ $validator${NC}"
@@ -166,9 +166,8 @@ if [[ $VALIDATORS_OK -eq ${#VALIDATORS[@]} ]]; then
     echo -e "  ${YELLOW}On push:${NC} Full validation (tags, encryption, naming)"
     echo -e "\n${BLUE}💡 Tips:${NC}"
     echo -e "  ${YELLOW}• Bypass (emergency): git commit/push --no-verify${NC}"
-    echo -e "  ${YELLOW}• Test validators: ./scripts/validators/check-*.sh${NC}"
-    echo -e "  ${YELLOW}• Documentation: docs/governance/infrastructure_governance.md${NC}"
-    echo -e "  ${YELLOW}• PR workflow: docs/governance/infrastructure_pr.md${NC}"
+    echo -e "  ${YELLOW}• Test validators: ./governance/scripts/validators/check-*.sh${NC}"
+    echo -e "  ${YELLOW}• Documentation: governance/README.md${NC}"
 
     echo -e "\n${GREEN}🎉 Ready to develop with governance!${NC}\n"
 else

@@ -1,6 +1,26 @@
 # ECR Repository Module
 # Creates an ECR repository with KMS encryption, image scanning, and lifecycle policies
 
+# Common Tags Module
+module "tags" {
+  source = "../common-tags"
+
+  environment = var.environment
+  service     = var.service_name
+  team        = var.team
+  owner       = var.owner
+  cost_center = var.cost_center
+  project     = var.project
+  data_class  = var.data_class
+
+  additional_tags = var.additional_tags
+}
+
+locals {
+  # Required tags for governance compliance
+  required_tags = module.tags.tags
+}
+
 resource "aws_ecr_repository" "this" {
   name                 = var.name
   image_tag_mutability = var.image_tag_mutability
@@ -15,7 +35,7 @@ resource "aws_ecr_repository" "this" {
   }
 
   tags = merge(
-    var.common_tags,
+    local.required_tags,
     {
       Name      = "ecr-${var.name}"
       Component = "container-registry"
@@ -99,7 +119,7 @@ resource "aws_ecr_repository_policy" "default" {
 data "aws_caller_identity" "current" {}
 
 # SSM Parameter for cross-stack reference (optional)
-resource "aws_ssm_parameter" "repository_url" {
+resource "aws_ssm_parameter" "repository-url" {
   count = var.create_ssm_parameter ? 1 : 0
 
   name        = "/shared/ecr/${var.name}-repository-url"
@@ -107,5 +127,5 @@ resource "aws_ssm_parameter" "repository_url" {
   value       = aws_ecr_repository.this.repository_url
   description = "ECR repository URL for ${var.name}"
 
-  tags = var.common_tags
+  tags = local.required_tags
 }
