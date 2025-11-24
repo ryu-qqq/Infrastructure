@@ -19,6 +19,14 @@ resource "aws_athena_workgroup" "cloudtrail" {
     }
   }
 
+  tags = merge(
+    local.required_tags,
+    {
+      Name        = var.athena_workgroup_name
+      Component   = "athena"
+      Description = "Athena workgroup for CloudTrail log analysis"
+    }
+  )
 }
 
 # Glue Database for CloudTrail logs
@@ -28,6 +36,14 @@ resource "aws_glue_catalog_database" "cloudtrail" {
 
   description = "Database for CloudTrail log analysis"
 
+  tags = merge(
+    local.required_tags,
+    {
+      Name        = var.athena_database_name
+      Component   = "athena"
+      Description = "Glue database for CloudTrail log analysis"
+    }
+  )
 }
 
 # Glue Table for CloudTrail logs

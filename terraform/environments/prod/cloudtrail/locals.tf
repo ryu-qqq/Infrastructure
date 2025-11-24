@@ -12,4 +12,16 @@ locals {
 
   # SNS topic name for security alerts
   security_alerts_topic_name = "cloudtrail-security-alerts"
+
+  # Required tags for all resources
+  required_tags = {
+    Environment = var.environment
+    Service     = var.service_name
+    Team        = var.team
+    Owner       = var.owner
+    CostCenter  = var.cost_center
+    Project     = var.project
+    DataClass   = var.data_class
+    ManagedBy   = "terraform"
+  }
 }
