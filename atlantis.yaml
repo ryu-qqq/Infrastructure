@@ -123,7 +123,7 @@ projects:
 
   # Atlantis Server Infrastructure
   - name: atlantis-prod
-    dir: terraform/atlantis
+    dir: terraform/environments/prod/atlantis
     workspace: default
     autoplan:
       when_modified: ["*.tf", "*.tfvars"]
