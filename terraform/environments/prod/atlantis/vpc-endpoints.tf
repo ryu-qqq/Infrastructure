@@ -34,18 +34,14 @@ module "vpc_endpoints_sg" {
   name        = "vpc-endpoint-sg"
   description = "Security group for VPC Interface Endpoints"
   vpc_id      = data.aws_vpc.main.id
+  type        = "vpc-endpoint"
 
-  ingress_rules = [
-    {
-      description = "HTTPS from VPC"
-      from_port   = 443
-      to_port     = 443
-      protocol    = "tcp"
-      cidr_blocks = [data.aws_vpc.main.cidr_block]
-    }
-  ]
+  # VPC Endpoint Configuration
+  vpc_endpoint_ingress_cidr_blocks = [data.aws_vpc.main.cidr_block]
+  vpc_endpoint_port                = 443
 
-  egress_rules = []
+  # Disable default egress rule (VPC endpoints don't need outbound)
+  enable_default_egress = false
 
   # Tags
   environment  = var.environment
