@@ -129,7 +129,6 @@ module "sg_alb" {
 
 **상세 가이드**:
 - [Terraform 모듈 카탈로그](./terraform/modules/README.md)
-- [모듈 개발 가이드](./docs/modules/README.md)
 
 ---
 
@@ -193,9 +192,7 @@ resource "aws_security_group" "example" {
 }
 ```
 
-**배포 순서**: Foundation (network, kms) → Security (atlantis) → Application (ecs-cluster, alb, ...) → Observability
-
-**상세 가이드**: [환경 관리 가이드](./terraform/environments/README.md)
+**배포 순서**: Foundation (network, kms) → Security (atlantis) → Application (ecs-cluster, alb, ...)
 
 ---
 
@@ -244,7 +241,6 @@ resource "aws_lb_listener" "https" {
 }
 ```
 
-**상세 가이드**: [공유 리소스 관리](./terraform/shared/README.md)
 
 ---
 
@@ -310,7 +306,6 @@ git push origin feature-branch
 - **Atlantis**: PR 코멘트에 plan 결과와 함께 표시
 - **GitHub Actions**: PR 코멘트에 상세한 검증 리포트
 
-**통합 가이드**: [OPA Policy Integration Guide](./docs/guides/opa-policy-integration-guide.md)
 
 ---
 
@@ -410,9 +405,6 @@ module "ecr_myapp" {
 }
 ```
 
-**관련 문서**:
-- [Modules v1.0.0 마이그레이션 가이드](./docs/modules/MIGRATION_V1.md)
-- [태그 표준화 가이드](./docs/governance/TAGGING_STANDARDS.md)
 
 ### 📅 2025-11-21: 거버넌스 시스템 구축
 
