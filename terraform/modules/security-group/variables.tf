@@ -152,6 +152,12 @@ variable "alb_enable_https" {
 
 # --- ECS Security Group Configuration ---
 
+variable "enable_ecs_alb_ingress" {
+  description = "Enable ingress rule from ALB to ECS (set to true when ecs_ingress_from_alb_sg_id is provided)"
+  type        = bool
+  default     = false
+}
+
 variable "ecs_ingress_from_alb_sg_id" {
   description = "ALB security group ID to allow ingress to ECS"
   type        = string
@@ -171,6 +177,12 @@ variable "ecs_additional_ingress_sg_ids" {
 }
 
 # --- RDS Security Group Configuration ---
+
+variable "enable_rds_ecs_ingress" {
+  description = "Enable ingress rule from ECS to RDS (set to true when rds_ingress_from_ecs_sg_id is provided)"
+  type        = bool
+  default     = false
+}
 
 variable "rds_ingress_from_ecs_sg_id" {
   description = "ECS security group ID to allow ingress to RDS"

@@ -81,7 +81,7 @@ resource "aws_vpc_security_group_ingress_rule" "alb-https" {
 # --- ECS Security Group Rules ---
 
 resource "aws_vpc_security_group_ingress_rule" "ecs-from-alb" {
-  count = var.type == "ecs" && var.ecs_ingress_from_alb_sg_id != null ? 1 : 0
+  count = var.type == "ecs" && var.enable_ecs_alb_ingress ? 1 : 0
 
   security_group_id            = aws_security_group.this.id
   from_port                    = var.ecs_container_port
@@ -119,7 +119,7 @@ resource "aws_vpc_security_group_ingress_rule" "ecs-additional" {
 # --- RDS Security Group Rules ---
 
 resource "aws_vpc_security_group_ingress_rule" "rds-from-ecs" {
-  count = var.type == "rds" && var.rds_ingress_from_ecs_sg_id != null ? 1 : 0
+  count = var.type == "rds" && var.enable_rds_ecs_ingress ? 1 : 0
 
   security_group_id            = aws_security_group.this.id
   from_port                    = var.rds_port
