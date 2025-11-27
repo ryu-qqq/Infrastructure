@@ -76,6 +76,12 @@ on:
         type: string
         default: ""
 
+      # latest 태그 푸시 여부 (ECR IMMUTABLE 설정 시 false)
+      push-latest:
+        description: "latest 태그도 푸시할지 여부 (ECR이 IMMUTABLE이면 false로 설정)"
+        type: boolean
+        default: false
+
     outputs:
       image-uri:
         description: "푸시된 이미지 전체 URI"
@@ -184,9 +190,12 @@ jobs:
           echo "📤 Pushing to ECR..."
           docker push "${IMAGE_URI}"
 
-          # latest 태그도 푸시
-          docker tag "${IMAGE_URI}" "${ECR_REGISTRY}/${ECR_REPOSITORY}:latest"
-          docker push "${ECR_REGISTRY}/${ECR_REPOSITORY}:latest"
+          # latest 태그 푸시 (ECR MUTABLE인 경우만)
+          if [ "${{ inputs.push-latest }}" = "true" ]; then
+            echo "📤 Pushing latest tag..."
+            docker tag "${IMAGE_URI}" "${ECR_REGISTRY}/${ECR_REPOSITORY}:latest"
+            docker push "${ECR_REGISTRY}/${ECR_REPOSITORY}:latest"
+          fi
 
           echo "image-uri=${IMAGE_URI}" >> $GITHUB_OUTPUT
           echo "✅ Image pushed: ${IMAGE_URI}"
