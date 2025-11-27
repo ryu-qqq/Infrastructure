@@ -33,8 +33,8 @@ allowed_cidr_blocks = [
 ]
 
 # Resource Configuration
-atlantis_cpu    = 512
-atlantis_memory = 1024
+atlantis_cpu    = 2048
+atlantis_memory = 4096
 
 # ALB Configuration
 alb_enable_deletion_protection = false # Set to true for production
