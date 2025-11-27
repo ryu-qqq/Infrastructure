@@ -281,6 +281,8 @@ resource "aws_iam_role_policy" "atlantis-terraform-operations" {
           "s3:DeleteBucketPolicy",
           "s3:GetBucketAcl",
           "s3:PutBucketAcl",
+          "s3:GetBucketCORS",
+          "s3:PutBucketCORS",
           "s3:GetBucketVersioning",
           "s3:PutBucketVersioning",
           "s3:GetBucketLogging",
@@ -288,7 +290,9 @@ resource "aws_iam_role_policy" "atlantis-terraform-operations" {
           "s3:GetEncryptionConfiguration",
           "s3:PutEncryptionConfiguration",
           "s3:GetBucketPublicAccessBlock",
-          "s3:PutBucketPublicAccessBlock"
+          "s3:PutBucketPublicAccessBlock",
+          "s3:GetLifecycleConfiguration",
+          "s3:PutLifecycleConfiguration"
         ]
         Resource = "arn:aws:s3:::fileflow-*"
       },
