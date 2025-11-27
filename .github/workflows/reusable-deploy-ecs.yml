@@ -148,7 +148,7 @@ jobs:
              task-definition.json > updated-task-definition.json
 
           # 불필요한 필드 제거 (새 Task Definition 등록 시 필요)
-          jq 'del(.taskDefinitionArn, .revision, .status, .requiresAttributes, .compatibilities, .registeredAt, .registeredBy)' \
+          jq 'del(.taskDefinitionArn, .revision, .status, .requiresAttributes, .compatibilities, .registeredAt, .registeredBy, .deregisteredAt)' \
              updated-task-definition.json > new-task-definition.json
 
           echo "✅ Task definition updated"
