@@ -136,6 +136,42 @@ jobs:
           ./gradlew ${{ inputs.gradle-task }} -x test --no-daemon --stacktrace
           echo "✅ JAR build completed"
 
+      - name: Verify JAR file exists
+        run: |
+          echo "🔍 Verifying JAR file was created..."
+
+          # Gradle task에서 모듈 경로 추출
+          GRADLE_TASK="${{ inputs.gradle-task }}"
+          # :bootstrap:bootstrap-download-worker:bootJar -> bootstrap/bootstrap-download-worker
+          MODULE_PATH=$(echo "$GRADLE_TASK" | sed 's/:bootJar$//' | sed 's/^://' | sed 's/:/\//g')
+          JAR_DIR="${MODULE_PATH}/build/libs"
+
+          echo "📂 Expected JAR location: $JAR_DIR"
+          echo "📂 Module path: $MODULE_PATH"
+
+          if [ -d "$JAR_DIR" ]; then
+            echo "✅ JAR directory exists"
+            echo "📦 JAR files found:"
+            ls -la "$JAR_DIR"
+          else
+            echo "❌ JAR directory does not exist: $JAR_DIR"
+            echo ""
+            echo "📂 Checking build directory..."
+            if [ -d "$MODULE_PATH/build" ]; then
+              echo "Build directory contents:"
+              ls -la "$MODULE_PATH/build/"
+            else
+              echo "❌ Build directory not found at: $MODULE_PATH/build"
+            fi
+            echo ""
+            echo "📂 Searching for all JAR files in project..."
+            find . -name "*.jar" -path "*/build/libs/*" 2>/dev/null | head -20 || echo "No JAR files found"
+            echo ""
+            echo "📂 Checking Dockerfile JAR path..."
+            cat "${{ inputs.dockerfile }}" | grep -E "COPY.*jar"
+            exit 1
+          fi
+
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
