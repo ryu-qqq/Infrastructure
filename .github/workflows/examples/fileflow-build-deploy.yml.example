@@ -193,27 +193,24 @@ jobs:
       AWS_ROLE_ARN: ${{ secrets.AWS_ROLE_ARN }}
 
   # ============================================================================
-  # Step 4: 배포 완료 알림
+  # Step 4: 배포 완료 알림 (Slack + GitHub Summary)
   # ============================================================================
   notify:
-    name: Deployment Summary
+    name: Deployment Notification
     needs: [detect-changes, build-web-api, build-download-worker, build-scheduler, deploy-web-api, deploy-download-worker, deploy-scheduler]
-    runs-on: ubuntu-latest
-    if: always()
-
-    steps:
-      - name: Create Summary
-        run: |
-          echo "## 🚀 FileFlow Smart Deployment" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "**Commit**: ${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
-          echo "**Actor**: @${{ github.actor }}" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "### Change Detection" >> $GITHUB_STEP_SUMMARY
-          echo "| Component | Changed | Build | Deploy |" >> $GITHUB_STEP_SUMMARY
-          echo "|-----------|---------|-------|--------|" >> $GITHUB_STEP_SUMMARY
-          echo "| web-api | ${{ needs.detect-changes.outputs.web-api }} | ${{ needs.build-web-api.result || 'skipped' }} | ${{ needs.deploy-web-api.result || 'skipped' }} |" >> $GITHUB_STEP_SUMMARY
-          echo "| download-worker | ${{ needs.detect-changes.outputs.download-worker }} | ${{ needs.build-download-worker.result || 'skipped' }} | ${{ needs.deploy-download-worker.result || 'skipped' }} |" >> $GITHUB_STEP_SUMMARY
-          echo "| scheduler | ${{ needs.detect-changes.outputs.scheduler }} | ${{ needs.build-scheduler.result || 'skipped' }} | ${{ needs.deploy-scheduler.result || 'skipped' }} |" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "💡 **Tip**: Use \`[build-all]\` in commit message to force build all components" >> $GITHUB_STEP_SUMMARY
+    if: always() && needs.detect-changes.outputs.any-changed == 'true'
+    uses: ryu-qqq/Infrastructure/.github/workflows/reusable-notify-slack.yml@main
+    with:
+      project-name: FileFlow
+      environment: prod
+      status: ${{ (needs.deploy-web-api.result == 'success' || needs.deploy-web-api.result == 'skipped') && (needs.deploy-download-worker.result == 'success' || needs.deploy-download-worker.result == 'skipped') && (needs.deploy-scheduler.result == 'success' || needs.deploy-scheduler.result == 'skipped') && 'success' || 'failure' }}
+      components: |
+        [
+          {"name": "web-api", "status": "${{ needs.detect-changes.outputs.web-api == 'true' && needs.deploy-web-api.result || 'skipped' }}", "image": "${{ needs.build-web-api.outputs.image-tag || 'N/A' }}"},
+          {"name": "download-worker", "status": "${{ needs.detect-changes.outputs.download-worker == 'true' && needs.deploy-download-worker.result || 'skipped' }}", "image": "${{ needs.build-download-worker.outputs.image-tag || 'N/A' }}"},
+          {"name": "scheduler", "status": "${{ needs.detect-changes.outputs.scheduler == 'true' && needs.deploy-scheduler.result || 'skipped' }}", "image": "${{ needs.build-scheduler.outputs.image-tag || 'N/A' }}"}
+        ]
+      custom-message: "💡 Use `[build-all]` in commit message to force build all components"
+      mention-on-failure: "@here"
+    secrets:
+      SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}

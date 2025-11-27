@@ -131,25 +131,23 @@ jobs:
       AWS_ROLE_ARN: ${{ secrets.AWS_ROLE_ARN }}
 
   # ============================================================================
-  # 배포 완료 알림
+  # 배포 완료 알림 (Slack + GitHub Summary)
   # ============================================================================
   notify:
-    name: Deployment Summary
+    name: Deployment Notification
     needs: [build-web-api, build-scheduler, build-crawl-worker, deploy-web-api, deploy-scheduler, deploy-crawl-worker]
-    runs-on: ubuntu-latest
     if: always()
-
-    steps:
-      - name: Create Summary
-        run: |
-          echo "## 🚀 CrawlingHub Deployment" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "**Commit**: ${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
-          echo "**Actor**: @${{ github.actor }}" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "### Build & Deploy Status" >> $GITHUB_STEP_SUMMARY
-          echo "| Component | Build | Deploy | Image |" >> $GITHUB_STEP_SUMMARY
-          echo "|-----------|-------|--------|-------|" >> $GITHUB_STEP_SUMMARY
-          echo "| web-api | ${{ needs.build-web-api.result }} | ${{ needs.deploy-web-api.result }} | \`${{ needs.build-web-api.outputs.image-tag }}\` |" >> $GITHUB_STEP_SUMMARY
-          echo "| scheduler | ${{ needs.build-scheduler.result }} | ${{ needs.deploy-scheduler.result }} | \`${{ needs.build-scheduler.outputs.image-tag }}\` |" >> $GITHUB_STEP_SUMMARY
-          echo "| crawl-worker | ${{ needs.build-crawl-worker.result }} | ${{ needs.deploy-crawl-worker.result }} | \`${{ needs.build-crawl-worker.outputs.image-tag }}\` |" >> $GITHUB_STEP_SUMMARY
+    uses: ryu-qqq/Infrastructure/.github/workflows/reusable-notify-slack.yml@main
+    with:
+      project-name: CrawlingHub
+      environment: prod
+      status: ${{ (needs.deploy-web-api.result == 'success' && needs.deploy-scheduler.result == 'success' && needs.deploy-crawl-worker.result == 'success') && 'success' || (needs.deploy-web-api.result == 'failure' || needs.deploy-scheduler.result == 'failure' || needs.deploy-crawl-worker.result == 'failure') && 'failure' || 'partial' }}
+      components: |
+        [
+          {"name": "web-api", "status": "${{ needs.deploy-web-api.result }}", "image": "${{ needs.build-web-api.outputs.image-tag || 'N/A' }}"},
+          {"name": "scheduler", "status": "${{ needs.deploy-scheduler.result }}", "image": "${{ needs.build-scheduler.outputs.image-tag || 'N/A' }}"},
+          {"name": "crawl-worker", "status": "${{ needs.deploy-crawl-worker.result }}", "image": "${{ needs.build-crawl-worker.outputs.image-tag || 'N/A' }}"}
+        ]
+      mention-on-failure: "@here"
+    secrets:
+      SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}

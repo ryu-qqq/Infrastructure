@@ -85,3 +85,10 @@ variable "allowed_github_repos" {
     "AuthHub"
   ]
 }
+
+# Slack Webhook URL for deployment notifications
+variable "slack_webhook_url" {
+  description = "Slack Incoming Webhook URL for deployment notifications"
+  type        = string
+  sensitive   = true
+}

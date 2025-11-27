@@ -1,0 +1,327 @@
+# ============================================================================
+# Reusable Workflow: Slack Deployment Notification
+#
+# 배포 결과를 Slack으로 알림 (Block Kit 사용)
+#
+# 사용법:
+#   jobs:
+#     notify:
+#       uses: ryu-qqq/Infrastructure/.github/workflows/reusable-notify-slack.yml@main
+#       with:
+#         project-name: crawlinghub
+#         environment: prod
+#         status: success
+#         components: '[{"name":"web-api","status":"success","image":"web-api-42-abc"},...]'
+#       secrets:
+#         SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+# ============================================================================
+
+name: Reusable Slack Notification
+
+on:
+  workflow_call:
+    inputs:
+      # 프로젝트 정보
+      project-name:
+        description: "프로젝트명 (예: CrawlingHub, FileFlow)"
+        required: true
+        type: string
+
+      environment:
+        description: "배포 환경 (예: prod, staging, dev)"
+        type: string
+        default: "prod"
+
+      # 배포 상태
+      status:
+        description: "전체 배포 상태 (success, failure, partial)"
+        required: true
+        type: string
+
+      # 컴포넌트 정보 (JSON 배열)
+      # 형식: [{"name":"web-api","status":"success","image":"tag","build":"success","deploy":"success"},...]
+      components:
+        description: "컴포넌트별 상태 (JSON 배열)"
+        required: true
+        type: string
+
+      # 메타 정보
+      duration:
+        description: "총 소요 시간 (예: 5m 32s)"
+        type: string
+        default: ""
+
+      commit-message:
+        description: "커밋 메시지"
+        type: string
+        default: ""
+
+      # 추가 옵션
+      mention-on-failure:
+        description: "실패 시 멘션할 Slack 사용자/그룹 (예: @here, <@U123456>)"
+        type: string
+        default: ""
+
+      custom-message:
+        description: "추가 메시지"
+        type: string
+        default: ""
+
+    secrets:
+      SLACK_WEBHOOK_URL:
+        description: "Slack Incoming Webhook URL"
+        required: true
+
+jobs:
+  notify:
+    name: Send Slack Notification
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: Prepare notification data
+        id: prepare
+        run: |
+          # 상태에 따른 이모지 및 색상 설정
+          STATUS="${{ inputs.status }}"
+
+          case "$STATUS" in
+            success)
+              EMOJI="✅"
+              COLOR="#36a64f"
+              TITLE_EMOJI="🚀"
+              STATUS_TEXT="배포 완료"
+              ;;
+            failure)
+              EMOJI="❌"
+              COLOR="#dc3545"
+              TITLE_EMOJI="🔥"
+              STATUS_TEXT="배포 실패"
+              ;;
+            partial)
+              EMOJI="⚠️"
+              COLOR="#ffc107"
+              TITLE_EMOJI="⚡"
+              STATUS_TEXT="부분 배포"
+              ;;
+            cancelled)
+              EMOJI="🚫"
+              COLOR="#6c757d"
+              TITLE_EMOJI="🛑"
+              STATUS_TEXT="배포 취소"
+              ;;
+            *)
+              EMOJI="ℹ️"
+              COLOR="#17a2b8"
+              TITLE_EMOJI="📢"
+              STATUS_TEXT="배포 알림"
+              ;;
+          esac
+
+          echo "emoji=${EMOJI}" >> $GITHUB_OUTPUT
+          echo "color=${COLOR}" >> $GITHUB_OUTPUT
+          echo "title_emoji=${TITLE_EMOJI}" >> $GITHUB_OUTPUT
+          echo "status_text=${STATUS_TEXT}" >> $GITHUB_OUTPUT
+
+          # 커밋 메시지 처리 (없으면 GitHub에서 가져오기)
+          COMMIT_MSG="${{ inputs.commit-message }}"
+          if [ -z "$COMMIT_MSG" ]; then
+            COMMIT_MSG="${{ github.event.head_commit.message || github.event.pull_request.title || 'No message' }}"
+          fi
+          # 첫 줄만 사용하고 특수문자 이스케이프
+          COMMIT_MSG=$(echo "$COMMIT_MSG" | head -1 | sed 's/"/\\"/g' | cut -c1-100)
+          echo "commit_msg=${COMMIT_MSG}" >> $GITHUB_OUTPUT
+
+          # 소요 시간 (없으면 계산 시도)
+          DURATION="${{ inputs.duration }}"
+          if [ -z "$DURATION" ]; then
+            DURATION="N/A"
+          fi
+          echo "duration=${DURATION}" >> $GITHUB_OUTPUT
+
+      - name: Build component status
+        id: components
+        run: |
+          COMPONENTS='${{ inputs.components }}'
+
+          # JSON 파싱하여 컴포넌트 상태 문자열 생성
+          COMPONENT_TEXT=$(echo "$COMPONENTS" | jq -r '
+            .[] |
+            if .status == "success" then
+              "✅ `\(.name)`: \(.image // "deployed")"
+            elif .status == "failure" then
+              "❌ `\(.name)`: 실패"
+            elif .status == "skipped" then
+              "⏭️ `\(.name)`: 스킵"
+            else
+              "⚪ `\(.name)`: \(.status)"
+            end
+          ' | paste -sd '\n' -)
+
+          # 빌드/배포 상세 정보가 있는 경우
+          DETAIL_TEXT=$(echo "$COMPONENTS" | jq -r '
+            .[] |
+            select(.build != null or .deploy != null) |
+            "• \(.name): Build=\(.build // "N/A"), Deploy=\(.deploy // "N/A")"
+          ' | paste -sd '\n' -)
+
+          # 멀티라인 출력 처리
+          echo "component_text<<EOF" >> $GITHUB_OUTPUT
+          echo "$COMPONENT_TEXT" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+
+          # 성공/실패 카운트
+          SUCCESS_COUNT=$(echo "$COMPONENTS" | jq '[.[] | select(.status == "success")] | length')
+          FAILURE_COUNT=$(echo "$COMPONENTS" | jq '[.[] | select(.status == "failure")] | length')
+          TOTAL_COUNT=$(echo "$COMPONENTS" | jq 'length')
+
+          echo "success_count=${SUCCESS_COUNT}" >> $GITHUB_OUTPUT
+          echo "failure_count=${FAILURE_COUNT}" >> $GITHUB_OUTPUT
+          echo "total_count=${TOTAL_COUNT}" >> $GITHUB_OUTPUT
+
+      - name: Send Slack notification
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+        run: |
+          # 멘션 처리
+          MENTION=""
+          if [ "${{ inputs.status }}" == "failure" ] && [ -n "${{ inputs.mention-on-failure }}" ]; then
+            MENTION="${{ inputs.mention-on-failure }} "
+          fi
+
+          # 커스텀 메시지 처리
+          CUSTOM_MSG=""
+          if [ -n "${{ inputs.custom-message }}" ]; then
+            CUSTOM_MSG=$(cat <<CUSTOMMSG
+          ,
+          {
+            "type": "section",
+            "text": {
+              "type": "mrkdwn",
+              "text": "💬 ${{ inputs.custom-message }}"
+            }
+          }
+          CUSTOMMSG
+          )
+          fi
+
+          # Block Kit 메시지 구성
+          PAYLOAD=$(cat <<PAYLOAD
+          {
+            "attachments": [
+              {
+                "color": "${{ steps.prepare.outputs.color }}",
+                "blocks": [
+                  {
+                    "type": "header",
+                    "text": {
+                      "type": "plain_text",
+                      "text": "${{ steps.prepare.outputs.title_emoji }} ${{ inputs.project-name }} ${{ steps.prepare.outputs.status_text }}",
+                      "emoji": true
+                    }
+                  },
+                  {
+                    "type": "section",
+                    "fields": [
+                      {
+                        "type": "mrkdwn",
+                        "text": "*Environment:*\n\`${{ inputs.environment }}\`"
+                      },
+                      {
+                        "type": "mrkdwn",
+                        "text": "*Status:*\n${{ steps.prepare.outputs.emoji }} ${{ steps.prepare.outputs.status_text }}"
+                      },
+                      {
+                        "type": "mrkdwn",
+                        "text": "*Components:*\n${{ steps.components.outputs.success_count }}/${{ steps.components.outputs.total_count }} 성공"
+                      },
+                      {
+                        "type": "mrkdwn",
+                        "text": "*Duration:*\n⏱️ ${{ steps.prepare.outputs.duration }}"
+                      }
+                    ]
+                  },
+                  {
+                    "type": "divider"
+                  },
+                  {
+                    "type": "section",
+                    "text": {
+                      "type": "mrkdwn",
+                      "text": "*📦 Component Details:*\n${{ steps.components.outputs.component_text }}"
+                    }
+                  },
+                  {
+                    "type": "context",
+                    "elements": [
+                      {
+                        "type": "mrkdwn",
+                        "text": "👤 *Actor:* ${{ github.actor }}"
+                      },
+                      {
+                        "type": "mrkdwn",
+                        "text": "🔗 *Commit:* <${{ github.server_url }}/${{ github.repository }}/commit/${{ github.sha }}|${GITHUB_SHA:0:7}>"
+                      },
+                      {
+                        "type": "mrkdwn",
+                        "text": "📝 ${{ steps.prepare.outputs.commit_msg }}"
+                      }
+                    ]
+                  }${CUSTOM_MSG},
+                  {
+                    "type": "actions",
+                    "elements": [
+                      {
+                        "type": "button",
+                        "text": {
+                          "type": "plain_text",
+                          "text": "📋 View Workflow",
+                          "emoji": true
+                        },
+                        "url": "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+                      },
+                      {
+                        "type": "button",
+                        "text": {
+                          "type": "plain_text",
+                          "text": "📂 View Commit",
+                          "emoji": true
+                        },
+                        "url": "${{ github.server_url }}/${{ github.repository }}/commit/${{ github.sha }}"
+                      }
+                    ]
+                  }
+                ]
+              }
+            ],
+            "text": "${MENTION}${{ steps.prepare.outputs.title_emoji }} ${{ inputs.project-name }} ${{ steps.prepare.outputs.status_text }}"
+          }
+          PAYLOAD
+          )
+
+          # Slack으로 전송
+          echo "📤 Sending notification to Slack..."
+
+          RESPONSE=$(curl -s -o /dev/null -w "%{http_code}" \
+            -X POST \
+            -H "Content-Type: application/json" \
+            -d "$PAYLOAD" \
+            "$SLACK_WEBHOOK_URL")
+
+          if [ "$RESPONSE" == "200" ]; then
+            echo "✅ Slack notification sent successfully"
+          else
+            echo "❌ Failed to send Slack notification (HTTP $RESPONSE)"
+            exit 1
+          fi
+
+      - name: Output summary
+        run: |
+          echo "## 📢 Slack Notification Sent" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Item | Value |" >> $GITHUB_STEP_SUMMARY
+          echo "|------|-------|" >> $GITHUB_STEP_SUMMARY
+          echo "| **Project** | ${{ inputs.project-name }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| **Environment** | ${{ inputs.environment }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| **Status** | ${{ steps.prepare.outputs.emoji }} ${{ steps.prepare.outputs.status_text }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| **Components** | ${{ steps.components.outputs.success_count }}/${{ steps.components.outputs.total_count }} succeeded |" >> $GITHUB_STEP_SUMMARY

@@ -8,6 +8,7 @@ Infrastructure 레포에서 제공하는 재사용 가능한 워크플로우입�
 |------------|------|------|
 | **Docker Build & Push** | Java/Gradle 빌드 → Docker 이미지 → ECR 푸시 | `reusable-build-docker.yml` |
 | **ECS Deploy** | Task Definition 업데이트 → ECS 서비스 배포 | `reusable-deploy-ecs.yml` |
+| **Slack Notify** | 배포 결과 Slack 알림 (Block Kit) | `reusable-notify-slack.yml` |
 
 ---
 
@@ -106,6 +107,99 @@ jobs:
 
 ---
 
+## 📢 reusable-notify-slack.yml
+
+### 기능
+- Slack Block Kit 기반 풍부한 알림
+- 컴포넌트별 상태 표시
+- 성공/실패/부분 배포 상태 지원
+- 실패 시 멘션 기능
+- GitHub Workflow/Commit 링크 버튼
+
+### 사용법
+
+```yaml
+jobs:
+  notify:
+    needs: [build-web-api, deploy-web-api]
+    if: always()
+    uses: ryu-qqq/Infrastructure/.github/workflows/reusable-notify-slack.yml@main
+    with:
+      project-name: CrawlingHub
+      environment: prod
+      status: ${{ needs.deploy-web-api.result }}
+      components: |
+        [
+          {"name": "web-api", "status": "${{ needs.deploy-web-api.result }}", "image": "${{ needs.build-web-api.outputs.image-tag }}"}
+        ]
+    secrets:
+      SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+```
+
+### 입력 파라미터
+
+| 파라미터 | 필수 | 기본값 | 설명 |
+|----------|------|--------|------|
+| `project-name` | ✅ | - | 프로젝트명 (예: CrawlingHub) |
+| `environment` | | `prod` | 배포 환경 |
+| `status` | ✅ | - | 전체 상태 (success/failure/partial/cancelled) |
+| `components` | ✅ | - | 컴포넌트 상태 JSON 배열 |
+| `duration` | | - | 총 소요 시간 |
+| `commit-message` | | - | 커밋 메시지 |
+| `mention-on-failure` | | - | 실패 시 멘션 (예: @here, <@U123>) |
+| `custom-message` | | - | 추가 메시지 |
+
+### 컴포넌트 JSON 형식
+
+```json
+[
+  {
+    "name": "web-api",
+    "status": "success",
+    "image": "web-api-42-abc1234"
+  },
+  {
+    "name": "scheduler",
+    "status": "failure",
+    "image": null
+  }
+]
+```
+
+### 알림 예시
+
+**성공 시:**
+```
+🚀 CrawlingHub 배포 완료
+
+Environment: prod          Status: ✅ 배포 완료
+Components: 3/3 성공       Duration: ⏱️ 5m 32s
+
+📦 Component Details:
+✅ `web-api`: web-api-42-abc1234
+✅ `scheduler`: scheduler-42-abc1234
+✅ `crawl-worker`: crawl-worker-42-abc1234
+
+👤 Actor: ryu-qqq | 🔗 Commit: abc1234 | 📝 feat: Add new feature
+
+[📋 View Workflow] [📂 View Commit]
+```
+
+**실패 시:**
+```
+🔥 CrawlingHub 배포 실패
+
+Environment: prod          Status: ❌ 배포 실패
+Components: 2/3 성공       Duration: ⏱️ 3m 15s
+
+📦 Component Details:
+✅ `web-api`: web-api-42-abc1234
+❌ `scheduler`: 실패
+✅ `crawl-worker`: crawl-worker-42-abc1234
+```
+
+---
+
 ## 📁 예시 워크플로우
 
 `examples/` 폴더에서 프로젝트별 예시를 확인하세요:
@@ -147,6 +241,7 @@ jobs:
 | Secret | 설명 | 조회 방법 |
 |--------|------|----------|
 | `AWS_ROLE_ARN` | GitHub Actions IAM Role ARN | `aws ssm get-parameter --name "/github-actions/role-arn" --query "Parameter.Value" --output text` |
+| `SLACK_WEBHOOK_URL` | Slack 알림 Webhook URL | `aws ssm get-parameter --name "/github-actions/slack-webhook-deployments" --with-decryption --query "Parameter.Value" --output text` |
 
 ### 2. IAM Role 허용 목록
 

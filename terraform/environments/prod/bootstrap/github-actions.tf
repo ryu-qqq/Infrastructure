@@ -631,3 +631,23 @@ output "github_actions_role_arn_ssm_parameter" {
   description = "SSM Parameter name for GitHub Actions Role ARN"
   value       = aws_ssm_parameter.github-actions-role-arn.name
 }
+
+# ============================================================================
+# Slack Webhook URL for Deployment Notifications
+# ============================================================================
+resource "aws_ssm_parameter" "slack-webhook-deployments" {
+  name        = "/github-actions/slack-webhook-deployments"
+  description = "Slack Incoming Webhook URL for deployment notifications"
+  type        = "SecureString"
+  value       = var.slack_webhook_url
+
+  tags = merge(local.github_actions_tags, {
+    Name      = "slack-webhook-deployments"
+    Component = "notifications"
+  })
+}
+
+output "slack_webhook_ssm_parameter" {
+  description = "SSM Parameter name for Slack Webhook URL"
+  value       = aws_ssm_parameter.slack-webhook-deployments.name
+}
