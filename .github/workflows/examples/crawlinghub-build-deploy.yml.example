@@ -1,0 +1,155 @@
+# ============================================================================
+# CrawlingHub Build & Deploy Example
+#
+# 이 파일은 CrawlingHub 프로젝트의 .github/workflows/build-and-deploy.yml 예시입니다.
+# 복사하여 CrawlingHub 레포에서 사용하세요.
+#
+# 기존 450줄 → 약 120줄로 단순화
+# ============================================================================
+
+name: Build and Deploy to ECS
+
+on:
+  push:
+    branches:
+      - main
+    paths-ignore:
+      - 'terraform/**'
+      - '.github/workflows/terraform-*.yml'
+      - '**.md'
+      - 'docs/**'
+
+permissions:
+  contents: read
+  id-token: write
+
+env:
+  AWS_REGION: ap-northeast-2
+  ECS_CLUSTER: crawlinghub-prod  # 네이밍 컨벤션: {project}-{env}
+
+jobs:
+  # ============================================================================
+  # 테스트 (공통 - 한 번만 실행)
+  # ============================================================================
+  test:
+    name: Run Tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+          cache: 'gradle'
+
+      - name: Run tests
+        run: |
+          chmod +x gradlew
+          ./gradlew clean test -x jacocoTestCoverageVerification --no-daemon
+
+  # ============================================================================
+  # 빌드 Jobs (병렬 실행)
+  # ============================================================================
+  build-web-api:
+    name: Build web-api
+    needs: test
+    uses: ryu-qqq/Infrastructure/.github/workflows/reusable-build-docker.yml@main
+    with:
+      ecr-repository: crawlinghub-web-api-prod
+      component: web-api
+      dockerfile: bootstrap/bootstrap-web-api/Dockerfile
+      gradle-task: ":bootstrap:bootstrap-web-api:bootJar"
+      timeout-minutes: 30
+    secrets:
+      AWS_ROLE_ARN: ${{ secrets.AWS_ROLE_ARN }}
+
+  build-scheduler:
+    name: Build scheduler
+    needs: test
+    uses: ryu-qqq/Infrastructure/.github/workflows/reusable-build-docker.yml@main
+    with:
+      ecr-repository: crawlinghub-scheduler-prod
+      component: scheduler
+      dockerfile: bootstrap/bootstrap-scheduler/Dockerfile
+      gradle-task: ":bootstrap:bootstrap-scheduler:bootJar"
+      timeout-minutes: 25
+    secrets:
+      AWS_ROLE_ARN: ${{ secrets.AWS_ROLE_ARN }}
+
+  build-crawl-worker:
+    name: Build crawl-worker
+    needs: test
+    uses: ryu-qqq/Infrastructure/.github/workflows/reusable-build-docker.yml@main
+    with:
+      ecr-repository: crawlinghub-crawl-worker-prod
+      component: crawl-worker
+      dockerfile: bootstrap/bootstrap-crawl-worker/Dockerfile
+      gradle-task: ":bootstrap:bootstrap-crawl-worker:bootJar"
+      timeout-minutes: 30
+    secrets:
+      AWS_ROLE_ARN: ${{ secrets.AWS_ROLE_ARN }}
+
+  # ============================================================================
+  # 배포 Jobs (병렬 실행)
+  # ============================================================================
+  deploy-web-api:
+    name: Deploy web-api
+    needs: build-web-api
+    uses: ryu-qqq/Infrastructure/.github/workflows/reusable-deploy-ecs.yml@main
+    with:
+      ecs-cluster: crawlinghub-prod
+      ecs-service: crawlinghub-web-api-prod
+      image-uri: ${{ needs.build-web-api.outputs.image-uri }}
+    secrets:
+      AWS_ROLE_ARN: ${{ secrets.AWS_ROLE_ARN }}
+
+  deploy-scheduler:
+    name: Deploy scheduler
+    needs: build-scheduler
+    uses: ryu-qqq/Infrastructure/.github/workflows/reusable-deploy-ecs.yml@main
+    with:
+      ecs-cluster: crawlinghub-prod
+      ecs-service: crawlinghub-scheduler-prod
+      image-uri: ${{ needs.build-scheduler.outputs.image-uri }}
+    secrets:
+      AWS_ROLE_ARN: ${{ secrets.AWS_ROLE_ARN }}
+
+  deploy-crawl-worker:
+    name: Deploy crawl-worker
+    needs: build-crawl-worker
+    uses: ryu-qqq/Infrastructure/.github/workflows/reusable-deploy-ecs.yml@main
+    with:
+      ecs-cluster: crawlinghub-prod
+      ecs-service: crawlinghub-crawl-worker-prod
+      image-uri: ${{ needs.build-crawl-worker.outputs.image-uri }}
+    secrets:
+      AWS_ROLE_ARN: ${{ secrets.AWS_ROLE_ARN }}
+
+  # ============================================================================
+  # 배포 완료 알림
+  # ============================================================================
+  notify:
+    name: Deployment Summary
+    needs: [build-web-api, build-scheduler, build-crawl-worker, deploy-web-api, deploy-scheduler, deploy-crawl-worker]
+    runs-on: ubuntu-latest
+    if: always()
+
+    steps:
+      - name: Create Summary
+        run: |
+          echo "## 🚀 CrawlingHub Deployment" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Commit**: ${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Actor**: @${{ github.actor }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Build & Deploy Status" >> $GITHUB_STEP_SUMMARY
+          echo "| Component | Build | Deploy | Image |" >> $GITHUB_STEP_SUMMARY
+          echo "|-----------|-------|--------|-------|" >> $GITHUB_STEP_SUMMARY
+          echo "| web-api | ${{ needs.build-web-api.result }} | ${{ needs.deploy-web-api.result }} | \`${{ needs.build-web-api.outputs.image-tag }}\` |" >> $GITHUB_STEP_SUMMARY
+          echo "| scheduler | ${{ needs.build-scheduler.result }} | ${{ needs.deploy-scheduler.result }} | \`${{ needs.build-scheduler.outputs.image-tag }}\` |" >> $GITHUB_STEP_SUMMARY
+          echo "| crawl-worker | ${{ needs.build-crawl-worker.result }} | ${{ needs.deploy-crawl-worker.result }} | \`${{ needs.build-crawl-worker.outputs.image-tag }}\` |" >> $GITHUB_STEP_SUMMARY

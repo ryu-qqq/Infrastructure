@@ -1,0 +1,219 @@
+# ============================================================================
+# FileFlow Build & Deploy Example (with Change Detection)
+#
+# 이 파일은 FileFlow 프로젝트의 .github/workflows/build-and-deploy.yml 예시입니다.
+# 변경 감지 기능을 유지하면서 reusable workflow 사용
+#
+# 기존 600줄 → 약 200줄로 단순화
+# ============================================================================
+
+name: Build and Deploy to ECS (Smart)
+
+on:
+  push:
+    branches:
+      - main
+    paths-ignore:
+      - 'terraform/**'
+      - '.github/workflows/terraform-*.yml'
+      - '**.md'
+      - 'docs/**'
+
+permissions:
+  contents: read
+  id-token: write
+
+env:
+  AWS_REGION: ap-northeast-2
+  ECS_CLUSTER: fileflow-prod  # 네이밍 컨벤션: {project}-{env}
+
+jobs:
+  # ============================================================================
+  # Step 1: 변경 감지 (FileFlow 고유 기능 유지)
+  # ============================================================================
+  detect-changes:
+    name: Detect Changes
+    runs-on: ubuntu-latest
+    outputs:
+      web-api: ${{ steps.filter.outputs.web-api }}
+      download-worker: ${{ steps.filter.outputs.download-worker }}
+      scheduler: ${{ steps.filter.outputs.scheduler }}
+      any-changed: ${{ steps.filter.outputs.any-changed }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+
+      - name: Detect changed paths
+        id: filter
+        run: |
+          CHANGED_FILES=$(git diff --name-only HEAD~1 HEAD)
+          echo "📁 Changed files:"
+          echo "$CHANGED_FILES"
+
+          # 강제 빌드 플래그 체크
+          FORCE_BUILD_ALL=false
+          COMMIT_MSG=$(git log -1 --format=%s HEAD)
+          if echo "$COMMIT_MSG" | grep -qE '\[build-all\]|\[rebuild\]'; then
+            FORCE_BUILD_ALL=true
+            echo "🔄 Force build all flag detected"
+          fi
+
+          # 공통 레이어 변경 체크
+          COMMON_CHANGED=false
+          if echo "$CHANGED_FILES" | grep -qE '^(domain/|application/)'; then
+            COMMON_CHANGED=true
+            echo "🔄 Common layer changed"
+          fi
+
+          # Bootstrap별 변경 여부
+          WEB_API=false
+          DOWNLOAD_WORKER=false
+          SCHEDULER=false
+
+          if [ "$FORCE_BUILD_ALL" = "true" ] || [ "$COMMON_CHANGED" = "true" ]; then
+            WEB_API=true
+            DOWNLOAD_WORKER=true
+            SCHEDULER=true
+          else
+            # 개별 변경 감지
+            if echo "$CHANGED_FILES" | grep -qE '^(adapter-in/rest-api/|bootstrap/bootstrap-web-api/)'; then
+              WEB_API=true
+            fi
+            if echo "$CHANGED_FILES" | grep -qE '^(adapter-in/sqs-listener/|adapter-out/http-client/|bootstrap/bootstrap-download-worker/)'; then
+              DOWNLOAD_WORKER=true
+            fi
+            if echo "$CHANGED_FILES" | grep -qE '^(bootstrap/bootstrap-scheduler/)'; then
+              SCHEDULER=true
+            fi
+            # 공통 Adapter 변경
+            if echo "$CHANGED_FILES" | grep -qE '^(adapter-out/(persistence-mysql|persistence-redis|aws-s3)/)'; then
+              WEB_API=true
+              DOWNLOAD_WORKER=true
+              SCHEDULER=true
+            fi
+          fi
+
+          echo "web-api=${WEB_API}" >> $GITHUB_OUTPUT
+          echo "download-worker=${DOWNLOAD_WORKER}" >> $GITHUB_OUTPUT
+          echo "scheduler=${SCHEDULER}" >> $GITHUB_OUTPUT
+
+          ANY_CHANGED=false
+          if [ "$WEB_API" = "true" ] || [ "$DOWNLOAD_WORKER" = "true" ] || [ "$SCHEDULER" = "true" ]; then
+            ANY_CHANGED=true
+          fi
+          echo "any-changed=${ANY_CHANGED}" >> $GITHUB_OUTPUT
+
+          echo "🔍 Results: web-api=${WEB_API}, download-worker=${DOWNLOAD_WORKER}, scheduler=${SCHEDULER}"
+
+  # ============================================================================
+  # Step 2: 빌드 (조건부 실행)
+  # ============================================================================
+  build-web-api:
+    name: Build web-api
+    needs: detect-changes
+    if: needs.detect-changes.outputs.web-api == 'true'
+    uses: ryu-qqq/Infrastructure/.github/workflows/reusable-build-docker.yml@main
+    with:
+      ecr-repository: fileflow-web-api-prod  # 분리된 ECR
+      component: web-api
+      dockerfile: bootstrap/bootstrap-web-api/Dockerfile
+      gradle-task: ":bootstrap:bootstrap-web-api:bootJar"
+      timeout-minutes: 30
+    secrets:
+      AWS_ROLE_ARN: ${{ secrets.AWS_ROLE_ARN }}
+
+  build-download-worker:
+    name: Build download-worker
+    needs: detect-changes
+    if: needs.detect-changes.outputs.download-worker == 'true'
+    uses: ryu-qqq/Infrastructure/.github/workflows/reusable-build-docker.yml@main
+    with:
+      ecr-repository: fileflow-download-worker-prod
+      component: download-worker
+      dockerfile: bootstrap/bootstrap-download-worker/Dockerfile
+      gradle-task: ":bootstrap:bootstrap-download-worker:bootJar"
+      timeout-minutes: 30
+    secrets:
+      AWS_ROLE_ARN: ${{ secrets.AWS_ROLE_ARN }}
+
+  build-scheduler:
+    name: Build scheduler
+    needs: detect-changes
+    if: needs.detect-changes.outputs.scheduler == 'true'
+    uses: ryu-qqq/Infrastructure/.github/workflows/reusable-build-docker.yml@main
+    with:
+      ecr-repository: fileflow-scheduler-prod
+      component: scheduler
+      dockerfile: bootstrap/bootstrap-scheduler/Dockerfile
+      gradle-task: ":bootstrap:bootstrap-scheduler:bootJar"
+      timeout-minutes: 25
+    secrets:
+      AWS_ROLE_ARN: ${{ secrets.AWS_ROLE_ARN }}
+
+  # ============================================================================
+  # Step 3: 배포 (조건부 실행)
+  # ============================================================================
+  deploy-web-api:
+    name: Deploy web-api
+    needs: [detect-changes, build-web-api]
+    if: needs.detect-changes.outputs.web-api == 'true'
+    uses: ryu-qqq/Infrastructure/.github/workflows/reusable-deploy-ecs.yml@main
+    with:
+      ecs-cluster: fileflow-prod
+      ecs-service: fileflow-web-api-prod
+      image-uri: ${{ needs.build-web-api.outputs.image-uri }}
+    secrets:
+      AWS_ROLE_ARN: ${{ secrets.AWS_ROLE_ARN }}
+
+  deploy-download-worker:
+    name: Deploy download-worker
+    needs: [detect-changes, build-download-worker]
+    if: needs.detect-changes.outputs.download-worker == 'true'
+    uses: ryu-qqq/Infrastructure/.github/workflows/reusable-deploy-ecs.yml@main
+    with:
+      ecs-cluster: fileflow-prod
+      ecs-service: fileflow-download-worker-prod
+      image-uri: ${{ needs.build-download-worker.outputs.image-uri }}
+    secrets:
+      AWS_ROLE_ARN: ${{ secrets.AWS_ROLE_ARN }}
+
+  deploy-scheduler:
+    name: Deploy scheduler
+    needs: [detect-changes, build-scheduler]
+    if: needs.detect-changes.outputs.scheduler == 'true'
+    uses: ryu-qqq/Infrastructure/.github/workflows/reusable-deploy-ecs.yml@main
+    with:
+      ecs-cluster: fileflow-prod
+      ecs-service: fileflow-scheduler-prod
+      image-uri: ${{ needs.build-scheduler.outputs.image-uri }}
+    secrets:
+      AWS_ROLE_ARN: ${{ secrets.AWS_ROLE_ARN }}
+
+  # ============================================================================
+  # Step 4: 배포 완료 알림
+  # ============================================================================
+  notify:
+    name: Deployment Summary
+    needs: [detect-changes, build-web-api, build-download-worker, build-scheduler, deploy-web-api, deploy-download-worker, deploy-scheduler]
+    runs-on: ubuntu-latest
+    if: always()
+
+    steps:
+      - name: Create Summary
+        run: |
+          echo "## 🚀 FileFlow Smart Deployment" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Commit**: ${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Actor**: @${{ github.actor }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Change Detection" >> $GITHUB_STEP_SUMMARY
+          echo "| Component | Changed | Build | Deploy |" >> $GITHUB_STEP_SUMMARY
+          echo "|-----------|---------|-------|--------|" >> $GITHUB_STEP_SUMMARY
+          echo "| web-api | ${{ needs.detect-changes.outputs.web-api }} | ${{ needs.build-web-api.result || 'skipped' }} | ${{ needs.deploy-web-api.result || 'skipped' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| download-worker | ${{ needs.detect-changes.outputs.download-worker }} | ${{ needs.build-download-worker.result || 'skipped' }} | ${{ needs.deploy-download-worker.result || 'skipped' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| scheduler | ${{ needs.detect-changes.outputs.scheduler }} | ${{ needs.build-scheduler.result || 'skipped' }} | ${{ needs.deploy-scheduler.result || 'skipped' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "💡 **Tip**: Use \`[build-all]\` in commit message to force build all components" >> $GITHUB_STEP_SUMMARY

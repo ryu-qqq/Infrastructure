@@ -73,3 +73,15 @@ variable "resource_lifecycle" {
     error_message = "Lifecycle must be one of: temporary, permanent."
   }
 }
+
+# GitHub Actions 허용 프로젝트 목록
+variable "allowed_github_repos" {
+  description = "List of GitHub repositories allowed to assume the GitHub Actions role"
+  type        = list(string)
+  default = [
+    "Infrastructure",
+    "fileflow",
+    "CrawlingHub",
+    "AuthHub"
+  ]
+}

@@ -1,0 +1,215 @@
+# ============================================================================
+# Reusable Workflow: Docker Build & ECR Push
+#
+# Java/Gradle 기반 프로젝트의 Docker 이미지 빌드 및 ECR 푸시를 위한 공통 워크플로우
+#
+# 사용법:
+#   jobs:
+#     build:
+#       uses: ryu-qqq/Infrastructure/.github/workflows/reusable-build-docker.yml@main
+#       with:
+#         ecr-repository: my-project-web-api-prod
+#         component: web-api
+#         dockerfile: bootstrap/bootstrap-web-api/Dockerfile
+#         gradle-task: ":bootstrap:bootstrap-web-api:bootJar"
+#       secrets:
+#         AWS_ROLE_ARN: ${{ secrets.AWS_ROLE_ARN }}
+# ============================================================================
+
+name: Reusable Docker Build & ECR Push
+
+on:
+  workflow_call:
+    inputs:
+      # ECR 설정
+      ecr-repository:
+        description: "ECR 레포지토리 이름 (예: crawlinghub-web-api-prod)"
+        required: true
+        type: string
+
+      # 컴포넌트 정보
+      component:
+        description: "컴포넌트명 - 이미지 태그에 사용 (예: web-api, scheduler)"
+        required: true
+        type: string
+
+      # 빌드 설정
+      dockerfile:
+        description: "Dockerfile 경로"
+        required: true
+        type: string
+
+      build-context:
+        description: "Docker build context 경로"
+        type: string
+        default: "."
+
+      gradle-task:
+        description: "Gradle 빌드 태스크 (예: :bootstrap:bootstrap-web-api:bootJar)"
+        required: true
+        type: string
+
+      # 옵션 설정
+      java-version:
+        description: "Java 버전"
+        type: string
+        default: "21"
+
+      aws-region:
+        description: "AWS 리전"
+        type: string
+        default: "ap-northeast-2"
+
+      timeout-minutes:
+        description: "빌드 타임아웃 (분)"
+        type: number
+        default: 30
+
+      run-tests:
+        description: "테스트 실행 여부"
+        type: boolean
+        default: false
+
+      # 추가 Docker 빌드 인자
+      build-args:
+        description: "추가 Docker build arguments (KEY=VALUE 형식, 줄바꿈으로 구분)"
+        type: string
+        default: ""
+
+    outputs:
+      image-uri:
+        description: "푸시된 이미지 전체 URI"
+        value: ${{ jobs.build.outputs.image-uri }}
+      image-tag:
+        description: "이미지 태그"
+        value: ${{ jobs.build.outputs.image-tag }}
+      ecr-repository:
+        description: "ECR 레포지토리 이름"
+        value: ${{ jobs.build.outputs.ecr-repository }}
+
+    secrets:
+      AWS_ROLE_ARN:
+        description: "AWS IAM Role ARN for GitHub Actions"
+        required: true
+
+jobs:
+  build:
+    name: Build & Push ${{ inputs.component }}
+    runs-on: ubuntu-latest
+    timeout-minutes: ${{ inputs.timeout-minutes }}
+
+    outputs:
+      image-uri: ${{ steps.build-push.outputs.image-uri }}
+      image-tag: ${{ steps.generate-tag.outputs.tag }}
+      ecr-repository: ${{ inputs.ecr-repository }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up JDK ${{ inputs.java-version }}
+        uses: actions/setup-java@v4
+        with:
+          java-version: ${{ inputs.java-version }}
+          distribution: 'temurin'
+          cache: 'gradle'
+
+      - name: Grant execute permission for gradlew
+        run: chmod +x gradlew
+
+      - name: Run tests
+        if: inputs.run-tests
+        run: |
+          echo "🧪 Running tests..."
+          ./gradlew test -x jacocoTestCoverageVerification --no-daemon --stacktrace
+          echo "✅ Tests completed"
+
+      - name: Build JAR
+        run: |
+          echo "🔨 Building ${{ inputs.component }} JAR..."
+          ./gradlew ${{ inputs.gradle-task }} -x test --no-daemon --stacktrace
+          echo "✅ JAR build completed"
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: ${{ inputs.aws-region }}
+          role-duration-seconds: 3600
+          role-session-name: GitHubActions-${{ inputs.component }}-Build
+
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Generate image tag
+        id: generate-tag
+        run: |
+          SHORT_SHA=$(echo ${{ github.sha }} | cut -c1-7)
+          # 태그 포맷: {component}-{run_number}-{short_sha}
+          TAG="${{ inputs.component }}-${{ github.run_number }}-${SHORT_SHA}"
+          echo "tag=${TAG}" >> $GITHUB_OUTPUT
+          echo "📦 Image tag: ${TAG}"
+
+      - name: Build and Push Docker image
+        id: build-push
+        env:
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          ECR_REPOSITORY: ${{ inputs.ecr-repository }}
+          IMAGE_TAG: ${{ steps.generate-tag.outputs.tag }}
+        run: |
+          IMAGE_URI="${ECR_REGISTRY}/${ECR_REPOSITORY}:${IMAGE_TAG}"
+
+          echo "🐳 Building Docker image for ${{ inputs.component }}..."
+          echo "   Registry: ${ECR_REGISTRY}"
+          echo "   Repository: ${ECR_REPOSITORY}"
+          echo "   Tag: ${IMAGE_TAG}"
+
+          # Build arguments 처리
+          BUILD_ARGS=""
+          if [ -n "${{ inputs.build-args }}" ]; then
+            while IFS= read -r arg; do
+              if [ -n "$arg" ]; then
+                BUILD_ARGS="${BUILD_ARGS} --build-arg ${arg}"
+              fi
+            done <<< "${{ inputs.build-args }}"
+          fi
+
+          docker build \
+            -f ${{ inputs.dockerfile }} \
+            -t "${IMAGE_URI}" \
+            ${BUILD_ARGS} \
+            ${{ inputs.build-context }}
+
+          echo "📤 Pushing to ECR..."
+          docker push "${IMAGE_URI}"
+
+          # latest 태그도 푸시
+          docker tag "${IMAGE_URI}" "${ECR_REGISTRY}/${ECR_REPOSITORY}:latest"
+          docker push "${ECR_REGISTRY}/${ECR_REPOSITORY}:latest"
+
+          echo "image-uri=${IMAGE_URI}" >> $GITHUB_OUTPUT
+          echo "✅ Image pushed: ${IMAGE_URI}"
+
+      - name: Image vulnerability scan
+        continue-on-error: true
+        run: |
+          echo "🔍 Checking ECR scan results..."
+          # ECR 스캔은 비동기로 실행되므로 결과 확인만
+          aws ecr describe-image-scan-findings \
+            --repository-name "${{ inputs.ecr-repository }}" \
+            --image-id imageTag="${{ steps.generate-tag.outputs.tag }}" \
+            --region "${{ inputs.aws-region }}" 2>/dev/null || echo "⚠️ Scan not yet complete or not enabled"
+
+      - name: Output summary
+        run: |
+          echo "## 🐳 Docker Build Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Item | Value |" >> $GITHUB_STEP_SUMMARY
+          echo "|------|-------|" >> $GITHUB_STEP_SUMMARY
+          echo "| **Component** | ${{ inputs.component }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| **ECR Repository** | ${{ inputs.ecr-repository }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| **Image Tag** | ${{ steps.generate-tag.outputs.tag }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| **Image URI** | \`${{ steps.build-push.outputs.image-uri }}\` |" >> $GITHUB_STEP_SUMMARY
+          echo "| **Java Version** | ${{ inputs.java-version }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| **Gradle Task** | ${{ inputs.gradle-task }} |" >> $GITHUB_STEP_SUMMARY

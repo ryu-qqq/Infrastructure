@@ -1,0 +1,245 @@
+# ============================================================================
+# Reusable Workflow: ECS Deploy
+#
+# ECS Fargate 서비스 배포를 위한 공통 워크플로우
+# Task Definition 업데이트 → 서비스 업데이트 → 안정화 대기
+#
+# 사용법:
+#   jobs:
+#     deploy:
+#       uses: ryu-qqq/Infrastructure/.github/workflows/reusable-deploy-ecs.yml@main
+#       with:
+#         ecs-cluster: my-cluster-prod
+#         ecs-service: my-service-prod
+#         image-uri: 123456789.dkr.ecr.ap-northeast-2.amazonaws.com/my-repo:tag
+#       secrets:
+#         AWS_ROLE_ARN: ${{ secrets.AWS_ROLE_ARN }}
+# ============================================================================
+
+name: Reusable ECS Deploy
+
+on:
+  workflow_call:
+    inputs:
+      # ECS 설정
+      ecs-cluster:
+        description: "ECS 클러스터 이름"
+        required: true
+        type: string
+
+      ecs-service:
+        description: "ECS 서비스 이름"
+        required: true
+        type: string
+
+      # 이미지 정보
+      image-uri:
+        description: "배포할 Docker 이미지 URI"
+        required: true
+        type: string
+
+      # 컨테이너 설정 (멀티 컨테이너 지원)
+      container-name:
+        description: "업데이트할 컨테이너 이름 (기본: 첫 번째 컨테이너)"
+        type: string
+        default: ""
+
+      # AWS 설정
+      aws-region:
+        description: "AWS 리전"
+        type: string
+        default: "ap-northeast-2"
+
+      # 배포 옵션
+      timeout-minutes:
+        description: "배포 타임아웃 (분)"
+        type: number
+        default: 20
+
+      wait-for-stability:
+        description: "서비스 안정화 대기 여부"
+        type: boolean
+        default: true
+
+      force-new-deployment:
+        description: "강제 새 배포 여부"
+        type: boolean
+        default: true
+
+    outputs:
+      task-definition-arn:
+        description: "새로 등록된 Task Definition ARN"
+        value: ${{ jobs.deploy.outputs.task-definition-arn }}
+      deployment-id:
+        description: "ECS 배포 ID"
+        value: ${{ jobs.deploy.outputs.deployment-id }}
+
+    secrets:
+      AWS_ROLE_ARN:
+        description: "AWS IAM Role ARN for GitHub Actions"
+        required: true
+
+jobs:
+  deploy:
+    name: Deploy to ${{ inputs.ecs-service }}
+    runs-on: ubuntu-latest
+    timeout-minutes: ${{ inputs.timeout-minutes }}
+
+    outputs:
+      task-definition-arn: ${{ steps.register-task-def.outputs.task-definition-arn }}
+      deployment-id: ${{ steps.update-service.outputs.deployment-id }}
+
+    steps:
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: ${{ inputs.aws-region }}
+          role-duration-seconds: 3600
+          role-session-name: GitHubActions-ECS-Deploy
+
+      - name: Get current task definition
+        id: get-task-def
+        run: |
+          echo "📋 Fetching current task definition for ${{ inputs.ecs-service }}..."
+
+          # 현재 서비스의 Task Definition ARN 가져오기
+          TASK_DEF_ARN=$(aws ecs describe-services \
+            --cluster "${{ inputs.ecs-cluster }}" \
+            --services "${{ inputs.ecs-service }}" \
+            --query 'services[0].taskDefinition' \
+            --output text)
+
+          if [ "$TASK_DEF_ARN" == "None" ] || [ -z "$TASK_DEF_ARN" ]; then
+            echo "❌ Service not found: ${{ inputs.ecs-service }}"
+            exit 1
+          fi
+
+          echo "task-definition-arn=${TASK_DEF_ARN}" >> $GITHUB_OUTPUT
+          echo "✅ Current Task Definition: ${TASK_DEF_ARN}"
+
+          # Task Definition 내용 가져오기
+          aws ecs describe-task-definition \
+            --task-definition "${TASK_DEF_ARN}" \
+            --query 'taskDefinition' > task-definition.json
+
+          echo "📄 Task Definition retrieved"
+
+      - name: Update task definition with new image
+        id: update-task-def
+        run: |
+          echo "🔄 Updating task definition with new image..."
+
+          # 컨테이너 이름 결정
+          if [ -n "${{ inputs.container-name }}" ]; then
+            CONTAINER_NAME="${{ inputs.container-name }}"
+          else
+            # 첫 번째 컨테이너 이름 사용
+            CONTAINER_NAME=$(jq -r '.containerDefinitions[0].name' task-definition.json)
+          fi
+
+          echo "📦 Target container: ${CONTAINER_NAME}"
+          echo "🐳 New image: ${{ inputs.image-uri }}"
+
+          # 이미지 URI 업데이트 (특정 컨테이너만)
+          jq --arg IMAGE "${{ inputs.image-uri }}" \
+             --arg CONTAINER "$CONTAINER_NAME" \
+             '(.containerDefinitions[] | select(.name == $CONTAINER) | .image) = $IMAGE' \
+             task-definition.json > updated-task-definition.json
+
+          # 불필요한 필드 제거 (새 Task Definition 등록 시 필요)
+          jq 'del(.taskDefinitionArn, .revision, .status, .requiresAttributes, .compatibilities, .registeredAt, .registeredBy)' \
+             updated-task-definition.json > new-task-definition.json
+
+          echo "✅ Task definition updated"
+
+      - name: Register new task definition
+        id: register-task-def
+        run: |
+          echo "📝 Registering new task definition..."
+
+          NEW_TASK_DEF_ARN=$(aws ecs register-task-definition \
+            --cli-input-json file://new-task-definition.json \
+            --query 'taskDefinition.taskDefinitionArn' \
+            --output text)
+
+          echo "task-definition-arn=${NEW_TASK_DEF_ARN}" >> $GITHUB_OUTPUT
+          echo "✅ New Task Definition registered: ${NEW_TASK_DEF_ARN}"
+
+      - name: Update ECS service
+        id: update-service
+        run: |
+          echo "🚀 Updating ECS service ${{ inputs.ecs-service }}..."
+
+          FORCE_FLAG=""
+          if [ "${{ inputs.force-new-deployment }}" == "true" ]; then
+            FORCE_FLAG="--force-new-deployment"
+          fi
+
+          # 서비스 업데이트
+          DEPLOYMENT_ID=$(aws ecs update-service \
+            --cluster "${{ inputs.ecs-cluster }}" \
+            --service "${{ inputs.ecs-service }}" \
+            --task-definition "${{ steps.register-task-def.outputs.task-definition-arn }}" \
+            ${FORCE_FLAG} \
+            --query 'service.deployments[0].id' \
+            --output text \
+            --no-cli-pager)
+
+          echo "deployment-id=${DEPLOYMENT_ID}" >> $GITHUB_OUTPUT
+          echo "✅ ECS service update initiated (Deployment: ${DEPLOYMENT_ID})"
+
+      - name: Wait for service stability
+        if: inputs.wait-for-stability
+        run: |
+          echo "⏳ Waiting for ${{ inputs.ecs-service }} to become stable..."
+          echo "   This may take a few minutes..."
+
+          aws ecs wait services-stable \
+            --cluster "${{ inputs.ecs-cluster }}" \
+            --services "${{ inputs.ecs-service }}"
+
+          echo "✅ Service is now stable"
+
+      - name: Verify deployment
+        run: |
+          echo "🔍 Verifying deployment..."
+
+          SERVICE_STATUS=$(aws ecs describe-services \
+            --cluster "${{ inputs.ecs-cluster }}" \
+            --services "${{ inputs.ecs-service }}" \
+            --query 'services[0].{Running:runningCount,Desired:desiredCount,Status:status,TaskDef:taskDefinition}' \
+            --output json)
+
+          echo "📊 Service Status:"
+          echo "$SERVICE_STATUS" | jq .
+
+          RUNNING=$(echo "$SERVICE_STATUS" | jq -r '.Running')
+          DESIRED=$(echo "$SERVICE_STATUS" | jq -r '.Desired')
+
+          if [ "$RUNNING" -eq "$DESIRED" ] && [ "$RUNNING" -gt 0 ]; then
+            echo "✅ Deployment successful: ${RUNNING}/${DESIRED} tasks running"
+          else
+            echo "⚠️ Warning: ${RUNNING}/${DESIRED} tasks running"
+          fi
+
+      - name: Output summary
+        run: |
+          echo "## 🚀 ECS Deployment Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Item | Value |" >> $GITHUB_STEP_SUMMARY
+          echo "|------|-------|" >> $GITHUB_STEP_SUMMARY
+          echo "| **Cluster** | ${{ inputs.ecs-cluster }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| **Service** | ${{ inputs.ecs-service }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| **Image URI** | \`${{ inputs.image-uri }}\` |" >> $GITHUB_STEP_SUMMARY
+          echo "| **Task Definition** | \`${{ steps.register-task-def.outputs.task-definition-arn }}\` |" >> $GITHUB_STEP_SUMMARY
+          echo "| **Deployment ID** | ${{ steps.update-service.outputs.deployment-id }} |" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### ✅ Deployment Steps Completed" >> $GITHUB_STEP_SUMMARY
+          echo "1. Retrieved current task definition" >> $GITHUB_STEP_SUMMARY
+          echo "2. Updated image URI in task definition" >> $GITHUB_STEP_SUMMARY
+          echo "3. Registered new task definition" >> $GITHUB_STEP_SUMMARY
+          echo "4. Updated ECS service" >> $GITHUB_STEP_SUMMARY
+          if [ "${{ inputs.wait-for-stability }}" == "true" ]; then
+            echo "5. Waited for service stability" >> $GITHUB_STEP_SUMMARY
+          fi

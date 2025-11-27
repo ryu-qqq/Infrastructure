@@ -9,6 +9,7 @@ AWS 인프라를 관리하는 Terraform 기반 IaC(Infrastructure as Code) 저�
 - [Terraform 모듈](#terraform-모듈)
 - [환경 관리 (Environments)](#환경-관리-environments)
 - [공유 리소스 (Shared)](#공유-리소스-shared)
+- [GitHub Actions IAM Role 관리](#github-actions-iam-role-관리)
 - [거버넌스 시스템](#거버넌스-시스템)
 - [시작하기](#시작하기)
 - [마이그레이션 이력](#마이그레이션-이력)
@@ -241,6 +242,142 @@ resource "aws_lb_listener" "https" {
 }
 ```
 
+
+---
+
+## GitHub Actions IAM Role 관리
+
+### 🔐 중앙화된 GitHub Actions 인증
+
+모든 프로젝트 레포지토리는 **단일 IAM Role**을 공유하여 AWS 리소스에 접근합니다. OIDC(OpenID Connect) 기반으로 시크릿 키 없이 안전하게 인증됩니다.
+
+#### Role 정보
+
+| 항목 | 값 |
+|------|------|
+| **Role Name** | `GitHubActionsRole` |
+| **SSM Parameter** | `/github-actions/role-arn` |
+| **인증 방식** | GitHub OIDC Federation |
+| **관리 위치** | `terraform/environments/prod/bootstrap/github-actions.tf` |
+
+> **Note**: Role ARN은 SSM Parameter Store에 저장되어 있습니다. 직접 노출을 피하고 중앙 관리를 위해 SSM을 통해 조회합니다.
+
+#### 현재 허용된 레포지토리
+
+```
+- Infrastructure
+- fileflow
+- CrawlingHub
+- AuthHub
+```
+
+> SSM에서 조회: `aws ssm get-parameter --name "/github-actions/allowed-repos" --query "Parameter.Value" --output text`
+
+### 🆕 새 프로젝트 추가 방법
+
+새로운 프로젝트가 AWS 리소스에 접근해야 할 때, 다음 2단계를 수행합니다.
+
+#### Step 1: Infrastructure 레포에서 허용 목록 추가
+
+**파일 위치**: `terraform/environments/prod/bootstrap/variables.tf`
+
+```hcl
+variable "allowed_github_repos" {
+  description = "List of GitHub repositories allowed to assume the GitHub Actions role"
+  type        = list(string)
+  default = [
+    "Infrastructure",
+    "fileflow",
+    "CrawlingHub",
+    "AuthHub",
+    "NewProject"    # ← 여기에 새 프로젝트 추가
+  ]
+}
+```
+
+**적용 방법**:
+```bash
+cd terraform/environments/prod/bootstrap
+terraform plan   # 변경 확인
+terraform apply  # 적용
+```
+
+또는 PR을 생성하면 Atlantis가 자동으로 plan/apply 합니다.
+
+#### Step 2: 새 프로젝트 레포에서 GitHub Secrets 설정
+
+**1. SSM Parameter에서 Role ARN 조회**:
+```bash
+# AWS CLI로 Role ARN 조회
+aws ssm get-parameter --name "/github-actions/role-arn" --query "Parameter.Value" --output text
+```
+
+**2. GitHub Secrets 설정**: `GitHub 레포 → Settings → Secrets and variables → Actions`
+
+| Secret Name | Value |
+|-------------|-------|
+| `AWS_ROLE_ARN` | (위 명령어로 조회한 ARN 값) |
+
+#### Step 3: 워크플로우에서 Role 사용
+
+새 프로젝트의 `.github/workflows/*.yml` 파일에서:
+
+```yaml
+permissions:
+  contents: read
+  id-token: write  # ← OIDC 토큰 발급에 필요
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: ap-northeast-2
+          role-duration-seconds: 3600
+          role-session-name: GitHubActions-${{ github.repository }}-${{ github.run_id }}
+```
+
+### 📋 Role 권한 범위
+
+GitHubActionsRole은 다음 AWS 서비스에 대한 권한을 포함합니다:
+
+| 정책 | 주요 권한 |
+|------|----------|
+| **TerraformStatePolicy** | S3 state 읽기/쓰기, DynamoDB 락 |
+| **InfrastructurePolicy** | VPC, EC2, Security Group, IAM (prod-* 패턴) |
+| **ECSPolicy** | ECS 클러스터/서비스/태스크 관리 |
+| **ECRPolicy** | ECR 레포지토리 및 이미지 관리 |
+| **S3Policy** | S3 버킷 전체 관리 |
+| **CloudWatchPolicy** | CloudWatch Logs 및 Alarms |
+| **ServicesPolicy** | SQS, ElastiCache, ALB, Route53 |
+| **SSMPolicy** | SSM Parameter Store 읽기/쓰기 |
+| **KMSPolicy** | KMS 키 관리 |
+
+#### IAM Role 네이밍 규칙
+
+`-prod`, `prod-`, `*-prod-*` 패턴의 Role만 생성/수정 가능합니다:
+```
+✅ fileflow-prod-task-role
+✅ prod-api-execution-role
+✅ crawlinghub-prod-scheduler-role
+❌ my-custom-role (prod 패턴 없음)
+```
+
+### ⚠️ 주의사항
+
+1. **레포 이름은 정확히 일치해야 합니다** (대소문자 구분)
+   - ✅ `CrawlingHub` (정확)
+   - ❌ `crawlinghub` (실패)
+
+2. **변경 후 반드시 terraform apply** 필요
+   - variables.tf만 수정하면 실제 AWS IAM Policy에 반영되지 않음
+
+3. **기존 프로젝트의 Role ARN 변경 시**
+   - SSM Parameter 조회: `aws ssm get-parameter --name "/github-actions/role-arn" --query "Parameter.Value" --output text`
+   - 이전 개별 Role (예: `crawlinghub-prod-github-actions-role`)은 삭제됨
 
 ---
 
