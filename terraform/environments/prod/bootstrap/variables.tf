@@ -80,7 +80,7 @@ variable "allowed_github_repos" {
   type        = list(string)
   default = [
     "Infrastructure",
-    "fileflow",
+    "FileFlow",
     "CrawlingHub",
     "AuthHub"
   ]
