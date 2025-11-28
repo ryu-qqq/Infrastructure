@@ -141,7 +141,7 @@ variable "port" {
   default     = null
 
   validation {
-    condition     = var.port == null || (var.port > 0 && var.port < 65536)
+    condition     = var.port == null ? true : (var.port > 0 && var.port < 65536)
     error_message = "Port must be between 1 and 65535"
   }
 }
@@ -267,7 +267,7 @@ variable "auth_token" {
   sensitive   = true
 
   validation {
-    condition     = var.auth_token == null || (length(var.auth_token) >= 16 && length(var.auth_token) <= 128)
+    condition     = var.auth_token == null ? true : (length(var.auth_token) >= 16 && length(var.auth_token) <= 128)
     error_message = "Auth token must be between 16 and 128 characters"
   }
 }
