@@ -44,48 +44,95 @@ resource "aws_ecs_task_definition" "this" {
   execution_role_arn       = var.execution_role_arn
   task_role_arn            = var.task_role_arn
 
-  container_definitions = jsonencode([
-    merge(
-      {
-        name      = var.container_name
-        image     = var.container_image
-        essential = true
+  container_definitions = jsonencode(concat(
+    # Main container
+    [
+      merge(
+        {
+          name      = var.container_name
+          image     = var.container_image
+          essential = true
 
-        portMappings = [
-          {
-            containerPort = var.container_port
-            protocol      = "tcp"
+          portMappings = [
+            {
+              containerPort = var.container_port
+              protocol      = "tcp"
+            }
+          ]
+
+          environment = var.container_environment
+          secrets     = var.container_secrets
+
+          # Log configuration
+          logConfiguration = var.log_configuration != null ? {
+            logDriver = var.log_configuration.log_driver
+            options   = var.log_configuration.options
+            } : {
+            logDriver = "awslogs"
+            options = {
+              "awslogs-group"         = aws_cloudwatch_log_group.this[0].name
+              "awslogs-region"        = data.aws_region.current.id
+              "awslogs-stream-prefix" = var.container_name
+            }
           }
-        ]
+        },
+        # Health check configuration (only included when command is provided)
+        var.health_check_command != null ? {
+          healthCheck = {
+            command     = var.health_check_command
+            interval    = var.health_check_interval
+            timeout     = var.health_check_timeout
+            retries     = var.health_check_retries
+            startPeriod = var.health_check_start_period
+          }
+        } : {}
+      )
+    ],
+    # Sidecar containers
+    [
+      for sidecar in var.sidecars : {
+        name      = sidecar.name
+        image     = sidecar.image
+        cpu       = sidecar.cpu
+        memory    = sidecar.memory
+        essential = sidecar.essential
+        command   = length(sidecar.command) > 0 ? sidecar.command : null
 
-        environment = var.container_environment
-        secrets     = var.container_secrets
+        portMappings = length(sidecar.portMappings) > 0 ? [
+          for pm in sidecar.portMappings : {
+            containerPort = pm.containerPort
+            protocol      = pm.protocol
+            hostPort      = pm.hostPort
+          }
+        ] : null
 
-        # Log configuration
-        logConfiguration = var.log_configuration != null ? {
-          logDriver = var.log_configuration.log_driver
-          options   = var.log_configuration.options
+        environment = length(sidecar.environment) > 0 ? sidecar.environment : null
+        secrets     = length(sidecar.secrets) > 0 ? sidecar.secrets : null
+
+        logConfiguration = sidecar.logConfiguration != null ? {
+          logDriver = sidecar.logConfiguration.logDriver
+          options   = sidecar.logConfiguration.options
           } : {
           logDriver = "awslogs"
           options = {
             "awslogs-group"         = aws_cloudwatch_log_group.this[0].name
-            "awslogs-region"        = data.aws_region.current.name
-            "awslogs-stream-prefix" = var.container_name
+            "awslogs-region"        = data.aws_region.current.id
+            "awslogs-stream-prefix" = sidecar.name
           }
         }
-      },
-      # Health check configuration (only included when command is provided)
-      var.health_check_command != null ? {
-        healthCheck = {
-          command     = var.health_check_command
-          interval    = var.health_check_interval
-          timeout     = var.health_check_timeout
-          retries     = var.health_check_retries
-          startPeriod = var.health_check_start_period
-        }
-      } : {}
-    )
-  ])
+
+        healthCheck = sidecar.healthCheck != null ? {
+          command     = sidecar.healthCheck.command
+          interval    = sidecar.healthCheck.interval
+          timeout     = sidecar.healthCheck.timeout
+          retries     = sidecar.healthCheck.retries
+          startPeriod = sidecar.healthCheck.startPeriod
+        } : null
+
+        dependsOn = length(sidecar.dependsOn) > 0 ? sidecar.dependsOn : null
+      }
+    ]
+  ))
 
   tags = merge(
     local.required_tags,

@@ -406,3 +406,46 @@ variable "log_retention_days" {
     error_message = "Log retention days must be a valid CloudWatch Logs retention value"
   }
 }
+
+# Optional Variables - Sidecar Containers
+
+variable "sidecars" {
+  description = "List of sidecar container definitions to add to the task. Each sidecar should be a complete container definition object."
+  type = list(object({
+    name      = string
+    image     = string
+    cpu       = optional(number, 256)
+    memory    = optional(number, 512)
+    essential = optional(bool, false)
+    command   = optional(list(string), [])
+    portMappings = optional(list(object({
+      containerPort = number
+      protocol      = optional(string, "tcp")
+      hostPort      = optional(number)
+    })), [])
+    environment = optional(list(object({
+      name  = string
+      value = string
+    })), [])
+    secrets = optional(list(object({
+      name      = string
+      valueFrom = string
+    })), [])
+    logConfiguration = optional(object({
+      logDriver = string
+      options   = map(string)
+    }))
+    healthCheck = optional(object({
+      command     = list(string)
+      interval    = optional(number, 30)
+      timeout     = optional(number, 5)
+      retries     = optional(number, 3)
+      startPeriod = optional(number, 60)
+    }))
+    dependsOn = optional(list(object({
+      containerName = string
+      condition     = string
+    })), [])
+  }))
+  default = []
+}
