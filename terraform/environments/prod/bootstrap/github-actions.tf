@@ -509,6 +509,7 @@ resource "aws_iam_policy" "github-actions-cloudwatch" {
           "cloudwatch:PutMetricAlarm",
           "cloudwatch:DeleteAlarms",
           "cloudwatch:DescribeAlarms",
+          "cloudwatch:ListTagsForResource",
           "cloudwatch:TagResource",
           "cloudwatch:UntagResource"
         ]
@@ -549,7 +550,7 @@ resource "aws_iam_policy" "github-actions-s3" {
 }
 
 # ============================================================================
-# Managed Policies - Additional Services (SQS, ElastiCache, ALB, Route53)
+# Managed Policies - Additional Services (SQS, ElastiCache, ALB, Route53, AMP, Grafana, SNS, Chatbot)
 # ============================================================================
 resource "aws_iam_policy" "github-actions-services" {
   name        = "GitHubActionsServicesPolicy"
@@ -591,6 +592,66 @@ resource "aws_iam_policy" "github-actions-services" {
           "route53:ListResourceRecordSets",
           "route53:ChangeResourceRecordSets",
           "route53:GetChange"
+        ]
+        Resource = "*"
+      },
+      {
+        Sid    = "PrometheusManagement"
+        Effect = "Allow"
+        Action = [
+          "aps:*"
+        ]
+        Resource = "*"
+      },
+      {
+        Sid    = "GrafanaManagement"
+        Effect = "Allow"
+        Action = [
+          "grafana:*"
+        ]
+        Resource = "*"
+      },
+      {
+        Sid    = "CloudWatchTagging"
+        Effect = "Allow"
+        Action = [
+          "cloudwatch:ListTagsForResource",
+          "cloudwatch:TagResource",
+          "cloudwatch:UntagResource"
+        ]
+        Resource = "*"
+      },
+      {
+        Sid    = "SNSManagement"
+        Effect = "Allow"
+        Action = [
+          "sns:CreateTopic",
+          "sns:DeleteTopic",
+          "sns:GetTopicAttributes",
+          "sns:SetTopicAttributes",
+          "sns:ListTopics",
+          "sns:Subscribe",
+          "sns:Unsubscribe",
+          "sns:ListSubscriptionsByTopic",
+          "sns:TagResource",
+          "sns:UntagResource",
+          "sns:ListTagsForResource"
+        ]
+        Resource = "*"
+      },
+      {
+        Sid    = "ChatbotManagement"
+        Effect = "Allow"
+        Action = [
+          "chatbot:CreateSlackChannelConfiguration",
+          "chatbot:DeleteSlackChannelConfiguration",
+          "chatbot:DescribeSlackChannelConfigurations",
+          "chatbot:UpdateSlackChannelConfiguration",
+          "chatbot:DescribeSlackWorkspaces",
+          "chatbot:ListMicrosoftTeamsChannelConfigurations",
+          "chatbot:TagResource",
+          "chatbot:UntagResource",
+          "chatbot:ListTagsForResource"
         ]
         Resource = "*"
       }

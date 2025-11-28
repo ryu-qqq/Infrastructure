@@ -165,3 +165,52 @@ resource "aws_cloudwatch_log_group" "amp-query-logs" {
 #     workspace_id = aws_prometheus_workspace.main.id
 #   })
 # }
+
+# ============================================================================
+# SSM Parameters for Cross-Stack Reference
+# ============================================================================
+
+resource "aws_ssm_parameter" "amp_workspace_arn" {
+  name        = "/shared/monitoring/amp-workspace-arn"
+  type        = "String"
+  value       = aws_prometheus_workspace.main.arn
+  description = "Amazon Managed Prometheus workspace ARN"
+
+  tags = merge(
+    local.required_tags,
+    {
+      Name      = "amp-workspace-arn"
+      Component = "amp"
+    }
+  )
+}
+
+resource "aws_ssm_parameter" "amp_remote_write_url" {
+  name        = "/shared/monitoring/amp-remote-write-url"
+  type        = "String"
+  value       = "${aws_prometheus_workspace.main.prometheus_endpoint}api/v1/remote_write"
+  description = "AMP remote write endpoint URL"
+
+  tags = merge(
+    local.required_tags,
+    {
+      Name      = "amp-remote-write-url"
+      Component = "amp"
+    }
+  )
+}
+
+resource "aws_ssm_parameter" "amp_workspace_id" {
+  name        = "/shared/monitoring/amp-workspace-id"
+  type        = "String"
+  value       = aws_prometheus_workspace.main.id
+  description = "Amazon Managed Prometheus workspace ID"
+
+  tags = merge(
+    local.required_tags,
+    {
+      Name      = "amp-workspace-id"
+      Component = "amp"
+    }
+  )
+}

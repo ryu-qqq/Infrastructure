@@ -12,6 +12,7 @@ resource "aws_ssm_parameter" "adot-config" {
   name        = "/${var.environment}/monitoring/adot-config"
   description = "ADOT Collector configuration for ECS tasks"
   type        = "String"
+  tier        = "Advanced"
   value       = file("${path.module}/configs/adot-config.yaml")
 
   tags = merge(
