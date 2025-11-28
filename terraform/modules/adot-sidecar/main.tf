@@ -14,7 +14,8 @@ locals {
   adot_image          = "public.ecr.aws/aws-observability/aws-otel-collector:latest"
 
   # S3 direct URL (bypasses CDN cache)
-  s3_config_url = "s3://${var.config_bucket}/otel-config/${var.project_name}-${var.service_name}/otel-config.yaml"
+  # ADOT requires format: s3://bucket.s3.region.amazonaws.com/path
+  s3_config_url = "s3://${var.config_bucket}.s3.${var.aws_region}.amazonaws.com/otel-config/${var.project_name}-${var.service_name}/otel-config.yaml"
 
   # CDN URL with optional cache-busting query parameter (fallback)
   base_cdn_url  = "https://${var.cdn_host}/otel-config/${var.project_name}-${var.service_name}/otel-config.yaml"
