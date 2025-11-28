@@ -10,6 +10,7 @@ AWS 인프라를 관리하는 Terraform 기반 IaC(Infrastructure as Code) 저�
 - [환경 관리 (Environments)](#환경-관리-environments)
 - [공유 리소스 (Shared)](#공유-리소스-shared)
 - [GitHub Actions IAM Role 관리](#github-actions-iam-role-관리)
+- [Reusable Workflows (CI/CD)](#reusable-workflows-cicd)
 - [거버넌스 시스템](#거버넌스-시스템)
 - [시작하기](#시작하기)
 - [마이그레이션 이력](#마이그레이션-이력)
@@ -381,6 +382,313 @@ GitHubActionsRole은 다음 AWS 서비스에 대한 권한을 포함합니다:
 
 ---
 
+## Reusable Workflows (CI/CD)
+
+### 🔄 재사용 가능한 GitHub Actions 워크플로우
+
+ECS/ECR 배포를 위한 표준화된 재사용 가능한 워크플로우를 제공합니다. 새 프로젝트에서 간단하게 import하여 사용할 수 있습니다.
+
+#### 제공 워크플로우
+
+| 워크플로우 | 용도 | 파일 |
+|-----------|------|------|
+| **Docker Build & ECR Push** | JAR 빌드 → Docker 이미지 빌드 → ECR 푸시 | `reusable-build-docker.yml` |
+| **ECS Deploy** | Task Definition 업데이트 → ECS 서비스 배포 | `reusable-deploy-ecs.yml` |
+| **Slack Notification** | 배포 결과 Slack 알림 (Block Kit) | `reusable-notify-slack.yml` |
+
+---
+
+### 📦 1. Docker Build & ECR Push
+
+Java/Gradle 기반 프로젝트의 Docker 이미지를 빌드하고 ECR에 푸시합니다.
+
+#### 입력 파라미터
+
+| 파라미터 | 필수 | 기본값 | 설명 |
+|---------|------|--------|------|
+| `ecr-repository` | ✅ | - | ECR 레포지토리 이름 (예: `myapp-web-api-prod`) |
+| `component` | ✅ | - | 컴포넌트명 - 이미지 태그에 사용 (예: `web-api`) |
+| `dockerfile` | ✅ | - | Dockerfile 경로 (예: `bootstrap/bootstrap-web-api/Dockerfile`) |
+| `gradle-task` | ✅ | - | Gradle 빌드 태스크 (예: `:bootstrap:bootstrap-web-api:bootJar`) |
+| `build-context` | ❌ | `.` | Docker build context 경로 |
+| `java-version` | ❌ | `21` | Java 버전 |
+| `aws-region` | ❌ | `ap-northeast-2` | AWS 리전 |
+| `timeout-minutes` | ❌ | `30` | 빌드 타임아웃 (분) |
+| `run-tests` | ❌ | `false` | 빌드 전 테스트 실행 여부 |
+| `push-latest` | ❌ | `false` | `latest` 태그 푸시 여부 (ECR IMMUTABLE이면 `false`) |
+| `build-args` | ❌ | `""` | 추가 Docker build arguments |
+
+#### 출력값
+
+| 출력 | 설명 |
+|------|------|
+| `image-uri` | 푸시된 이미지 전체 URI |
+| `image-tag` | 이미지 태그 (형식: `{component}-{run_number}-{short_sha}`) |
+| `ecr-repository` | ECR 레포지토리 이름 |
+
+#### 사용 예시
+
+```yaml
+jobs:
+  build-web-api:
+    uses: ryu-qqq/Infrastructure/.github/workflows/reusable-build-docker.yml@main
+    with:
+      ecr-repository: myapp-web-api-prod
+      component: web-api
+      dockerfile: bootstrap/bootstrap-web-api/Dockerfile
+      gradle-task: ":bootstrap:bootstrap-web-api:bootJar"
+    secrets:
+      AWS_ROLE_ARN: ${{ secrets.AWS_ROLE_ARN }}
+```
+
+---
+
+### 🚀 2. ECS Deploy
+
+새 이미지를 ECS 서비스에 배포합니다. Task Definition을 자동으로 업데이트하고 서비스 안정화를 기다립니다.
+
+#### 입력 파라미터
+
+| 파라미터 | 필수 | 기본값 | 설명 |
+|---------|------|--------|------|
+| `ecs-cluster` | ✅ | - | ECS 클러스터 이름 |
+| `ecs-service` | ✅ | - | ECS 서비스 이름 |
+| `image-uri` | ✅ | - | 배포할 Docker 이미지 URI |
+| `container-name` | ❌ | `""` | 업데이트할 컨테이너 이름 (기본: 첫 번째 컨테이너) |
+| `aws-region` | ❌ | `ap-northeast-2` | AWS 리전 |
+| `timeout-minutes` | ❌ | `20` | 배포 타임아웃 (분) |
+| `wait-for-stability` | ❌ | `true` | 서비스 안정화 대기 여부 |
+| `force-new-deployment` | ❌ | `true` | 강제 새 배포 여부 |
+
+#### 출력값
+
+| 출력 | 설명 |
+|------|------|
+| `task-definition-arn` | 새로 등록된 Task Definition ARN |
+| `deployment-id` | ECS 배포 ID |
+
+#### 사용 예시
+
+```yaml
+jobs:
+  deploy-web-api:
+    needs: build-web-api
+    uses: ryu-qqq/Infrastructure/.github/workflows/reusable-deploy-ecs.yml@main
+    with:
+      ecs-cluster: myapp-cluster-prod
+      ecs-service: myapp-web-api-prod
+      image-uri: ${{ needs.build-web-api.outputs.image-uri }}
+    secrets:
+      AWS_ROLE_ARN: ${{ secrets.AWS_ROLE_ARN }}
+```
+
+---
+
+### 📢 3. Slack Notification
+
+배포 결과를 Slack으로 알림합니다. Block Kit을 사용한 풍부한 UI를 제공합니다.
+
+#### 입력 파라미터
+
+| 파라미터 | 필수 | 기본값 | 설명 |
+|---------|------|--------|------|
+| `project-name` | ✅ | - | 프로젝트명 (예: `CrawlingHub`) |
+| `status` | ✅ | - | 전체 배포 상태 (`success`, `failure`, `partial`) |
+| `components` | ✅ | - | 컴포넌트별 상태 (JSON 배열) |
+| `environment` | ❌ | `prod` | 배포 환경 |
+| `duration` | ❌ | `""` | 총 소요 시간 |
+| `mention-on-failure` | ❌ | `""` | 실패 시 멘션 (예: `@here`) |
+| `custom-message` | ❌ | `""` | 추가 메시지 |
+
+#### Components JSON 형식
+
+```json
+[
+  {"name": "web-api", "status": "success", "image": "web-api-42-abc1234"},
+  {"name": "scheduler", "status": "success", "image": "scheduler-42-abc1234"},
+  {"name": "worker", "status": "failure", "image": "N/A"}
+]
+```
+
+#### 사용 예시
+
+```yaml
+jobs:
+  notify:
+    needs: [build-web-api, build-scheduler, deploy-web-api, deploy-scheduler]
+    if: always()
+    uses: ryu-qqq/Infrastructure/.github/workflows/reusable-notify-slack.yml@main
+    with:
+      project-name: MyApp
+      environment: prod
+      status: ${{ (needs.deploy-web-api.result == 'success' && needs.deploy-scheduler.result == 'success') && 'success' || 'failure' }}
+      components: |
+        [
+          {"name": "web-api", "status": "${{ needs.deploy-web-api.result }}", "image": "${{ needs.build-web-api.outputs.image-tag || 'N/A' }}"},
+          {"name": "scheduler", "status": "${{ needs.deploy-scheduler.result }}", "image": "${{ needs.build-scheduler.outputs.image-tag || 'N/A' }}"}
+        ]
+      mention-on-failure: "@here"
+    secrets:
+      SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+```
+
+---
+
+### 🎯 전체 워크플로우 예시
+
+새 프로젝트에서 CI/CD 파이프라인을 구성하는 전체 예시입니다.
+
+```yaml
+# .github/workflows/build-and-deploy.yml
+name: Build and Deploy to ECS
+
+on:
+  workflow_dispatch:  # 수동 트리거 허용
+  push:
+    branches:
+      - main
+    paths-ignore:
+      - '**.md'
+      - 'docs/**'
+
+permissions:
+  contents: read
+  id-token: write  # OIDC 인증에 필요
+
+env:
+  AWS_REGION: ap-northeast-2
+  ECS_CLUSTER: myapp-cluster-prod
+
+jobs:
+  # ============================================================================
+  # 테스트 (선택사항 - 한 번만 실행)
+  # ============================================================================
+  test:
+    name: Run Tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+          cache: 'gradle'
+      - run: |
+          chmod +x gradlew
+          ./gradlew clean test --no-daemon
+
+  # ============================================================================
+  # 빌드 Jobs (병렬 실행)
+  # ============================================================================
+  build-web-api:
+    name: Build web-api
+    needs: test
+    uses: ryu-qqq/Infrastructure/.github/workflows/reusable-build-docker.yml@main
+    with:
+      ecr-repository: myapp-web-api-prod
+      component: web-api
+      dockerfile: bootstrap/bootstrap-web-api/Dockerfile
+      gradle-task: ":bootstrap:bootstrap-web-api:bootJar"
+    secrets:
+      AWS_ROLE_ARN: ${{ secrets.AWS_ROLE_ARN }}
+
+  build-scheduler:
+    name: Build scheduler
+    needs: test
+    uses: ryu-qqq/Infrastructure/.github/workflows/reusable-build-docker.yml@main
+    with:
+      ecr-repository: myapp-scheduler-prod
+      component: scheduler
+      dockerfile: bootstrap/bootstrap-scheduler/Dockerfile
+      gradle-task: ":bootstrap:bootstrap-scheduler:bootJar"
+    secrets:
+      AWS_ROLE_ARN: ${{ secrets.AWS_ROLE_ARN }}
+
+  # ============================================================================
+  # 배포 Jobs (병렬 실행)
+  # ============================================================================
+  deploy-web-api:
+    name: Deploy web-api
+    needs: build-web-api
+    uses: ryu-qqq/Infrastructure/.github/workflows/reusable-deploy-ecs.yml@main
+    with:
+      ecs-cluster: myapp-cluster-prod
+      ecs-service: myapp-web-api-prod
+      image-uri: ${{ needs.build-web-api.outputs.image-uri }}
+    secrets:
+      AWS_ROLE_ARN: ${{ secrets.AWS_ROLE_ARN }}
+
+  deploy-scheduler:
+    name: Deploy scheduler
+    needs: build-scheduler
+    uses: ryu-qqq/Infrastructure/.github/workflows/reusable-deploy-ecs.yml@main
+    with:
+      ecs-cluster: myapp-cluster-prod
+      ecs-service: myapp-scheduler-prod
+      image-uri: ${{ needs.build-scheduler.outputs.image-uri }}
+    secrets:
+      AWS_ROLE_ARN: ${{ secrets.AWS_ROLE_ARN }}
+
+  # ============================================================================
+  # 배포 완료 알림
+  # ============================================================================
+  notify:
+    name: Deployment Notification
+    needs: [build-web-api, build-scheduler, deploy-web-api, deploy-scheduler]
+    if: always()
+    uses: ryu-qqq/Infrastructure/.github/workflows/reusable-notify-slack.yml@main
+    with:
+      project-name: MyApp
+      environment: prod
+      status: ${{ (needs.deploy-web-api.result == 'success' && needs.deploy-scheduler.result == 'success') && 'success' || 'failure' }}
+      components: |
+        [
+          {"name": "web-api", "status": "${{ needs.deploy-web-api.result }}", "image": "${{ needs.build-web-api.outputs.image-tag || 'N/A' }}"},
+          {"name": "scheduler", "status": "${{ needs.deploy-scheduler.result }}", "image": "${{ needs.build-scheduler.outputs.image-tag || 'N/A' }}"}
+        ]
+      mention-on-failure: "@here"
+    secrets:
+      SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+```
+
+---
+
+### 🔧 새 프로젝트 설정 체크리스트
+
+1. **GitHub Secrets 설정** (레포 → Settings → Secrets and variables → Actions)
+   - `AWS_ROLE_ARN`: AWS IAM Role ARN ([조회 방법](#step-2-새-프로젝트-레포에서-github-secrets-설정))
+   - `SLACK_WEBHOOK_URL`: Slack Incoming Webhook URL
+
+2. **Infrastructure 레포에 프로젝트 등록** ([가이드](#step-1-infrastructure-레포에서-허용-목록-추가))
+   - `terraform/environments/prod/bootstrap/variables.tf`에 레포 이름 추가
+   - `terraform apply` 실행
+
+3. **AWS 리소스 생성** (Terraform 또는 수동)
+   - ECR Repository: `{project}-{component}-prod`
+   - ECS Service: `{project}-{component}-prod`
+   - CloudWatch Log Group: `/ecs/{project}-{component}-prod`
+
+4. **워크플로우 파일 생성**
+   - `.github/workflows/build-and-deploy.yml` 생성
+   - 위 예시를 참고하여 프로젝트에 맞게 수정
+
+---
+
+### ⚠️ 주의사항
+
+1. **ECR IMMUTABLE 설정 시**: `push-latest: false` 설정 필요 (기본값)
+
+2. **이미지 태그 형식**: `{component}-{run_number}-{short_sha}`
+   - 예: `web-api-42-abc1234`
+   - 같은 run_number로 재실행 시 태그 충돌 발생 → 새 커밋 필요
+
+3. **멀티 컨테이너 Task Definition**: `container-name` 파라미터로 특정 컨테이너만 업데이트 가능
+
+4. **OIDC 인증**: `permissions.id-token: write` 필수
+
+---
+
 ## 거버넌스 시스템
 
 ### 🛡️ governance/
@@ -559,4 +867,4 @@ module "ecr_myapp" {
 ---
 
 **Maintained By**: Platform Team
-**Last Updated**: 2025-11-24
+**Last Updated**: 2025-11-28
