@@ -175,6 +175,7 @@ resource "aws_iam_policy" "github-actions-kms" {
         Action = [
           "kms:Decrypt",
           "kms:Encrypt",
+          "kms:GenerateDataKey",
           "kms:DescribeKey",
           "kms:CreateGrant",
           "kms:ListGrants",
