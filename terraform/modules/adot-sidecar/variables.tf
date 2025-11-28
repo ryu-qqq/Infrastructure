@@ -73,3 +73,9 @@ variable "adot_memory" {
   type        = number
   default     = 512
 }
+
+variable "config_version" {
+  description = "Config version for cache busting (e.g., v1, v2, 20251128)"
+  type        = string
+  default     = ""
+}

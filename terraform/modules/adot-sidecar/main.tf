@@ -13,8 +13,9 @@ locals {
   adot_container_name = "adot-collector"
   adot_image          = "public.ecr.aws/aws-observability/aws-otel-collector:latest"
 
-  # OTEL config URL pattern
-  otel_config_url = "https://${var.cdn_host}/otel-config/${var.project_name}-${var.service_name}/otel-config.yaml"
+  # OTEL config URL pattern with optional cache-busting query parameter
+  base_config_url   = "https://${var.cdn_host}/otel-config/${var.project_name}-${var.service_name}/otel-config.yaml"
+  otel_config_url   = var.config_version != "" ? "${local.base_config_url}?v=${var.config_version}" : local.base_config_url
 }
 
 # ========================================
