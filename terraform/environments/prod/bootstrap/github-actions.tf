@@ -370,6 +370,57 @@ resource "aws_iam_policy" "github-actions-ecs" {
           "ecs:PutClusterCapacityProviders"
         ]
         Resource = "*"
+      },
+      {
+        Sid    = "ApplicationAutoScaling"
+        Effect = "Allow"
+        Action = [
+          "application-autoscaling:RegisterScalableTarget",
+          "application-autoscaling:DeregisterScalableTarget",
+          "application-autoscaling:DescribeScalableTargets",
+          "application-autoscaling:DescribeScalingActivities",
+          "application-autoscaling:PutScalingPolicy",
+          "application-autoscaling:DeleteScalingPolicy",
+          "application-autoscaling:DescribeScalingPolicies",
+          "application-autoscaling:PutScheduledAction",
+          "application-autoscaling:DeleteScheduledAction",
+          "application-autoscaling:DescribeScheduledActions",
+          "application-autoscaling:TagResource",
+          "application-autoscaling:UntagResource",
+          "application-autoscaling:ListTagsForResource"
+        ]
+        Resource = "*"
+      },
+      {
+        Sid    = "CodeDeployECS"
+        Effect = "Allow"
+        Action = [
+          "codedeploy:CreateApplication",
+          "codedeploy:DeleteApplication",
+          "codedeploy:GetApplication",
+          "codedeploy:GetApplicationRevision",
+          "codedeploy:RegisterApplicationRevision",
+          "codedeploy:CreateDeploymentGroup",
+          "codedeploy:DeleteDeploymentGroup",
+          "codedeploy:GetDeploymentGroup",
+          "codedeploy:UpdateDeploymentGroup",
+          "codedeploy:CreateDeployment",
+          "codedeploy:GetDeployment",
+          "codedeploy:GetDeploymentConfig",
+          "codedeploy:ListDeploymentConfigs",
+          "codedeploy:StopDeployment",
+          "codedeploy:ContinueDeployment",
+          "codedeploy:BatchGetDeploymentGroups",
+          "codedeploy:BatchGetDeployments",
+          "codedeploy:BatchGetApplications",
+          "codedeploy:ListApplications",
+          "codedeploy:ListDeploymentGroups",
+          "codedeploy:ListDeployments",
+          "codedeploy:TagResource",
+          "codedeploy:UntagResource",
+          "codedeploy:ListTagsForResource"
+        ]
+        Resource = "*"
       }
     ]
   })
