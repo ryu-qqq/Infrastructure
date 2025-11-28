@@ -13,9 +13,15 @@ locals {
   adot_container_name = "adot-collector"
   adot_image          = "public.ecr.aws/aws-observability/aws-otel-collector:latest"
 
-  # OTEL config URL pattern with optional cache-busting query parameter
-  base_config_url   = "https://${var.cdn_host}/otel-config/${var.project_name}-${var.service_name}/otel-config.yaml"
-  otel_config_url   = var.config_version != "" ? "${local.base_config_url}?v=${var.config_version}" : local.base_config_url
+  # S3 direct URL (bypasses CDN cache)
+  s3_config_url = "s3://${var.config_bucket}/otel-config/${var.project_name}-${var.service_name}/otel-config.yaml"
+
+  # CDN URL with optional cache-busting query parameter (fallback)
+  base_cdn_url  = "https://${var.cdn_host}/otel-config/${var.project_name}-${var.service_name}/otel-config.yaml"
+  cdn_config_url = var.config_version != "" ? "${local.base_cdn_url}?v=${var.config_version}" : local.base_cdn_url
+
+  # Use S3 direct by default to avoid CDN cache issues
+  otel_config_url = var.use_s3_direct ? local.s3_config_url : local.cdn_config_url
 }
 
 # ========================================

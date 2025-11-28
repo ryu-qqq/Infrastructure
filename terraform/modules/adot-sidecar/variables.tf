@@ -79,3 +79,9 @@ variable "config_version" {
   type        = string
   default     = ""
 }
+
+variable "use_s3_direct" {
+  description = "Use S3 direct URL instead of CDN to avoid cache issues"
+  type        = bool
+  default     = true
+}
