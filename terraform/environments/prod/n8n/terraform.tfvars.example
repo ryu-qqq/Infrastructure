@@ -1,0 +1,70 @@
+# n8n Terraform Configuration Example
+# Copy this file to terraform.auto.tfvars and fill in the values
+
+# =============================================================================
+# Environment
+# =============================================================================
+environment = "prod"
+aws_region  = "ap-northeast-2"
+
+# =============================================================================
+# Network Configuration
+# =============================================================================
+vpc_id             = "vpc-xxxxxxxxx"
+public_subnet_ids  = ["subnet-xxxxxxxx", "subnet-yyyyyyyy"]
+private_subnet_ids = ["subnet-aaaaaaaa", "subnet-bbbbbbbb"]
+
+# =============================================================================
+# n8n Application Configuration
+# =============================================================================
+n8n_url            = "https://n8n.example.com"
+n8n_webhook_url    = "https://n8n.example.com"
+n8n_timezone       = "Asia/Seoul"
+n8n_image_tag      = "latest"
+n8n_desired_count  = 1
+
+# Encryption key for n8n credentials (32+ characters)
+# Generate with: openssl rand -hex 16
+n8n_encryption_key = "your-32-character-encryption-key-here"
+
+# =============================================================================
+# ECS Configuration
+# =============================================================================
+n8n_cpu    = 1024
+n8n_memory = 2048
+
+# =============================================================================
+# RDS Configuration
+# =============================================================================
+db_instance_class        = "db.t3.micro"
+db_allocated_storage     = 20
+db_max_allocated_storage = 100
+db_multi_az              = false
+db_backup_retention_period = 7
+
+# Database password (use strong password)
+# Generate with: openssl rand -base64 24
+db_password = "your-strong-database-password"
+
+# =============================================================================
+# ALB Configuration
+# =============================================================================
+acm_certificate_arn        = "arn:aws:acm:ap-northeast-2:123456789012:certificate/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
+allowed_cidr_blocks        = ["0.0.0.0/0"]  # Restrict in production
+alb_health_check_path      = "/healthz"
+alb_enable_deletion_protection = false
+
+# =============================================================================
+# Route53 Configuration (Optional)
+# =============================================================================
+# route53_zone_id     = "Z1234567890ABC"
+# route53_record_name = "n8n.example.com"
+
+# =============================================================================
+# Tags
+# =============================================================================
+service_name = "n8n"
+team         = "platform-team"
+owner        = "platform-team"
+cost_center  = "engineering"
+data_class   = "confidential"
