@@ -35,9 +35,31 @@ variable "amp_workspace_arn" {
   type        = string
 }
 
+variable "amp_remote_write_endpoint" {
+  description = "Amazon Managed Prometheus remote write endpoint URL"
+  type        = string
+}
+
 variable "log_group_name" {
   description = "CloudWatch log group name for ADOT logs"
   type        = string
+}
+
+variable "app_port" {
+  description = "Application port for Prometheus metrics scraping"
+  type        = number
+  default     = 8080
+}
+
+variable "cluster_name" {
+  description = "ECS cluster name for resource tagging"
+  type        = string
+}
+
+variable "environment" {
+  description = "Environment name (dev, staging, prod)"
+  type        = string
+  default     = "prod"
 }
 
 variable "adot_cpu" {

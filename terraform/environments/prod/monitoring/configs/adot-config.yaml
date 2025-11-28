@@ -4,6 +4,15 @@
 
 # Receivers define how to collect metrics
 receivers:
+  # OTLP receiver for metrics and traces from applications
+  # Applications push telemetry data to this endpoint
+  otlp:
+    protocols:
+      grpc:
+        endpoint: 0.0.0.0:4317
+      http:
+        endpoint: 0.0.0.0:4318
+
   # Prometheus receiver scrapes metrics from application endpoints
   prometheus:
     config:
@@ -16,7 +25,7 @@ receivers:
         - job_name: 'application-metrics'
           scrape_interval: 30s
           static_configs:
-            - targets: ['localhost:8080']  # Adjust port based on your application
+            - targets: ['localhost:${APP_PORT}']  # Set via environment variable
           metric_relabel_configs:
             - source_labels: [__name__]
               regex: '(http_.*|application_.*|business_.*)'
@@ -53,10 +62,10 @@ processors:
   resource:
     attributes:
       - key: environment
-        value: prod
+        value: ${ENVIRONMENT}
         action: upsert
       - key: cluster_name
-        value: atlantis-prod
+        value: ${CLUSTER_NAME}
         action: upsert
       - key: service_name
         value: ${SERVICE_NAME}  # Set via environment variable
@@ -76,6 +85,19 @@ processors:
 
 # Exporters define where to send metrics
 exporters:
+  # AWS X-Ray exporter for distributed tracing
+  awsxray:
+    region: ${AWS_REGION}
+    # Indexed attributes will be added as annotations in X-Ray
+    indexed_attributes:
+      - http.method
+      - http.status_code
+      - http.route
+      - rpc.service
+      - rpc.method
+      - db.system
+      - db.name
+
   # Prometheus Remote Write exporter for AMP
   prometheusremotewrite:
     endpoint: ${AMP_ENDPOINT}  # Set via environment variable
@@ -141,9 +163,10 @@ service:
 
   # Pipeline configuration
   pipelines:
-    # Metrics pipeline
+    # Metrics pipeline - receives from OTLP, Prometheus, and ECS container metrics
     metrics:
       receivers:
+        - otlp
         - prometheus
         - awsecscontainermetrics
       processors:
@@ -154,3 +177,14 @@ service:
       exporters:
         - prometheusremotewrite
         - logging
+
+    # Traces pipeline - receives from OTLP and sends to X-Ray
+    traces:
+      receivers:
+        - otlp
+      processors:
+        - memory_limiter
+        - resource
+        - batch
+      exporters:
+        - awsxray
