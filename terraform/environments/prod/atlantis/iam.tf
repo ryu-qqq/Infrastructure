@@ -202,6 +202,17 @@ resource "aws_iam_role_policy" "atlantis-terraform-operations" {
         Resource = "*"
       },
       {
+        Sid    = "KMSDecryptForTerraformState"
+        Effect = "Allow"
+        Action = [
+          "kms:Decrypt",
+          "kms:DescribeKey",
+          "kms:GenerateDataKey"
+        ]
+        Resource = "*"
+        # Required for decrypting Terraform state files encrypted with KMS
+      },
+      {
         Sid    = "IAMReadOnlyForTerraformResources"
         Effect = "Allow"
         Action = [
@@ -453,6 +464,20 @@ resource "aws_iam_role_policy" "atlantis-terraform-operations" {
           "arn:aws:route53:::change/*"
         ]
         # Required for CrawlingHub ecs-web-api DNS management
+      },
+      {
+        Sid    = "ManageEventBridgeRules"
+        Effect = "Allow"
+        Action = [
+          "events:DescribeRule",
+          "events:ListRules",
+          "events:PutRule",
+          "events:DeleteRule",
+          "events:PutTargets",
+          "events:RemoveTargets"
+        ]
+        Resource = "*"
+        # Required for EventBridge rule management
       }
     ]
   })
