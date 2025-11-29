@@ -480,6 +480,19 @@ resource "aws_iam_role_policy" "atlantis-terraform-operations" {
         ]
         Resource = "*"
         # Required for EventBridge rule management
+      },
+      {
+        Sid    = "ManageSSMParametersForEventBridge"
+        Effect = "Allow"
+        Action = [
+          "ssm:PutParameter",
+          "ssm:AddTagsToResource",
+          "ssm:GetParameter",
+          "ssm:GetParameters",
+          "ssm:GetParametersByPath"
+        ]
+        Resource = "arn:aws:ssm:ap-northeast-2:646886795421:parameter/crawlinghub/eventbridge/*"
+        # Required for managing EventBridge configuration in SSM Parameter Store
       }
     ]
   })
