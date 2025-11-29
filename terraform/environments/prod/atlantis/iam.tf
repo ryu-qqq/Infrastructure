@@ -493,6 +493,20 @@ resource "aws_iam_role_policy" "atlantis-terraform-operations" {
         ]
         Resource = "arn:aws:ssm:ap-northeast-2:646886795421:parameter/crawlinghub/eventbridge/*"
         # Required for managing EventBridge configuration in SSM Parameter Store
+      },
+      {
+        Sid    = "ManageApplicationAutoScaling"
+        Effect = "Allow"
+        Action = [
+          "application-autoscaling:DescribeScalableTargets",
+          "application-autoscaling:DescribeScalingPolicies",
+          "application-autoscaling:RegisterScalableTarget",
+          "application-autoscaling:DeregisterScalableTarget",
+          "application-autoscaling:PutScalingPolicy",
+          "application-autoscaling:DeleteScalingPolicy"
+        ]
+        Resource = "*"
+        # Required for managing ECS service auto-scaling
       }
     ]
   })
