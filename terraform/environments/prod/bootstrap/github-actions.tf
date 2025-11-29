@@ -326,6 +326,25 @@ resource "aws_iam_policy" "github-actions-infrastructure" {
           "arn:aws:iam::${local.account_id}:role/*-role-prod",
           "arn:aws:iam::${local.account_id}:role/atlantis-*"
         ]
+      },
+      {
+        Sid    = "IAMPolicyManagement"
+        Effect = "Allow"
+        Action = [
+          "iam:CreatePolicy",
+          "iam:DeletePolicy",
+          "iam:CreatePolicyVersion",
+          "iam:DeletePolicyVersion",
+          "iam:SetDefaultPolicyVersion",
+          "iam:TagPolicy",
+          "iam:UntagPolicy",
+          "iam:ListPolicyTags"
+        ]
+        Resource = [
+          "arn:aws:iam::${local.account_id}:policy/*-prod-*",
+          "arn:aws:iam::${local.account_id}:policy/*-prod",
+          "arn:aws:iam::${local.account_id}:policy/fileflow-*"
+        ]
       }
     ]
   })
@@ -655,6 +674,18 @@ resource "aws_iam_policy" "github-actions-services" {
           "chatbot:ListTagsForResource"
         ]
         Resource = "*"
+      },
+      {
+        Sid    = "SecretsManagerAccess"
+        Effect = "Allow"
+        Action = [
+          "secretsmanager:DescribeSecret",
+          "secretsmanager:GetSecretValue",
+          "secretsmanager:ListSecrets"
+        ]
+        Resource = [
+          "arn:aws:secretsmanager:${var.aws_region}:${local.account_id}:secret:fileflow/*"
+        ]
       }
     ]
   })

@@ -472,6 +472,7 @@ resource "aws_iam_role_policy" "atlantis-terraform-operations" {
           "events:DescribeRule",
           "events:ListRules",
           "events:ListTagsForResource",
+          "events:ListTargetsByRule",
           "events:PutRule",
           "events:DeleteRule",
           "events:PutTargets",
