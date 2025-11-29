@@ -517,8 +517,11 @@ resource "aws_iam_role_policy" "atlantis-terraform-operations" {
           "iam:PutRolePolicy",
           "iam:DeleteRolePolicy"
         ]
-        Resource = "arn:aws:iam::646886795421:role/crawlinghub-*-task-role-prod"
-        # Required for managing all crawlinghub task roles
+        Resource = [
+          "arn:aws:iam::646886795421:role/crawlinghub-*-task-role-prod",
+          "arn:aws:iam::646886795421:role/crawlinghub-*-execution-role-prod"
+        ]
+        # Required for managing all crawlinghub task and execution roles
       },
       {
         Sid    = "ManageCrawlingHubSSMParameters"
