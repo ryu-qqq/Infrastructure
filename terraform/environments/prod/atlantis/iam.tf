@@ -500,6 +500,7 @@ resource "aws_iam_role_policy" "atlantis-terraform-operations" {
         Action = [
           "application-autoscaling:DescribeScalableTargets",
           "application-autoscaling:DescribeScalingPolicies",
+          "application-autoscaling:ListTagsForResource",
           "application-autoscaling:RegisterScalableTarget",
           "application-autoscaling:DeregisterScalableTarget",
           "application-autoscaling:PutScalingPolicy",
