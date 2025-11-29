@@ -508,6 +508,26 @@ resource "aws_iam_role_policy" "atlantis-terraform-operations" {
         ]
         Resource = "*"
         # Required for managing ECS service auto-scaling
+      },
+      {
+        Sid    = "PassRoleToCrawlingHubWebApi"
+        Effect = "Allow"
+        Action = "iam:PassRole"
+        Resource = [
+          "arn:aws:iam::646886795421:role/crawlinghub-web-api-task-role-prod",
+          "arn:aws:iam::646886795421:role/crawlinghub-web-api-execution-role-prod"
+        ]
+        # Required for ECS task and execution roles
+      },
+      {
+        Sid    = "ManageCrawlingHubWebApiTaskRolePolicy"
+        Effect = "Allow"
+        Action = [
+          "iam:PutRolePolicy",
+          "iam:DeleteRolePolicy"
+        ]
+        Resource = "arn:aws:iam::646886795421:role/crawlinghub-web-api-task-role-prod"
+        # Required for managing task role inline policies
       }
     ]
   })
