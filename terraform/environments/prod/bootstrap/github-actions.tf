@@ -679,6 +679,7 @@ resource "aws_iam_policy" "github-actions-services" {
         Sid    = "SecretsManagerAccess"
         Effect = "Allow"
         Action = [
+          "secretsmanager:GetResourcePolicy",
           "secretsmanager:DescribeSecret",
           "secretsmanager:GetSecretValue",
           "secretsmanager:ListSecrets"
