@@ -36,6 +36,18 @@ output "cache_nodes" {
   value       = var.replication_group_id == null ? aws_elasticache_cluster.memcached-or-single-redis[0].cache_nodes : []
 }
 
+output "endpoint_address" {
+  description = "The cache endpoint address (works for both standalone and replication group)"
+  value = coalesce(
+    # 1. Replication Group primary endpoint
+    var.replication_group_id != null ? aws_elasticache_replication_group.redis[0].primary_endpoint_address : null,
+    # 2. Standalone Redis/Memcached first node address
+    length(aws_elasticache_cluster.memcached-or-single-redis) > 0 && length(aws_elasticache_cluster.memcached-or-single-redis[0].cache_nodes) > 0
+    ? aws_elasticache_cluster.memcached-or-single-redis[0].cache_nodes[0].address
+    : null
+  )
+}
+
 # ==============================================================================
 # Engine Configuration
 # ==============================================================================
