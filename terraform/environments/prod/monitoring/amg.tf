@@ -51,7 +51,7 @@ resource "aws_grafana_workspace" "main" {
   authentication_providers = var.amg_authentication_providers
   permission_type          = var.amg_permission_type
   data_sources             = var.amg_data_sources
-  role_arn                 = module.iam_grafana_workspace.role_arn
+  role_arn                 = module.iam_grafana_amp_reader.role_arn
 
   # Network access configuration (optional - for VPC access)
   # network_access_control {

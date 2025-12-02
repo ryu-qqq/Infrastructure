@@ -206,15 +206,24 @@ module "iam_grafana_amp_reader" {
             }
           },
           {
+            # DescribeLogGroups requires wildcard resource to list all log groups
+            # https://docs.aws.amazon.com/AmazonCloudWatch/latest/logs/iam-access-control-overview-cwl.html
+            Effect = "Allow"
+            Action = [
+              "logs:DescribeLogGroups"
+            ]
+            Resource = "*"
+          },
+          {
             # CloudWatch Logs actions limited to specific log groups
             Effect = "Allow"
             Action = [
-              "logs:DescribeLogGroups",
               "logs:GetLogGroupFields",
               "logs:StartQuery",
               "logs:StopQuery",
               "logs:GetQueryResults",
-              "logs:GetLogEvents"
+              "logs:GetLogEvents",
+              "logs:FilterLogEvents"
             ]
             Resource = [
               "arn:aws:logs:${local.aws_region}:${local.aws_account_id}:log-group:/aws/ecs/*",
