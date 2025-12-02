@@ -187,6 +187,9 @@ module "iam_grafana_amp_reader" {
             Resource = "*"
           },
           {
+            # CloudWatch GetMetricData/GetMetricStatistics require wildcard resource
+            # Namespace conditions may not work reliably with GetMetricData API
+            # https://docs.aws.amazon.com/AmazonCloudWatch/latest/monitoring/iam-cw-condition-keys-namespace.html
             Effect = "Allow"
             Action = [
               "cloudwatch:GetMetricStatistics",
@@ -194,16 +197,6 @@ module "iam_grafana_amp_reader" {
               "cloudwatch:GetMetricWidgetImage"
             ]
             Resource = "*"
-            Condition = {
-              StringEquals = {
-                "cloudwatch:namespace" = [
-                  "AWS/ECS",
-                  "AWS/RDS",
-                  "AWS/ApplicationELB",
-                  "ECS/ContainerInsights"
-                ]
-              }
-            }
           },
           {
             # DescribeLogGroups requires wildcard resource to list all log groups
