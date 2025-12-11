@@ -145,16 +145,17 @@ jobs:
           COMPONENTS='${{ inputs.components }}'
 
           # JSON 파싱하여 컴포넌트 상태 문자열 생성
+          # 백틱 대신 *bold* 사용 (heredoc에서 백틱이 명령어로 해석되는 문제 방지)
           COMPONENT_TEXT=$(echo "$COMPONENTS" | jq -r '
             .[] |
             if .status == "success" then
-              "✅ `\(.name)`: \(.image // "deployed")"
+              "✅ *\(.name)*: \(.image // "deployed")"
             elif .status == "failure" then
-              "❌ `\(.name)`: 실패"
+              "❌ *\(.name)*: 실패"
             elif .status == "skipped" then
-              "⏭️ `\(.name)`: 스킵"
+              "⏭️ *\(.name)*: 스킵"
             else
-              "⚪ `\(.name)`: \(.status)"
+              "⚪ *\(.name)*: \(.status)"
             end
           ' | paste -sd '\n' -)
 
