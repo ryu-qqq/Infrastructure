@@ -153,6 +153,20 @@ resource "aws_iam_policy" "github-actions-ssm" {
           "ssm:DescribeParameters"
         ]
         Resource = "*"
+      },
+      {
+        Sid    = "SecretsManagerAccess"
+        Effect = "Allow"
+        Action = [
+          "secretsmanager:DescribeSecret",
+          "secretsmanager:GetSecretValue",
+          "secretsmanager:ListSecrets"
+        ]
+        Resource = [
+          "arn:aws:secretsmanager:${var.aws_region}:${local.account_id}:secret:atlantis/*",
+          "arn:aws:secretsmanager:${var.aws_region}:${local.account_id}:secret:authhub/*",
+          "arn:aws:secretsmanager:${var.aws_region}:${local.account_id}:secret:prod-shared-mysql-auth*"
+        ]
       }
     ]
   })
