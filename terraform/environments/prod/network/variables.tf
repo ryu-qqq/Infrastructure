@@ -94,3 +94,35 @@ variable "transit_gateway_routes" {
   default     = []
   # Example: ["10.1.0.0/16", "10.2.0.0/16"] for additional VPCs
 }
+
+# Bastion Host Variables
+
+variable "enable_bastion" {
+  description = "Enable bastion host with SSM Session Manager"
+  type        = bool
+  default     = true
+}
+
+variable "bastion_instance_type" {
+  description = "Instance type for bastion host"
+  type        = string
+  default     = "t3.nano"
+}
+
+variable "bastion_volume_size" {
+  description = "Root volume size for bastion host (GB)"
+  type        = number
+  default     = 30
+}
+
+variable "enable_bastion_session_logging" {
+  description = "Enable CloudWatch logging for SSM sessions"
+  type        = bool
+  default     = true
+}
+
+variable "bastion_session_log_retention_days" {
+  description = "Retention period for bastion session logs (days)"
+  type        = number
+  default     = 30
+}

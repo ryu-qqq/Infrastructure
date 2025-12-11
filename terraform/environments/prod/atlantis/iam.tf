@@ -288,23 +288,9 @@ resource "aws_iam_role_policy" "atlantis-terraform-operations" {
         Sid    = "ManageS3Buckets"
         Effect = "Allow"
         Action = [
-          "s3:GetBucketPolicy",
-          "s3:PutBucketPolicy",
-          "s3:DeleteBucketPolicy",
-          "s3:GetBucketAcl",
-          "s3:PutBucketAcl",
-          "s3:GetBucketCORS",
-          "s3:PutBucketCORS",
-          "s3:GetBucketVersioning",
-          "s3:PutBucketVersioning",
-          "s3:GetBucketLogging",
-          "s3:PutBucketLogging",
-          "s3:GetEncryptionConfiguration",
-          "s3:PutEncryptionConfiguration",
-          "s3:GetBucketPublicAccessBlock",
-          "s3:PutBucketPublicAccessBlock",
-          "s3:GetLifecycleConfiguration",
-          "s3:PutLifecycleConfiguration"
+          "s3:Get*",
+          "s3:Put*",
+          "s3:Delete*"
         ]
         Resource = "arn:aws:s3:::fileflow-*"
       },
@@ -318,6 +304,9 @@ resource "aws_iam_role_policy" "atlantis-terraform-operations" {
           "elasticache:CreateReplicationGroup",
           "elasticache:DeleteReplicationGroup",
           "elasticache:ModifyReplicationGroup",
+          "elasticache:CreateCacheCluster",
+          "elasticache:DeleteCacheCluster",
+          "elasticache:ModifyCacheCluster",
           "elasticache:AddTagsToResource",
           "elasticache:RemoveTagsFromResource",
           "elasticache:CreateCacheParameterGroup",
@@ -326,6 +315,17 @@ resource "aws_iam_role_policy" "atlantis-terraform-operations" {
           "elasticache:DescribeReplicationGroups"
         ]
         Resource = "*"
+      },
+      {
+        Sid    = "ManageFileFlowSSMParameters"
+        Effect = "Allow"
+        Action = [
+          "ssm:PutParameter",
+          "ssm:DeleteParameter",
+          "ssm:AddTagsToResource",
+          "ssm:RemoveTagsFromResource"
+        ]
+        Resource = "arn:aws:ssm:${var.aws_region}:${data.aws_caller_identity.current.account_id}:parameter/fileflow/*"
       },
       {
         Sid    = "ManageSQS"
@@ -346,6 +346,7 @@ resource "aws_iam_role_policy" "atlantis-terraform-operations" {
           "cloudwatch:PutMetricAlarm",
           "cloudwatch:DeleteAlarms",
           "cloudwatch:DescribeAlarms",
+          "cloudwatch:ListTagsForResource",
           "cloudwatch:TagResource",
           "cloudwatch:UntagResource"
         ]
@@ -363,6 +364,7 @@ resource "aws_iam_role_policy" "atlantis-terraform-operations" {
           "ecs:CreateService",
           "ecs:UpdateService",
           "ecs:DeleteService",
+          "ecs:ListTagsForResource",
           "ecs:TagResource",
           "ecs:UntagResource"
         ]
@@ -411,8 +413,10 @@ resource "aws_iam_role_policy" "atlantis-terraform-operations" {
         Action = [
           "ecr:CreateRepository",
           "ecr:DeleteRepository",
+          "ecr:GetLifecyclePolicy",
           "ecr:PutLifecyclePolicy",
           "ecr:DeleteLifecyclePolicy",
+          "ecr:GetRepositoryPolicy",
           "ecr:SetRepositoryPolicy",
           "ecr:DeleteRepositoryPolicy",
           "ecr:TagResource",

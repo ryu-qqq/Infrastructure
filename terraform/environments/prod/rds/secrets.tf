@@ -84,6 +84,114 @@ resource "aws_secretsmanager_secret_version" "db-master-password" {
   }
 }
 
+# ============================================================================
+# Application User Credentials - setof
+# ============================================================================
+
+resource "random_password" "setof" {
+  length           = 32
+  special          = true
+  override_special = "!#$%&*()-_=+[]{}<>:?"
+}
+
+resource "aws_secretsmanager_secret" "db-setof-password" {
+  name                    = "${local.name_prefix}-setof-password"
+  description             = "Database credentials for setof schema/user"
+  recovery_window_in_days = 0
+  kms_key_id              = data.aws_kms_key.secrets_manager.arn
+
+  tags = merge(
+    {
+      Environment = var.environment
+      Service     = var.service_name
+      Team        = var.team
+      Owner       = var.owner
+      CostCenter  = var.cost_center
+      ManagedBy   = "Terraform"
+      Project     = var.project
+      DataClass   = var.data_class
+      Stack       = "rds"
+    },
+    var.tags,
+    {
+      Name = "${local.name_prefix}-setof-password"
+    }
+  )
+}
+
+resource "aws_secretsmanager_secret_version" "db-setof-password" {
+  secret_id = aws_secretsmanager_secret.db-setof-password.id
+  secret_string = jsonencode({
+    username          = "setof_user"
+    password          = random_password.setof.result
+    engine            = "mysql"
+    host              = module.rds.db_instance_address
+    port              = module.rds.db_instance_port
+    dbname            = "setof"
+    connection_string = "mysql://setof_user:${random_password.setof.result}@${module.rds.db_instance_address}:${module.rds.db_instance_port}/setof"
+  })
+
+  lifecycle {
+    ignore_changes = [secret_string]
+  }
+}
+
+# ============================================================================
+# Application User Credentials - auth
+# ============================================================================
+
+resource "random_password" "auth" {
+  length           = 32
+  special          = true
+  override_special = "!#$%&*()-_=+[]{}<>:?"
+}
+
+resource "aws_secretsmanager_secret" "db-auth-password" {
+  name                    = "${local.name_prefix}-auth-password"
+  description             = "Database credentials for auth schema/user (authentication/authorization)"
+  recovery_window_in_days = 0
+  kms_key_id              = data.aws_kms_key.secrets_manager.arn
+
+  tags = merge(
+    {
+      Environment = var.environment
+      Service     = var.service_name
+      Team        = var.team
+      Owner       = var.owner
+      CostCenter  = var.cost_center
+      ManagedBy   = "Terraform"
+      Project     = var.project
+      DataClass   = var.data_class
+      Stack       = "rds"
+    },
+    var.tags,
+    {
+      Name = "${local.name_prefix}-auth-password"
+    }
+  )
+}
+
+resource "aws_secretsmanager_secret_version" "db-auth-password" {
+  secret_id = aws_secretsmanager_secret.db-auth-password.id
+  secret_string = jsonencode({
+    username          = "auth_user"
+    password          = random_password.auth.result
+    engine            = "mysql"
+    host              = module.rds.db_instance_address
+    port              = module.rds.db_instance_port
+    dbname            = "auth"
+    connection_string = "mysql://auth_user:${random_password.auth.result}@${module.rds.db_instance_address}:${module.rds.db_instance_port}/auth"
+  })
+
+  lifecycle {
+    ignore_changes = [secret_string]
+  }
+}
+
+# ============================================================================
+# Secrets Rotation Configuration
+# ============================================================================
+
 # Reference to rotation Lambda from secrets module
 data "terraform_remote_state" "secrets" {
   backend = "s3"

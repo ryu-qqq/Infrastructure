@@ -1,0 +1,73 @@
+ 정책 이름
+
+  GitHubActionsSSMPolicy (ARN: arn:aws:iam::646886795421:policy/GitHubActionsSSMPolicy)
+
+  변경 내용
+
+  기존에 SSM Parameter Store 권한만 있던 정책에 Secrets Manager 권한을 추가했습니다.
+
+  변경 전 (v1)
+
+  {
+    "Version": "2012-10-17",
+    "Statement": [
+      {
+        "Sid": "SSMParameterAccess",
+        "Effect": "Allow",
+        "Action": [
+          "ssm:GetParameter",
+          "ssm:GetParameters",
+          "ssm:PutParameter",
+          "ssm:DeleteParameter",
+          "ssm:AddTagsToResource",
+          "ssm:ListTagsForResource",
+          "ssm:RemoveTagsFromResource"
+        ],
+        "Resource": "arn:aws:ssm:ap-northeast-2:646886795421:parameter/*"
+      },
+      {
+        "Sid": "SSMDescribe",
+        "Effect": "Allow",
+        "Action": ["ssm:DescribeParameters"],
+        "Resource": "*"
+      }
+    ]
+  }
+
+  변경 후 (v2) - 현재
+
+  {
+    "Version": "2012-10-17",
+    "Statement": [
+      {
+        "Sid": "SSMParameterAccess",
+        // ... 기존 SSM 권한 유지
+      },
+      {
+        "Sid": "SSMDescribe",
+        // ... 기존 SSM Describe 권한 유지
+      },
+      {
+        "Sid": "SecretsManagerAccess",  // ← 새로 추가됨
+        "Effect": "Allow",
+        "Action": [
+          "secretsmanager:DescribeSecret",
+          "secretsmanager:GetSecretValue",
+          "secretsmanager:ListSecrets"
+        ],
+        "Resource": [
+          "arn:aws:secretsmanager:ap-northeast-2:646886795421:secret:atlantis/*",
+          "arn:aws:secretsmanager:ap-northeast-2:646886795421:secret:authhub/*",
+          "arn:aws:secretsmanager:ap-northeast-2:646886795421:secret:prod-shared-mysql-auth*"
+        ]
+      }
+    ]
+  }
+
+  추가된 리소스 접근 권한
+
+  | 리소스 패턴                  | 용도                             |
+  |-------------------------|--------------------------------|
+  | atlantis/*              | Atlantis CI/CD 시크릿             |
+  | authhub/*               | AuthHub JWT 시크릿 등 ← 이번에 필요했던 것 |
+  | prod-shared-mysql-auth* | 공용 MySQL 인증 정보                 |

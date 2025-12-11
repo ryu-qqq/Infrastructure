@@ -61,7 +61,7 @@ output "db_subnet_group_id" {
 
 output "db_parameter_group_name" {
   description = "DB parameter group name"
-  value       = module.rds.db_parameter_group_name
+  value       = module.rds.db_parameter_group_id
 }
 
 # ============================================================================
@@ -91,6 +91,34 @@ output "connection_secret_name" {
 }
 
 # ============================================================================
+# Application User Secrets - setof
+# ============================================================================
+
+output "setof_password_secret_arn" {
+  description = "ARN of the Secrets Manager secret containing setof user credentials"
+  value       = aws_secretsmanager_secret.db-setof-password.arn
+}
+
+output "setof_password_secret_name" {
+  description = "Name of the Secrets Manager secret containing setof user credentials"
+  value       = aws_secretsmanager_secret.db-setof-password.name
+}
+
+# ============================================================================
+# Application User Secrets - auth
+# ============================================================================
+
+output "auth_password_secret_arn" {
+  description = "ARN of the Secrets Manager secret containing auth user credentials"
+  value       = aws_secretsmanager_secret.db-auth-password.arn
+}
+
+output "auth_password_secret_name" {
+  description = "Name of the Secrets Manager secret containing auth user credentials"
+  value       = aws_secretsmanager_secret.db-auth-password.name
+}
+
+# ============================================================================
 # Monitoring Information
 # ============================================================================
 
@@ -110,12 +138,12 @@ output "performance_insights_enabled" {
 
 output "multi_az" {
   description = "Whether Multi-AZ is enabled"
-  value       = module.rds.multi_az
+  value       = module.rds.db_instance_multi_az
 }
 
 output "availability_zone" {
   description = "Availability zone of the RDS instance"
-  value       = module.rds.availability_zone
+  value       = module.rds.db_instance_availability_zone
 }
 
 # ============================================================================
@@ -124,17 +152,17 @@ output "availability_zone" {
 
 output "backup_retention_period" {
   description = "Backup retention period in days"
-  value       = module.rds.backup_retention_period
+  value       = module.rds.db_instance_backup_retention_period
 }
 
 output "backup_window" {
   description = "Backup window"
-  value       = module.rds.backup_window
+  value       = module.rds.db_instance_backup_window
 }
 
 output "maintenance_window" {
   description = "Maintenance window"
-  value       = module.rds.maintenance_window
+  value       = module.rds.db_instance_maintenance_window
 }
 
 # ============================================================================
@@ -143,27 +171,27 @@ output "maintenance_window" {
 
 output "allocated_storage" {
   description = "Allocated storage in GB"
-  value       = module.rds.allocated_storage
+  value       = module.rds.db_instance_allocated_storage
 }
 
 output "max_allocated_storage" {
   description = "Maximum allocated storage for autoscaling in GB"
-  value       = module.rds.max_allocated_storage
+  value       = var.max_allocated_storage
 }
 
 output "storage_type" {
   description = "Storage type"
-  value       = module.rds.storage_type
+  value       = module.rds.db_instance_storage_type
 }
 
 output "storage_encrypted" {
   description = "Whether storage is encrypted"
-  value       = module.rds.storage_encrypted
+  value       = module.rds.db_instance_storage_encrypted
 }
 
 output "kms_key_id" {
   description = "KMS key ID used for encryption"
-  value       = module.rds.kms_key_id
+  value       = module.rds.db_instance_kms_key_id
 }
 
 # ============================================================================
@@ -320,6 +348,58 @@ resource "aws_ssm_parameter" "master-password-secret-name" {
     var.tags,
     {
       Name      = "master-password-secret-name-export"
+      Component = "rds"
+    }
+  )
+}
+
+resource "aws_ssm_parameter" "setof-password-secret-name" {
+  name        = "/shared/rds/setof-password-secret-name"
+  description = "RDS setof user password secret name for cross-stack references"
+  type        = "String"
+  value       = aws_secretsmanager_secret.db-setof-password.name
+
+  tags = merge(
+    {
+      Environment = var.environment
+      Service     = var.service_name
+      Team        = var.team
+      Owner       = var.owner
+      CostCenter  = var.cost_center
+      ManagedBy   = "Terraform"
+      Project     = var.project
+      DataClass   = var.data_class
+      Stack       = "rds"
+    },
+    var.tags,
+    {
+      Name      = "setof-password-secret-name-export"
+      Component = "rds"
+    }
+  )
+}
+
+resource "aws_ssm_parameter" "auth-password-secret-name" {
+  name        = "/shared/rds/auth-password-secret-name"
+  description = "RDS auth user password secret name for cross-stack references"
+  type        = "String"
+  value       = aws_secretsmanager_secret.db-auth-password.name
+
+  tags = merge(
+    {
+      Environment = var.environment
+      Service     = var.service_name
+      Team        = var.team
+      Owner       = var.owner
+      CostCenter  = var.cost_center
+      ManagedBy   = "Terraform"
+      Project     = var.project
+      DataClass   = var.data_class
+      Stack       = "rds"
+    },
+    var.tags,
+    {
+      Name      = "auth-password-secret-name-export"
       Component = "rds"
     }
   )

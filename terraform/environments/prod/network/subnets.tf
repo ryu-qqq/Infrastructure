@@ -1,62 +1,15 @@
-# Public Subnets
+# Public Subnets Data Source - Reference existing subnets
 
-resource "aws_subnet" "public" {
-  count = length(var.public_subnet_cidrs)
+data "aws_subnet" "public" {
+  count = 2
 
-  vpc_id                  = aws_vpc.main.id
-  cidr_block              = var.public_subnet_cidrs[count.index]
-  availability_zone       = var.availability_zones[count.index]
-  map_public_ip_on_launch = true
-
-  # Note: Imported existing subnet - tags defined for governance compliance
-  # Tags are not modified in AWS due to IAM permission constraints
-  tags = {
-    Name        = "${var.environment}-public-subnet-${count.index + 1}"
-    Type        = "Public"
-    Owner       = var.team
-    CostCenter  = var.cost_center
-    Environment = var.environment
-    Lifecycle   = var.lifecycle_stage
-    DataClass   = var.data_class
-    Service     = var.service_name
-    Team        = var.team
-    ManagedBy   = "terraform"
-    Project     = var.project
-    Component   = var.project
-  }
-
-  lifecycle {
-    ignore_changes = [tags]
-  }
+  id = count.index == 0 ? "subnet-0bd2fc282b0fb137a" : "subnet-0c8c0ad85064b80bb"
 }
 
-# Private Subnets
+# Private Subnets Data Source - Reference existing subnets
 
-resource "aws_subnet" "private" {
-  count = length(var.private_subnet_cidrs)
+data "aws_subnet" "private" {
+  count = 2
 
-  vpc_id            = aws_vpc.main.id
-  cidr_block        = var.private_subnet_cidrs[count.index]
-  availability_zone = var.availability_zones[count.index]
-
-  # Note: Imported existing subnet - tags defined for governance compliance
-  # Tags are not modified in AWS due to IAM permission constraints
-  tags = {
-    Name        = "${var.environment}-private-subnet-${count.index + 1}"
-    Type        = "Private"
-    Owner       = var.team
-    CostCenter  = var.cost_center
-    Environment = var.environment
-    Lifecycle   = var.lifecycle_stage
-    DataClass   = var.data_class
-    Service     = var.service_name
-    Team        = var.team
-    ManagedBy   = "terraform"
-    Project     = var.project
-    Component   = var.project
-  }
-
-  lifecycle {
-    ignore_changes = [tags]
-  }
+  id = count.index == 0 ? "subnet-09692620519f86cf0" : "subnet-0d99080cbe134b6e9"
 }
