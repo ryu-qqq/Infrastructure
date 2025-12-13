@@ -123,7 +123,7 @@ resource "aws_db_instance" "this" {
     local.required_tags,
     {
       Name        = var.identifier
-      Description = "RDS instance ${var.identifier} (${var.engine} ${var.engine_version})"
+      Description = "RDS instance ${var.identifier} - ${var.engine} ${var.engine_version}"
     }
   )
 
