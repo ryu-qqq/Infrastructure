@@ -117,6 +117,16 @@ projects:
     apply_requirements: ["approved", "mergeable"]
     workflow: default
 
+  # 11. Service Discovery - Cloud Map Namespace
+  - name: service-discovery-prod
+    dir: terraform/environments/prod/service-discovery
+    workspace: default
+    autoplan:
+      when_modified: ["*.tf", "*.tfvars"]
+      enabled: true
+    apply_requirements: ["approved", "mergeable"]
+    workflow: default
+
   # ============================================================================
   # Platform Infrastructure (플랫폼 인프라)
   # ============================================================================

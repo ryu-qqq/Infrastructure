@@ -75,3 +75,27 @@ output "task_definition_revision" {
   description = "The revision number of the ECS task definition"
   value       = aws_ecs_task_definition.this.revision
 }
+
+# ==============================================================================
+# Service Discovery Outputs
+# ==============================================================================
+
+output "service_discovery_service_id" {
+  description = "The ID of the Cloud Map service discovery service"
+  value       = var.enable_service_discovery ? aws_service_discovery_service.this[0].id : null
+}
+
+output "service_discovery_service_arn" {
+  description = "The ARN of the Cloud Map service discovery service"
+  value       = var.enable_service_discovery ? aws_service_discovery_service.this[0].arn : null
+}
+
+output "service_discovery_dns_name" {
+  description = "The DNS name for service discovery (e.g., service-name.namespace.local)"
+  value       = var.enable_service_discovery ? "${var.name}.${var.service_discovery_namespace_name}" : null
+}
+
+output "service_discovery_endpoint" {
+  description = "The full endpoint URL for the service (http://dns-name:port)"
+  value       = var.enable_service_discovery ? "http://${var.name}.${var.service_discovery_namespace_name}:${var.container_port}" : null
+}

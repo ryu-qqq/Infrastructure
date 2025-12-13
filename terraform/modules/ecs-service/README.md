@@ -11,6 +11,7 @@ AWS Fargate 기반 ECS 서비스를 프로비저닝하는 Terraform 모듈입니
 - ✅ **헬스체크**: 컨테이너 및 ALB 헬스체크 구성
 - ✅ **보안 통합**: Secrets Manager/Parameter Store 연동
 - ✅ **거버넌스 준수**: 필수 태그 및 명명 규칙 자동 적용
+- ✅ **Service Discovery**: AWS Cloud Map 기반 내부 서비스 검색 지원 (선택적)
 
 ## 사용 예시
 
@@ -127,6 +128,51 @@ module "worker_service" {
   cost_center  = "engineering"
 }
 ```
+
+### Service Discovery 활성화 (Cloud Map)
+
+```hcl
+# SSM에서 Namespace ID 가져오기
+data "aws_ssm_parameter" "service_discovery_namespace_id" {
+  name = "/shared/service-discovery/namespace-id"
+}
+
+module "backend_service" {
+  source = "../../modules/ecs-service"
+
+  name           = "authhub"
+  cluster_id     = aws_ecs_cluster.main.id
+  container_name = "authhub"
+  container_image = "123456789012.dkr.ecr.ap-northeast-2.amazonaws.com/authhub:latest"
+  container_port = 9090
+
+  cpu    = 512
+  memory = 1024
+
+  execution_role_arn = aws_iam_role.ecs_execution.arn
+  task_role_arn      = aws_iam_role.ecs_task.arn
+
+  subnet_ids         = aws_subnet.private[*].id
+  security_group_ids = [aws_security_group.ecs_tasks.id]
+
+  # Service Discovery 설정
+  enable_service_discovery           = true
+  service_discovery_namespace_id     = data.aws_ssm_parameter.service_discovery_namespace_id.value
+  service_discovery_namespace_name   = "connectly.local"  # DNS: authhub.connectly.local
+  service_discovery_dns_ttl          = 10                 # 10초 TTL (빠른 장애 대응)
+  service_discovery_failure_threshold = 1                 # 1회 실패시 DNS에서 제거
+
+  environment  = "prod"
+  service_name = "authhub"
+  team         = "backend-team"
+  owner        = "backend@example.com"
+  cost_center  = "platform"
+}
+
+# 결과: http://authhub.connectly.local:9090 으로 접근 가능
+```
+
+> 📖 **상세 가이드**: Service Discovery 설정에 대한 자세한 내용은 [docs/SERVICE_DISCOVERY_GUIDE.md](./docs/SERVICE_DISCOVERY_GUIDE.md)를 참조하세요.
 
 ### 환경변수 및 시크릿 주입
 

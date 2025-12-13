@@ -143,7 +143,44 @@ resource "aws_ecs_task_definition" "this" {
   )
 }
 
+# ============================================================================
+# Service Discovery (Cloud Map) Configuration
+# ============================================================================
+
+resource "aws_service_discovery_service" "this" {
+  count = var.enable_service_discovery ? 1 : 0
+
+  name = var.name
+
+  dns_config {
+    namespace_id = var.service_discovery_namespace_id
+
+    dns_records {
+      ttl  = var.service_discovery_dns_ttl
+      type = var.service_discovery_dns_type
+    }
+
+    routing_policy = var.service_discovery_routing_policy
+  }
+
+  # Use custom health check (ECS task health)
+  health_check_custom_config {
+    failure_threshold = var.service_discovery_failure_threshold
+  }
+
+  tags = merge(
+    local.required_tags,
+    {
+      Name        = "${var.name}-service-discovery"
+      Description = "Cloud Map service for ${var.name}"
+    }
+  )
+}
+
+# ============================================================================
 # ECS Service
+# ============================================================================
+
 resource "aws_ecs_service" "this" {
   name            = var.name
   cluster         = var.cluster_id
@@ -165,6 +202,14 @@ resource "aws_ecs_service" "this" {
       target_group_arn = load_balancer.value.target_group_arn
       container_name   = load_balancer.value.container_name
       container_port   = load_balancer.value.container_port
+    }
+  }
+
+  # Service Discovery configuration (if enabled)
+  dynamic "service_registries" {
+    for_each = var.enable_service_discovery ? [1] : []
+    content {
+      registry_arn = aws_service_discovery_service.this[0].arn
     }
   }
 

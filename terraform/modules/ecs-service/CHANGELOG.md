@@ -5,6 +5,96 @@
 형식은 [Keep a Changelog](https://keepachangelog.com/ko/1.0.0/)를 따르며,
 이 프로젝트는 [Semantic Versioning](https://semver.org/lang/ko/)을 준수합니다.
 
+## [1.1.0] - 2025-12-13
+
+### 추가됨
+
+#### AWS Cloud Map Service Discovery 지원
+
+ECS 서비스가 Cloud Map을 통해 DNS 기반으로 서로를 검색할 수 있는 기능을 추가했습니다.
+
+**아키텍처**
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                  AWS Cloud Map Namespace                        │
+│                    (connectly.local)                            │
+├─────────────────────────────────────────────────────────────────┤
+│                                                                 │
+│   authhub.connectly.local:9090 ──────┐                          │
+│   fileflow.connectly.local:8080 ─────┼──→ ECS Task IP 자동 등록 │
+│   commerce.connectly.local:8080 ─────┘                          │
+│                                                                 │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+**새 변수**
+- `enable_service_discovery`: Service Discovery 활성화 (기본값: false)
+- `service_discovery_namespace_id`: Cloud Map Namespace ID
+- `service_discovery_namespace_name`: Namespace 이름 (기본값: "connectly.local")
+- `service_discovery_dns_ttl`: DNS TTL 초 (기본값: 10)
+- `service_discovery_dns_type`: DNS 레코드 타입 - A 또는 SRV (기본값: "A")
+- `service_discovery_routing_policy`: 라우팅 정책 - MULTIVALUE 또는 WEIGHTED (기본값: "MULTIVALUE")
+- `service_discovery_failure_threshold`: Health Check 실패 임계값 (기본값: 1)
+
+**새 출력값**
+- `service_discovery_service_id`: Cloud Map Service ID
+- `service_discovery_service_arn`: Cloud Map Service ARN
+- `service_discovery_dns_name`: DNS 이름 (예: authhub.connectly.local)
+- `service_discovery_endpoint`: 전체 엔드포인트 URL (예: http://authhub.connectly.local:9090)
+
+**사용 예시**
+```hcl
+# SSM에서 Namespace ID 가져오기
+data "aws_ssm_parameter" "service_discovery_namespace_id" {
+  name = "/shared/service-discovery/namespace-id"
+}
+
+module "authhub" {
+  source = "../../modules/ecs-service"
+
+  name            = "authhub"
+  container_port  = 9090
+  # ... 기존 설정 ...
+
+  # Service Discovery 설정
+  enable_service_discovery           = true
+  service_discovery_namespace_id     = data.aws_ssm_parameter.service_discovery_namespace_id.value
+  service_discovery_namespace_name   = "connectly.local"
+  service_discovery_dns_ttl          = 10
+  service_discovery_failure_threshold = 1
+}
+
+# 결과: http://authhub.connectly.local:9090 으로 접근 가능
+```
+
+**장점**
+| 항목 | 이전 (정적) | 이후 (Cloud Map) |
+|------|-------------|------------------|
+| URI 관리 | 환경변수로 직접 지정 | DNS 자동 해결 |
+| 스케일링 | URI 고정 | ECS Task IP 자동 등록/해제 |
+| 장애 대응 | 수동 IP 변경 | 자동 Health Check 연동 |
+| 서비스 추가 | URI 환경변수 + YAML | YAML만 추가 |
+
+**Namespace 정보 (SSM Parameter Store)**
+- `/shared/service-discovery/namespace-id`: Namespace ID
+- `/shared/service-discovery/namespace-arn`: Namespace ARN
+- `/shared/service-discovery/namespace-name`: Namespace 이름
+
+**새 리소스**
+- `aws_service_discovery_service`: Cloud Map 서비스 등록 (조건부 - enable_service_discovery=true)
+
+### 문서화
+
+- Service Discovery 상세 가이드 추가 (`docs/SERVICE_DISCOVERY_GUIDE.md`)
+- README.md에 Service Discovery 사용 예시 추가
+- 트러블슈팅 가이드 포함 (DNS 조회 실패, 등록 상태 확인, Health Check 실패)
+
+### 기타
+
+- README.md 주요 기능에 Service Discovery 항목 추가
+
+---
+
 ## [1.0.0] - 2025-11-23
 
 ### 추가됨

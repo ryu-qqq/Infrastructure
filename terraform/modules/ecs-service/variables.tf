@@ -449,3 +449,69 @@ variable "sidecars" {
   }))
   default = []
 }
+
+# ============================================================================
+# Service Discovery Configuration
+# ============================================================================
+
+variable "enable_service_discovery" {
+  description = "Enable AWS Cloud Map service discovery for this ECS service"
+  type        = bool
+  default     = false
+}
+
+variable "service_discovery_namespace_id" {
+  description = "Cloud Map namespace ID for service discovery. Required when enable_service_discovery is true"
+  type        = string
+  default     = null
+}
+
+variable "service_discovery_namespace_name" {
+  description = "Cloud Map namespace name (e.g., connectly.local). Required when enable_service_discovery is true"
+  type        = string
+  default     = "connectly.local"
+}
+
+variable "service_discovery_dns_ttl" {
+  description = "TTL for DNS records in seconds (lower = faster failover, higher = less DNS load)"
+  type        = number
+  default     = 10
+
+  validation {
+    condition     = var.service_discovery_dns_ttl >= 0 && var.service_discovery_dns_ttl <= 2147483647
+    error_message = "DNS TTL must be between 0 and 2147483647 seconds"
+  }
+}
+
+variable "service_discovery_dns_type" {
+  description = "DNS record type for service discovery (A for IP address, SRV for port+IP)"
+  type        = string
+  default     = "A"
+
+  validation {
+    condition     = contains(["A", "SRV"], var.service_discovery_dns_type)
+    error_message = "DNS type must be either A or SRV"
+  }
+}
+
+variable "service_discovery_routing_policy" {
+  description = "Routing policy for service discovery (MULTIVALUE for load balancing, WEIGHTED for single instance)"
+  type        = string
+  default     = "MULTIVALUE"
+
+  validation {
+    condition     = contains(["MULTIVALUE", "WEIGHTED"], var.service_discovery_routing_policy)
+    error_message = "Routing policy must be either MULTIVALUE or WEIGHTED"
+  }
+}
+
+variable "service_discovery_failure_threshold" {
+  description = "Number of consecutive health check failures before removing instance from DNS"
+  type        = number
+  default     = 1
+
+  validation {
+    condition     = var.service_discovery_failure_threshold >= 1 && var.service_discovery_failure_threshold <= 10
+    error_message = "Failure threshold must be between 1 and 10"
+  }
+}
