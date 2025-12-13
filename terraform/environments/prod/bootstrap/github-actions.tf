@@ -20,8 +20,8 @@ locals {
     for repo in var.allowed_github_repos : "repo:${local.github_org}/${repo}:*"
   ]
 
-  # Common tags for GitHub Actions resources
-  github_actions_tags = {
+  # Required tags for governance compliance
+  required_tags = {
     Owner       = var.owner
     CostCenter  = var.cost_center
     Environment = var.environment
@@ -31,7 +31,6 @@ locals {
     Team        = var.team
     ManagedBy   = "terraform"
     Project     = var.project
-    Component   = "ci-cd"
   }
 }
 
@@ -64,8 +63,9 @@ resource "aws_iam_role" "github-actions" {
     ]
   })
 
-  tags = merge(local.github_actions_tags, {
-    Name = "GitHubActionsRole"
+  tags = merge(local.required_tags, {
+    Name      = "GitHubActionsRole"
+    Component = "ci-cd"
   })
 }
 
@@ -120,8 +120,9 @@ resource "aws_iam_policy" "github-actions-terraform-state" {
     ]
   })
 
-  tags = merge(local.github_actions_tags, {
-    Name = "github-actions-terraform-state-policy"
+  tags = merge(local.required_tags, {
+    Name      = "github-actions-terraform-state-policy"
+    Component = "ci-cd"
   })
 }
 
@@ -157,8 +158,9 @@ resource "aws_iam_policy" "github-actions-ssm" {
     ]
   })
 
-  tags = merge(local.github_actions_tags, {
-    Name = "github-actions-ssm-policy"
+  tags = merge(local.required_tags, {
+    Name      = "github-actions-ssm-policy"
+    Component = "ci-cd"
   })
 }
 
@@ -211,8 +213,9 @@ resource "aws_iam_policy" "github-actions-kms" {
     ]
   })
 
-  tags = merge(local.github_actions_tags, {
-    Name = "github-actions-kms-policy"
+  tags = merge(local.required_tags, {
+    Name      = "github-actions-kms-policy"
+    Component = "ci-cd"
   })
 }
 
@@ -349,8 +352,9 @@ resource "aws_iam_policy" "github-actions-infrastructure" {
     ]
   })
 
-  tags = merge(local.github_actions_tags, {
-    Name = "github-actions-infrastructure-policy"
+  tags = merge(local.required_tags, {
+    Name      = "github-actions-infrastructure-policy"
+    Component = "ci-cd"
   })
 }
 
@@ -445,8 +449,9 @@ resource "aws_iam_policy" "github-actions-ecs" {
     ]
   })
 
-  tags = merge(local.github_actions_tags, {
-    Name = "github-actions-ecs-policy"
+  tags = merge(local.required_tags, {
+    Name      = "github-actions-ecs-policy"
+    Component = "ci-cd"
   })
 }
 
@@ -499,8 +504,9 @@ resource "aws_iam_policy" "github-actions-ecr" {
     ]
   })
 
-  tags = merge(local.github_actions_tags, {
-    Name = "github-actions-ecr-policy"
+  tags = merge(local.required_tags, {
+    Name      = "github-actions-ecr-policy"
+    Component = "ci-cd"
   })
 }
 
@@ -538,8 +544,9 @@ resource "aws_iam_policy" "github-actions-cloudwatch" {
     ]
   })
 
-  tags = merge(local.github_actions_tags, {
-    Name = "github-actions-cloudwatch-policy"
+  tags = merge(local.required_tags, {
+    Name      = "github-actions-cloudwatch-policy"
+    Component = "ci-cd"
   })
 }
 
@@ -564,8 +571,9 @@ resource "aws_iam_policy" "github-actions-s3" {
     ]
   })
 
-  tags = merge(local.github_actions_tags, {
-    Name = "github-actions-s3-policy"
+  tags = merge(local.required_tags, {
+    Name      = "github-actions-s3-policy"
+    Component = "ci-cd"
   })
 }
 
@@ -691,8 +699,9 @@ resource "aws_iam_policy" "github-actions-services" {
     ]
   })
 
-  tags = merge(local.github_actions_tags, {
-    Name = "github-actions-services-policy"
+  tags = merge(local.required_tags, {
+    Name      = "github-actions-services-policy"
+    Component = "ci-cd"
   })
 }
 
@@ -738,8 +747,9 @@ resource "aws_ssm_parameter" "github-actions-role-arn" {
   type        = "String"
   value       = aws_iam_role.github-actions.arn
 
-  tags = merge(local.github_actions_tags, {
-    Name = "github-actions-role-arn"
+  tags = merge(local.required_tags, {
+    Name      = "github-actions-role-arn"
+    Component = "ci-cd"
   })
 }
 
@@ -749,8 +759,9 @@ resource "aws_ssm_parameter" "github-actions-allowed-repos" {
   type        = "StringList"
   value       = join(",", var.allowed_github_repos)
 
-  tags = merge(local.github_actions_tags, {
-    Name = "github-actions-allowed-repos"
+  tags = merge(local.required_tags, {
+    Name      = "github-actions-allowed-repos"
+    Component = "ci-cd"
   })
 }
 
@@ -786,7 +797,7 @@ resource "aws_ssm_parameter" "slack-webhook-deployments" {
   type        = "SecureString"
   value       = var.slack_webhook_url
 
-  tags = merge(local.github_actions_tags, {
+  tags = merge(local.required_tags, {
     Name      = "slack-webhook-deployments"
     Component = "notifications"
   })

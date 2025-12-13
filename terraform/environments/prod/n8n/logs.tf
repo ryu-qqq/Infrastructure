@@ -3,7 +3,7 @@
 module "n8n_logs" {
   source = "../../../modules/cloudwatch-log-group"
 
-  name              = "/ecs/n8n/${var.environment}"
+  name              = "/aws/ecs/n8n-${var.environment}"
   retention_in_days = 30
 
   # Tags

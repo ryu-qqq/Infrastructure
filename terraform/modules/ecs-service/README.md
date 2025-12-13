@@ -11,6 +11,7 @@ AWS Fargate 기반 ECS 서비스를 프로비저닝하는 Terraform 모듈입니
 - ✅ **헬스체크**: 컨테이너 및 ALB 헬스체크 구성
 - ✅ **보안 통합**: Secrets Manager/Parameter Store 연동
 - ✅ **거버넌스 준수**: 필수 태그 및 명명 규칙 자동 적용
+- ✅ **Service Discovery**: AWS Cloud Map 기반 내부 서비스 검색 지원 (선택적)
 
 ## 사용 예시
 
@@ -126,6 +127,49 @@ module "worker_service" {
   owner        = "data@example.com"
   cost_center  = "engineering"
 }
+```
+
+### Service Discovery 활성화 (Cloud Map)
+
+```hcl
+# SSM에서 Namespace ID 가져오기
+data "aws_ssm_parameter" "service_discovery_namespace_id" {
+  name = "/shared/service-discovery/namespace-id"
+}
+
+module "backend_service" {
+  source = "../../modules/ecs-service"
+
+  name           = "authhub"
+  cluster_id     = aws_ecs_cluster.main.id
+  container_name = "authhub"
+  container_image = "123456789012.dkr.ecr.ap-northeast-2.amazonaws.com/authhub:latest"
+  container_port = 9090
+
+  cpu    = 512
+  memory = 1024
+
+  execution_role_arn = aws_iam_role.ecs_execution.arn
+  task_role_arn      = aws_iam_role.ecs_task.arn
+
+  subnet_ids         = aws_subnet.private[*].id
+  security_group_ids = [aws_security_group.ecs_tasks.id]
+
+  # Service Discovery 설정
+  enable_service_discovery           = true
+  service_discovery_namespace_id     = data.aws_ssm_parameter.service_discovery_namespace_id.value
+  service_discovery_namespace_name   = "connectly.local"  # DNS: authhub.connectly.local
+  service_discovery_dns_ttl          = 10                 # 10초 TTL (빠른 장애 대응)
+  service_discovery_failure_threshold = 1                 # 1회 실패시 DNS에서 제거
+
+  environment  = "prod"
+  service_name = "authhub"
+  team         = "backend-team"
+  owner        = "backend@example.com"
+  cost_center  = "platform"
+}
+
+# 결과: http://authhub.connectly.local:9090 으로 접근 가능
 ```
 
 ### 환경변수 및 시크릿 주입
@@ -362,6 +406,19 @@ module "debug_service" {
 | `project` | string | "infrastructure" | 프로젝트 이름 |
 | `data_class` | string | "confidential" | 데이터 분류 (confidential, internal, public) |
 | `additional_tags` | map(string) | {} | 추가 태그 |
+
+#### Service Discovery (Cloud Map)
+
+| 변수명 | 타입 | 기본값 | 설명 | 제약사항 |
+|--------|------|--------|------|----------|
+| `enable_service_discovery` | bool | false | Cloud Map 서비스 디스커버리 활성화 | - |
+| `service_discovery_namespace_id` | string | null | Cloud Map Namespace ID | `enable_service_discovery=true`일 때 필수 |
+| `service_discovery_namespace_name` | string | "connectly.local" | Namespace 이름 (DNS 도메인) | - |
+| `service_discovery_dns_ttl` | number | 10 | DNS 레코드 TTL(초) | 0-172,800 (AWS 권장 범위) |
+| `service_discovery_dns_type` | string | "A" | DNS 레코드 타입 | A 또는 SRV |
+| `service_discovery_routing_policy` | string | "MULTIVALUE" | DNS 라우팅 정책 | MULTIVALUE 또는 WEIGHTED |
+| `service_discovery_failure_threshold` | number | 1 | 헬스체크 실패 임계값 | 1-10 |
+| `service_discovery_endpoint_scheme` | string | "http" | 엔드포인트 URL 스킴 | http, https, grpc, grpcs |
 
 ## 출력 값
 

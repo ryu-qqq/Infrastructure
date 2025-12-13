@@ -55,7 +55,7 @@ module "n8n_rds" {
   # Database Configuration
   db_name         = local.db_name
   master_username = local.db_username
-  master_password = var.db_password
+  master_password = random_password.db-password.result
   port            = local.db_port
 
   # Storage Configuration

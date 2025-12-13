@@ -118,15 +118,10 @@ variable "n8n_timezone" {
   default     = "Asia/Seoul"
 }
 
-variable "n8n_encryption_key" {
-  description = "Encryption key for n8n credentials (32+ characters)"
-  type        = string
-  sensitive   = true
-}
-
 # =============================================================================
 # RDS Configuration
 # =============================================================================
+# Note: n8n_encryption_key is auto-generated and stored in Secrets Manager
 
 variable "db_instance_class" {
   description = "RDS instance class"
@@ -146,11 +141,7 @@ variable "db_max_allocated_storage" {
   default     = 100
 }
 
-variable "db_password" {
-  description = "Master password for RDS"
-  type        = string
-  sensitive   = true
-}
+# Note: db_password is auto-generated and stored in Secrets Manager
 
 variable "db_multi_az" {
   description = "Enable Multi-AZ for RDS"
