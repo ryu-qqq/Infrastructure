@@ -30,7 +30,7 @@ resource "aws_ecs_task_definition" "n8n" {
         },
         {
           name  = "DB_POSTGRESDB_HOST"
-          value = module.n8n_rds.db_instance_endpoint
+          value = module.n8n_rds.db_instance_address
         },
         {
           name  = "DB_POSTGRESDB_PORT"
