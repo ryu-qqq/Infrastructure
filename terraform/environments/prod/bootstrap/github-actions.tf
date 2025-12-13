@@ -20,8 +20,8 @@ locals {
     for repo in var.allowed_github_repos : "repo:${local.github_org}/${repo}:*"
   ]
 
-  # Common tags for GitHub Actions resources
-  github_actions_tags = {
+  # Common tags for GitHub Actions resources (using required_tags for governance compliance)
+  required_tags = {
     Owner       = var.owner
     CostCenter  = var.cost_center
     Environment = var.environment
@@ -31,8 +31,12 @@ locals {
     Team        = var.team
     ManagedBy   = "terraform"
     Project     = var.project
-    Component   = "ci-cd"
   }
+
+  # Extended tags for GitHub Actions resources
+  github_actions_tags = merge(local.required_tags, {
+    Component = "ci-cd"
+  })
 }
 
 # ============================================================================
