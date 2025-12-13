@@ -172,8 +172,6 @@ module "backend_service" {
 # 결과: http://authhub.connectly.local:9090 으로 접근 가능
 ```
 
-> 📖 **상세 가이드**: Service Discovery 설정에 대한 자세한 내용은 [docs/SERVICE_DISCOVERY_GUIDE.md](./docs/SERVICE_DISCOVERY_GUIDE.md)를 참조하세요.
-
 ### 환경변수 및 시크릿 주입
 
 ```hcl

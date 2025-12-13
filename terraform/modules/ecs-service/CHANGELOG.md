@@ -85,9 +85,8 @@ module "authhub" {
 
 ### 문서화
 
-- Service Discovery 상세 가이드 추가 (`docs/SERVICE_DISCOVERY_GUIDE.md`)
 - README.md에 Service Discovery 사용 예시 추가
-- 트러블슈팅 가이드 포함 (DNS 조회 실패, 등록 상태 확인, Health Check 실패)
+- CHANGELOG.md에 상세 사용 가이드 및 트러블슈팅 포함
 
 ### 기타
 
