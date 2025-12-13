@@ -30,8 +30,8 @@ resource "aws_ecr_repository" "this" {
   }
 
   encryption_configuration {
-    encryption_type = "KMS"
-    kms_key         = var.kms_key_arn  # null이면 AWS 관리형 KMS 키 사용
+    encryption_type = var.encryption_type
+    kms_key         = var.encryption_type == "KMS" ? var.kms_key_arn : null
   }
 
   tags = merge(
