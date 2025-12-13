@@ -49,7 +49,7 @@ module "n8n_rds" {
   # Instance Configuration
   identifier     = "${local.name_prefix}-postgres"
   engine         = "postgres"
-  engine_version = "15.4"
+  engine_version = "15.15"
   instance_class = var.db_instance_class
 
   # Database Configuration
