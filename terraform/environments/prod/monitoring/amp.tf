@@ -170,7 +170,7 @@ resource "aws_cloudwatch_log_group" "amp-query-logs" {
 # SSM Parameters for Cross-Stack Reference
 # ============================================================================
 
-resource "aws_ssm_parameter" "amp_workspace_arn" {
+resource "aws_ssm_parameter" "amp-workspace-arn" {
   name        = "/shared/monitoring/amp-workspace-arn"
   type        = "String"
   value       = aws_prometheus_workspace.main.arn
@@ -185,7 +185,7 @@ resource "aws_ssm_parameter" "amp_workspace_arn" {
   )
 }
 
-resource "aws_ssm_parameter" "amp_remote_write_url" {
+resource "aws_ssm_parameter" "amp-remote-write-url" {
   name        = "/shared/monitoring/amp-remote-write-url"
   type        = "String"
   value       = "${aws_prometheus_workspace.main.prometheus_endpoint}api/v1/remote_write"
@@ -200,7 +200,7 @@ resource "aws_ssm_parameter" "amp_remote_write_url" {
   )
 }
 
-resource "aws_ssm_parameter" "amp_workspace_id" {
+resource "aws_ssm_parameter" "amp-workspace-id" {
   name        = "/shared/monitoring/amp-workspace-id"
   type        = "String"
   value       = aws_prometheus_workspace.main.id

@@ -37,13 +37,13 @@ module "n8n_task_execution_role" {
 }
 
 # Attach AWS managed policy for ECS Task Execution
-resource "aws_iam_role_policy_attachment" "n8n_task_execution_policy" {
+resource "aws_iam_role_policy_attachment" "n8n-task-execution-policy" {
   role       = module.n8n_task_execution_role.role_name
   policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy"
 }
 
 # Inline Policy for Secrets Manager Access
-resource "aws_iam_role_policy" "n8n_task_execution_secrets" {
+resource "aws_iam_role_policy" "n8n-task-execution-secrets" {
   name = "secrets-access"
   role = module.n8n_task_execution_role.role_name
 
@@ -65,7 +65,7 @@ resource "aws_iam_role_policy" "n8n_task_execution_secrets" {
 }
 
 # Inline Policy for CloudWatch Logs
-resource "aws_iam_role_policy" "n8n_task_execution_logs" {
+resource "aws_iam_role_policy" "n8n-task-execution-logs" {
   name = "cloudwatch-logs"
   role = module.n8n_task_execution_role.role_name
 
@@ -121,7 +121,7 @@ module "n8n_task_role" {
 }
 
 # n8n Task Role Policy - Basic permissions for n8n operations
-resource "aws_iam_role_policy" "n8n_task_operations" {
+resource "aws_iam_role_policy" "n8n-task-operations" {
   name = "n8n-operations"
   role = module.n8n_task_role.role_name
 
