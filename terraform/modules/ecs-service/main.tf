@@ -18,17 +18,6 @@ locals {
   required_tags = module.tags.tags
 }
 
-# ============================================================================
-# Input Validation (Terraform 1.5.0+)
-# ============================================================================
-
-check "service_discovery_namespace_id_required" {
-  assert {
-    condition     = !var.enable_service_discovery || var.service_discovery_namespace_id != null
-    error_message = "service_discovery_namespace_id is required when enable_service_discovery is true"
-  }
-}
-
 # CloudWatch Log Group for Container Logs
 resource "aws_cloudwatch_log_group" "this" {
   count = var.log_configuration == null ? 1 : 0
