@@ -12,7 +12,7 @@ terraform {
 
   backend "s3" {
     bucket         = "prod-connectly"
-    key            = "service-discovery/terraform.tfstate"
+    key            = "environments/prod/service-discovery/terraform.tfstate"
     region         = "ap-northeast-2"
     encrypt        = true
     dynamodb_table = "prod-connectly-tf-lock"
@@ -29,6 +29,3 @@ provider "aws" {
     }
   }
 }
-
-# Current AWS region data source
-data "aws_region" "current" {}

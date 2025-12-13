@@ -473,13 +473,18 @@ variable "service_discovery_namespace_name" {
 }
 
 variable "service_discovery_dns_ttl" {
-  description = "TTL for DNS records in seconds (lower = faster failover, higher = less DNS load)"
+  description = <<-EOT
+    TTL for DNS records in seconds.
+    Lower values = faster failover, higher values = less DNS load.
+    AWS Route 53 recommends 60-172,800 seconds (1 min - 2 days) for operational use.
+    Default: 10 seconds (optimized for service discovery failover)
+  EOT
   type        = number
   default     = 10
 
   validation {
-    condition     = var.service_discovery_dns_ttl >= 0 && var.service_discovery_dns_ttl <= 2147483647
-    error_message = "DNS TTL must be between 0 and 2147483647 seconds"
+    condition     = var.service_discovery_dns_ttl >= 0 && var.service_discovery_dns_ttl <= 172800
+    error_message = "DNS TTL must be between 0 and 172,800 seconds (AWS recommended range)"
   }
 }
 
@@ -513,5 +518,16 @@ variable "service_discovery_failure_threshold" {
   validation {
     condition     = var.service_discovery_failure_threshold >= 1 && var.service_discovery_failure_threshold <= 10
     error_message = "Failure threshold must be between 1 and 10"
+  }
+}
+
+variable "service_discovery_endpoint_scheme" {
+  description = "URL scheme for service discovery endpoint output (http, https, grpc, etc.)"
+  type        = string
+  default     = "http"
+
+  validation {
+    condition     = contains(["http", "https", "grpc", "grpcs"], var.service_discovery_endpoint_scheme)
+    error_message = "Endpoint scheme must be one of: http, https, grpc, grpcs"
   }
 }

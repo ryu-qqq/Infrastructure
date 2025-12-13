@@ -407,6 +407,19 @@ module "debug_service" {
 | `data_class` | string | "confidential" | 데이터 분류 (confidential, internal, public) |
 | `additional_tags` | map(string) | {} | 추가 태그 |
 
+#### Service Discovery (Cloud Map)
+
+| 변수명 | 타입 | 기본값 | 설명 | 제약사항 |
+|--------|------|--------|------|----------|
+| `enable_service_discovery` | bool | false | Cloud Map 서비스 디스커버리 활성화 | - |
+| `service_discovery_namespace_id` | string | null | Cloud Map Namespace ID | `enable_service_discovery=true`일 때 필수 |
+| `service_discovery_namespace_name` | string | "connectly.local" | Namespace 이름 (DNS 도메인) | - |
+| `service_discovery_dns_ttl` | number | 10 | DNS 레코드 TTL(초) | 0-172,800 (AWS 권장 범위) |
+| `service_discovery_dns_type` | string | "A" | DNS 레코드 타입 | A 또는 SRV |
+| `service_discovery_routing_policy` | string | "MULTIVALUE" | DNS 라우팅 정책 | MULTIVALUE 또는 WEIGHTED |
+| `service_discovery_failure_threshold` | number | 1 | 헬스체크 실패 임계값 | 1-10 |
+| `service_discovery_endpoint_scheme` | string | "http" | 엔드포인트 URL 스킴 | http, https, grpc, grpcs |
+
 ## 출력 값
 
 ### 주요 식별자

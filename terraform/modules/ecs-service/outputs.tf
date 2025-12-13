@@ -96,6 +96,6 @@ output "service_discovery_dns_name" {
 }
 
 output "service_discovery_endpoint" {
-  description = "The full endpoint URL for the service (http://dns-name:port)"
-  value       = var.enable_service_discovery ? "http://${var.name}.${var.service_discovery_namespace_name}:${var.container_port}" : null
+  description = "The full endpoint URL for the service (scheme://dns-name:port)"
+  value       = var.enable_service_discovery ? "${var.service_discovery_endpoint_scheme}://${var.name}.${var.service_discovery_namespace_name}:${var.container_port}" : null
 }
