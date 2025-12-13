@@ -44,6 +44,14 @@ resource "aws_ecs_task_definition" "n8n" {
           name  = "DB_POSTGRESDB_USER"
           value = local.db_username
         },
+        {
+          name  = "DB_POSTGRESDB_SSL_ENABLED"
+          value = "true"
+        },
+        {
+          name  = "DB_POSTGRESDB_SSL_REJECT_UNAUTHORIZED"
+          value = "false"
+        },
         # n8n Configuration
         {
           name  = "N8N_HOST"
