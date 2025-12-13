@@ -56,8 +56,8 @@ resource "aws_iam_role_policy" "n8n-task-execution-secrets" {
           "secretsmanager:GetSecretValue"
         ]
         Resource = [
-          aws_secretsmanager_secret.n8n_db_password.arn,
-          aws_secretsmanager_secret.n8n_encryption_key.arn
+          aws_secretsmanager_secret.n8n-db-password.arn,
+          aws_secretsmanager_secret.n8n-encryption-key.arn
         ]
       }
     ]

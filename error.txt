@@ -1,0 +1,44 @@
+ Error: Reference to undeclared resource
+│
+│   on iam.tf line 59, in resource "aws_iam_role_policy" "n8n-task-execution-secrets":
+│   59:           aws_secretsmanager_secret.n8n_db_password.arn,
+│
+│ A managed resource "aws_secretsmanager_secret" "n8n_db_password" has not
+│ been declared in the root module.
+╵
+╷
+│ Error: Reference to undeclared resource
+│
+│   on iam.tf line 60, in resource "aws_iam_role_policy" "n8n-task-execution-secrets":
+│   60:           aws_secretsmanager_secret.n8n_encryption_key.arn
+│
+│ A managed resource "aws_secretsmanager_secret" "n8n_encryption_key" has not
+│ been declared in the root module.
+╵
+╷
+│ Error: Reference to undeclared input variable
+│
+│   on secrets.tf line 49, in resource "aws_secretsmanager_secret_version" "n8n-encryption-key":
+│   49:     encryption_key = var.n8n-encryption-key
+│
+│ An input variable with the name "n8n-encryption-key" has not been declared.
+│ Did you mean "n8n_encryption_key"?
+╵
+╷
+│ Error: Reference to undeclared resource
+│
+│   on task-definition.tf line 104, in resource "aws_ecs_task_definition" "n8n":
+│  104:           valueFrom = "${aws_secretsmanager_secret.n8n_db_password.arn}:password::"
+│
+│ A managed resource "aws_secretsmanager_secret" "n8n_db_password" has not
+│ been declared in the root module.
+╵
+╷
+│ Error: Reference to undeclared resource
+│
+│   on task-definition.tf line 108, in resource "aws_ecs_task_definition" "n8n":
+│  108:           valueFrom = "${aws_secretsmanager_secret.n8n_encryption_key.arn}:encryption_key::"
+│
+│ A managed resource "aws_secretsmanager_secret" "n8n_encryption_key" has not
+│ been declared in the root module.
+╵

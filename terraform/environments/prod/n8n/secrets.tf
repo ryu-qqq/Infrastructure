@@ -46,7 +46,7 @@ resource "aws_secretsmanager_secret" "n8n-encryption-key" {
 resource "aws_secretsmanager_secret_version" "n8n-encryption-key" {
   secret_id = aws_secretsmanager_secret.n8n-encryption-key.id
   secret_string = jsonencode({
-    encryption_key = var.n8n-encryption-key
+    encryption_key = var.n8n_encryption_key
   })
 }
 

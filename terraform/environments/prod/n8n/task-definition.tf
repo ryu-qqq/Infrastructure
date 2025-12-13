@@ -101,11 +101,11 @@ resource "aws_ecs_task_definition" "n8n" {
       secrets = [
         {
           name      = "DB_POSTGRESDB_PASSWORD"
-          valueFrom = "${aws_secretsmanager_secret.n8n_db_password.arn}:password::"
+          valueFrom = "${aws_secretsmanager_secret.n8n-db-password.arn}:password::"
         },
         {
           name      = "N8N_ENCRYPTION_KEY"
-          valueFrom = "${aws_secretsmanager_secret.n8n_encryption_key.arn}:encryption_key::"
+          valueFrom = "${aws_secretsmanager_secret.n8n-encryption-key.arn}:encryption_key::"
         }
       ]
 
