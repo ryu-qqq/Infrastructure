@@ -1,6 +1,24 @@
 # AWS Secrets Manager for n8n
 
 # =============================================================================
+# Random Password Generation
+# =============================================================================
+
+# Generate random password for database (always auto-generated for security)
+resource "random_password" "db-password" {
+  length  = 32
+  special = true
+  # Exclude characters that might cause issues in connection strings
+  override_special = "!#$%&*()-_=+[]{}<>:?"
+}
+
+# Generate random encryption key for n8n (always auto-generated for security)
+resource "random_password" "n8n-encryption-key" {
+  length  = 64
+  special = false
+}
+
+# =============================================================================
 # Database Password Secret
 # =============================================================================
 
@@ -21,7 +39,7 @@ resource "aws_secretsmanager_secret" "n8n-db-password" {
 resource "aws_secretsmanager_secret_version" "n8n-db-password" {
   secret_id = aws_secretsmanager_secret.n8n-db-password.id
   secret_string = jsonencode({
-    password = var.db_password
+    password = random_password.db-password.result
   })
 }
 
@@ -46,7 +64,7 @@ resource "aws_secretsmanager_secret" "n8n-encryption-key" {
 resource "aws_secretsmanager_secret_version" "n8n-encryption-key" {
   secret_id = aws_secretsmanager_secret.n8n-encryption-key.id
   secret_string = jsonencode({
-    encryption_key = var.n8n_encryption_key
+    encryption_key = random_password.n8n-encryption-key.result
   })
 }
 
