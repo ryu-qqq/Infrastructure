@@ -684,6 +684,32 @@ resource "aws_iam_policy" "github-actions-services" {
         Resource = "*"
       },
       {
+        Sid    = "ServiceDiscoveryManagement"
+        Effect = "Allow"
+        Action = [
+          "servicediscovery:CreatePrivateDnsNamespace",
+          "servicediscovery:CreateHttpNamespace",
+          "servicediscovery:DeleteNamespace",
+          "servicediscovery:GetNamespace",
+          "servicediscovery:ListNamespaces",
+          "servicediscovery:CreateService",
+          "servicediscovery:DeleteService",
+          "servicediscovery:GetService",
+          "servicediscovery:ListServices",
+          "servicediscovery:UpdateService",
+          "servicediscovery:RegisterInstance",
+          "servicediscovery:DeregisterInstance",
+          "servicediscovery:GetInstance",
+          "servicediscovery:ListInstances",
+          "servicediscovery:GetOperation",
+          "servicediscovery:ListOperations",
+          "servicediscovery:TagResource",
+          "servicediscovery:UntagResource",
+          "servicediscovery:ListTagsForResource"
+        ]
+        Resource = "*"
+      },
+      {
         Sid    = "SecretsManagerAccess"
         Effect = "Allow"
         Action = [
