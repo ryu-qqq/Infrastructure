@@ -6,6 +6,7 @@ module "atlantis_ecr" {
   name                 = "atlantis"
   image_tag_mutability = "MUTABLE"
   scan_on_push         = true
+  encryption_type      = "KMS"
   kms_key_arn          = aws_kms_key.ecr.arn
 
   # Lifecycle policy configuration
