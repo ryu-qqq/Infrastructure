@@ -510,6 +510,28 @@ resource "aws_iam_role_policy" "atlantis-terraform-operations" {
         # Required for managing ECS service auto-scaling
       },
       {
+        Sid    = "ServiceDiscoveryAccess"
+        Effect = "Allow"
+        Action = [
+          "servicediscovery:GetService",
+          "servicediscovery:GetNamespace",
+          "servicediscovery:ListServices",
+          "servicediscovery:ListNamespaces",
+          "servicediscovery:CreateService",
+          "servicediscovery:UpdateService",
+          "servicediscovery:DeleteService",
+          "servicediscovery:RegisterInstance",
+          "servicediscovery:DeregisterInstance",
+          "servicediscovery:GetInstance",
+          "servicediscovery:ListInstances",
+          "servicediscovery:TagResource",
+          "servicediscovery:UntagResource",
+          "servicediscovery:ListTagsForResource"
+        ]
+        Resource = "*"
+        # Required for AWS Cloud Map (Service Discovery) operations
+      },
+      {
         Sid    = "ManageCrawlingHubRoles"
         Effect = "Allow"
         Action = [
