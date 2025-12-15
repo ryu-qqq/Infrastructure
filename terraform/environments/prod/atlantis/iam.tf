@@ -411,8 +411,10 @@ resource "aws_iam_role_policy" "atlantis-terraform-operations" {
         Action = [
           "ecr:CreateRepository",
           "ecr:DeleteRepository",
+          "ecr:GetLifecyclePolicy",
           "ecr:PutLifecyclePolicy",
           "ecr:DeleteLifecyclePolicy",
+          "ecr:GetRepositoryPolicy",
           "ecr:SetRepositoryPolicy",
           "ecr:DeleteRepositoryPolicy",
           "ecr:TagResource",
