@@ -81,9 +81,16 @@ jobs:
     steps:
       - name: Prepare notification data
         id: prepare
+        env:
+          # 환경변수로 안전하게 전달 (쉘 command substitution 방지)
+          INPUT_COMMIT_MSG: ${{ inputs.commit-message }}
+          HEAD_COMMIT_MSG: ${{ github.event.head_commit.message }}
+          PR_TITLE: ${{ github.event.pull_request.title }}
+          INPUT_STATUS: ${{ inputs.status }}
+          INPUT_DURATION: ${{ inputs.duration }}
         run: |
           # 상태에 따른 이모지 및 색상 설정
-          STATUS="${{ inputs.status }}"
+          STATUS="$INPUT_STATUS"
 
           case "$STATUS" in
             success)
@@ -123,17 +130,17 @@ jobs:
           echo "title_emoji=${TITLE_EMOJI}" >> $GITHUB_OUTPUT
           echo "status_text=${STATUS_TEXT}" >> $GITHUB_OUTPUT
 
-          # 커밋 메시지 처리 (없으면 GitHub에서 가져오기)
-          COMMIT_MSG="${{ inputs.commit-message }}"
+          # 커밋 메시지 처리 (환경변수로 안전하게 전달됨)
+          COMMIT_MSG="$INPUT_COMMIT_MSG"
           if [ -z "$COMMIT_MSG" ]; then
-            COMMIT_MSG="${{ github.event.head_commit.message || github.event.pull_request.title || 'No message' }}"
+            COMMIT_MSG="${HEAD_COMMIT_MSG:-${PR_TITLE:-No message}}"
           fi
-          # 첫 줄만 사용하고 특수문자 이스케이프
-          COMMIT_MSG=$(echo "$COMMIT_MSG" | head -1 | sed 's/"/\\"/g' | cut -c1-100)
+          # 첫 줄만 사용하고 특수문자 이스케이프 (백틱, $() 제거)
+          COMMIT_MSG=$(printf '%s' "$COMMIT_MSG" | head -1 | tr '`' "'" | sed 's/\$(/(/g; s/"/\\"/g' | cut -c1-100)
           echo "commit_msg=${COMMIT_MSG}" >> $GITHUB_OUTPUT
 
           # 소요 시간 (없으면 계산 시도)
-          DURATION="${{ inputs.duration }}"
+          DURATION="$INPUT_DURATION"
           if [ -z "$DURATION" ]; then
             DURATION="N/A"
           fi
@@ -183,23 +190,28 @@ jobs:
       - name: Send Slack notification
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+          # 환경변수로 안전하게 전달 (쉘 command substitution 방지)
+          INPUT_STATUS: ${{ inputs.status }}
+          INPUT_MENTION: ${{ inputs.mention-on-failure }}
+          INPUT_CUSTOM_MSG: ${{ inputs.custom-message }}
         run: |
           # 멘션 처리
           MENTION=""
-          if [ "${{ inputs.status }}" == "failure" ] && [ -n "${{ inputs.mention-on-failure }}" ]; then
-            MENTION="${{ inputs.mention-on-failure }} "
+          if [ "$INPUT_STATUS" == "failure" ] && [ -n "$INPUT_MENTION" ]; then
+            MENTION="$INPUT_MENTION "
           fi
 
-          # 커스텀 메시지 처리
+          # 커스텀 메시지 처리 (특수문자 이스케이프)
           CUSTOM_MSG=""
-          if [ -n "${{ inputs.custom-message }}" ]; then
+          SAFE_CUSTOM_MSG=$(printf '%s' "$INPUT_CUSTOM_MSG" | tr '`' "'" | sed 's/\$(/(/g; s/"/\\"/g')
+          if [ -n "$SAFE_CUSTOM_MSG" ]; then
             CUSTOM_MSG=$(cat <<CUSTOMMSG
           ,
           {
             "type": "section",
             "text": {
               "type": "mrkdwn",
-              "text": "💬 ${{ inputs.custom-message }}"
+              "text": "💬 ${SAFE_CUSTOM_MSG}"
             }
           }
           CUSTOMMSG
