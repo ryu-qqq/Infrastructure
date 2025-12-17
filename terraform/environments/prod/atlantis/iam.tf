@@ -558,6 +558,20 @@ resource "aws_iam_role_policy" "atlantis-terraform-operations" {
         ]
         Resource = "arn:aws:ssm:ap-northeast-2:646886795421:parameter/crawlinghub/*"
         # Required for managing crawlinghub SSM parameters
+      },
+      {
+        Sid    = "ManageGatewayRoles"
+        Effect = "Allow"
+        Action = [
+          "iam:PassRole",
+          "iam:PutRolePolicy",
+          "iam:DeleteRolePolicy"
+        ]
+        Resource = [
+          "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/gateway-task-role-prod",
+          "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/gateway-execution-role-prod"
+        ]
+        # Required for managing gateway ECS task and execution roles
       }
     ]
   })
