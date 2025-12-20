@@ -159,3 +159,37 @@ output "grafana_setup_info" {
     supported_data_types = var.amg_data_sources
   }
 }
+
+# ============================================================================
+# Alert Enrichment Outputs
+# ============================================================================
+
+output "alert_enrichment_lambda_arn" {
+  description = "ARN of the alert enrichment Lambda function"
+  value       = var.enable_alert_enrichment ? module.alert_enrichment_lambda[0].function_arn : null
+}
+
+output "alert_enrichment_lambda_name" {
+  description = "Name of the alert enrichment Lambda function"
+  value       = var.enable_alert_enrichment ? module.alert_enrichment_lambda[0].function_name : null
+}
+
+output "runbook_table_name" {
+  description = "Name of the runbook DynamoDB table"
+  value       = var.enable_runbook_table ? module.runbook_table[0].table_name : null
+}
+
+output "runbook_table_arn" {
+  description = "ARN of the runbook DynamoDB table"
+  value       = var.enable_runbook_table ? module.runbook_table[0].table_arn : null
+}
+
+output "alert_history_table_name" {
+  description = "Name of the alert history DynamoDB table"
+  value       = var.enable_alert_history_table ? module.alert_history_table[0].table_name : null
+}
+
+output "alert_history_table_arn" {
+  description = "ARN of the alert history DynamoDB table"
+  value       = var.enable_alert_history_table ? module.alert_history_table[0].table_arn : null
+}

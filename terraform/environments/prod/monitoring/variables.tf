@@ -182,3 +182,66 @@ variable "enable_chatbot" {
   type        = bool
   default     = false # Will be enabled after Slack workspace setup
 }
+
+# ============================================================================
+# Alert Enrichment Configuration
+# ============================================================================
+
+variable "enable_alert_enrichment" {
+  description = "Enable alert enrichment Lambda for Slack notifications"
+  type        = bool
+  default     = false # Enable when Slack webhook is configured
+}
+
+variable "alert_enrichment_slack_webhook_url" {
+  description = "Slack Incoming Webhook URL for enriched alerts"
+  type        = string
+  default     = ""
+  sensitive   = true
+}
+
+variable "grafana_url" {
+  description = "Grafana dashboard base URL for alert links"
+  type        = string
+  default     = ""
+}
+
+variable "enable_runbook_table" {
+  description = "Enable DynamoDB table for runbook URL mappings"
+  type        = bool
+  default     = false
+}
+
+variable "enable_alert_history_table" {
+  description = "Enable DynamoDB table for alert history"
+  type        = bool
+  default     = false
+}
+
+# ============================================================================
+# OpenSearch Alerting Configuration
+# ============================================================================
+
+variable "enable_opensearch_alerting" {
+  description = "Enable OpenSearch alerting with SNS notifications"
+  type        = bool
+  default     = false
+}
+
+variable "opensearch_domain_name" {
+  description = "Name of the OpenSearch domain for log analysis"
+  type        = string
+  default     = "prod-obs-opensearch"
+}
+
+variable "run_opensearch_alerting_setup" {
+  description = "Run the OpenSearch alerting setup Lambda to configure monitors"
+  type        = bool
+  default     = false
+}
+
+variable "opensearch_alerting_setup_version" {
+  description = "Version string to trigger alerting setup re-run"
+  type        = string
+  default     = "v1"
+}

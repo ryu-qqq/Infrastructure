@@ -16,6 +16,7 @@ terraform {
     region         = "ap-northeast-2"
     dynamodb_table = "prod-connectly-tf-lock"
     encrypt        = true
+    kms_key_id     = "086b1677-614f-46ba-863e-23c215fb5010"
   }
 }
 

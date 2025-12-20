@@ -1,0 +1,7 @@
+# Alert Enrichment Lambda Dependencies
+# boto3 and botocore are provided by Lambda runtime
+# Only include additional dependencies here if needed
+
+# For AMP query signing (if implementing direct Prometheus API calls)
+# requests-aws4auth==1.2.3
+# requests==2.31.0
