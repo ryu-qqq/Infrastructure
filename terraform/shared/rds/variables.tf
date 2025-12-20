@@ -58,7 +58,7 @@ variable "engine_version" {
 variable "instance_class" {
   description = "RDS instance class"
   type        = string
-  default     = "db.t4g.medium"
+  default     = "db.t4g.large"
 }
 
 variable "allocated_storage" {

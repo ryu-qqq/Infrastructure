@@ -74,3 +74,41 @@ output "kms_key_used" {
     alias = data.terraform_remote_state.kms.outputs.cloudwatch_logs_key_alias
   }
 }
+
+# ============================================================================
+# Log Streaming Outputs
+# ============================================================================
+
+output "firehose_delivery_stream" {
+  description = "Kinesis Firehose delivery stream for OpenSearch"
+  value = var.enable_log_streaming ? {
+    name = aws_kinesis_firehose_delivery_stream.logs_to_opensearch[0].name
+    arn  = aws_kinesis_firehose_delivery_stream.logs_to_opensearch[0].arn
+  } : null
+}
+
+output "firehose_backup_bucket" {
+  description = "S3 bucket for Firehose failed document backup"
+  value = var.enable_log_streaming ? {
+    name = module.firehose_backup_bucket[0].bucket_id
+    arn  = module.firehose_backup_bucket[0].bucket_arn
+  } : null
+}
+
+output "opensearch_integration" {
+  description = "OpenSearch integration details"
+  value = var.enable_log_streaming ? {
+    domain_name = var.opensearch_domain_name
+    domain_arn  = data.aws_opensearch_domain.logs[0].arn
+    endpoint    = data.aws_opensearch_domain.logs[0].endpoint
+    index_name  = var.opensearch_index_name
+  } : null
+}
+
+output "cloudwatch_to_firehose_role" {
+  description = "IAM role for CloudWatch Logs subscription filter"
+  value = var.enable_log_streaming ? {
+    name = aws_iam_role.cloudwatch_to_firehose[0].name
+    arn  = aws_iam_role.cloudwatch_to_firehose[0].arn
+  } : null
+}

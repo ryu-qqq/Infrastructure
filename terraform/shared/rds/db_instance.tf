@@ -53,7 +53,7 @@ resource "aws_db_instance" "main" {
 
   # Upgrades
   auto_minor_version_upgrade = true
-  apply_immediately          = false
+  apply_immediately          = true
 
   tags = merge(
     local.required_tags,

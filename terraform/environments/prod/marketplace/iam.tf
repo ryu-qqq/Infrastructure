@@ -21,7 +21,7 @@ resource "aws_iam_access_key" "marketplace" {
 }
 
 # IAM Policy for Amazon Textract (OCR)
-resource "aws_iam_policy" "marketplace_textract" {
+resource "aws_iam_policy" "marketplace-textract" {
   name        = "marketplace-textract-policy"
   description = "Full access to Amazon Textract for OCR operations"
   path        = "/service/"
@@ -74,7 +74,7 @@ resource "aws_iam_policy" "marketplace_textract" {
 }
 
 # IAM Policy for Amazon SES (Email)
-resource "aws_iam_policy" "marketplace_ses" {
+resource "aws_iam_policy" "marketplace-ses" {
   name        = "marketplace-ses-policy"
   description = "Full access to Amazon SES for email operations"
   path        = "/service/"
@@ -146,7 +146,7 @@ resource "aws_iam_policy" "marketplace_ses" {
 }
 
 # IAM Policy for S3 Access (Textract needs S3 for async operations)
-resource "aws_iam_policy" "marketplace_s3" {
+resource "aws_iam_policy" "marketplace-s3" {
   name        = "marketplace-s3-policy"
   description = "S3 access for Textract async operations and file storage"
   path        = "/service/"
@@ -182,17 +182,17 @@ resource "aws_iam_policy" "marketplace_s3" {
 }
 
 # Attach policies to user
-resource "aws_iam_user_policy_attachment" "marketplace_textract" {
+resource "aws_iam_user_policy_attachment" "marketplace-textract" {
   user       = aws_iam_user.marketplace.name
-  policy_arn = aws_iam_policy.marketplace_textract.arn
+  policy_arn = aws_iam_policy.marketplace-textract.arn
 }
 
-resource "aws_iam_user_policy_attachment" "marketplace_ses" {
+resource "aws_iam_user_policy_attachment" "marketplace-ses" {
   user       = aws_iam_user.marketplace.name
-  policy_arn = aws_iam_policy.marketplace_ses.arn
+  policy_arn = aws_iam_policy.marketplace-ses.arn
 }
 
-resource "aws_iam_user_policy_attachment" "marketplace_s3" {
+resource "aws_iam_user_policy_attachment" "marketplace-s3" {
   user       = aws_iam_user.marketplace.name
-  policy_arn = aws_iam_policy.marketplace_s3.arn
+  policy_arn = aws_iam_policy.marketplace-s3.arn
 }

@@ -147,6 +147,7 @@ module "iam_grafana_amp_reader" {
         Version = "2012-10-17"
         Statement = [
           {
+            Sid    = "AMPQueryMetrics"
             Effect = "Allow"
             Action = [
               "aps:QueryMetrics",
@@ -159,10 +160,67 @@ module "iam_grafana_amp_reader" {
           {
             # ListWorkspaces and DescribeWorkspace require wildcard resource
             # https://docs.aws.amazon.com/prometheus/latest/userguide/AMP-APIReference.html
+            Sid    = "AMPListDescribe"
             Effect = "Allow"
             Action = [
               "aps:ListWorkspaces",
               "aps:DescribeWorkspace"
+            ]
+            Resource = "*"
+          },
+          {
+            # Alert Manager permissions for Grafana Alerting
+            # Required for AMG to manage alerts via AMP Alert Manager
+            Sid    = "AMPAlertManager"
+            Effect = "Allow"
+            Action = [
+              "aps:ListAlertManagerDefinitions",
+              "aps:DescribeAlertManagerDefinition",
+              "aps:GetAlertManagerStatus",
+              "aps:PutAlertManagerDefinition",
+              "aps:DeleteAlertManagerDefinition"
+            ]
+            Resource = aws_prometheus_workspace.main.arn
+          },
+          {
+            # Rule groups permissions for Prometheus recording/alerting rules
+            Sid    = "AMPRuleGroups"
+            Effect = "Allow"
+            Action = [
+              "aps:ListRuleGroupsNamespaces",
+              "aps:DescribeRuleGroupsNamespace",
+              "aps:CreateRuleGroupsNamespace",
+              "aps:PutRuleGroupsNamespace",
+              "aps:DeleteRuleGroupsNamespace"
+            ]
+            Resource = aws_prometheus_workspace.main.arn
+          }
+        ]
+      })
+    }
+
+    # SNS permissions for Grafana Alerting
+    sns-alerting = {
+      policy = jsonencode({
+        Version = "2012-10-17"
+        Statement = [
+          {
+            Sid    = "SNSPublish"
+            Effect = "Allow"
+            Action = [
+              "sns:Publish"
+            ]
+            Resource = [
+              module.sns_critical.topic_arn,
+              module.sns_warning.topic_arn,
+              module.sns_info.topic_arn
+            ]
+          },
+          {
+            Sid    = "SNSList"
+            Effect = "Allow"
+            Action = [
+              "sns:ListTopics"
             ]
             Resource = "*"
           }

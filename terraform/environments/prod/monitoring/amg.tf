@@ -62,8 +62,8 @@ resource "aws_grafana_workspace" "main" {
   # Organization access (if using ORGANIZATION account_access_type)
   # organization_role_name = "GrafanaOrganizationAccess"
 
-  # Notification destinations (optional - for alerts)
-  # notification_destinations = ["SNS"]
+  # Notification destinations for Grafana Alerting
+  notification_destinations = ["SNS"]
 
   tags = merge(
     local.required_tags,

@@ -11,24 +11,23 @@ variable "name" {
 }
 
 variable "encryption_type" {
-  description = "Encryption type for ECR repository (AES256 or KMS)"
+  description = "Encryption type for ECR repository (KMS required by governance)"
   type        = string
-  default     = "AES256"
+  default     = "KMS"
 
   validation {
-    condition     = contains(["AES256", "KMS"], var.encryption_type)
-    error_message = "Encryption type must be either 'AES256' or 'KMS'."
+    condition     = var.encryption_type == "KMS"
+    error_message = "Encryption type must be 'KMS' per governance requirements. AES256 is not allowed."
   }
 }
 
 variable "kms_key_arn" {
-  description = "ARN of the KMS key for ECR encryption (only used when encryption_type = KMS)"
+  description = "ARN of the KMS key for ECR encryption (required for KMS encryption)"
   type        = string
-  default     = null
 
   validation {
-    condition     = var.kms_key_arn == null || can(regex("^arn:aws:kms:", var.kms_key_arn))
-    error_message = "KMS key ARN must be null or a valid ARN starting with 'arn:aws:kms:'."
+    condition     = can(regex("^arn:aws:kms:", var.kms_key_arn))
+    error_message = "KMS key ARN is required and must be a valid ARN starting with 'arn:aws:kms:'."
   }
 }
 

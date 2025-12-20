@@ -640,9 +640,21 @@ resource "aws_iam_policy" "github-actions-services" {
         Resource = "*"
       },
       {
-        Sid    = "CloudWatchTagging"
+        Sid    = "CloudWatchManagement"
         Effect = "Allow"
         Action = [
+          "cloudwatch:DescribeAlarms",
+          "cloudwatch:DescribeAlarmsForMetric",
+          "cloudwatch:DescribeAlarmHistory",
+          "cloudwatch:GetMetricData",
+          "cloudwatch:GetMetricStatistics",
+          "cloudwatch:ListMetrics",
+          "cloudwatch:PutMetricAlarm",
+          "cloudwatch:DeleteAlarms",
+          "cloudwatch:SetAlarmState",
+          "cloudwatch:EnableAlarmActions",
+          "cloudwatch:DisableAlarmActions",
+          "cloudwatch:PutMetricData",
           "cloudwatch:ListTagsForResource",
           "cloudwatch:TagResource",
           "cloudwatch:UntagResource"
@@ -661,6 +673,10 @@ resource "aws_iam_policy" "github-actions-services" {
           "sns:Subscribe",
           "sns:Unsubscribe",
           "sns:ListSubscriptionsByTopic",
+          "sns:GetSubscriptionAttributes",
+          "sns:SetSubscriptionAttributes",
+          "sns:ConfirmSubscription",
+          "sns:Publish",
           "sns:TagResource",
           "sns:UntagResource",
           "sns:ListTagsForResource"
@@ -721,6 +737,48 @@ resource "aws_iam_policy" "github-actions-services" {
         Resource = [
           "arn:aws:secretsmanager:${var.aws_region}:${local.account_id}:secret:fileflow/*"
         ]
+      },
+      {
+        Sid    = "LambdaManagement"
+        Effect = "Allow"
+        Action = [
+          "lambda:*"
+        ]
+        Resource = "*"
+      },
+      {
+        Sid    = "DynamoDBFullAccess"
+        Effect = "Allow"
+        Action = [
+          "dynamodb:CreateTable",
+          "dynamodb:DeleteTable",
+          "dynamodb:DescribeTable",
+          "dynamodb:UpdateTable",
+          "dynamodb:DescribeTimeToLive",
+          "dynamodb:UpdateTimeToLive",
+          "dynamodb:DescribeContinuousBackups",
+          "dynamodb:UpdateContinuousBackups",
+          "dynamodb:ListTagsOfResource",
+          "dynamodb:TagResource",
+          "dynamodb:UntagResource"
+        ]
+        Resource = "*"
+      },
+      {
+        Sid    = "OpenSearchManagement"
+        Effect = "Allow"
+        Action = [
+          "es:*"
+        ]
+        Resource = "*"
+      },
+      {
+        Sid    = "FirehoseManagement"
+        Effect = "Allow"
+        Action = [
+          "firehose:*"
+        ]
+        Resource = "*"
       }
     ]
   })

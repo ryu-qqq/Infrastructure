@@ -13,7 +13,7 @@ variable "aws_region" {
 variable "terraform_state_bucket" {
   description = "S3 bucket name for Terraform remote state"
   type        = string
-  default     = "terraform-state-bucket"
+  default     = "prod-connectly"
 }
 
 # ============================================================================
@@ -99,4 +99,32 @@ variable "data_class" {
     condition     = contains(["confidential", "internal", "public"], var.data_class)
     error_message = "Data class must be one of: confidential, internal, public."
   }
+}
+
+# ============================================================================
+# Log Streaming Variables
+# ============================================================================
+
+variable "enable_log_streaming" {
+  description = "Enable log streaming to OpenSearch"
+  type        = bool
+  default     = false
+}
+
+variable "opensearch_domain_name" {
+  description = "Name of the existing OpenSearch domain"
+  type        = string
+  default     = "prod-obs-opensearch"
+}
+
+variable "opensearch_index_name" {
+  description = "Index name prefix for logs in OpenSearch"
+  type        = string
+  default     = "logs"
+}
+
+variable "log_filter_pattern" {
+  description = "CloudWatch Logs filter pattern (empty string = all logs)"
+  type        = string
+  default     = ""
 }
