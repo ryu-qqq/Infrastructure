@@ -184,7 +184,7 @@ resource "aws_route53_record" "cdn" {
 # ============================================================================
 
 # Policy for connectly-prod bucket
-resource "aws_s3_bucket_policy" "connectly_prod" {
+resource "aws_s3_bucket_policy" "connectly-prod" {
   bucket = "connectly-prod"
   policy = jsonencode({
     Version = "2012-10-17"
@@ -207,7 +207,7 @@ resource "aws_s3_bucket_policy" "connectly_prod" {
 }
 
 # Policy for prod-connectly bucket (otel-config only)
-resource "aws_s3_bucket_policy" "prod_connectly" {
+resource "aws_s3_bucket_policy" "prod-connectly" {
   bucket = "prod-connectly"
   policy = jsonencode({
     Version = "2012-10-17"
@@ -254,7 +254,7 @@ resource "aws_s3_bucket_policy" "prod_connectly" {
 }
 
 # Policy for fileflow-uploads-prod bucket
-resource "aws_s3_bucket_policy" "fileflow_uploads" {
+resource "aws_s3_bucket_policy" "fileflow-uploads" {
   bucket = "fileflow-uploads-prod"
   policy = jsonencode({
     Version = "2012-10-17"

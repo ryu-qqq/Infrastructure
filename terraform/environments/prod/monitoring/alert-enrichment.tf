@@ -169,7 +169,7 @@ module "alert_enrichment_lambda" {
 # SNS Subscriptions for Lambda
 # ============================================================================
 
-resource "aws_sns_topic_subscription" "alert_enrichment_critical" {
+resource "aws_sns_topic_subscription" "alert-enrichment-critical" {
   count = var.enable_alert_enrichment ? 1 : 0
 
   topic_arn = module.sns_critical.topic_arn
@@ -177,7 +177,7 @@ resource "aws_sns_topic_subscription" "alert_enrichment_critical" {
   endpoint  = module.alert_enrichment_lambda[0].function_arn
 }
 
-resource "aws_sns_topic_subscription" "alert_enrichment_warning" {
+resource "aws_sns_topic_subscription" "alert-enrichment-warning" {
   count = var.enable_alert_enrichment ? 1 : 0
 
   topic_arn = module.sns_warning.topic_arn
@@ -185,7 +185,7 @@ resource "aws_sns_topic_subscription" "alert_enrichment_warning" {
   endpoint  = module.alert_enrichment_lambda[0].function_arn
 }
 
-resource "aws_sns_topic_subscription" "alert_enrichment_info" {
+resource "aws_sns_topic_subscription" "alert-enrichment-info" {
   count = var.enable_alert_enrichment ? 1 : 0
 
   topic_arn = module.sns_info.topic_arn
@@ -298,7 +298,7 @@ module "alert_history_table" {
 # CloudWatch Alarms for Lambda Health
 # ============================================================================
 
-resource "aws_cloudwatch_metric_alarm" "alert_enrichment_errors" {
+resource "aws_cloudwatch_metric_alarm" "alert-enrichment-errors" {
   count = var.enable_alert_enrichment ? 1 : 0
 
   alarm_name          = "${local.name_prefix}-alert-enrichment-errors"
@@ -329,7 +329,7 @@ resource "aws_cloudwatch_metric_alarm" "alert_enrichment_errors" {
   )
 }
 
-resource "aws_cloudwatch_metric_alarm" "alert_enrichment_duration" {
+resource "aws_cloudwatch_metric_alarm" "alert-enrichment-duration" {
   count = var.enable_alert_enrichment ? 1 : 0
 
   alarm_name          = "${local.name_prefix}-alert-enrichment-duration"
@@ -363,7 +363,7 @@ resource "aws_cloudwatch_metric_alarm" "alert_enrichment_duration" {
 # SSM Parameters for Cross-Stack Reference
 # ============================================================================
 
-resource "aws_ssm_parameter" "alert_enrichment_lambda_arn" {
+resource "aws_ssm_parameter" "alert-enrichment-lambda-arn" {
   count = var.enable_alert_enrichment ? 1 : 0
 
   name        = "/shared/monitoring/alert-enrichment-lambda-arn"
@@ -380,7 +380,7 @@ resource "aws_ssm_parameter" "alert_enrichment_lambda_arn" {
   )
 }
 
-resource "aws_ssm_parameter" "runbook_table_name" {
+resource "aws_ssm_parameter" "runbook-table-name" {
   count = var.enable_runbook_table ? 1 : 0
 
   name        = "/shared/monitoring/runbook-table-name"

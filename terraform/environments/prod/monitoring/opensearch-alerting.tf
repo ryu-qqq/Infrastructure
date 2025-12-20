@@ -8,7 +8,7 @@
 # ============================================================================
 
 data "aws_elasticsearch_domain" "logs" {
-  count       = var.enable_opensearch_alerting ? 1 : 0
+  count       = var.enable_opensearch-alerting ? 1 : 0
   domain_name = var.opensearch_domain_name
 }
 
@@ -16,8 +16,8 @@ data "aws_elasticsearch_domain" "logs" {
 # IAM Role for OpenSearch Alerting → SNS
 # ============================================================================
 
-resource "aws_iam_role" "opensearch_alerting" {
-  count = var.enable_opensearch_alerting ? 1 : 0
+resource "aws_iam_role" "opensearch-alerting" {
+  count = var.enable_opensearch-alerting ? 1 : 0
   name  = "${local.name_prefix}-opensearch-alerting-role"
 
   assume_role_policy = jsonencode({
@@ -42,10 +42,10 @@ resource "aws_iam_role" "opensearch_alerting" {
   )
 }
 
-resource "aws_iam_role_policy" "opensearch_alerting_sns" {
-  count = var.enable_opensearch_alerting ? 1 : 0
+resource "aws_iam_role_policy" "opensearch-alerting-sns" {
+  count = var.enable_opensearch-alerting ? 1 : 0
   name  = "${local.name_prefix}-opensearch-alerting-sns-policy"
-  role  = aws_iam_role.opensearch_alerting[0].id
+  role  = aws_iam_role.opensearch-alerting[0].id
 
   policy = jsonencode({
     Version = "2012-10-17"
@@ -88,16 +88,16 @@ resource "aws_iam_role_policy" "opensearch_alerting_sns" {
 # ============================================================================
 
 # Lambda to configure OpenSearch Alerting monitors and destinations
-resource "aws_lambda_function" "opensearch_alerting_setup" {
-  count            = var.enable_opensearch_alerting ? 1 : 0
+resource "aws_lambda_function" "opensearch-alerting-setup" {
+  count            = var.enable_opensearch-alerting ? 1 : 0
   function_name    = "${local.name_prefix}-opensearch-alerting-setup"
-  role             = aws_iam_role.opensearch_alerting_lambda[0].arn
+  role             = aws_iam_role.opensearch-alerting-lambda[0].arn
   handler          = "lambda_function.handler"
   runtime          = "python3.11"
   timeout          = 120
   memory_size      = 256
-  filename         = data.archive_file.opensearch_alerting_setup[0].output_path
-  source_code_hash = data.archive_file.opensearch_alerting_setup[0].output_base64sha256
+  filename         = data.archive_file.opensearch-alerting-setup[0].output_path
+  source_code_hash = data.archive_file.opensearch-alerting-setup[0].output_base64sha256
 
   environment {
     variables = {
@@ -105,7 +105,7 @@ resource "aws_lambda_function" "opensearch_alerting_setup" {
       SNS_TOPIC_CRITICAL  = module.sns_critical.topic_arn
       SNS_TOPIC_WARNING   = module.sns_warning.topic_arn
       SNS_TOPIC_INFO      = module.sns_info.topic_arn
-      SNS_ROLE_ARN        = aws_iam_role.opensearch_alerting[0].arn
+      SNS_ROLE_ARN        = aws_iam_role.opensearch-alerting[0].arn
       AWS_REGION_NAME     = local.aws_region
     }
   }
@@ -122,15 +122,15 @@ resource "aws_lambda_function" "opensearch_alerting_setup" {
   )
 }
 
-data "archive_file" "opensearch_alerting_setup" {
-  count       = var.enable_opensearch_alerting ? 1 : 0
+data "archive_file" "opensearch-alerting-setup" {
+  count       = var.enable_opensearch-alerting ? 1 : 0
   type        = "zip"
   source_dir  = "${path.module}/../../../../lambda/opensearch-alerting-setup"
   output_path = "${path.module}/opensearch-alerting-setup.zip"
 }
 
-resource "aws_iam_role" "opensearch_alerting_lambda" {
-  count = var.enable_opensearch_alerting ? 1 : 0
+resource "aws_iam_role" "opensearch-alerting-lambda" {
+  count = var.enable_opensearch-alerting ? 1 : 0
   name  = "${local.name_prefix}-opensearch-alerting-lambda-role"
 
   assume_role_policy = jsonencode({
@@ -155,10 +155,10 @@ resource "aws_iam_role" "opensearch_alerting_lambda" {
   )
 }
 
-resource "aws_iam_role_policy" "opensearch_alerting_lambda" {
-  count = var.enable_opensearch_alerting ? 1 : 0
+resource "aws_iam_role_policy" "opensearch-alerting-lambda" {
+  count = var.enable_opensearch-alerting ? 1 : 0
   name  = "${local.name_prefix}-opensearch-alerting-lambda-policy"
-  role  = aws_iam_role.opensearch_alerting_lambda[0].id
+  role  = aws_iam_role.opensearch-alerting-lambda[0].id
 
   policy = jsonencode({
     Version = "2012-10-17"
@@ -191,21 +191,21 @@ resource "aws_iam_role_policy" "opensearch_alerting_lambda" {
 }
 
 # Invoke Lambda to setup alerting (one-time execution via null_resource)
-resource "null_resource" "opensearch_alerting_setup" {
-  count = var.enable_opensearch_alerting && var.run_opensearch_alerting_setup ? 1 : 0
+resource "null_resource" "opensearch-alerting-setup" {
+  count = var.enable_opensearch-alerting && var.run_opensearch-alerting-setup ? 1 : 0
 
   triggers = {
-    lambda_arn     = aws_lambda_function.opensearch_alerting_setup[0].arn
-    source_hash    = data.archive_file.opensearch_alerting_setup[0].output_base64sha256
+    lambda_arn     = aws_lambda_function.opensearch-alerting-setup[0].arn
+    source_hash    = data.archive_file.opensearch-alerting-setup[0].output_base64sha256
     sns_critical   = module.sns_critical.topic_arn
     sns_warning    = module.sns_warning.topic_arn
-    setup_version  = var.opensearch_alerting_setup_version
+    setup_version  = var.opensearch-alerting-setup_version
   }
 
   provisioner "local-exec" {
     command = <<-EOT
       aws lambda invoke \
-        --function-name ${aws_lambda_function.opensearch_alerting_setup[0].function_name} \
+        --function-name ${aws_lambda_function.opensearch-alerting-setup[0].function_name} \
         --payload '{"action": "setup_all"}' \
         --region ${local.aws_region} \
         /tmp/opensearch-alerting-setup-response.json
@@ -214,9 +214,9 @@ resource "null_resource" "opensearch_alerting_setup" {
   }
 
   depends_on = [
-    aws_lambda_function.opensearch_alerting_setup,
-    aws_iam_role_policy.opensearch_alerting_lambda,
-    aws_iam_role_policy.opensearch_alerting_sns
+    aws_lambda_function.opensearch-alerting-setup,
+    aws_iam_role_policy.opensearch-alerting-lambda,
+    aws_iam_role_policy.opensearch-alerting-sns
   ]
 }
 
@@ -226,10 +226,10 @@ resource "null_resource" "opensearch_alerting_setup" {
 
 output "opensearch_alerting_role_arn" {
   description = "IAM role ARN for OpenSearch alerting to publish to SNS"
-  value       = var.enable_opensearch_alerting ? aws_iam_role.opensearch_alerting[0].arn : null
+  value       = var.enable_opensearch-alerting ? aws_iam_role.opensearch-alerting[0].arn : null
 }
 
 output "opensearch_alerting_setup_lambda_arn" {
   description = "Lambda function ARN for OpenSearch alerting setup"
-  value       = var.enable_opensearch_alerting ? aws_lambda_function.opensearch_alerting_setup[0].arn : null
+  value       = var.enable_opensearch-alerting ? aws_lambda_function.opensearch-alerting-setup[0].arn : null
 }
