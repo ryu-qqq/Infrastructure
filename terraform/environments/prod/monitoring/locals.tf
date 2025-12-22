@@ -26,11 +26,11 @@ locals {
 
   # IAM role names
   iam_roles = {
-    ecs_amp_writer      = "${local.name_prefix}-ecs-amp-writer"
-    grafana_amp_reader  = "${local.name_prefix}-grafana-amp-reader"
-    grafana_workspace   = "${local.name_prefix}-grafana-workspace-role"
-    chatbot             = "${local.name_prefix}-chatbot-role"
-    alert_enrichment    = "${local.name_prefix}-alert-enrichment-role"
+    ecs_amp_writer     = "${local.name_prefix}-ecs-amp-writer"
+    grafana_amp_reader = "${local.name_prefix}-grafana-amp-reader"
+    grafana_workspace  = "${local.name_prefix}-grafana-workspace-role"
+    chatbot            = "${local.name_prefix}-chatbot-role"
+    alert_enrichment   = "${local.name_prefix}-alert-enrichment-role"
   }
 
   # Current AWS account and region
