@@ -334,6 +334,38 @@ module "iam_grafana_amp_reader" {
         ]
       })
     }
+
+    # OpenSearch read permissions for log visualization
+    opensearch-read = {
+      policy = jsonencode({
+        Version = "2012-10-17"
+        Statement = [
+          {
+            Sid    = "OpenSearchReadAccess"
+            Effect = "Allow"
+            Action = [
+              "es:ESHttpGet",
+              "es:ESHttpPost",
+              "es:DescribeDomain",
+              "es:DescribeDomains",
+              "es:ListDomainNames"
+            ]
+            Resource = [
+              "arn:aws:es:${local.aws_region}:${local.aws_account_id}:domain/${var.opensearch_domain_name}",
+              "arn:aws:es:${local.aws_region}:${local.aws_account_id}:domain/${var.opensearch_domain_name}/*"
+            ]
+          },
+          {
+            Sid    = "OpenSearchListDomains"
+            Effect = "Allow"
+            Action = [
+              "es:ListDomainNames"
+            ]
+            Resource = "*"
+          }
+        ]
+      })
+    }
   }
 
   # Required tag variables
