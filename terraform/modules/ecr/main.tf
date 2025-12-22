@@ -22,6 +22,7 @@ locals {
 }
 
 resource "aws_ecr_repository" "this" {
+  force_delete         = var.force_delete
   name                 = var.name
   image_tag_mutability = var.image_tag_mutability
 

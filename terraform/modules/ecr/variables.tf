@@ -189,3 +189,9 @@ variable "create_ssm_parameter" {
   type        = bool
   default     = true
 }
+
+variable "force_delete" {
+  description = "If true, will delete the repository even if it contains images"
+  type        = bool
+  default     = false
+}
