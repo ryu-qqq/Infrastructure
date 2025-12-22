@@ -195,11 +195,11 @@ resource "null_resource" "opensearch-alerting-setup" {
   count = var.enable_opensearch-alerting && var.run_opensearch-alerting-setup ? 1 : 0
 
   triggers = {
-    lambda_arn     = aws_lambda_function.opensearch-alerting-setup[0].arn
-    source_hash    = data.archive_file.opensearch-alerting-setup[0].output_base64sha256
-    sns_critical   = module.sns_critical.topic_arn
-    sns_warning    = module.sns_warning.topic_arn
-    setup_version  = var.opensearch-alerting-setup_version
+    lambda_arn    = aws_lambda_function.opensearch-alerting-setup[0].arn
+    source_hash   = data.archive_file.opensearch-alerting-setup[0].output_base64sha256
+    sns_critical  = module.sns_critical.topic_arn
+    sns_warning   = module.sns_warning.topic_arn
+    setup_version = var.opensearch-alerting-setup_version
   }
 
   provisioner "local-exec" {
