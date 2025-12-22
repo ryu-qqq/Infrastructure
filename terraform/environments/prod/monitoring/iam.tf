@@ -303,6 +303,37 @@ module "iam_grafana_amp_reader" {
         ]
       })
     }
+
+    # X-Ray read permissions for distributed tracing visualization
+    xray-read = {
+      policy = jsonencode({
+        Version = "2012-10-17"
+        Statement = [
+          {
+            Sid    = "XRayReadAccess"
+            Effect = "Allow"
+            Action = [
+              "xray:GetSamplingRules",
+              "xray:GetSamplingTargets",
+              "xray:GetSamplingStatisticSummaries",
+              "xray:BatchGetTraces",
+              "xray:GetServiceGraph",
+              "xray:GetTraceGraph",
+              "xray:GetTraceSummaries",
+              "xray:GetGroups",
+              "xray:GetGroup",
+              "xray:ListTagsForResource",
+              "xray:GetTimeSeriesServiceStatistics",
+              "xray:GetInsightSummaries",
+              "xray:GetInsight",
+              "xray:GetInsightEvents",
+              "xray:GetInsightImpactGraph"
+            ]
+            Resource = "*"
+          }
+        ]
+      })
+    }
   }
 
   # Required tag variables
