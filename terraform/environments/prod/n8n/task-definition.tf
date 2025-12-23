@@ -106,7 +106,7 @@ resource "aws_ecs_task_definition" "n8n" {
         # AuthHub Integration (Internal API via Service Discovery)
         {
           name  = "AUTHHUB_API_URL"
-          value = "http://authhub.connectly.local:8080"
+          value = "http://authhub-web-api-prod.connectly.local:8080"
         }
       ]
 
