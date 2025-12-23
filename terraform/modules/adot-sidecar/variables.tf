@@ -27,7 +27,7 @@ variable "cdn_host" {
 variable "config_bucket" {
   description = "S3 bucket name for OTEL configs"
   type        = string
-  default     = "connectly-prod"
+  default     = "prod-connectly"
 }
 
 variable "amp_workspace_arn" {
