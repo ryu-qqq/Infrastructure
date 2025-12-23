@@ -103,10 +103,10 @@ resource "aws_ecs_task_definition" "n8n" {
           name  = "N8N_VERSION_NOTIFICATIONS_ENABLED"
           value = "false"
         },
-        # AuthHub Integration
+        # AuthHub Integration (Internal API via Service Discovery)
         {
           name  = "AUTHHUB_API_URL"
-          value = "https://api.set-of.com"
+          value = "http://authhub.connectly.local:8080"
         }
       ]
 
