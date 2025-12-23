@@ -572,6 +572,19 @@ resource "aws_iam_role_policy" "atlantis-terraform-operations" {
           "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/gateway-execution-role-prod"
         ]
         # Required for managing gateway ECS task and execution roles
+      },
+      {
+        Sid    = "ManageAuthHubRoles"
+        Effect = "Allow"
+        Action = [
+          "iam:PassRole",
+          "iam:PutRolePolicy",
+          "iam:DeleteRolePolicy"
+        ]
+        Resource = [
+          "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/authhub-web-api-*"
+        ]
+        # Required for managing AuthHub ECS task and execution roles
       }
     ]
   })
