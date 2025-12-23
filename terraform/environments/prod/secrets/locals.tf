@@ -7,8 +7,8 @@ data "aws_region" "current" {}
 data "terraform_remote_state" "kms" {
   backend = "s3"
   config = {
-    bucket = "prod-tfstate"
-    key    = "kms/terraform.tfstate"
+    bucket = "prod-connectly"
+    key    = "environments/prod/kms/terraform.tfstate"
     region = "ap-northeast-2"
   }
 }

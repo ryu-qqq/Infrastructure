@@ -46,6 +46,46 @@ resource "aws_secretsmanager_secret_version" "db-master" {
   }
 }
 
+# ============================================================================
+# Market Service Database Credentials
+# ============================================================================
+
+resource "aws_secretsmanager_secret" "market-db" {
+  name        = "/${local.org_name}/market/${var.environment}/db-credentials"
+  description = "Market service database credentials for prod-shared-mysql"
+  kms_key_id  = local.secrets_manager_kms_key_id
+
+  recovery_window_in_days = var.secret_recovery_window_in_days
+
+  tags = merge(
+    local.required_tags,
+    {
+      Name       = "/${local.org_name}/market/${var.environment}/db-credentials"
+      SecretType = "rds"
+      AutoRotate = "false"
+      Component  = "secret"
+      Service    = "market"
+    }
+  )
+}
+
+resource "aws_secretsmanager_secret_version" "market-db" {
+  secret_id = aws_secretsmanager_secret.market-db.id
+
+  secret_string = jsonencode({
+    username = "market_user"
+    password = "SpupfgrgZfeQ6ZutDgxCoumLUKjaTy4c"
+    engine   = "mysql"
+    host     = "prod-shared-mysql.cfacertspqbw.ap-northeast-2.rds.amazonaws.com"
+    port     = 3306
+    dbname   = "market"
+  })
+
+  lifecycle {
+    ignore_changes = [secret_string]
+  }
+}
+
 # Rotation configuration for RDS secret
 resource "aws_secretsmanager_secret_rotation" "db-master" {
   count = var.enable_rotation ? 1 : 0

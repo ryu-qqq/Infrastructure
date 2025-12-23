@@ -69,6 +69,22 @@ output "crawler_secrets_read_policy_arn" {
   value       = aws_iam_policy.crawler-secrets-read.arn
 }
 
+output "market_secrets_read_policy_arn" {
+  description = "ARN of the Market service secrets read policy"
+  value       = aws_iam_policy.market-secrets-read.arn
+}
+
+# Market service secret outputs
+output "market_db_secret_arn" {
+  description = "ARN of the Market service database credentials secret"
+  value       = aws_secretsmanager_secret.market-db.arn
+}
+
+output "market_db_secret_name" {
+  description = "Name of the Market service database credentials secret"
+  value       = aws_secretsmanager_secret.market-db.name
+}
+
 output "devops_secrets_management_policy_arn" {
   description = "ARN of the DevOps secrets management policy"
   value       = aws_iam_policy.devops-secrets-management.arn

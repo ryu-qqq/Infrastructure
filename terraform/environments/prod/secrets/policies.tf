@@ -84,6 +84,51 @@ resource "aws_iam_policy" "crawler-secrets-read" {
   )
 }
 
+# Market service specific policy
+resource "aws_iam_policy" "market-secrets-read" {
+  name        = "market-secrets-read-policy"
+  description = "Policy for market service to read its secrets"
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Sid    = "AllowReadMarketSecrets"
+        Effect = "Allow"
+        Action = [
+          "secretsmanager:GetSecretValue",
+          "secretsmanager:DescribeSecret"
+        ]
+        Resource = [
+          "arn:aws:secretsmanager:${var.aws_region}:${local.account_id}:secret:/${local.org_name}/market/*",
+          "arn:aws:secretsmanager:${var.aws_region}:${local.account_id}:secret:/${local.org_name}/common/*"
+        ]
+      },
+      {
+        Sid    = "AllowKMSDecrypt"
+        Effect = "Allow"
+        Action = [
+          "kms:Decrypt",
+          "kms:DescribeKey"
+        ]
+        Resource = data.terraform_remote_state.kms.outputs.secrets_manager_key_arn
+        Condition = {
+          StringEquals = {
+            "kms:ViaService" = "secretsmanager.${var.aws_region}.amazonaws.com"
+          }
+        }
+      }
+    ]
+  })
+
+  tags = merge(
+    local.required_tags,
+    {
+      Name = "market-secrets-read-policy"
+    }
+  )
+}
+
 # Policy for DevOps team to manage secrets
 data "aws_iam_policy_document" "devops_manage_secrets" {
   # Full secrets management
