@@ -59,6 +59,16 @@ resource "aws_iam_role_policy" "n8n-task-execution-secrets" {
           aws_secretsmanager_secret.n8n-db-password.arn,
           aws_secretsmanager_secret.n8n-encryption-key.arn
         ]
+      },
+      {
+        Effect = "Allow"
+        Action = [
+          "ssm:GetParameter",
+          "ssm:GetParameters"
+        ]
+        Resource = [
+          "arn:aws:ssm:${var.aws_region}:${data.aws_caller_identity.current.account_id}:parameter/authhub/security/service-token-secret"
+        ]
       }
     ]
   })

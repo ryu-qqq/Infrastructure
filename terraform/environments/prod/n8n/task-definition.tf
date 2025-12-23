@@ -102,6 +102,11 @@ resource "aws_ecs_task_definition" "n8n" {
         {
           name  = "N8N_VERSION_NOTIFICATIONS_ENABLED"
           value = "false"
+        },
+        # AuthHub Integration
+        {
+          name  = "AUTHHUB_API_URL"
+          value = "https://api.set-of.com"
         }
       ]
 
@@ -114,6 +119,11 @@ resource "aws_ecs_task_definition" "n8n" {
         {
           name      = "N8N_ENCRYPTION_KEY"
           valueFrom = "${aws_secretsmanager_secret.n8n-encryption-key.arn}:encryption_key::"
+        },
+        # AuthHub Service Token
+        {
+          name      = "SERVICE_TOKEN_SECRET"
+          valueFrom = "arn:aws:ssm:${var.aws_region}:${data.aws_caller_identity.current.account_id}:parameter/authhub/security/service-token-secret"
         }
       ]
 
