@@ -31,8 +31,16 @@ resource "aws_ecr_repository" "this" {
   }
 
   encryption_configuration {
-    encryption_type = "KMS"
-    kms_key         = var.kms_key_arn
+    encryption_type = var.encryption_type
+    kms_key         = var.encryption_type == "KMS" ? var.kms_key_arn : null
+  }
+
+  # Precondition to ensure kms_key_arn is provided when encryption_type is KMS
+  lifecycle {
+    precondition {
+      condition     = var.encryption_type != "KMS" || var.kms_key_arn != null
+      error_message = "encryption_type이 'KMS'인 경우 kms_key_arn 변수도 반드시 설정해야 합니다."
+    }
   }
 
   tags = merge(
