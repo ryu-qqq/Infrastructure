@@ -80,20 +80,29 @@ check_ecr_encryption() {
     fi
 
     # Check encryption type
+    # Note: AES256 is allowed as policy exception for legacy ECR repositories
+    # See: claudedocs/policy-exceptions/ecr-aes256.md
     if echo "$resource_block" | grep -q 'encryption_type\s*=\s*"AES256"'; then
-        echo -e "${RED}✗ Error: ECR using AES256 instead of KMS${NC}"
+        echo -e "${YELLOW}⚠ Warning: ECR using AES256 instead of KMS (policy exception)${NC}"
         echo -e "  ${YELLOW}Resource: aws_ecr_repository.$resource_name${NC}"
         echo -e "  ${YELLOW}File: $file:$line_number${NC}"
-        echo -e "  ${YELLOW}💡 Change to: encryption_type = \"KMS\"${NC}"
-        ((ERRORS++))
+        echo -e "  ${YELLOW}💡 Consider migrating to KMS for new repositories${NC}"
+        ((WARNINGS++))
         return
     fi
 
-    if ! echo "$resource_block" | grep -q 'encryption_type\s*=\s*"KMS"'; then
+    # Check if encryption_type is KMS or uses a variable (module pattern)
+    if ! echo "$resource_block" | grep -qE 'encryption_type\s*=\s*("KMS"|var\.)'; then
         echo -e "${RED}✗ Error: ECR encryption_type not set to KMS${NC}"
         echo -e "  ${YELLOW}Resource: aws_ecr_repository.$resource_name${NC}"
         echo -e "  ${YELLOW}File: $file:$line_number${NC}"
         ((ERRORS++))
+        return
+    fi
+
+    # If using variable, show info message
+    if echo "$resource_block" | grep -q 'encryption_type\s*=\s*var\.'; then
+        echo -e "${GREEN}✓ aws_ecr_repository.$resource_name uses encryption_type variable (module pattern)${NC}"
         return
     fi
 
