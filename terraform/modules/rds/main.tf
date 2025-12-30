@@ -119,6 +119,9 @@ resource "aws_db_instance" "this" {
   # Deletion Protection
   deletion_protection = var.deletion_protection
 
+  # IAM Database Authentication
+  iam_database_authentication_enabled = var.iam_database_authentication_enabled
+
   tags = merge(
     local.required_tags,
     {
@@ -130,7 +133,10 @@ resource "aws_db_instance" "this" {
   lifecycle {
     ignore_changes = [
       password,
-      final_snapshot_identifier
+      final_snapshot_identifier,
+      # AWS Database Insights Advanced 모드에서 설정된 값은 콘솔에서만 변경 가능
+      performance_insights_enabled,
+      performance_insights_retention_period
     ]
 
     precondition {

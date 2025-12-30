@@ -50,8 +50,9 @@ module "rds" {
   performance_insights_retention_period = var.enable_performance_insights ? var.performance_insights_retention_period : null
 
   # Security
-  deletion_protection = var.enable_deletion_protection
-  publicly_accessible = var.publicly_accessible
+  deletion_protection                     = var.enable_deletion_protection
+  publicly_accessible                     = var.publicly_accessible
+  iam_database_authentication_enabled     = var.iam_database_authentication_enabled
 
   # Parameter Group
   parameter_group_family = var.parameter_group_family

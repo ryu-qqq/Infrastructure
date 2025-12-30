@@ -85,13 +85,13 @@ variable "additional_tags" {
 # --- Required Variables (RDS Configuration) ---
 
 variable "db_name" {
-  description = "The name of the database to create when the DB instance is created. If this parameter is not specified, no database is created. Must begin with a letter and contain only alphanumeric characters"
+  description = "The name of the database to create when the DB instance is created. If this parameter is not specified, no database is created"
   type        = string
   default     = null
 
   validation {
-    condition     = var.db_name == null || can(regex("^[a-zA-Z][a-zA-Z0-9]*$", var.db_name))
-    error_message = "Database name must begin with a letter and contain only alphanumeric characters"
+    condition     = var.db_name == null || can(regex("^[a-zA-Z][a-zA-Z0-9_]*$", var.db_name))
+    error_message = "Database name must begin with a letter and contain only alphanumeric characters or underscores"
   }
 }
 
@@ -131,7 +131,7 @@ variable "instance_class" {
 }
 
 variable "master_username" {
-  description = "Username for the master DB user. Cannot be 'admin' for MySQL, 'postgres' for PostgreSQL"
+  description = "Username for the master DB user"
   type        = string
 
   validation {
@@ -140,8 +140,8 @@ variable "master_username" {
   }
 
   validation {
-    condition     = !contains(["admin", "postgres", "root", "rdsadmin"], var.master_username)
-    error_message = "Master username cannot be 'admin', 'postgres', 'root', or 'rdsadmin'"
+    condition     = !contains(["postgres", "root", "rdsadmin"], var.master_username)
+    error_message = "Master username cannot be 'postgres', 'root', or 'rdsadmin'"
   }
 }
 
@@ -315,12 +315,12 @@ variable "performance_insights_enabled" {
 }
 
 variable "performance_insights_retention_period" {
-  description = "The number of days to retain Performance Insights data (7, 731)"
+  description = "The number of days to retain Performance Insights data (7, 731, or null)"
   type        = number
-  default     = 7
+  default     = null
 
   validation {
-    condition     = contains([7, 731], var.performance_insights_retention_period)
+    condition     = var.performance_insights_retention_period == null ? true : contains([7, 731], var.performance_insights_retention_period)
     error_message = "Performance Insights retention period must be 7 or 731 days"
   }
 }
@@ -394,6 +394,14 @@ variable "deletion_protection" {
 
 variable "apply_immediately" {
   description = "Specifies whether any database modifications are applied immediately, or during the next maintenance window"
+  type        = bool
+  default     = false
+}
+
+# Optional Variables - IAM Database Authentication
+
+variable "iam_database_authentication_enabled" {
+  description = "Specifies whether IAM Database authentication is enabled"
   type        = bool
   default     = false
 }

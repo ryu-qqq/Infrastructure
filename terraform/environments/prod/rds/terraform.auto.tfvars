@@ -43,7 +43,7 @@ allowed_cidr_blocks = [
 
 identifier     = "shared-mysql"
 mysql_version  = "8.0.42"       # Auto-upgraded by AWS
-instance_class = "db.t4g.small" # 2 vCPU, 2GB RAM
+instance_class = "db.t4g.large" # 2 vCPU, 8GB RAM (콘솔에서 업그레이드됨)
 
 # ============================================================================
 # Storage Configuration
@@ -81,7 +81,7 @@ copy_tags_to_snapshot   = true
 # Monitoring Configuration
 # ============================================================================
 
-enable_performance_insights           = false # Not supported on db.t4g.small
+enable_performance_insights           = true # db.t4g.large에서 지원됨 (콘솔에서 활성화됨)
 performance_insights_retention_period = 7     # 7일 보존
 
 enable_enhanced_monitoring = true
@@ -93,9 +93,10 @@ enabled_cloudwatch_logs_exports = ["error", "general", "slowquery"]
 # Security Configuration
 # ============================================================================
 
-enable_deletion_protection = true  # 실수로 삭제 방지
-publicly_accessible        = false # 퍼블릭 접근 불가
-storage_encrypted          = true  # 스토리지 암호화
+enable_deletion_protection          = true  # 실수로 삭제 방지
+publicly_accessible                 = false # 퍼블릭 접근 불가
+storage_encrypted                   = true  # 스토리지 암호화
+iam_database_authentication_enabled = true  # IAM 인증 활성화 (콘솔에서 활성화됨)
 
 # ============================================================================
 # Parameter Group Configuration
@@ -153,3 +154,27 @@ tags = {
   Project     = "shared-infrastructure"
   Description = "Shared MySQL database for multiple services"
 }
+
+# ============================================================================
+# RDS Proxy Configuration
+# ============================================================================
+# RDS Proxy를 통한 커넥션 풀링 활성화
+# - 다중 ECS 태스크의 커넥션 고갈 방지
+# - 효율적인 커넥션 재사용 (90%+ 효율)
+# - Multi-AZ Failover 시 자동 연결 전환
+
+enable_rds_proxy = true
+
+# Proxy 설정
+proxy_debug_logging       = false # 운영 환경에서는 false 권장
+proxy_idle_client_timeout = 1800  # 30분
+proxy_require_tls         = true  # TLS 필수
+proxy_iam_auth            = false # Secrets Manager 인증 사용
+
+# 커넥션 풀 설정
+proxy_connection_borrow_timeout    = 120 # 커넥션 대기 최대 2분
+proxy_max_connections_percent      = 100 # RDS max_connections의 100% 사용 가능
+proxy_max_idle_connections_percent = 50  # 유휴 커넥션은 50%까지만 유지
+
+# 보안 설정
+proxy_ingress_cidr_block = "10.0.0.0/16" # VPC CIDR (향후 보안그룹 기반으로 변경 권장)
