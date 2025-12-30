@@ -20,11 +20,52 @@ resource "aws_db_proxy" "main" {
   vpc_security_group_ids = [module.rds_proxy_security_group[0].security_group_id]
   vpc_subnet_ids         = var.private_subnet_ids
 
+  # Master user authentication
   auth {
     auth_scheme               = "SECRETS"
     client_password_auth_type = "MYSQL_NATIVE_PASSWORD"
     iam_auth                  = var.proxy_iam_auth ? "REQUIRED" : "DISABLED"
     secret_arn                = aws_secretsmanager_secret.db-master-password.arn
+  }
+
+  # Application user authentication - fileflow
+  auth {
+    auth_scheme               = "SECRETS"
+    client_password_auth_type = "MYSQL_NATIVE_PASSWORD"
+    iam_auth                  = "DISABLED"
+    secret_arn                = data.aws_secretsmanager_secret.fileflow_credentials.arn
+  }
+
+  # Application user authentication - crawlinghub
+  auth {
+    auth_scheme               = "SECRETS"
+    client_password_auth_type = "MYSQL_NATIVE_PASSWORD"
+    iam_auth                  = "DISABLED"
+    secret_arn                = data.aws_secretsmanager_secret.crawlinghub_credentials.arn
+  }
+
+  # Application user authentication - setof-commerce
+  auth {
+    auth_scheme               = "SECRETS"
+    client_password_auth_type = "MYSQL_NATIVE_PASSWORD"
+    iam_auth                  = "DISABLED"
+    secret_arn                = data.aws_secretsmanager_secret.setof_commerce_credentials.arn
+  }
+
+  # Application user authentication - marketplace
+  auth {
+    auth_scheme               = "SECRETS"
+    client_password_auth_type = "MYSQL_NATIVE_PASSWORD"
+    iam_auth                  = "DISABLED"
+    secret_arn                = data.aws_secretsmanager_secret.marketplace_credentials.arn
+  }
+
+  # Application user authentication - authhub
+  auth {
+    auth_scheme               = "SECRETS"
+    client_password_auth_type = "MYSQL_NATIVE_PASSWORD"
+    iam_auth                  = "DISABLED"
+    secret_arn                = data.aws_secretsmanager_secret.authhub_credentials.arn
   }
 
   tags = merge(
@@ -94,3 +135,30 @@ resource "aws_db_proxy_target" "main" {
 #     }
 #   )
 # }
+
+# ============================================================================
+# Data Sources - Application User Credentials
+# ============================================================================
+# 각 서비스별로 사전 생성된 RDS credential secret을 참조합니다.
+# Secret 형식: {"username": "xxx_user", "password": "xxx"}
+# ============================================================================
+
+data "aws_secretsmanager_secret" "fileflow_credentials" {
+  name = "fileflow/rds/credentials"
+}
+
+data "aws_secretsmanager_secret" "crawlinghub_credentials" {
+  name = "crawlinghub/rds/credentials"
+}
+
+data "aws_secretsmanager_secret" "setof_commerce_credentials" {
+  name = "setof-commerce/rds/credentials"
+}
+
+data "aws_secretsmanager_secret" "marketplace_credentials" {
+  name = "/ryuqqq/market/prod/db-credentials"
+}
+
+data "aws_secretsmanager_secret" "authhub_credentials" {
+  name = "authhub/rds/credentials"
+}

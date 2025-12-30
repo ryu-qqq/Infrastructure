@@ -45,7 +45,12 @@ module "rds_proxy_role" {
               "secretsmanager:GetSecretValue"
             ]
             Resource = [
-              aws_secretsmanager_secret.db-master-password.arn
+              aws_secretsmanager_secret.db-master-password.arn,
+              data.aws_secretsmanager_secret.fileflow_credentials.arn,
+              data.aws_secretsmanager_secret.crawlinghub_credentials.arn,
+              data.aws_secretsmanager_secret.setof_commerce_credentials.arn,
+              data.aws_secretsmanager_secret.marketplace_credentials.arn,
+              data.aws_secretsmanager_secret.authhub_credentials.arn
             ]
           },
           {
