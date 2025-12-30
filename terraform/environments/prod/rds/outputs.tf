@@ -59,9 +59,9 @@ output "db_subnet_group_id" {
   value       = module.rds.db_subnet_group_id
 }
 
-output "db_parameter_group_name" {
-  description = "DB parameter group name"
-  value       = module.rds.db_parameter_group_name
+output "db_parameter_group_id" {
+  description = "DB parameter group ID"
+  value       = module.rds.db_parameter_group_id
 }
 
 # ============================================================================
@@ -110,12 +110,12 @@ output "performance_insights_enabled" {
 
 output "multi_az" {
   description = "Whether Multi-AZ is enabled"
-  value       = module.rds.multi_az
+  value       = module.rds.db_instance_multi_az
 }
 
 output "availability_zone" {
   description = "Availability zone of the RDS instance"
-  value       = module.rds.availability_zone
+  value       = module.rds.db_instance_availability_zone
 }
 
 # ============================================================================
@@ -124,17 +124,17 @@ output "availability_zone" {
 
 output "backup_retention_period" {
   description = "Backup retention period in days"
-  value       = module.rds.backup_retention_period
+  value       = module.rds.db_instance_backup_retention_period
 }
 
 output "backup_window" {
   description = "Backup window"
-  value       = module.rds.backup_window
+  value       = module.rds.db_instance_backup_window
 }
 
 output "maintenance_window" {
   description = "Maintenance window"
-  value       = module.rds.maintenance_window
+  value       = module.rds.db_instance_maintenance_window
 }
 
 # ============================================================================
@@ -143,27 +143,22 @@ output "maintenance_window" {
 
 output "allocated_storage" {
   description = "Allocated storage in GB"
-  value       = module.rds.allocated_storage
-}
-
-output "max_allocated_storage" {
-  description = "Maximum allocated storage for autoscaling in GB"
-  value       = module.rds.max_allocated_storage
+  value       = module.rds.db_instance_allocated_storage
 }
 
 output "storage_type" {
   description = "Storage type"
-  value       = module.rds.storage_type
+  value       = module.rds.db_instance_storage_type
 }
 
 output "storage_encrypted" {
   description = "Whether storage is encrypted"
-  value       = module.rds.storage_encrypted
+  value       = module.rds.db_instance_storage_encrypted
 }
 
 output "kms_key_id" {
   description = "KMS key ID used for encryption"
-  value       = module.rds.kms_key_id
+  value       = module.rds.db_instance_kms_key_id
 }
 
 # ============================================================================
@@ -189,6 +184,7 @@ output "cloudwatch_alarm_arns" {
 output "connection_string_example" {
   description = "Example connection string (password is in Secrets Manager)"
   value       = "mysql://${module.rds.db_instance_username}:<password>@${module.rds.db_instance_address}:${module.rds.db_instance_port}/${module.rds.db_instance_name}"
+  sensitive   = true
 }
 
 # ============================================================================
@@ -321,6 +317,90 @@ resource "aws_ssm_parameter" "master-password-secret-name" {
     {
       Name      = "master-password-secret-name-export"
       Component = "rds"
+    }
+  )
+}
+
+# ============================================================================
+# RDS Proxy Outputs
+# ============================================================================
+
+output "proxy_endpoint" {
+  description = "RDS Proxy endpoint (use this instead of direct RDS endpoint)"
+  value       = var.enable_rds_proxy ? aws_db_proxy.main[0].endpoint : null
+}
+
+output "proxy_arn" {
+  description = "RDS Proxy ARN"
+  value       = var.enable_rds_proxy ? aws_db_proxy.main[0].arn : null
+}
+
+output "proxy_security_group_id" {
+  description = "RDS Proxy security group ID"
+  value       = var.enable_rds_proxy ? module.rds_proxy_security_group[0].security_group_id : null
+}
+
+output "proxy_role_arn" {
+  description = "RDS Proxy IAM role ARN"
+  value       = var.enable_rds_proxy ? module.rds_proxy_role[0].role_arn : null
+}
+
+# ============================================================================
+# RDS Proxy SSM Parameters for Cross-Stack References
+# ============================================================================
+
+resource "aws_ssm_parameter" "proxy-endpoint" {
+  count = var.enable_rds_proxy ? 1 : 0
+
+  name        = "/shared/rds/proxy-endpoint"
+  description = "RDS Proxy endpoint for cross-stack references (recommended for applications)"
+  type        = "String"
+  value       = aws_db_proxy.main[0].endpoint
+
+  tags = merge(
+    {
+      Environment = var.environment
+      Service     = var.service_name
+      Team        = var.team
+      Owner       = var.owner
+      CostCenter  = var.cost_center
+      ManagedBy   = "Terraform"
+      Project     = var.project
+      DataClass   = var.data_class
+      Stack       = "rds"
+    },
+    var.tags,
+    {
+      Name      = "proxy-endpoint-export"
+      Component = "rds-proxy"
+    }
+  )
+}
+
+resource "aws_ssm_parameter" "proxy-security-group-id" {
+  count = var.enable_rds_proxy ? 1 : 0
+
+  name        = "/shared/rds/proxy-security-group-id"
+  description = "RDS Proxy security group ID for cross-stack references"
+  type        = "String"
+  value       = module.rds_proxy_security_group[0].security_group_id
+
+  tags = merge(
+    {
+      Environment = var.environment
+      Service     = var.service_name
+      Team        = var.team
+      Owner       = var.owner
+      CostCenter  = var.cost_center
+      ManagedBy   = "Terraform"
+      Project     = var.project
+      DataClass   = var.data_class
+      Stack       = "rds"
+    },
+    var.tags,
+    {
+      Name      = "proxy-security-group-id-export"
+      Component = "rds-proxy"
     }
   )
 }

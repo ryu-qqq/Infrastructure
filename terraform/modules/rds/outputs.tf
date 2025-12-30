@@ -7,6 +7,11 @@ output "db_instance_id" {
   value       = aws_db_instance.this.id
 }
 
+output "db_instance_identifier" {
+  description = "The RDS instance identifier (use this for RDS Proxy target)"
+  value       = aws_db_instance.this.identifier
+}
+
 output "db_instance_arn" {
   description = "The ARN of the RDS instance"
   value       = aws_db_instance.this.arn

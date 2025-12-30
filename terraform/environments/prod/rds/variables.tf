@@ -282,6 +282,12 @@ variable "publicly_accessible" {
   default     = false
 }
 
+variable "iam_database_authentication_enabled" {
+  description = "Enable IAM Database authentication"
+  type        = bool
+  default     = false
+}
+
 variable "storage_encrypted" {
   description = "Enable storage encryption"
   type        = bool
@@ -398,4 +404,62 @@ variable "tags" {
   description = "Additional tags for all resources"
   type        = map(string)
   default     = {}
+}
+
+# ============================================================================
+# RDS Proxy Configuration
+# ============================================================================
+
+variable "enable_rds_proxy" {
+  description = "Enable RDS Proxy for connection pooling"
+  type        = bool
+  default     = false
+}
+
+variable "proxy_debug_logging" {
+  description = "Enable debug logging for RDS Proxy"
+  type        = bool
+  default     = false
+}
+
+variable "proxy_idle_client_timeout" {
+  description = "Idle client timeout in seconds (default: 1800 = 30 minutes)"
+  type        = number
+  default     = 1800
+}
+
+variable "proxy_require_tls" {
+  description = "Require TLS for connections to the proxy"
+  type        = bool
+  default     = true
+}
+
+variable "proxy_iam_auth" {
+  description = "Enable IAM authentication for the proxy"
+  type        = bool
+  default     = false
+}
+
+variable "proxy_connection_borrow_timeout" {
+  description = "Connection borrow timeout in seconds"
+  type        = number
+  default     = 120
+}
+
+variable "proxy_max_connections_percent" {
+  description = "Maximum percentage of available RDS connections to use"
+  type        = number
+  default     = 100
+}
+
+variable "proxy_max_idle_connections_percent" {
+  description = "Maximum percentage of idle connections to keep in pool"
+  type        = number
+  default     = 50
+}
+
+variable "proxy_ingress_cidr_block" {
+  description = "CIDR block allowed to connect to the proxy (VPC CIDR)"
+  type        = string
+  default     = "10.0.0.0/16"
 }
