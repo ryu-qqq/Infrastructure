@@ -159,6 +159,8 @@ resource "aws_iam_role_policy" "atlantis-terraform-operations" {
         Sid    = "TerraformPlanOperations"
         Effect = "Allow"
         Action = [
+          "acm:*",
+          "cloudfront:*",
           "ec2:Describe*",
           "ecs:Describe*",
           "ecr:Describe*",
@@ -181,6 +183,7 @@ resource "aws_iam_role_policy" "atlantis-terraform-operations" {
           "rds:DescribeDBParameters",
           "rds:DescribeDBInstances",
           "rds:ListTagsForResource",
+          "route53:*",
           "secretsmanager:DescribeSecret",
           "secretsmanager:GetResourcePolicy",
           "secretsmanager:GetSecretValue",
@@ -193,11 +196,7 @@ resource "aws_iam_role_policy" "atlantis-terraform-operations" {
           "ssm:GetParameter",
           "ssm:GetParameters",
           "ssm:DescribeParameters",
-          "ssm:ListTagsForResource",
-          "route53:GetHostedZone",
-          "route53:ListHostedZones",
-          "route53:ListResourceRecordSets",
-          "route53:GetChange"
+          "ssm:ListTagsForResource"
         ]
         Resource = "*"
       },
@@ -346,6 +345,7 @@ resource "aws_iam_role_policy" "atlantis-terraform-operations" {
           "cloudwatch:PutMetricAlarm",
           "cloudwatch:DeleteAlarms",
           "cloudwatch:DescribeAlarms",
+          "cloudwatch:ListTagsForResource",
           "cloudwatch:TagResource",
           "cloudwatch:UntagResource"
         ]
