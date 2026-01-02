@@ -552,12 +552,32 @@ resource "aws_iam_role_policy" "atlantis-terraform-operations" {
         Effect = "Allow"
         Action = [
           "ssm:PutParameter",
+          "ssm:DeleteParameter",
           "ssm:GetParameter",
           "ssm:GetParameters",
-          "ssm:GetParameterHistory"
+          "ssm:GetParameterHistory",
+          "ssm:AddTagsToResource",
+          "ssm:RemoveTagsFromResource"
         ]
         Resource = "arn:aws:ssm:ap-northeast-2:646886795421:parameter/crawlinghub/*"
         # Required for managing crawlinghub SSM parameters
+      },
+      {
+        Sid    = "ManageCrawlingHubIAMPolicies"
+        Effect = "Allow"
+        Action = [
+          "iam:CreatePolicy",
+          "iam:DeletePolicy",
+          "iam:CreatePolicyVersion",
+          "iam:DeletePolicyVersion",
+          "iam:GetPolicy",
+          "iam:GetPolicyVersion",
+          "iam:ListPolicyVersions",
+          "iam:TagPolicy",
+          "iam:UntagPolicy"
+        ]
+        Resource = "arn:aws:iam::${data.aws_caller_identity.current.account_id}:policy/crawlinghub-*"
+        # Required for managing crawlinghub IAM policies (e.g., SQS access policy)
       },
       {
         Sid    = "ManageGatewayRoles"
