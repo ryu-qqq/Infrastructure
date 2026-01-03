@@ -2,7 +2,7 @@ name: Sync GitHub Issue to Jira
 
 on:
   issues:
-    types: [opened, edited, closed, reopened]
+    types: [opened, edited, closed, reopened, labeled]
   issue_comment:
     types: [created]
   workflow_dispatch:
@@ -223,7 +223,8 @@ jobs:
               "body": ${{ toJSON(github.event.issue.body) }},
               "author": "${{ github.event.issue.user.login }}",
               "url": "${{ github.event.issue.html_url }}",
-              "labels": "${{ join(github.event.issue.labels.*.name, ', ') }}"
+              "labels": "${{ join(github.event.issue.labels.*.name, ', ') }}",
+              "event_type": "new"
             }'
 
       - name: Handle Jira Creation Failure
@@ -304,19 +305,52 @@ jobs:
               core.warning('Jira issue key not found. The issue may not have been synced initially.');
             }
 
+      # Transition ID 사용 (한글 transition 이름 대응)
+      # 11 = 해야 할 일 (To Do)
+      # 21 = 진행 중 (In Progress)
+      # 31 = 완료 (Done)
       - name: Update Jira Issue Status (Closed)
         if: github.event.action == 'closed' && steps.find.outputs.issue
-        uses: atlassian/gajira-transition@v3
-        with:
-          issue: ${{ steps.find.outputs.issue }}
-          transition: "Done"
+        continue-on-error: true
+        run: |
+          curl -X POST "${{ secrets.JIRA_BASE_URL }}/rest/api/3/issue/${{ steps.find.outputs.issue }}/transitions" \
+            -u "${{ secrets.JIRA_USER_EMAIL }}:${{ secrets.JIRA_API_TOKEN }}" \
+            -H "Content-Type: application/json" \
+            -d '{"transition": {"id": "31"}}'
 
       - name: Update Jira Issue Status (Reopened)
         if: github.event.action == 'reopened' && steps.find.outputs.issue
-        uses: atlassian/gajira-transition@v3
-        with:
-          issue: ${{ steps.find.outputs.issue }}
-          transition: "To Do"
+        continue-on-error: true
+        run: |
+          curl -X POST "${{ secrets.JIRA_BASE_URL }}/rest/api/3/issue/${{ steps.find.outputs.issue }}/transitions" \
+            -u "${{ secrets.JIRA_USER_EMAIL }}:${{ secrets.JIRA_API_TOKEN }}" \
+            -H "Content-Type: application/json" \
+            -d '{"transition": {"id": "11"}}'
+
+      # 수정요청 후 재검토 플로우
+      # needs-review 라벨이 추가되면 n8n으로 재검토 요청 전송
+      - name: Trigger Re-review on Label
+        if: github.event.action == 'labeled' && github.event.label.name == 'needs-review' && steps.find.outputs.issue
+        run: |
+          # Jira를 다시 해야 할 일(To Do)로 전환
+          curl -X POST "${{ secrets.JIRA_BASE_URL }}/rest/api/3/issue/${{ steps.find.outputs.issue }}/transitions" \
+            -u "${{ secrets.JIRA_USER_EMAIL }}:${{ secrets.JIRA_API_TOKEN }}" \
+            -H "Content-Type: application/json" \
+            -d '{"transition": {"id": "11"}}'
+
+          # n8n 웹훅으로 재검토 요청 전송
+          curl -X POST "${{ secrets.N8N_WEBHOOK_URL }}" \
+            -H "Content-Type: application/json" \
+            -d '{
+              "github_issue": "#${{ github.event.issue.number }}",
+              "jira_key": "${{ steps.find.outputs.issue }}",
+              "title": "[재검토] ${{ github.event.issue.title }}",
+              "body": ${{ toJSON(github.event.issue.body) }},
+              "author": "${{ github.event.issue.user.login }}",
+              "url": "${{ github.event.issue.html_url }}",
+              "labels": "${{ join(github.event.issue.labels.*.name, ', ') }}",
+              "event_type": "re-review"
+            }'
 
       - name: Add Comment to Jira
         if: github.event_name == 'issue_comment' && steps.find.outputs.issue
