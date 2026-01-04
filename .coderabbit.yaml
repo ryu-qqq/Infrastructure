@@ -1,59 +1,222 @@
 # yaml-language-server: $schema=https://coderabbit.ai/integrations/schema.v2.json
 
+# CodeRabbit Configuration for Infrastructure (Terraform) Project
+# Based on: governance/policies/*.rego, .claude/INFRASTRUCTURE_RULES.md
+
 language: ko-KR
-tone_instructions: "Be ASSERTIVE on Zero-Tolerance rules. Focus on AWS security best practices."
+tone_instructions: "Be ASSERTIVE on Zero-Tolerance rules. Focus on AWS security."
 early_access: true
 
 reviews:
   profile: assertive
   high_level_summary: true
+  high_level_summary_placeholder: |
+    ## Infrastructure Change Summary
+
+    This PR modifies...
+
+    ### Governance Compliance
+    - Required Tags: [Pass/Fail]
+    - KMS Encryption: [Pass/Fail]
+    - Naming Conventions: [Pass/Fail]
+    - Security: [Pass/Fail]
+
   poem: false
   collapse_walkthrough: false
+
   auto_review:
     enabled: true
+    auto_incremental_review: true
     drafts: true
     base_branches:
       - "main"
       - "develop"
+
   path_filters:
     - "!**/.terraform/**"
     - "!**/*.tfstate"
     - "!**/*.tfstate.backup"
     - "!**/terraform.tfvars"
+    - "!**/.terraformrc"
+    - "!**/crash.log"
+    - "!**/*.tfplan"
     - "!**/node_modules/**"
+
   path_instructions:
     - path: "terraform/modules/**/*.tf"
       instructions: |
-        CRITICAL RULES:
-        1. Required Tags: merge(local.required_tags, {...}) pattern required
-        2. KMS Encryption: Customer-managed KMS keys required, no AES256
-        3. Naming: Resources use kebab-case, variables use snake_case
+        CRITICAL ZERO-TOLERANCE RULES (Must enforce):
+
+        1. Required Tags Pattern
+           - NO individual tag hardcoding
+           - MUST use merge(local.required_tags, {...}) or merge(var.common_tags, {...})
+           - Required tags: Environment, Service, Team, Owner, CostCenter, ManagedBy, Project
+
+        2. KMS Encryption (Customer-managed KMS required)
+           - NO encryption_type = "AES256"
+           - NO missing encryption
+           - MUST use encryption_type = "KMS" + kms_key = aws_kms_key.*.arn
+           - Applies to: ECR, S3, RDS, EBS, CloudWatch Logs
+
+        3. Naming Conventions
+           - Resources: kebab-case (ecr-atlantis, prod-server-vpc)
+           - Variables/Locals: snake_case (aws_region, required_tags)
+           - NO camelCase (ecrAtlantis)
+           - NO UPPER_SNAKE_CASE (ECR_ATLANTIS)
+
         4. No Hardcoded Secrets
+           - NO password = "..." hardcoding
+           - NO secret = "...", api_key = "..."
+           - USE var.db_password or data.aws_secretsmanager_secret_version.*.secret_string
+
+        5. KMS Key Rotation
+           - MUST have enable_key_rotation = true
+           - SHOULD have deletion_window_in_days >= 7
+
+        Module Best Practices:
+        - variables.tf with description and validation
+        - outputs.tf with necessary values
+        - README.md with usage examples
+
     - path: "terraform/environments/**/*.tf"
       instructions: |
         CRITICAL RULES:
-        1. Required Tags Pattern: merge(local.required_tags, {...})
-        2. KMS Encryption for all resources
-        3. Environment consistency check
+
+        1. Required Tags Pattern
+           - MUST use merge(local.required_tags, {...})
+           - NO individual tag definitions
+
+        2. KMS Encryption
+           - MUST use KMS keys for all encryptable resources
+           - NO AWS managed keys (AES256)
+
+        3. Environment Consistency
+           - Verify environment variables (dev/staging/prod)
+           - Include environment prefix in resource names
+
+        4. Secrets Management
+           - NO sensitive info in terraform.tfvars
+           - USE AWS Secrets Manager or environment variables
+
+        Security Checks:
+        - Stricter security settings for production
+        - Verify Multi-AZ, backup settings for HA
+
     - path: "**/*security*.tf"
       instructions: |
-        SECURITY GROUP RULES:
-        1. No 0.0.0.0/0 with all ports
-        2. No dangerous ports (22, 3389, 3306, 5432) exposed to internet
-        3. Description required for all security groups
+        SECURITY GROUP CRITICAL RULES:
+
+        1. Overly Permissive Rules forbidden
+           - NO cidr_blocks = ["0.0.0.0/0"] with all ports (0-0)
+           - NO protocol = "-1" with 0.0.0.0/0
+
+        2. Dangerous Ports internet exposure forbidden
+           - NO SSH(22), RDP(3389) internet exposure
+           - NO DB ports (3306, 5432, 6379, 27017) internet exposure
+           - NO Elasticsearch(9200), Kibana(5601) internet exposure
+           - USE VPN, Bastion, or specific IP ranges
+
+        3. Description required
+           - ALL Security Groups must have specific description
+           - NO generic "Managed by Terraform" descriptions
+
+        4. IPv6 Security
+           - NO ::/0 for dangerous ports
+
+        Best Practices:
+        - Apply least privilege principle
+        - Allow only necessary inbound ports
+        - Restrict outbound when possible
+
     - path: "**/*s3*.tf"
       instructions: |
-        S3 RULES:
-        1. Public access block required
-        2. KMS encryption required (no AES256)
+        S3 SECURITY RULES:
+
+        1. Public Access Block required
+           - MUST have aws_s3_bucket_public_access_block resource
+           - block_public_acls = true
+           - block_public_policy = true
+           - ignore_public_acls = true
+           - restrict_public_buckets = true
+
+        2. KMS Encryption required
+           - MUST have aws_s3_bucket_server_side_encryption_configuration
+           - MUST use sse_algorithm = "aws:kms" with KMS key ARN
+           - NO sse_algorithm = "AES256"
+
         3. Versioning recommended
+           - Enable versioning for important data buckets
+
+        4. Naming
+           - Bucket names: kebab-case or dots allowed
+           - Follow global unique naming rules
+
     - path: "**/*rds*.tf"
       instructions: |
-        RDS RULES:
-        1. No publicly_accessible = true
-        2. storage_encrypted = true with KMS
-        3. No hardcoded passwords
-        4. Production: multi_az = true, backup_retention >= 7
+        RDS CRITICAL RULES:
+
+        1. Public Access forbidden
+           - NO publicly_accessible = true
+           - Only Private Subnet placement
+
+        2. Encryption required
+           - storage_encrypted = true
+           - kms_key_id required (customer-managed KMS)
+
+        3. Password security
+           - NO hardcoded passwords
+           - USE random_password or Secrets Manager
+
+        4. Production requirements
+           - multi_az = true (HA)
+           - backup_retention_period >= 7
+           - deletion_protection = true recommended
+
+        Best Practices:
+        - Enable Performance Insights
+        - Enable Enhanced Monitoring
+        - Configure appropriate parameter groups
+
+    - path: "**/*iam*.tf"
+      instructions: |
+        IAM SECURITY RULES:
+
+        1. Least Privilege
+           - NO "Action": "*"
+           - Minimize "Resource": "*"
+           - Grant only necessary permissions explicitly
+
+        2. No Hardcoded Credentials
+           - NO access_key, secret_key hardcoding
+           - USE IAM Role based authentication
+
+        3. Policy Description
+           - ALL Policies must have description
+           - Use Sid for each Statement purpose
+
+        Best Practices:
+        - Role-based access control (RBAC)
+        - Use Conditions to limit scope
+        - Regular permission reviews
+
+    - path: ".github/workflows/**/*.yml"
+      instructions: |
+        CI/CD Workflow Rules:
+
+        1. Secrets management
+           - USE ${{ secrets.* }}
+           - NO hardcoded credentials
+
+        2. Terraform workflow
+           - Follow Plan -> Review -> Apply order
+           - Include terraform fmt -check
+           - Include terraform validate
+           - Include security scan (tfsec, checkov)
+
+        3. Branch Protection
+           - NO direct push to main branch
+           - Require PR approval
+
   tools:
     gitleaks:
       enabled: true
@@ -63,5 +226,7 @@ chat:
 
 knowledge_base:
   opt_out: false
+  web_search:
+    enabled: true
   learnings:
     scope: auto
