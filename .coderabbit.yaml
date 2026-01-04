@@ -1,283 +1,67 @@
 # yaml-language-server: $schema=https://coderabbit.ai/integrations/schema.v2.json
 
-# CodeRabbit Configuration for Infrastructure (Terraform) Project
-# Based on: governance/policies/*.rego, .claude/INFRASTRUCTURE_RULES.md
-
 language: ko-KR
-tone_instructions: "Be ASSERTIVE on Zero-Tolerance rules (Required Tags, KMS Encryption, Naming Conventions, Hardcoded Secrets, Security Groups). Be CHILL on formatting/comments. Focus on AWS security best practices and Terraform conventions."
-
+tone_instructions: "Be ASSERTIVE on Zero-Tolerance rules. Focus on AWS security best practices."
 early_access: true
-enable_free_tier: false
 
 reviews:
   profile: assertive
   high_level_summary: true
-  high_level_summary_placeholder: |
-    ## 📊 Infrastructure Change Summary
-
-    This PR modifies...
-
-    ### ✅ Governance Compliance
-    - Required Tags: [Pass/Fail]
-    - KMS Encryption: [Pass/Fail]
-    - Naming Conventions: [Pass/Fail]
-    - Security: [Pass/Fail]
-
   poem: false
   collapse_walkthrough: false
-
   auto_review:
     enabled: true
-    auto_incremental_review: true
-    ignore_title_keywords:
-      - "WIP"
-      - "DO NOT MERGE"
-    # AI 생성 Draft PR도 리뷰
     drafts: true
     base_branches:
       - "main"
       - "develop"
-    ignore_usernames:
-      - "dependabot"
-      - "renovate"
-
-  # 빌드 산출물 및 불필요한 파일 제외
   path_filters:
     - "!**/.terraform/**"
     - "!**/*.tfstate"
     - "!**/*.tfstate.backup"
     - "!**/terraform.tfvars"
-    - "!**/.terraformrc"
-    - "!**/crash.log"
-    - "!**/*.tfplan"
     - "!**/node_modules/**"
-
-  # Terraform 파일별 리뷰 규칙
   path_instructions:
-    # Terraform Modules (재사용 모듈 - 가장 엄격)
     - path: "terraform/modules/**/*.tf"
       instructions: |
-        🚨 **CRITICAL ZERO-TOLERANCE RULES** (Must enforce):
-
-        1. **Required Tags Pattern**
-           - ❌ 개별 태그 하드코딩 금지
-           - ✅ `merge(local.required_tags, {...})` 또는 `merge(var.common_tags, {...})` 패턴 필수
-           - **필수 태그**: Environment, Service, Team, Owner, CostCenter, ManagedBy, Project
-
-        2. **KMS Encryption (고객 관리형 KMS 필수)**
-           - ❌ `encryption_type = "AES256"` 금지
-           - ❌ 암호화 설정 누락 금지
-           - ✅ `encryption_type = "KMS"` + `kms_key = aws_kms_key.*.arn`
-           - **적용 대상**: ECR, S3, RDS, EBS, CloudWatch Logs
-
-        3. **Naming Conventions**
-           - ✅ 리소스 이름: kebab-case (`ecr-atlantis`, `prod-server-vpc`)
-           - ✅ 변수/로컬: snake_case (`aws_region`, `required_tags`)
-           - ❌ camelCase 금지 (`ecrAtlantis`)
-           - ❌ UPPER_SNAKE_CASE 금지 (`ECR_ATLANTIS`)
-
-        4. **No Hardcoded Secrets**
-           - ❌ `password = "..."` 하드코딩 금지
-           - ❌ `secret = "..."`, `api_key = "..."` 금지
-           - ✅ `var.db_password` 또는 `data.aws_secretsmanager_secret_version.*.secret_string`
-
-        5. **KMS Key Rotation**
-           - ✅ `enable_key_rotation = true` 필수
-           - ✅ `deletion_window_in_days >= 7` 권장
-
-        **Module Best Practices**:
-        - variables.tf에 적절한 description과 validation 포함
-        - outputs.tf에 필요한 값들 노출
-        - README.md에 사용 예시 포함
-
-    # Environment Configurations (환경별 설정)
+        CRITICAL RULES:
+        1. Required Tags: merge(local.required_tags, {...}) pattern required
+        2. KMS Encryption: Customer-managed KMS keys required, no AES256
+        3. Naming: Resources use kebab-case, variables use snake_case
+        4. No Hardcoded Secrets
     - path: "terraform/environments/**/*.tf"
       instructions: |
-        🚨 **CRITICAL RULES**:
-
-        1. **Required Tags Pattern**
-           - ✅ `merge(local.required_tags, {...})` 패턴 사용 필수
-           - ❌ 태그 개별 정의 금지
-
-        2. **KMS Encryption**
-           - ✅ 모든 암호화 가능 리소스에 KMS 키 사용
-           - ❌ AWS 관리형 키(AES256) 사용 금지
-
-        3. **Environment Consistency**
-           - ✅ 환경 변수가 올바른 값인지 확인 (dev/staging/prod)
-           - ✅ 환경별 리소스 이름에 환경 prefix 포함 권장
-
-        4. **Secrets Management**
-           - ❌ terraform.tfvars에 민감 정보 절대 금지
-           - ✅ AWS Secrets Manager 또는 환경 변수 사용
-
-        **Security Checks**:
-        - Production 환경에서 더 엄격한 보안 설정 확인
-        - Multi-AZ, 백업 설정 등 고가용성 확인
-
-    # Security Group Resources
+        CRITICAL RULES:
+        1. Required Tags Pattern: merge(local.required_tags, {...})
+        2. KMS Encryption for all resources
+        3. Environment consistency check
     - path: "**/*security*.tf"
       instructions: |
-        🚨 **SECURITY GROUP CRITICAL RULES**:
-
-        1. **Overly Permissive Rules 금지**
-           - ❌ `cidr_blocks = ["0.0.0.0/0"]` + 모든 포트(0-0) 금지
-           - ❌ `protocol = "-1"` + `0.0.0.0/0` 금지
-
-        2. **Dangerous Ports 인터넷 노출 금지**
-           - ❌ SSH(22), RDP(3389) 인터넷 노출
-           - ❌ DB 포트(3306, 5432, 6379, 27017) 인터넷 노출
-           - ❌ Elasticsearch(9200), Kibana(5601) 인터넷 노출
-           - ✅ VPN, Bastion, 또는 특정 IP 대역으로 제한
-
-        3. **Description 필수**
-           - ✅ 모든 Security Group에 구체적인 description 필수
-           - ❌ "Managed by Terraform" 같은 generic 설명 금지
-
-        4. **IPv6 보안**
-           - ❌ `::/0`로 위험 포트 노출 금지
-
-        **Best Practices**:
-        - 최소 권한 원칙 적용
-        - 인바운드는 필요한 포트만 허용
-        - 아웃바운드도 가능하면 제한
-
-    # S3 Bucket Resources
+        SECURITY GROUP RULES:
+        1. No 0.0.0.0/0 with all ports
+        2. No dangerous ports (22, 3389, 3306, 5432) exposed to internet
+        3. Description required for all security groups
     - path: "**/*s3*.tf"
       instructions: |
-        🚨 **S3 SECURITY RULES**:
-
-        1. **Public Access Block 필수**
-           - ✅ `aws_s3_bucket_public_access_block` 리소스 필수
-           - ✅ `block_public_acls = true`
-           - ✅ `block_public_policy = true`
-           - ✅ `ignore_public_acls = true`
-           - ✅ `restrict_public_buckets = true`
-
-        2. **KMS Encryption 필수**
-           - ✅ `aws_s3_bucket_server_side_encryption_configuration` 필수
-           - ✅ `sse_algorithm = "aws:kms"` + KMS key ARN
-           - ❌ `sse_algorithm = "AES256"` 금지
-
-        3. **Versioning 권장**
-           - ✅ 중요 데이터 버킷은 versioning 활성화
-
-        4. **Naming**
-           - ✅ 버킷 이름: kebab-case 또는 점(.) 허용
-           - ✅ 글로벌 유니크 이름 규칙 준수
-
-    # RDS Resources
+        S3 RULES:
+        1. Public access block required
+        2. KMS encryption required (no AES256)
+        3. Versioning recommended
     - path: "**/*rds*.tf"
       instructions: |
-        🚨 **RDS CRITICAL RULES**:
-
-        1. **Public Access 금지**
-           - ❌ `publicly_accessible = true` 절대 금지
-           - ✅ Private Subnet에만 배치
-
-        2. **Encryption 필수**
-           - ✅ `storage_encrypted = true`
-           - ✅ `kms_key_id` 설정 (고객 관리형 KMS)
-
-        3. **Password 보안**
-           - ❌ 하드코딩된 password 금지
-           - ✅ `random_password` 또는 Secrets Manager 사용
-
-        4. **Production 요구사항**
-           - ✅ `multi_az = true` (고가용성)
-           - ✅ `backup_retention_period >= 7`
-           - ✅ `deletion_protection = true` 권장
-
-        **Best Practices**:
-        - Performance Insights 활성화
-        - Enhanced Monitoring 활성화
-        - 적절한 파라미터 그룹 설정
-
-    # IAM Resources
-    - path: "**/*iam*.tf"
-      instructions: |
-        🚨 **IAM SECURITY RULES**:
-
-        1. **Least Privilege**
-           - ❌ `"Action": "*"` 금지
-           - ❌ `"Resource": "*"` 최소화
-           - ✅ 필요한 권한만 명시적으로 부여
-
-        2. **No Hardcoded Credentials**
-           - ❌ access_key, secret_key 하드코딩 금지
-           - ✅ IAM Role 기반 인증 사용
-
-        3. **Policy Description**
-           - ✅ 모든 Policy에 description 필수
-           - ✅ 각 Statement에 Sid로 목적 명시
-
-        **Best Practices**:
-        - 역할 기반 접근 제어 (RBAC)
-        - 조건(Condition) 활용하여 범위 제한
-        - 정기적인 권한 검토
-
-    # GitHub Actions Workflows
-    - path: ".github/workflows/**/*.yml"
-      instructions: |
-        **CI/CD Workflow Rules**:
-
-        1. **Secrets 관리**
-           - ✅ `${{ secrets.* }}` 사용
-           - ❌ 하드코딩된 credentials 금지
-
-        2. **Terraform 워크플로우**
-           - ✅ Plan → Review → Apply 순서 준수
-           - ✅ `terraform fmt -check` 포함
-           - ✅ `terraform validate` 포함
-           - ✅ Security scan (tfsec, checkov) 포함
-
-        3. **Branch Protection**
-           - ✅ main 브랜치 직접 push 금지
-           - ✅ PR 승인 필수
-
-  # 도구 활성화 (Infrastructure 전용)
+        RDS RULES:
+        1. No publicly_accessible = true
+        2. storage_encrypted = true with KMS
+        3. No hardcoded passwords
+        4. Production: multi_az = true, backup_retention >= 7
   tools:
-    # 보안 스캔
     gitleaks:
-      enabled: true
-
-    # Terraform 취약점
-    trivy:
-      enabled: true
-
-    # Dockerfile 검증
-    hadolint:
-      enabled: true
-
-    # YAML 검증
-    yamllint:
       enabled: true
 
 chat:
   auto_reply: true
-  art: false
 
 knowledge_base:
   opt_out: false
-
-  # 프로젝트 컨벤션 파일 자동 학습
-  code_guidelines:
-    enabled: true
-    filePatterns:
-      - "**/.claude/CLAUDE.md"
-      - "**/.claude/INFRASTRUCTURE_RULES.md"
-      - "**/governance/policies/**/*.rego"
-      - "**/docs/**/*.md"
-
   learnings:
-    scope: "organization"
-
-  # 외부 지식 통합
-  web_search:
-    enabled: true
-
-code_generation:
-  docstrings:
-    language: ko-KR
-  unit_tests:
-    language: ko-KR
+    scope: auto
