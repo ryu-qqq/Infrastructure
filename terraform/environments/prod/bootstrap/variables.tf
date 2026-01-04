@@ -82,7 +82,10 @@ variable "allowed_github_repos" {
     "Infrastructure",
     "FileFlow",
     "CrawlingHub",
-    "AuthHub"
+    "AuthHub",
+    "Gateway",
+    "MarketPlace",
+    "setof-commerce"
   ]
 }
 

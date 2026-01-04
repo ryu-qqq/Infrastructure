@@ -1,0 +1,1164 @@
+{
+  "annotations": {
+    "list": []
+  },
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 1,
+  "id": null,
+  "links": [],
+  "liveNow": false,
+  "panels": [
+    {
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 0 },
+      "id": 100,
+      "panels": [],
+      "title": "Overview",
+      "type": "row"
+    },
+    {
+      "datasource": { "type": "cloudwatch", "uid": "${datasource}" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "red", "value": null },
+              { "color": "green", "value": 1 }
+            ]
+          },
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 4, "w": 4, "x": 0, "y": 1 },
+      "id": 1,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": ["lastNotNull"],
+          "fields": "",
+          "values": false
+        },
+        "textMode": "auto"
+      },
+      "targets": [
+        {
+          "alias": "Running Tasks",
+          "datasource": { "type": "cloudwatch", "uid": "${datasource}" },
+          "dimensions": { "ClusterName": "$cluster", "ServiceName": "$service" },
+          "expression": "",
+          "id": "",
+          "matchExact": true,
+          "metricEditorMode": 0,
+          "metricName": "RunningTaskCount",
+          "metricQueryType": 0,
+          "namespace": "ECS/ContainerInsights",
+          "period": "300",
+          "queryMode": "Metrics",
+          "refId": "A",
+          "region": "ap-northeast-2",
+          "sqlExpression": "",
+          "statistic": "Average"
+        }
+      ],
+      "title": "Running Tasks",
+      "type": "stat"
+    },
+    {
+      "datasource": { "type": "cloudwatch", "uid": "${datasource}" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 1 }
+            ]
+          },
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 4, "w": 4, "x": 4, "y": 1 },
+      "id": 2,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": ["lastNotNull"],
+          "fields": "",
+          "values": false
+        },
+        "textMode": "auto"
+      },
+      "targets": [
+        {
+          "alias": "Pending Tasks",
+          "datasource": { "type": "cloudwatch", "uid": "${datasource}" },
+          "dimensions": { "ClusterName": "$cluster", "ServiceName": "$service" },
+          "expression": "",
+          "id": "",
+          "matchExact": true,
+          "metricEditorMode": 0,
+          "metricName": "PendingTaskCount",
+          "metricQueryType": 0,
+          "namespace": "ECS/ContainerInsights",
+          "period": "300",
+          "queryMode": "Metrics",
+          "refId": "A",
+          "region": "ap-northeast-2",
+          "sqlExpression": "",
+          "statistic": "Average"
+        }
+      ],
+      "title": "Pending Tasks",
+      "type": "stat"
+    },
+    {
+      "datasource": { "type": "cloudwatch", "uid": "${datasource}" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "mappings": [],
+          "max": 100,
+          "min": 0,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 70 },
+              { "color": "red", "value": 85 }
+            ]
+          },
+          "unit": "percent"
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 4, "w": 4, "x": 8, "y": 1 },
+      "id": 3,
+      "options": {
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": ["lastNotNull"],
+          "fields": "",
+          "values": false
+        },
+        "showThresholdLabels": false,
+        "showThresholdMarkers": true
+      },
+      "targets": [
+        {
+          "alias": "CPU",
+          "datasource": { "type": "cloudwatch", "uid": "${datasource}" },
+          "dimensions": { "ClusterName": "$cluster", "ServiceName": "$service" },
+          "expression": "",
+          "id": "",
+          "matchExact": true,
+          "metricEditorMode": 0,
+          "metricName": "CPUUtilization",
+          "metricQueryType": 0,
+          "namespace": "AWS/ECS",
+          "period": "300",
+          "queryMode": "Metrics",
+          "refId": "A",
+          "region": "ap-northeast-2",
+          "sqlExpression": "",
+          "statistic": "Average"
+        }
+      ],
+      "title": "CPU Utilization",
+      "type": "gauge"
+    },
+    {
+      "datasource": { "type": "cloudwatch", "uid": "${datasource}" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "mappings": [],
+          "max": 100,
+          "min": 0,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 70 },
+              { "color": "red", "value": 85 }
+            ]
+          },
+          "unit": "percent"
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 4, "w": 4, "x": 12, "y": 1 },
+      "id": 4,
+      "options": {
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": ["lastNotNull"],
+          "fields": "",
+          "values": false
+        },
+        "showThresholdLabels": false,
+        "showThresholdMarkers": true
+      },
+      "targets": [
+        {
+          "alias": "Memory",
+          "datasource": { "type": "cloudwatch", "uid": "${datasource}" },
+          "dimensions": { "ClusterName": "$cluster", "ServiceName": "$service" },
+          "expression": "",
+          "id": "",
+          "matchExact": true,
+          "metricEditorMode": 0,
+          "metricName": "MemoryUtilization",
+          "metricQueryType": 0,
+          "namespace": "AWS/ECS",
+          "period": "300",
+          "queryMode": "Metrics",
+          "refId": "A",
+          "region": "ap-northeast-2",
+          "sqlExpression": "",
+          "statistic": "Average"
+        }
+      ],
+      "title": "Memory Utilization",
+      "type": "gauge"
+    },
+    {
+      "datasource": { "type": "cloudwatch", "uid": "${datasource}" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null }
+            ]
+          },
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 4, "w": 4, "x": 16, "y": 1 },
+      "id": 5,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": ["lastNotNull"],
+          "fields": "",
+          "values": false
+        },
+        "textMode": "auto"
+      },
+      "targets": [
+        {
+          "alias": "Desired Tasks",
+          "datasource": { "type": "cloudwatch", "uid": "${datasource}" },
+          "dimensions": { "ClusterName": "$cluster", "ServiceName": "$service" },
+          "expression": "",
+          "id": "",
+          "matchExact": true,
+          "metricEditorMode": 0,
+          "metricName": "DesiredTaskCount",
+          "metricQueryType": 0,
+          "namespace": "ECS/ContainerInsights",
+          "period": "300",
+          "queryMode": "Metrics",
+          "refId": "A",
+          "region": "ap-northeast-2",
+          "sqlExpression": "",
+          "statistic": "Average"
+        }
+      ],
+      "title": "Desired Tasks",
+      "type": "stat"
+    },
+    {
+      "datasource": { "type": "cloudwatch", "uid": "${datasource}" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null }
+            ]
+          },
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 4, "w": 4, "x": 20, "y": 1 },
+      "id": 6,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": ["lastNotNull"],
+          "fields": "",
+          "values": false
+        },
+        "textMode": "auto"
+      },
+      "targets": [
+        {
+          "alias": "Deployment Count",
+          "datasource": { "type": "cloudwatch", "uid": "${datasource}" },
+          "dimensions": { "ClusterName": "$cluster", "ServiceName": "$service" },
+          "expression": "",
+          "id": "",
+          "matchExact": true,
+          "metricEditorMode": 0,
+          "metricName": "DeploymentCount",
+          "metricQueryType": 0,
+          "namespace": "ECS/ContainerInsights",
+          "period": "300",
+          "queryMode": "Metrics",
+          "refId": "A",
+          "region": "ap-northeast-2",
+          "sqlExpression": "",
+          "statistic": "Average"
+        }
+      ],
+      "title": "Deployments",
+      "type": "stat"
+    },
+    {
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 5 },
+      "id": 101,
+      "panels": [],
+      "title": "CPU & Memory",
+      "type": "row"
+    },
+    {
+      "datasource": { "type": "cloudwatch", "uid": "${datasource}" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": {
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "gradientMode": "none",
+            "hideFrom": { "legend": false, "tooltip": false, "viz": false },
+            "lineInterpolation": "smooth",
+            "lineWidth": 2,
+            "pointSize": 5,
+            "scaleDistribution": { "type": "linear" },
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": { "group": "A", "mode": "none" },
+            "thresholdsStyle": { "mode": "line" }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 70 },
+              { "color": "red", "value": 85 }
+            ]
+          },
+          "unit": "percent"
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 6 },
+      "id": 10,
+      "options": {
+        "legend": { "calcs": ["last", "max", "mean"], "displayMode": "table", "placement": "bottom" },
+        "tooltip": { "mode": "multi", "sort": "desc" }
+      },
+      "targets": [
+        {
+          "alias": "{{ServiceName}}",
+          "datasource": { "type": "cloudwatch", "uid": "${datasource}" },
+          "dimensions": { "ClusterName": "$cluster", "ServiceName": "$service" },
+          "expression": "",
+          "id": "",
+          "matchExact": true,
+          "metricEditorMode": 0,
+          "metricName": "CPUUtilization",
+          "metricQueryType": 0,
+          "namespace": "AWS/ECS",
+          "period": "300",
+          "queryMode": "Metrics",
+          "refId": "A",
+          "region": "ap-northeast-2",
+          "sqlExpression": "",
+          "statistic": "Average"
+        }
+      ],
+      "title": "CPU Utilization (%)",
+      "type": "timeseries"
+    },
+    {
+      "datasource": { "type": "cloudwatch", "uid": "${datasource}" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": {
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "gradientMode": "none",
+            "hideFrom": { "legend": false, "tooltip": false, "viz": false },
+            "lineInterpolation": "smooth",
+            "lineWidth": 2,
+            "pointSize": 5,
+            "scaleDistribution": { "type": "linear" },
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": { "group": "A", "mode": "none" },
+            "thresholdsStyle": { "mode": "line" }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 70 },
+              { "color": "red", "value": 85 }
+            ]
+          },
+          "unit": "percent"
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 6 },
+      "id": 11,
+      "options": {
+        "legend": { "calcs": ["last", "max", "mean"], "displayMode": "table", "placement": "bottom" },
+        "tooltip": { "mode": "multi", "sort": "desc" }
+      },
+      "targets": [
+        {
+          "alias": "{{ServiceName}}",
+          "datasource": { "type": "cloudwatch", "uid": "${datasource}" },
+          "dimensions": { "ClusterName": "$cluster", "ServiceName": "$service" },
+          "expression": "",
+          "id": "",
+          "matchExact": true,
+          "metricEditorMode": 0,
+          "metricName": "MemoryUtilization",
+          "metricQueryType": 0,
+          "namespace": "AWS/ECS",
+          "period": "300",
+          "queryMode": "Metrics",
+          "refId": "A",
+          "region": "ap-northeast-2",
+          "sqlExpression": "",
+          "statistic": "Average"
+        }
+      ],
+      "title": "Memory Utilization (%)",
+      "type": "timeseries"
+    },
+    {
+      "datasource": { "type": "cloudwatch", "uid": "${datasource}" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": {
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "gradientMode": "none",
+            "hideFrom": { "legend": false, "tooltip": false, "viz": false },
+            "lineInterpolation": "smooth",
+            "lineWidth": 2,
+            "pointSize": 5,
+            "scaleDistribution": { "type": "linear" },
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": { "group": "A", "mode": "none" },
+            "thresholdsStyle": { "mode": "off" }
+          },
+          "mappings": [],
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }] },
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 14 },
+      "id": 12,
+      "options": {
+        "legend": { "calcs": ["last", "max"], "displayMode": "table", "placement": "bottom" },
+        "tooltip": { "mode": "multi", "sort": "desc" }
+      },
+      "targets": [
+        {
+          "alias": "Reserved - {{ServiceName}}",
+          "datasource": { "type": "cloudwatch", "uid": "${datasource}" },
+          "dimensions": { "ClusterName": "$cluster", "ServiceName": "$service" },
+          "expression": "",
+          "id": "",
+          "matchExact": true,
+          "metricEditorMode": 0,
+          "metricName": "CpuReserved",
+          "metricQueryType": 0,
+          "namespace": "ECS/ContainerInsights",
+          "period": "300",
+          "queryMode": "Metrics",
+          "refId": "A",
+          "region": "ap-northeast-2",
+          "sqlExpression": "",
+          "statistic": "Average"
+        },
+        {
+          "alias": "Utilized - {{ServiceName}}",
+          "datasource": { "type": "cloudwatch", "uid": "${datasource}" },
+          "dimensions": { "ClusterName": "$cluster", "ServiceName": "$service" },
+          "expression": "",
+          "hide": false,
+          "id": "",
+          "matchExact": true,
+          "metricEditorMode": 0,
+          "metricName": "CpuUtilized",
+          "metricQueryType": 0,
+          "namespace": "ECS/ContainerInsights",
+          "period": "300",
+          "queryMode": "Metrics",
+          "refId": "B",
+          "region": "ap-northeast-2",
+          "sqlExpression": "",
+          "statistic": "Average"
+        }
+      ],
+      "title": "CPU Reserved vs Utilized (Units)",
+      "type": "timeseries"
+    },
+    {
+      "datasource": { "type": "cloudwatch", "uid": "${datasource}" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": {
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "gradientMode": "none",
+            "hideFrom": { "legend": false, "tooltip": false, "viz": false },
+            "lineInterpolation": "smooth",
+            "lineWidth": 2,
+            "pointSize": 5,
+            "scaleDistribution": { "type": "linear" },
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": { "group": "A", "mode": "none" },
+            "thresholdsStyle": { "mode": "off" }
+          },
+          "mappings": [],
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }] },
+          "unit": "bytes"
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 14 },
+      "id": 13,
+      "options": {
+        "legend": { "calcs": ["last", "max"], "displayMode": "table", "placement": "bottom" },
+        "tooltip": { "mode": "multi", "sort": "desc" }
+      },
+      "targets": [
+        {
+          "alias": "Reserved - {{ServiceName}}",
+          "datasource": { "type": "cloudwatch", "uid": "${datasource}" },
+          "dimensions": { "ClusterName": "$cluster", "ServiceName": "$service" },
+          "expression": "",
+          "id": "",
+          "matchExact": true,
+          "metricEditorMode": 0,
+          "metricName": "MemoryReserved",
+          "metricQueryType": 0,
+          "namespace": "ECS/ContainerInsights",
+          "period": "300",
+          "queryMode": "Metrics",
+          "refId": "A",
+          "region": "ap-northeast-2",
+          "sqlExpression": "",
+          "statistic": "Average"
+        },
+        {
+          "alias": "Utilized - {{ServiceName}}",
+          "datasource": { "type": "cloudwatch", "uid": "${datasource}" },
+          "dimensions": { "ClusterName": "$cluster", "ServiceName": "$service" },
+          "expression": "",
+          "hide": false,
+          "id": "",
+          "matchExact": true,
+          "metricEditorMode": 0,
+          "metricName": "MemoryUtilized",
+          "metricQueryType": 0,
+          "namespace": "ECS/ContainerInsights",
+          "period": "300",
+          "queryMode": "Metrics",
+          "refId": "B",
+          "region": "ap-northeast-2",
+          "sqlExpression": "",
+          "statistic": "Average"
+        }
+      ],
+      "title": "Memory Reserved vs Utilized (Bytes)",
+      "type": "timeseries"
+    },
+    {
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 22 },
+      "id": 102,
+      "panels": [],
+      "title": "Task Count",
+      "type": "row"
+    },
+    {
+      "datasource": { "type": "cloudwatch", "uid": "${datasource}" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": {
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "gradientMode": "none",
+            "hideFrom": { "legend": false, "tooltip": false, "viz": false },
+            "lineInterpolation": "stepAfter",
+            "lineWidth": 2,
+            "pointSize": 5,
+            "scaleDistribution": { "type": "linear" },
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": { "group": "A", "mode": "none" },
+            "thresholdsStyle": { "mode": "off" }
+          },
+          "mappings": [],
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }] },
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 8, "w": 8, "x": 0, "y": 23 },
+      "id": 20,
+      "options": {
+        "legend": { "calcs": ["last", "max", "min"], "displayMode": "table", "placement": "bottom" },
+        "tooltip": { "mode": "multi", "sort": "desc" }
+      },
+      "targets": [
+        {
+          "alias": "{{ServiceName}}",
+          "datasource": { "type": "cloudwatch", "uid": "${datasource}" },
+          "dimensions": { "ClusterName": "$cluster", "ServiceName": "$service" },
+          "expression": "",
+          "id": "",
+          "matchExact": true,
+          "metricEditorMode": 0,
+          "metricName": "RunningTaskCount",
+          "metricQueryType": 0,
+          "namespace": "ECS/ContainerInsights",
+          "period": "300",
+          "queryMode": "Metrics",
+          "refId": "A",
+          "region": "ap-northeast-2",
+          "sqlExpression": "",
+          "statistic": "Average"
+        }
+      ],
+      "title": "Running Task Count",
+      "type": "timeseries"
+    },
+    {
+      "datasource": { "type": "cloudwatch", "uid": "${datasource}" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": {
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "gradientMode": "none",
+            "hideFrom": { "legend": false, "tooltip": false, "viz": false },
+            "lineInterpolation": "stepAfter",
+            "lineWidth": 2,
+            "pointSize": 5,
+            "scaleDistribution": { "type": "linear" },
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": { "group": "A", "mode": "none" },
+            "thresholdsStyle": { "mode": "off" }
+          },
+          "mappings": [],
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }] },
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 8, "w": 8, "x": 8, "y": 23 },
+      "id": 21,
+      "options": {
+        "legend": { "calcs": ["last", "max", "min"], "displayMode": "table", "placement": "bottom" },
+        "tooltip": { "mode": "multi", "sort": "desc" }
+      },
+      "targets": [
+        {
+          "alias": "{{ServiceName}}",
+          "datasource": { "type": "cloudwatch", "uid": "${datasource}" },
+          "dimensions": { "ClusterName": "$cluster", "ServiceName": "$service" },
+          "expression": "",
+          "id": "",
+          "matchExact": true,
+          "metricEditorMode": 0,
+          "metricName": "DesiredTaskCount",
+          "metricQueryType": 0,
+          "namespace": "ECS/ContainerInsights",
+          "period": "300",
+          "queryMode": "Metrics",
+          "refId": "A",
+          "region": "ap-northeast-2",
+          "sqlExpression": "",
+          "statistic": "Average"
+        }
+      ],
+      "title": "Desired Task Count",
+      "type": "timeseries"
+    },
+    {
+      "datasource": { "type": "cloudwatch", "uid": "${datasource}" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": {
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "gradientMode": "none",
+            "hideFrom": { "legend": false, "tooltip": false, "viz": false },
+            "lineInterpolation": "stepAfter",
+            "lineWidth": 2,
+            "pointSize": 5,
+            "scaleDistribution": { "type": "linear" },
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": { "group": "A", "mode": "none" },
+            "thresholdsStyle": { "mode": "line" }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 1 }
+            ]
+          },
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 8, "w": 8, "x": 16, "y": 23 },
+      "id": 22,
+      "options": {
+        "legend": { "calcs": ["last", "max"], "displayMode": "table", "placement": "bottom" },
+        "tooltip": { "mode": "multi", "sort": "desc" }
+      },
+      "targets": [
+        {
+          "alias": "{{ServiceName}}",
+          "datasource": { "type": "cloudwatch", "uid": "${datasource}" },
+          "dimensions": { "ClusterName": "$cluster", "ServiceName": "$service" },
+          "expression": "",
+          "id": "",
+          "matchExact": true,
+          "metricEditorMode": 0,
+          "metricName": "PendingTaskCount",
+          "metricQueryType": 0,
+          "namespace": "ECS/ContainerInsights",
+          "period": "300",
+          "queryMode": "Metrics",
+          "refId": "A",
+          "region": "ap-northeast-2",
+          "sqlExpression": "",
+          "statistic": "Average"
+        }
+      ],
+      "title": "Pending Task Count",
+      "type": "timeseries"
+    },
+    {
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 31 },
+      "id": 103,
+      "panels": [],
+      "title": "Network",
+      "type": "row"
+    },
+    {
+      "datasource": { "type": "cloudwatch", "uid": "${datasource}" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": {
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "gradientMode": "none",
+            "hideFrom": { "legend": false, "tooltip": false, "viz": false },
+            "lineInterpolation": "smooth",
+            "lineWidth": 2,
+            "pointSize": 5,
+            "scaleDistribution": { "type": "linear" },
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": { "group": "A", "mode": "none" },
+            "thresholdsStyle": { "mode": "off" }
+          },
+          "mappings": [],
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }] },
+          "unit": "Bps"
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 32 },
+      "id": 30,
+      "options": {
+        "legend": { "calcs": ["last", "max", "mean"], "displayMode": "table", "placement": "bottom" },
+        "tooltip": { "mode": "multi", "sort": "desc" }
+      },
+      "targets": [
+        {
+          "alias": "{{ServiceName}}",
+          "datasource": { "type": "cloudwatch", "uid": "${datasource}" },
+          "dimensions": { "ClusterName": "$cluster", "ServiceName": "$service" },
+          "expression": "",
+          "id": "",
+          "matchExact": true,
+          "metricEditorMode": 0,
+          "metricName": "NetworkRxBytes",
+          "metricQueryType": 0,
+          "namespace": "ECS/ContainerInsights",
+          "period": "300",
+          "queryMode": "Metrics",
+          "refId": "A",
+          "region": "ap-northeast-2",
+          "sqlExpression": "",
+          "statistic": "Average"
+        }
+      ],
+      "title": "Network RX Bytes",
+      "type": "timeseries"
+    },
+    {
+      "datasource": { "type": "cloudwatch", "uid": "${datasource}" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": {
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "gradientMode": "none",
+            "hideFrom": { "legend": false, "tooltip": false, "viz": false },
+            "lineInterpolation": "smooth",
+            "lineWidth": 2,
+            "pointSize": 5,
+            "scaleDistribution": { "type": "linear" },
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": { "group": "A", "mode": "none" },
+            "thresholdsStyle": { "mode": "off" }
+          },
+          "mappings": [],
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }] },
+          "unit": "Bps"
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 32 },
+      "id": 31,
+      "options": {
+        "legend": { "calcs": ["last", "max", "mean"], "displayMode": "table", "placement": "bottom" },
+        "tooltip": { "mode": "multi", "sort": "desc" }
+      },
+      "targets": [
+        {
+          "alias": "{{ServiceName}}",
+          "datasource": { "type": "cloudwatch", "uid": "${datasource}" },
+          "dimensions": { "ClusterName": "$cluster", "ServiceName": "$service" },
+          "expression": "",
+          "id": "",
+          "matchExact": true,
+          "metricEditorMode": 0,
+          "metricName": "NetworkTxBytes",
+          "metricQueryType": 0,
+          "namespace": "ECS/ContainerInsights",
+          "period": "300",
+          "queryMode": "Metrics",
+          "refId": "A",
+          "region": "ap-northeast-2",
+          "sqlExpression": "",
+          "statistic": "Average"
+        }
+      ],
+      "title": "Network TX Bytes",
+      "type": "timeseries"
+    },
+    {
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 40 },
+      "id": 104,
+      "panels": [],
+      "title": "Storage",
+      "type": "row"
+    },
+    {
+      "datasource": { "type": "cloudwatch", "uid": "${datasource}" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": {
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "gradientMode": "none",
+            "hideFrom": { "legend": false, "tooltip": false, "viz": false },
+            "lineInterpolation": "smooth",
+            "lineWidth": 2,
+            "pointSize": 5,
+            "scaleDistribution": { "type": "linear" },
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": { "group": "A", "mode": "none" },
+            "thresholdsStyle": { "mode": "off" }
+          },
+          "mappings": [],
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }] },
+          "unit": "Bps"
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 41 },
+      "id": 40,
+      "options": {
+        "legend": { "calcs": ["last", "max", "mean"], "displayMode": "table", "placement": "bottom" },
+        "tooltip": { "mode": "multi", "sort": "desc" }
+      },
+      "targets": [
+        {
+          "alias": "{{ServiceName}}",
+          "datasource": { "type": "cloudwatch", "uid": "${datasource}" },
+          "dimensions": { "ClusterName": "$cluster", "ServiceName": "$service" },
+          "expression": "",
+          "id": "",
+          "matchExact": true,
+          "metricEditorMode": 0,
+          "metricName": "StorageReadBytes",
+          "metricQueryType": 0,
+          "namespace": "ECS/ContainerInsights",
+          "period": "300",
+          "queryMode": "Metrics",
+          "refId": "A",
+          "region": "ap-northeast-2",
+          "sqlExpression": "",
+          "statistic": "Average"
+        }
+      ],
+      "title": "Storage Read Bytes",
+      "type": "timeseries"
+    },
+    {
+      "datasource": { "type": "cloudwatch", "uid": "${datasource}" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": {
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "gradientMode": "none",
+            "hideFrom": { "legend": false, "tooltip": false, "viz": false },
+            "lineInterpolation": "smooth",
+            "lineWidth": 2,
+            "pointSize": 5,
+            "scaleDistribution": { "type": "linear" },
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": { "group": "A", "mode": "none" },
+            "thresholdsStyle": { "mode": "off" }
+          },
+          "mappings": [],
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }] },
+          "unit": "Bps"
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 41 },
+      "id": 41,
+      "options": {
+        "legend": { "calcs": ["last", "max", "mean"], "displayMode": "table", "placement": "bottom" },
+        "tooltip": { "mode": "multi", "sort": "desc" }
+      },
+      "targets": [
+        {
+          "alias": "{{ServiceName}}",
+          "datasource": { "type": "cloudwatch", "uid": "${datasource}" },
+          "dimensions": { "ClusterName": "$cluster", "ServiceName": "$service" },
+          "expression": "",
+          "id": "",
+          "matchExact": true,
+          "metricEditorMode": 0,
+          "metricName": "StorageWriteBytes",
+          "metricQueryType": 0,
+          "namespace": "ECS/ContainerInsights",
+          "period": "300",
+          "queryMode": "Metrics",
+          "refId": "A",
+          "region": "ap-northeast-2",
+          "sqlExpression": "",
+          "statistic": "Average"
+        }
+      ],
+      "title": "Storage Write Bytes",
+      "type": "timeseries"
+    }
+  ],
+  "refresh": "1m",
+  "schemaVersion": 38,
+  "style": "dark",
+  "tags": ["ecs", "container", "fargate", "cloudwatch"],
+  "templating": {
+    "list": [
+      {
+        "current": {},
+        "hide": 0,
+        "includeAll": false,
+        "label": "Data Source",
+        "multi": false,
+        "name": "datasource",
+        "options": [],
+        "query": "cloudwatch",
+        "queryValue": "",
+        "refresh": 1,
+        "regex": "",
+        "skipUrlSync": false,
+        "type": "datasource"
+      },
+      {
+        "current": {},
+        "datasource": { "type": "cloudwatch", "uid": "${datasource}" },
+        "definition": "",
+        "hide": 0,
+        "includeAll": true,
+        "label": "Cluster",
+        "multi": true,
+        "name": "cluster",
+        "options": [],
+        "query": {
+          "dimensionFilters": {},
+          "dimensionKey": "ClusterName",
+          "metricName": "RunningTaskCount",
+          "namespace": "ECS/ContainerInsights",
+          "queryType": "dimensionValues",
+          "refId": "CloudWatchVariableQueryEditor-VariableQuery",
+          "region": "ap-northeast-2"
+        },
+        "refresh": 1,
+        "regex": "",
+        "skipUrlSync": false,
+        "sort": 1,
+        "type": "query"
+      },
+      {
+        "current": {},
+        "datasource": { "type": "cloudwatch", "uid": "${datasource}" },
+        "definition": "",
+        "hide": 0,
+        "includeAll": true,
+        "label": "Service",
+        "multi": true,
+        "name": "service",
+        "options": [],
+        "query": {
+          "dimensionFilters": { "ClusterName": "$cluster" },
+          "dimensionKey": "ServiceName",
+          "metricName": "RunningTaskCount",
+          "namespace": "ECS/ContainerInsights",
+          "queryType": "dimensionValues",
+          "refId": "CloudWatchVariableQueryEditor-VariableQuery",
+          "region": "ap-northeast-2"
+        },
+        "refresh": 1,
+        "regex": "",
+        "skipUrlSync": false,
+        "sort": 1,
+        "type": "query"
+      }
+    ]
+  },
+  "time": { "from": "now-6h", "to": "now" },
+  "timepicker": {},
+  "timezone": "Asia/Seoul",
+  "title": "ECS Cluster Monitoring",
+  "uid": "ecs-cluster-dashboard",
+  "version": 1,
+  "weekStart": ""
+}

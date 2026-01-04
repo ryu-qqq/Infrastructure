@@ -1,0 +1,1074 @@
+{
+  "annotations": {
+    "list": []
+  },
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 1,
+  "id": null,
+  "links": [],
+  "liveNow": false,
+  "panels": [
+    {
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 0 },
+      "id": 100,
+      "panels": [],
+      "title": "Cache Performance",
+      "type": "row"
+    },
+    {
+      "datasource": { "type": "cloudwatch", "uid": "${datasource}" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "mappings": [],
+          "max": 100,
+          "min": 0,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "red", "value": null },
+              { "color": "yellow", "value": 80 },
+              { "color": "green", "value": 90 }
+            ]
+          },
+          "unit": "percent"
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 6, "w": 4, "x": 0, "y": 1 },
+      "id": 1,
+      "options": {
+        "orientation": "auto",
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+        "showThresholdLabels": false,
+        "showThresholdMarkers": true
+      },
+      "targets": [
+        {
+          "alias": "{{CacheClusterId}}",
+          "datasource": { "type": "cloudwatch", "uid": "${datasource}" },
+          "dimensions": { "CacheClusterId": "$redis_cluster" },
+          "expression": "",
+          "id": "",
+          "matchExact": true,
+          "metricEditorMode": 0,
+          "metricName": "CacheHitRate",
+          "metricQueryType": 0,
+          "namespace": "AWS/ElastiCache",
+          "period": "300",
+          "queryMode": "Metrics",
+          "refId": "A",
+          "region": "ap-northeast-2",
+          "sqlExpression": "",
+          "statistic": "Average"
+        }
+      ],
+      "title": "Cache Hit Rate",
+      "type": "gauge"
+    },
+    {
+      "datasource": { "type": "cloudwatch", "uid": "${datasource}" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": {
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "gradientMode": "none",
+            "hideFrom": { "legend": false, "tooltip": false, "viz": false },
+            "lineInterpolation": "smooth",
+            "lineWidth": 2,
+            "pointSize": 5,
+            "scaleDistribution": { "type": "linear" },
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": { "group": "A", "mode": "none" },
+            "thresholdsStyle": { "mode": "off" }
+          },
+          "mappings": [],
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }] },
+          "unit": "short"
+        },
+        "overrides": [
+          {
+            "matcher": { "id": "byName", "options": "Cache Hits" },
+            "properties": [{ "id": "color", "value": { "fixedColor": "green", "mode": "fixed" } }]
+          },
+          {
+            "matcher": { "id": "byName", "options": "Cache Misses" },
+            "properties": [{ "id": "color", "value": { "fixedColor": "red", "mode": "fixed" } }]
+          }
+        ]
+      },
+      "gridPos": { "h": 6, "w": 10, "x": 4, "y": 1 },
+      "id": 2,
+      "options": {
+        "legend": { "calcs": ["last", "sum"], "displayMode": "table", "placement": "right" },
+        "tooltip": { "mode": "multi", "sort": "desc" }
+      },
+      "targets": [
+        {
+          "alias": "Cache Hits",
+          "datasource": { "type": "cloudwatch", "uid": "${datasource}" },
+          "dimensions": { "CacheClusterId": "$redis_cluster" },
+          "expression": "",
+          "id": "",
+          "matchExact": true,
+          "metricEditorMode": 0,
+          "metricName": "CacheHits",
+          "metricQueryType": 0,
+          "namespace": "AWS/ElastiCache",
+          "period": "300",
+          "queryMode": "Metrics",
+          "refId": "A",
+          "region": "ap-northeast-2",
+          "sqlExpression": "",
+          "statistic": "Sum"
+        },
+        {
+          "alias": "Cache Misses",
+          "datasource": { "type": "cloudwatch", "uid": "${datasource}" },
+          "dimensions": { "CacheClusterId": "$redis_cluster" },
+          "expression": "",
+          "id": "",
+          "matchExact": true,
+          "metricEditorMode": 0,
+          "metricName": "CacheMisses",
+          "metricQueryType": 0,
+          "namespace": "AWS/ElastiCache",
+          "period": "300",
+          "queryMode": "Metrics",
+          "refId": "B",
+          "region": "ap-northeast-2",
+          "sqlExpression": "",
+          "statistic": "Sum"
+        }
+      ],
+      "title": "Cache Hits vs Misses",
+      "type": "timeseries"
+    },
+    {
+      "datasource": { "type": "cloudwatch", "uid": "${datasource}" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": {
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "gradientMode": "none",
+            "hideFrom": { "legend": false, "tooltip": false, "viz": false },
+            "lineInterpolation": "smooth",
+            "lineWidth": 2,
+            "pointSize": 5,
+            "scaleDistribution": { "type": "linear" },
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": { "group": "A", "mode": "none" },
+            "thresholdsStyle": { "mode": "line" }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 1 },
+              { "color": "red", "value": 100 }
+            ]
+          },
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 6, "w": 5, "x": 14, "y": 1 },
+      "id": 3,
+      "options": {
+        "legend": { "calcs": ["last", "sum"], "displayMode": "table", "placement": "bottom" },
+        "tooltip": { "mode": "multi", "sort": "desc" }
+      },
+      "targets": [
+        {
+          "alias": "Evictions",
+          "datasource": { "type": "cloudwatch", "uid": "${datasource}" },
+          "dimensions": { "CacheClusterId": "$redis_cluster" },
+          "expression": "",
+          "id": "",
+          "matchExact": true,
+          "metricEditorMode": 0,
+          "metricName": "Evictions",
+          "metricQueryType": 0,
+          "namespace": "AWS/ElastiCache",
+          "period": "300",
+          "queryMode": "Metrics",
+          "refId": "A",
+          "region": "ap-northeast-2",
+          "sqlExpression": "",
+          "statistic": "Sum"
+        }
+      ],
+      "title": "Evictions (Alert if > 0)",
+      "type": "timeseries"
+    },
+    {
+      "datasource": { "type": "cloudwatch", "uid": "${datasource}" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": {
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "gradientMode": "none",
+            "hideFrom": { "legend": false, "tooltip": false, "viz": false },
+            "lineInterpolation": "smooth",
+            "lineWidth": 2,
+            "pointSize": 5,
+            "scaleDistribution": { "type": "linear" },
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": { "group": "A", "mode": "none" },
+            "thresholdsStyle": { "mode": "off" }
+          },
+          "mappings": [],
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }] },
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 6, "w": 5, "x": 19, "y": 1 },
+      "id": 4,
+      "options": {
+        "legend": { "calcs": ["last"], "displayMode": "table", "placement": "bottom" },
+        "tooltip": { "mode": "multi", "sort": "desc" }
+      },
+      "targets": [
+        {
+          "alias": "Current Items",
+          "datasource": { "type": "cloudwatch", "uid": "${datasource}" },
+          "dimensions": { "CacheClusterId": "$redis_cluster" },
+          "expression": "",
+          "id": "",
+          "matchExact": true,
+          "metricEditorMode": 0,
+          "metricName": "CurrItems",
+          "metricQueryType": 0,
+          "namespace": "AWS/ElastiCache",
+          "period": "300",
+          "queryMode": "Metrics",
+          "refId": "A",
+          "region": "ap-northeast-2",
+          "sqlExpression": "",
+          "statistic": "Average"
+        }
+      ],
+      "title": "Current Items",
+      "type": "timeseries"
+    },
+    {
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 7 },
+      "id": 101,
+      "panels": [],
+      "title": "Resource Utilization",
+      "type": "row"
+    },
+    {
+      "datasource": { "type": "cloudwatch", "uid": "${datasource}" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": {
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "gradientMode": "none",
+            "hideFrom": { "legend": false, "tooltip": false, "viz": false },
+            "lineInterpolation": "smooth",
+            "lineWidth": 2,
+            "pointSize": 5,
+            "scaleDistribution": { "type": "linear" },
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": { "group": "A", "mode": "none" },
+            "thresholdsStyle": { "mode": "line" }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 70 },
+              { "color": "red", "value": 90 }
+            ]
+          },
+          "unit": "percent"
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 8, "w": 6, "x": 0, "y": 8 },
+      "id": 5,
+      "options": {
+        "legend": { "calcs": ["last", "max"], "displayMode": "table", "placement": "bottom" },
+        "tooltip": { "mode": "multi", "sort": "desc" }
+      },
+      "targets": [
+        {
+          "alias": "{{CacheClusterId}}",
+          "datasource": { "type": "cloudwatch", "uid": "${datasource}" },
+          "dimensions": { "CacheClusterId": "$redis_cluster" },
+          "expression": "",
+          "id": "",
+          "matchExact": true,
+          "metricEditorMode": 0,
+          "metricName": "EngineCPUUtilization",
+          "metricQueryType": 0,
+          "namespace": "AWS/ElastiCache",
+          "period": "300",
+          "queryMode": "Metrics",
+          "refId": "A",
+          "region": "ap-northeast-2",
+          "sqlExpression": "",
+          "statistic": "Average"
+        }
+      ],
+      "title": "Engine CPU Utilization",
+      "type": "timeseries"
+    },
+    {
+      "datasource": { "type": "cloudwatch", "uid": "${datasource}" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": {
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "gradientMode": "none",
+            "hideFrom": { "legend": false, "tooltip": false, "viz": false },
+            "lineInterpolation": "smooth",
+            "lineWidth": 2,
+            "pointSize": 5,
+            "scaleDistribution": { "type": "linear" },
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": { "group": "A", "mode": "none" },
+            "thresholdsStyle": { "mode": "line" }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 70 },
+              { "color": "red", "value": 85 }
+            ]
+          },
+          "unit": "percent"
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 8, "w": 6, "x": 6, "y": 8 },
+      "id": 6,
+      "options": {
+        "legend": { "calcs": ["last", "max"], "displayMode": "table", "placement": "bottom" },
+        "tooltip": { "mode": "multi", "sort": "desc" }
+      },
+      "targets": [
+        {
+          "alias": "{{CacheClusterId}}",
+          "datasource": { "type": "cloudwatch", "uid": "${datasource}" },
+          "dimensions": { "CacheClusterId": "$redis_cluster" },
+          "expression": "",
+          "id": "",
+          "matchExact": true,
+          "metricEditorMode": 0,
+          "metricName": "DatabaseMemoryUsagePercentage",
+          "metricQueryType": 0,
+          "namespace": "AWS/ElastiCache",
+          "period": "300",
+          "queryMode": "Metrics",
+          "refId": "A",
+          "region": "ap-northeast-2",
+          "sqlExpression": "",
+          "statistic": "Average"
+        }
+      ],
+      "title": "Memory Usage %",
+      "type": "timeseries"
+    },
+    {
+      "datasource": { "type": "cloudwatch", "uid": "${datasource}" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": {
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "gradientMode": "none",
+            "hideFrom": { "legend": false, "tooltip": false, "viz": false },
+            "lineInterpolation": "smooth",
+            "lineWidth": 2,
+            "pointSize": 5,
+            "scaleDistribution": { "type": "linear" },
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": { "group": "A", "mode": "none" },
+            "thresholdsStyle": { "mode": "off" }
+          },
+          "mappings": [],
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }] },
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 8, "w": 6, "x": 12, "y": 8 },
+      "id": 7,
+      "options": {
+        "legend": { "calcs": ["last", "max"], "displayMode": "table", "placement": "bottom" },
+        "tooltip": { "mode": "multi", "sort": "desc" }
+      },
+      "targets": [
+        {
+          "alias": "{{CacheClusterId}}",
+          "datasource": { "type": "cloudwatch", "uid": "${datasource}" },
+          "dimensions": { "CacheClusterId": "$redis_cluster" },
+          "expression": "",
+          "id": "",
+          "matchExact": true,
+          "metricEditorMode": 0,
+          "metricName": "CurrConnections",
+          "metricQueryType": 0,
+          "namespace": "AWS/ElastiCache",
+          "period": "300",
+          "queryMode": "Metrics",
+          "refId": "A",
+          "region": "ap-northeast-2",
+          "sqlExpression": "",
+          "statistic": "Average"
+        }
+      ],
+      "title": "Current Connections",
+      "type": "timeseries"
+    },
+    {
+      "datasource": { "type": "cloudwatch", "uid": "${datasource}" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": {
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "gradientMode": "none",
+            "hideFrom": { "legend": false, "tooltip": false, "viz": false },
+            "lineInterpolation": "smooth",
+            "lineWidth": 2,
+            "pointSize": 5,
+            "scaleDistribution": { "type": "linear" },
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": { "group": "A", "mode": "none" },
+            "thresholdsStyle": { "mode": "off" }
+          },
+          "mappings": [],
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }] },
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 8, "w": 6, "x": 18, "y": 8 },
+      "id": 8,
+      "options": {
+        "legend": { "calcs": ["last", "sum"], "displayMode": "table", "placement": "bottom" },
+        "tooltip": { "mode": "multi", "sort": "desc" }
+      },
+      "targets": [
+        {
+          "alias": "New Connections",
+          "datasource": { "type": "cloudwatch", "uid": "${datasource}" },
+          "dimensions": { "CacheClusterId": "$redis_cluster" },
+          "expression": "",
+          "id": "",
+          "matchExact": true,
+          "metricEditorMode": 0,
+          "metricName": "NewConnections",
+          "metricQueryType": 0,
+          "namespace": "AWS/ElastiCache",
+          "period": "300",
+          "queryMode": "Metrics",
+          "refId": "A",
+          "region": "ap-northeast-2",
+          "sqlExpression": "",
+          "statistic": "Sum"
+        }
+      ],
+      "title": "New Connections",
+      "type": "timeseries"
+    },
+    {
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 16 },
+      "id": 102,
+      "panels": [],
+      "title": "Commands & Operations",
+      "type": "row"
+    },
+    {
+      "datasource": { "type": "cloudwatch", "uid": "${datasource}" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": {
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "gradientMode": "none",
+            "hideFrom": { "legend": false, "tooltip": false, "viz": false },
+            "lineInterpolation": "smooth",
+            "lineWidth": 2,
+            "pointSize": 5,
+            "scaleDistribution": { "type": "linear" },
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": { "group": "A", "mode": "none" },
+            "thresholdsStyle": { "mode": "off" }
+          },
+          "mappings": [],
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }] },
+          "unit": "short"
+        },
+        "overrides": [
+          {
+            "matcher": { "id": "byName", "options": "Get Commands" },
+            "properties": [{ "id": "color", "value": { "fixedColor": "blue", "mode": "fixed" } }]
+          },
+          {
+            "matcher": { "id": "byName", "options": "Set Commands" },
+            "properties": [{ "id": "color", "value": { "fixedColor": "orange", "mode": "fixed" } }]
+          }
+        ]
+      },
+      "gridPos": { "h": 8, "w": 8, "x": 0, "y": 17 },
+      "id": 9,
+      "options": {
+        "legend": { "calcs": ["last", "sum"], "displayMode": "table", "placement": "right" },
+        "tooltip": { "mode": "multi", "sort": "desc" }
+      },
+      "targets": [
+        {
+          "alias": "Get Commands",
+          "datasource": { "type": "cloudwatch", "uid": "${datasource}" },
+          "dimensions": { "CacheClusterId": "$redis_cluster" },
+          "expression": "",
+          "id": "",
+          "matchExact": true,
+          "metricEditorMode": 0,
+          "metricName": "GetTypeCmds",
+          "metricQueryType": 0,
+          "namespace": "AWS/ElastiCache",
+          "period": "300",
+          "queryMode": "Metrics",
+          "refId": "A",
+          "region": "ap-northeast-2",
+          "sqlExpression": "",
+          "statistic": "Sum"
+        },
+        {
+          "alias": "Set Commands",
+          "datasource": { "type": "cloudwatch", "uid": "${datasource}" },
+          "dimensions": { "CacheClusterId": "$redis_cluster" },
+          "expression": "",
+          "id": "",
+          "matchExact": true,
+          "metricEditorMode": 0,
+          "metricName": "SetTypeCmds",
+          "metricQueryType": 0,
+          "namespace": "AWS/ElastiCache",
+          "period": "300",
+          "queryMode": "Metrics",
+          "refId": "B",
+          "region": "ap-northeast-2",
+          "sqlExpression": "",
+          "statistic": "Sum"
+        }
+      ],
+      "title": "Get/Set Commands",
+      "type": "timeseries"
+    },
+    {
+      "datasource": { "type": "cloudwatch", "uid": "${datasource}" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": {
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "gradientMode": "none",
+            "hideFrom": { "legend": false, "tooltip": false, "viz": false },
+            "lineInterpolation": "smooth",
+            "lineWidth": 2,
+            "pointSize": 5,
+            "scaleDistribution": { "type": "linear" },
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": { "group": "A", "mode": "none" },
+            "thresholdsStyle": { "mode": "off" }
+          },
+          "mappings": [],
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }] },
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 8, "w": 8, "x": 8, "y": 17 },
+      "id": 10,
+      "options": {
+        "legend": { "calcs": ["last", "sum"], "displayMode": "table", "placement": "right" },
+        "tooltip": { "mode": "multi", "sort": "desc" }
+      },
+      "targets": [
+        {
+          "alias": "String Commands",
+          "datasource": { "type": "cloudwatch", "uid": "${datasource}" },
+          "dimensions": { "CacheClusterId": "$redis_cluster" },
+          "expression": "",
+          "id": "",
+          "matchExact": true,
+          "metricEditorMode": 0,
+          "metricName": "StringBasedCmds",
+          "metricQueryType": 0,
+          "namespace": "AWS/ElastiCache",
+          "period": "300",
+          "queryMode": "Metrics",
+          "refId": "A",
+          "region": "ap-northeast-2",
+          "sqlExpression": "",
+          "statistic": "Sum"
+        },
+        {
+          "alias": "Hash Commands",
+          "datasource": { "type": "cloudwatch", "uid": "${datasource}" },
+          "dimensions": { "CacheClusterId": "$redis_cluster" },
+          "expression": "",
+          "id": "",
+          "matchExact": true,
+          "metricEditorMode": 0,
+          "metricName": "HashBasedCmds",
+          "metricQueryType": 0,
+          "namespace": "AWS/ElastiCache",
+          "period": "300",
+          "queryMode": "Metrics",
+          "refId": "B",
+          "region": "ap-northeast-2",
+          "sqlExpression": "",
+          "statistic": "Sum"
+        },
+        {
+          "alias": "List Commands",
+          "datasource": { "type": "cloudwatch", "uid": "${datasource}" },
+          "dimensions": { "CacheClusterId": "$redis_cluster" },
+          "expression": "",
+          "id": "",
+          "matchExact": true,
+          "metricEditorMode": 0,
+          "metricName": "ListBasedCmds",
+          "metricQueryType": 0,
+          "namespace": "AWS/ElastiCache",
+          "period": "300",
+          "queryMode": "Metrics",
+          "refId": "C",
+          "region": "ap-northeast-2",
+          "sqlExpression": "",
+          "statistic": "Sum"
+        },
+        {
+          "alias": "Set Commands",
+          "datasource": { "type": "cloudwatch", "uid": "${datasource}" },
+          "dimensions": { "CacheClusterId": "$redis_cluster" },
+          "expression": "",
+          "id": "",
+          "matchExact": true,
+          "metricEditorMode": 0,
+          "metricName": "SetBasedCmds",
+          "metricQueryType": 0,
+          "namespace": "AWS/ElastiCache",
+          "period": "300",
+          "queryMode": "Metrics",
+          "refId": "D",
+          "region": "ap-northeast-2",
+          "sqlExpression": "",
+          "statistic": "Sum"
+        }
+      ],
+      "title": "Commands by Data Type",
+      "type": "timeseries"
+    },
+    {
+      "datasource": { "type": "cloudwatch", "uid": "${datasource}" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": {
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "gradientMode": "none",
+            "hideFrom": { "legend": false, "tooltip": false, "viz": false },
+            "lineInterpolation": "smooth",
+            "lineWidth": 2,
+            "pointSize": 5,
+            "scaleDistribution": { "type": "linear" },
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": { "group": "A", "mode": "none" },
+            "thresholdsStyle": { "mode": "off" }
+          },
+          "mappings": [],
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }] },
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 8, "w": 8, "x": 16, "y": 17 },
+      "id": 11,
+      "options": {
+        "legend": { "calcs": ["last", "sum"], "displayMode": "table", "placement": "right" },
+        "tooltip": { "mode": "multi", "sort": "desc" }
+      },
+      "targets": [
+        {
+          "alias": "Key Expirations",
+          "datasource": { "type": "cloudwatch", "uid": "${datasource}" },
+          "dimensions": { "CacheClusterId": "$redis_cluster" },
+          "expression": "",
+          "id": "",
+          "matchExact": true,
+          "metricEditorMode": 0,
+          "metricName": "Reclaimed",
+          "metricQueryType": 0,
+          "namespace": "AWS/ElastiCache",
+          "period": "300",
+          "queryMode": "Metrics",
+          "refId": "A",
+          "region": "ap-northeast-2",
+          "sqlExpression": "",
+          "statistic": "Sum"
+        }
+      ],
+      "title": "Key Expirations (Reclaimed)",
+      "type": "timeseries"
+    },
+    {
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 25 },
+      "id": 103,
+      "panels": [],
+      "title": "Network & Latency",
+      "type": "row"
+    },
+    {
+      "datasource": { "type": "cloudwatch", "uid": "${datasource}" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": {
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "gradientMode": "none",
+            "hideFrom": { "legend": false, "tooltip": false, "viz": false },
+            "lineInterpolation": "smooth",
+            "lineWidth": 2,
+            "pointSize": 5,
+            "scaleDistribution": { "type": "linear" },
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": { "group": "A", "mode": "none" },
+            "thresholdsStyle": { "mode": "off" }
+          },
+          "mappings": [],
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }] },
+          "unit": "Bps"
+        },
+        "overrides": [
+          {
+            "matcher": { "id": "byName", "options": "Bytes In" },
+            "properties": [{ "id": "color", "value": { "fixedColor": "blue", "mode": "fixed" } }]
+          },
+          {
+            "matcher": { "id": "byName", "options": "Bytes Out" },
+            "properties": [{ "id": "color", "value": { "fixedColor": "green", "mode": "fixed" } }]
+          }
+        ]
+      },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 26 },
+      "id": 12,
+      "options": {
+        "legend": { "calcs": ["last", "max"], "displayMode": "table", "placement": "right" },
+        "tooltip": { "mode": "multi", "sort": "desc" }
+      },
+      "targets": [
+        {
+          "alias": "Bytes In",
+          "datasource": { "type": "cloudwatch", "uid": "${datasource}" },
+          "dimensions": { "CacheClusterId": "$redis_cluster" },
+          "expression": "",
+          "id": "",
+          "matchExact": true,
+          "metricEditorMode": 0,
+          "metricName": "NetworkBytesIn",
+          "metricQueryType": 0,
+          "namespace": "AWS/ElastiCache",
+          "period": "300",
+          "queryMode": "Metrics",
+          "refId": "A",
+          "region": "ap-northeast-2",
+          "sqlExpression": "",
+          "statistic": "Average"
+        },
+        {
+          "alias": "Bytes Out",
+          "datasource": { "type": "cloudwatch", "uid": "${datasource}" },
+          "dimensions": { "CacheClusterId": "$redis_cluster" },
+          "expression": "",
+          "id": "",
+          "matchExact": true,
+          "metricEditorMode": 0,
+          "metricName": "NetworkBytesOut",
+          "metricQueryType": 0,
+          "namespace": "AWS/ElastiCache",
+          "period": "300",
+          "queryMode": "Metrics",
+          "refId": "B",
+          "region": "ap-northeast-2",
+          "sqlExpression": "",
+          "statistic": "Average"
+        }
+      ],
+      "title": "Network Bytes In/Out",
+      "type": "timeseries"
+    },
+    {
+      "datasource": { "type": "cloudwatch", "uid": "${datasource}" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": {
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "gradientMode": "none",
+            "hideFrom": { "legend": false, "tooltip": false, "viz": false },
+            "lineInterpolation": "smooth",
+            "lineWidth": 2,
+            "pointSize": 5,
+            "scaleDistribution": { "type": "linear" },
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": { "group": "A", "mode": "none" },
+            "thresholdsStyle": { "mode": "off" }
+          },
+          "mappings": [],
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }] },
+          "unit": "bytes"
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 8, "w": 6, "x": 12, "y": 26 },
+      "id": 13,
+      "options": {
+        "legend": { "calcs": ["last"], "displayMode": "table", "placement": "bottom" },
+        "tooltip": { "mode": "multi", "sort": "desc" }
+      },
+      "targets": [
+        {
+          "alias": "Bytes Used",
+          "datasource": { "type": "cloudwatch", "uid": "${datasource}" },
+          "dimensions": { "CacheClusterId": "$redis_cluster" },
+          "expression": "",
+          "id": "",
+          "matchExact": true,
+          "metricEditorMode": 0,
+          "metricName": "BytesUsedForCache",
+          "metricQueryType": 0,
+          "namespace": "AWS/ElastiCache",
+          "period": "300",
+          "queryMode": "Metrics",
+          "refId": "A",
+          "region": "ap-northeast-2",
+          "sqlExpression": "",
+          "statistic": "Average"
+        }
+      ],
+      "title": "Bytes Used for Cache",
+      "type": "timeseries"
+    },
+    {
+      "datasource": { "type": "cloudwatch", "uid": "${datasource}" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": {
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "gradientMode": "none",
+            "hideFrom": { "legend": false, "tooltip": false, "viz": false },
+            "lineInterpolation": "smooth",
+            "lineWidth": 2,
+            "pointSize": 5,
+            "scaleDistribution": { "type": "linear" },
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": { "group": "A", "mode": "none" },
+            "thresholdsStyle": { "mode": "off" }
+          },
+          "mappings": [],
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }] },
+          "unit": "none"
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 8, "w": 6, "x": 18, "y": 26 },
+      "id": 14,
+      "options": {
+        "legend": { "calcs": ["last"], "displayMode": "table", "placement": "bottom" },
+        "tooltip": { "mode": "multi", "sort": "desc" }
+      },
+      "targets": [
+        {
+          "alias": "Frag Ratio",
+          "datasource": { "type": "cloudwatch", "uid": "${datasource}" },
+          "dimensions": { "CacheClusterId": "$redis_cluster" },
+          "expression": "",
+          "id": "",
+          "matchExact": true,
+          "metricEditorMode": 0,
+          "metricName": "MemoryFragmentationRatio",
+          "metricQueryType": 0,
+          "namespace": "AWS/ElastiCache",
+          "period": "300",
+          "queryMode": "Metrics",
+          "refId": "A",
+          "region": "ap-northeast-2",
+          "sqlExpression": "",
+          "statistic": "Average"
+        }
+      ],
+      "title": "Memory Fragmentation Ratio",
+      "type": "timeseries"
+    }
+  ],
+  "refresh": "1m",
+  "schemaVersion": 38,
+  "style": "dark",
+  "tags": ["redis", "elasticache", "cache", "cloudwatch"],
+  "templating": {
+    "list": [
+      {
+        "current": {},
+        "hide": 0,
+        "includeAll": false,
+        "label": "Data Source",
+        "multi": false,
+        "name": "datasource",
+        "options": [],
+        "query": "cloudwatch",
+        "queryValue": "",
+        "refresh": 1,
+        "regex": "",
+        "skipUrlSync": false,
+        "type": "datasource"
+      },
+      {
+        "current": {},
+        "datasource": { "type": "cloudwatch", "uid": "${datasource}" },
+        "definition": "",
+        "hide": 0,
+        "includeAll": false,
+        "label": "Redis Cluster",
+        "multi": true,
+        "name": "redis_cluster",
+        "options": [],
+        "query": {
+          "dimensionFilters": {},
+          "dimensionKey": "CacheClusterId",
+          "metricName": "EngineCPUUtilization",
+          "namespace": "AWS/ElastiCache",
+          "queryType": "dimensionValues",
+          "refId": "CloudWatchVariableQueryEditor-VariableQuery",
+          "region": "ap-northeast-2"
+        },
+        "refresh": 1,
+        "regex": "",
+        "skipUrlSync": false,
+        "sort": 1,
+        "type": "query"
+      }
+    ]
+  },
+  "time": { "from": "now-6h", "to": "now" },
+  "timepicker": {},
+  "timezone": "Asia/Seoul",
+  "title": "ElastiCache Redis Monitoring",
+  "uid": "elasticache-redis-dashboard",
+  "version": 1,
+  "weekStart": ""
+}

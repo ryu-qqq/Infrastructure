@@ -1,0 +1,528 @@
+{
+  "annotations": {
+    "list": []
+  },
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 1,
+  "id": null,
+  "links": [],
+  "liveNow": false,
+  "panels": [
+    {
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 0 },
+      "id": 100,
+      "panels": [],
+      "title": "Service Overview",
+      "type": "row"
+    },
+    {
+      "datasource": { "type": "grafana-x-ray-datasource", "uid": "${datasource}" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": {
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "gradientMode": "none",
+            "hideFrom": { "legend": false, "tooltip": false, "viz": false },
+            "lineInterpolation": "smooth",
+            "lineWidth": 2,
+            "pointSize": 5,
+            "scaleDistribution": { "type": "linear" },
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": { "group": "A", "mode": "none" },
+            "thresholdsStyle": { "mode": "off" }
+          },
+          "mappings": [],
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }] },
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 8, "w": 8, "x": 0, "y": 1 },
+      "id": 1,
+      "options": {
+        "legend": { "calcs": ["sum", "mean"], "displayMode": "table", "placement": "bottom" },
+        "tooltip": { "mode": "multi", "sort": "desc" }
+      },
+      "targets": [
+        {
+          "datasource": { "type": "grafana-x-ray-datasource", "uid": "${datasource}" },
+          "group": { "FilterExpression": "", "GroupARN": "", "GroupName": "" },
+          "query": "",
+          "queryType": "getTimeSeriesServiceStatistics",
+          "refId": "A",
+          "region": "ap-northeast-2"
+        }
+      ],
+      "title": "Request Count by Service",
+      "type": "timeseries",
+      "transformations": [
+        {
+          "id": "filterFieldsByName",
+          "options": {
+            "include": { "pattern": "Time|.*RequestCount.*" }
+          }
+        }
+      ]
+    },
+    {
+      "datasource": { "type": "grafana-x-ray-datasource", "uid": "${datasource}" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": {
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "gradientMode": "none",
+            "hideFrom": { "legend": false, "tooltip": false, "viz": false },
+            "lineInterpolation": "smooth",
+            "lineWidth": 2,
+            "pointSize": 5,
+            "scaleDistribution": { "type": "linear" },
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": { "group": "A", "mode": "none" },
+            "thresholdsStyle": { "mode": "line" }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 0.01 },
+              { "color": "red", "value": 0.05 }
+            ]
+          },
+          "unit": "percentunit"
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 8, "w": 8, "x": 8, "y": 1 },
+      "id": 2,
+      "options": {
+        "legend": { "calcs": ["last", "max"], "displayMode": "table", "placement": "bottom" },
+        "tooltip": { "mode": "multi", "sort": "desc" }
+      },
+      "targets": [
+        {
+          "datasource": { "type": "grafana-x-ray-datasource", "uid": "${datasource}" },
+          "group": { "FilterExpression": "", "GroupARN": "", "GroupName": "" },
+          "query": "",
+          "queryType": "getTimeSeriesServiceStatistics",
+          "refId": "A",
+          "region": "ap-northeast-2"
+        }
+      ],
+      "title": "Error Rate by Service",
+      "type": "timeseries",
+      "transformations": [
+        {
+          "id": "filterFieldsByName",
+          "options": {
+            "include": { "pattern": "Time|.*ErrorRate.*" }
+          }
+        }
+      ]
+    },
+    {
+      "datasource": { "type": "grafana-x-ray-datasource", "uid": "${datasource}" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": {
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "gradientMode": "none",
+            "hideFrom": { "legend": false, "tooltip": false, "viz": false },
+            "lineInterpolation": "smooth",
+            "lineWidth": 2,
+            "pointSize": 5,
+            "scaleDistribution": { "type": "linear" },
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": { "group": "A", "mode": "none" },
+            "thresholdsStyle": { "mode": "line" }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "orange", "value": 0.01 },
+              { "color": "red", "value": 0.05 }
+            ]
+          },
+          "unit": "percentunit"
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 8, "w": 8, "x": 16, "y": 1 },
+      "id": 3,
+      "options": {
+        "legend": { "calcs": ["last", "max"], "displayMode": "table", "placement": "bottom" },
+        "tooltip": { "mode": "multi", "sort": "desc" }
+      },
+      "targets": [
+        {
+          "datasource": { "type": "grafana-x-ray-datasource", "uid": "${datasource}" },
+          "group": { "FilterExpression": "", "GroupARN": "", "GroupName": "" },
+          "query": "",
+          "queryType": "getTimeSeriesServiceStatistics",
+          "refId": "A",
+          "region": "ap-northeast-2"
+        }
+      ],
+      "title": "Fault Rate by Service",
+      "type": "timeseries",
+      "transformations": [
+        {
+          "id": "filterFieldsByName",
+          "options": {
+            "include": { "pattern": "Time|.*FaultRate.*" }
+          }
+        }
+      ]
+    },
+    {
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 9 },
+      "id": 101,
+      "panels": [],
+      "title": "Latency Analysis",
+      "type": "row"
+    },
+    {
+      "datasource": { "type": "grafana-x-ray-datasource", "uid": "${datasource}" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": {
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "gradientMode": "none",
+            "hideFrom": { "legend": false, "tooltip": false, "viz": false },
+            "lineInterpolation": "smooth",
+            "lineWidth": 2,
+            "pointSize": 5,
+            "scaleDistribution": { "type": "linear" },
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": { "group": "A", "mode": "none" },
+            "thresholdsStyle": { "mode": "line" }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 0.5 },
+              { "color": "red", "value": 1 }
+            ]
+          },
+          "unit": "s"
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 10 },
+      "id": 10,
+      "options": {
+        "legend": { "calcs": ["last", "max", "mean"], "displayMode": "table", "placement": "bottom" },
+        "tooltip": { "mode": "multi", "sort": "desc" }
+      },
+      "targets": [
+        {
+          "datasource": { "type": "grafana-x-ray-datasource", "uid": "${datasource}" },
+          "group": { "FilterExpression": "", "GroupARN": "", "GroupName": "" },
+          "query": "",
+          "queryType": "getTimeSeriesServiceStatistics",
+          "refId": "A",
+          "region": "ap-northeast-2"
+        }
+      ],
+      "title": "Average Response Time by Service",
+      "type": "timeseries",
+      "transformations": [
+        {
+          "id": "filterFieldsByName",
+          "options": {
+            "include": { "pattern": "Time|.*AverageResponseTime.*" }
+          }
+        }
+      ]
+    },
+    {
+      "datasource": { "type": "grafana-x-ray-datasource", "uid": "${datasource}" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": {
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "gradientMode": "none",
+            "hideFrom": { "legend": false, "tooltip": false, "viz": false },
+            "lineInterpolation": "smooth",
+            "lineWidth": 2,
+            "pointSize": 5,
+            "scaleDistribution": { "type": "linear" },
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": { "group": "A", "mode": "none" },
+            "thresholdsStyle": { "mode": "off" }
+          },
+          "mappings": [],
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }] },
+          "unit": "s"
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 10 },
+      "id": 11,
+      "options": {
+        "legend": { "calcs": ["last", "max"], "displayMode": "table", "placement": "bottom" },
+        "tooltip": { "mode": "multi", "sort": "desc" }
+      },
+      "targets": [
+        {
+          "datasource": { "type": "grafana-x-ray-datasource", "uid": "${datasource}" },
+          "group": { "FilterExpression": "", "GroupARN": "", "GroupName": "" },
+          "query": "",
+          "queryType": "getTimeSeriesServiceStatistics",
+          "refId": "A",
+          "region": "ap-northeast-2"
+        }
+      ],
+      "title": "Response Time Histogram",
+      "type": "timeseries",
+      "transformations": [
+        {
+          "id": "filterFieldsByName",
+          "options": {
+            "include": { "pattern": "Time|.*ResponseTimeHistogram.*" }
+          }
+        }
+      ]
+    },
+    {
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 18 },
+      "id": 102,
+      "panels": [],
+      "title": "Trace Analytics",
+      "type": "row"
+    },
+    {
+      "datasource": { "type": "grafana-x-ray-datasource", "uid": "${datasource}" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "custom": {
+            "align": "auto",
+            "displayMode": "auto",
+            "inspect": false
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [{ "color": "green", "value": null }]
+          }
+        },
+        "overrides": [
+          {
+            "matcher": { "id": "byName", "options": "Duration" },
+            "properties": [
+              { "id": "unit", "value": "s" },
+              { "id": "custom.displayMode", "value": "color-background" },
+              {
+                "id": "thresholds",
+                "value": {
+                  "mode": "absolute",
+                  "steps": [
+                    { "color": "green", "value": null },
+                    { "color": "yellow", "value": 0.5 },
+                    { "color": "red", "value": 1 }
+                  ]
+                }
+              }
+            ]
+          },
+          {
+            "matcher": { "id": "byName", "options": "HasError" },
+            "properties": [
+              { "id": "custom.displayMode", "value": "color-background" },
+              {
+                "id": "mappings",
+                "value": [
+                  { "options": { "false": { "color": "green", "index": 0, "text": "OK" } }, "type": "value" },
+                  { "options": { "true": { "color": "red", "index": 1, "text": "Error" } }, "type": "value" }
+                ]
+              }
+            ]
+          },
+          {
+            "matcher": { "id": "byName", "options": "HasFault" },
+            "properties": [
+              { "id": "custom.displayMode", "value": "color-background" },
+              {
+                "id": "mappings",
+                "value": [
+                  { "options": { "false": { "color": "green", "index": 0, "text": "OK" } }, "type": "value" },
+                  { "options": { "true": { "color": "orange", "index": 1, "text": "Fault" } }, "type": "value" }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": { "h": 10, "w": 24, "x": 0, "y": 19 },
+      "id": 20,
+      "options": {
+        "footer": { "fields": "", "reducer": ["sum"], "show": false },
+        "showHeader": true,
+        "sortBy": [{ "desc": true, "displayName": "Duration" }]
+      },
+      "targets": [
+        {
+          "datasource": { "type": "grafana-x-ray-datasource", "uid": "${datasource}" },
+          "group": { "FilterExpression": "", "GroupARN": "", "GroupName": "" },
+          "query": "$query",
+          "queryType": "getTraceSummaries",
+          "refId": "A",
+          "region": "ap-northeast-2"
+        }
+      ],
+      "title": "Trace List",
+      "type": "table"
+    },
+    {
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 29 },
+      "id": 103,
+      "panels": [],
+      "title": "Insights",
+      "type": "row"
+    },
+    {
+      "datasource": { "type": "grafana-x-ray-datasource", "uid": "${datasource}" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "custom": {
+            "align": "auto",
+            "displayMode": "auto",
+            "inspect": false
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [{ "color": "green", "value": null }]
+          }
+        },
+        "overrides": [
+          {
+            "matcher": { "id": "byName", "options": "State" },
+            "properties": [
+              { "id": "custom.displayMode", "value": "color-background" },
+              {
+                "id": "mappings",
+                "value": [
+                  { "options": { "ACTIVE": { "color": "red", "index": 0 } }, "type": "value" },
+                  { "options": { "CLOSED": { "color": "green", "index": 1 } }, "type": "value" }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": { "h": 8, "w": 24, "x": 0, "y": 30 },
+      "id": 30,
+      "options": {
+        "footer": { "fields": "", "reducer": ["sum"], "show": false },
+        "showHeader": true
+      },
+      "targets": [
+        {
+          "datasource": { "type": "grafana-x-ray-datasource", "uid": "${datasource}" },
+          "group": { "FilterExpression": "", "GroupARN": "", "GroupName": "" },
+          "query": "",
+          "queryType": "getInsightSummaries",
+          "refId": "A",
+          "region": "ap-northeast-2"
+        }
+      ],
+      "title": "X-Ray Insights (Anomalies & Issues)",
+      "type": "table"
+    }
+  ],
+  "refresh": "1m",
+  "schemaVersion": 38,
+  "style": "dark",
+  "tags": ["xray", "tracing", "distributed", "apm"],
+  "templating": {
+    "list": [
+      {
+        "current": {},
+        "hide": 0,
+        "includeAll": false,
+        "label": "Data Source",
+        "multi": false,
+        "name": "datasource",
+        "options": [],
+        "query": "grafana-x-ray-datasource",
+        "queryValue": "",
+        "refresh": 1,
+        "regex": "",
+        "skipUrlSync": false,
+        "type": "datasource"
+      },
+      {
+        "current": { "selected": false, "text": "", "value": "" },
+        "hide": 0,
+        "label": "Trace Filter",
+        "name": "query",
+        "options": [
+          { "selected": true, "text": "", "value": "" }
+        ],
+        "query": "",
+        "skipUrlSync": false,
+        "type": "textbox",
+        "description": "Filter expression (e.g., service(\"gateway\") AND responseTime > 1)"
+      }
+    ]
+  },
+  "time": { "from": "now-6h", "to": "now" },
+  "timepicker": {},
+  "timezone": "Asia/Seoul",
+  "title": "X-Ray Distributed Tracing",
+  "uid": "xray-tracing-dashboard",
+  "version": 1,
+  "weekStart": ""
+}

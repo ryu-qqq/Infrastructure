@@ -103,6 +103,15 @@ resource "aws_ecs_task_definition" "n8n" {
           name  = "N8N_VERSION_NOTIFICATIONS_ENABLED"
           value = "false"
         },
+        # Environment Variable Access (for workflows to use $env)
+        {
+          name  = "N8N_BLOCK_ENV_ACCESS_IN_NODE"
+          value = "false"
+        },
+        {
+          name  = "N8N_ALLOWED_ENVIRONMENT_VARIABLES"
+          value = "AUTHHUB_API_URL,SERVICE_TOKEN_SECRET"
+        },
         # AuthHub Integration (Internal API via Service Discovery)
         {
           name  = "AUTHHUB_API_URL"
