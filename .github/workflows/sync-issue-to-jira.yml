@@ -30,6 +30,9 @@ jobs:
   # ===========================================
   sync:
     if: github.event_name != 'workflow_dispatch'
+    permissions:
+      issues: write
+      contents: read
     uses: ryu-qqq/Infrastructure/.github/workflows/reusable-sync-jira.yml@main
     with:
       jira-project-key: IN
