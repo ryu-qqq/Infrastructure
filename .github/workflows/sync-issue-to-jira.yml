@@ -24,15 +24,17 @@ on:
         required: false
         type: string
 
+# Workflow 레벨 권한 설정 (reusable workflow에 상속됨)
+permissions:
+  issues: write
+  contents: read
+
 jobs:
   # ===========================================
   # Reusable Workflow 호출 (자동 이벤트)
   # ===========================================
   sync:
     if: github.event_name != 'workflow_dispatch'
-    permissions:
-      issues: write
-      contents: read
     uses: ryu-qqq/Infrastructure/.github/workflows/reusable-sync-jira.yml@main
     with:
       jira-project-key: IN
@@ -54,9 +56,6 @@ jobs:
   manual-sync:
     if: github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
-    permissions:
-      issues: write
-      contents: read
 
     steps:
       - name: Checkout repository

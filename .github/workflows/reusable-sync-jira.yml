@@ -88,9 +88,6 @@ jobs:
     runs-on: ubuntu-latest
     # Only run for issues, not pull requests
     if: "!github.event.issue.pull_request"
-    permissions:
-      issues: write
-      contents: read
 
     steps:
       - name: Login to Jira
