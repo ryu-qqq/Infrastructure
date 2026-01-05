@@ -52,9 +52,21 @@ def handler(event, context):
             transformed_records = transform_log_events(log_data)
 
             if transformed_records:
-                # 각 로그 이벤트를 개별 문서로 저장 (NDJSON 형식)
-                # Firehose OpenSearch 목적지는 줄바꿈으로 구분된 각 JSON을 개별 문서로 인덱싱
-                output_data = '\n'.join([json.dumps(doc) for doc in transformed_records]) + '\n'
+                # Firehose → OpenSearch: 하나의 레코드 = 하나의 문서
+                # 여러 로그 이벤트가 있으면 첫 번째 이벤트만 사용하고 나머지는 메타데이터로 포함
+                if len(transformed_records) == 1:
+                    output_doc = transformed_records[0]
+                else:
+                    # 다중 이벤트: 첫 번째 이벤트를 기본으로, 나머지는 additional_events로
+                    first = transformed_records[0]
+                    output_doc = first.copy()
+                    output_doc['event_count'] = len(transformed_records)
+                    # 나머지 이벤트의 메시지만 추출해서 배열로 저장
+                    output_doc['additional_messages'] = [
+                        r.get('message', '') for r in transformed_records[1:]
+                    ]
+
+                output_data = json.dumps(output_doc) + '\n'
 
                 output.append({
                     'recordId': record['recordId'],
