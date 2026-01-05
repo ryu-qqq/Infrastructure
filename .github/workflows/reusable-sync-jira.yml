@@ -245,6 +245,23 @@ jobs:
             -H "Content-Type: application/json" \
             -d '{"transition": {"id": "${{ inputs.transition-id-todo }}"}}'
 
+      - name: Trigger n8n Webhook (Reopened)
+        if: github.event.action == 'reopened' && steps.find.outputs.issue && inputs.enable-n8n-webhook
+        run: |
+          curl -X POST "${{ secrets.N8N_WEBHOOK_URL }}" \
+            -H "Content-Type: application/json" \
+            -d '{
+              "github_issue": "#${{ github.event.issue.number }}",
+              "jira_key": "${{ steps.find.outputs.issue }}",
+              "title": "${{ github.event.issue.title }}",
+              "body": ${{ toJSON(github.event.issue.body) }},
+              "author": "${{ github.event.issue.user.login }}",
+              "url": "${{ github.event.issue.html_url }}",
+              "labels": "${{ join(github.event.issue.labels.*.name, ', ') }}",
+              "repository": "${{ github.repository }}",
+              "event_type": "reopened"
+            }'
+
       # ========================================
       # Re-review Flow (needs-review label)
       # ========================================
