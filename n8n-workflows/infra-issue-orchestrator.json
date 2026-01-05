@@ -1731,6 +1731,76 @@
           "name": "Infrastructure GitHub"
         }
       }
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "=https://api.github.com/repos/ryu-qqq/infrastructure/pulls?head=ryu-qqq:{{ $('Parse Code Files').first().json.branchName }}&state=open",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "githubApi",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Accept",
+              "value": "application/vnd.github.v3+json"
+            }
+          ]
+        },
+        "options": {
+          "response": {
+            "response": {
+              "neverError": true
+            }
+          }
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        4176,
+        -2224
+      ],
+      "id": "check-existing-pr-001",
+      "name": "Check Existing PR",
+      "credentials": {
+        "githubApi": {
+          "id": "uJpJHjMJj6qdmUVx",
+          "name": "Infrastructure GitHub"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "pr-exists-check",
+              "leftValue": "={{ $json.length }}",
+              "rightValue": 0,
+              "operator": {
+                "type": "number",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        4264,
+        -2224
+      ],
+      "id": "pr-exists-check-001",
+      "name": "PR Exists?"
     }
   ],
   "pinData": {},
@@ -1899,7 +1969,7 @@
       "main": [
         [
           {
-            "node": "Create Draft PR",
+            "node": "Check Existing PR",
             "type": "main",
             "index": 0
           }
@@ -1911,6 +1981,29 @@
             "index": 0
           }
         ]
+      ]
+    },
+    "Check Existing PR": {
+      "main": [
+        [
+          {
+            "node": "PR Exists?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "PR Exists?": {
+      "main": [
+        [
+          {
+            "node": "Create Draft PR",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        []
       ]
     },
     "Encode Base64": {
