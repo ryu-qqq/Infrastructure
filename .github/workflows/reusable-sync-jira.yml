@@ -1,0 +1,291 @@
+# ============================================================================
+# Reusable Workflow: Sync GitHub Issue to Jira
+#
+# GitHub Issue를 Jira에 동기화하는 재사용 가능한 워크플로우
+#
+# 기능:
+#   - Issue 생성 시 Jira 티켓 자동 생성
+#   - Issue 상태 변경 시 Jira 동기화 (closed, reopened)
+#   - Issue 코멘트 → Jira 코멘트 동기화
+#   - needs-review 라벨 시 재검토 플로우 트리거
+#
+# 사용법:
+#   jobs:
+#     sync:
+#       uses: ryu-qqq/Infrastructure/.github/workflows/reusable-sync-jira.yml@main
+#       with:
+#         jira-project-key: IN
+#         issue-type: Task
+#         enable-n8n-webhook: true
+#       secrets:
+#         JIRA_BASE_URL: ${{ secrets.JIRA_BASE_URL }}
+#         JIRA_USER_EMAIL: ${{ secrets.JIRA_USER_EMAIL }}
+#         JIRA_API_TOKEN: ${{ secrets.JIRA_API_TOKEN }}
+#         N8N_WEBHOOK_URL: ${{ secrets.N8N_WEBHOOK_URL }}
+# ============================================================================
+
+name: Reusable Sync Jira
+
+on:
+  workflow_call:
+    inputs:
+      # Jira 설정
+      jira-project-key:
+        description: "Jira 프로젝트 키 (예: IN, AUTH, CH)"
+        required: true
+        type: string
+
+      issue-type:
+        description: "생성할 Jira 이슈 타입"
+        type: string
+        default: "Task"
+
+      # 동기화 옵션
+      sync-comments:
+        description: "GitHub 코멘트를 Jira에 동기화"
+        type: boolean
+        default: true
+
+      sync-status:
+        description: "Issue 상태 변경 시 Jira 동기화"
+        type: boolean
+        default: true
+
+      # n8n 연동
+      enable-n8n-webhook:
+        description: "n8n 웹훅 트리거 활성화"
+        type: boolean
+        default: true
+
+      # Jira Transition IDs (프로젝트별로 다를 수 있음)
+      transition-id-todo:
+        description: "Jira 'To Do' transition ID"
+        type: string
+        default: "11"
+
+      transition-id-done:
+        description: "Jira 'Done' transition ID"
+        type: string
+        default: "31"
+
+    secrets:
+      JIRA_BASE_URL:
+        description: "Jira 인스턴스 URL"
+        required: true
+      JIRA_USER_EMAIL:
+        description: "Jira 사용자 이메일"
+        required: true
+      JIRA_API_TOKEN:
+        description: "Jira API 토큰"
+        required: true
+      N8N_WEBHOOK_URL:
+        description: "n8n 웹훅 URL (enable-n8n-webhook이 true일 때 필요)"
+        required: false
+
+jobs:
+  sync-to-jira:
+    name: Sync Issue to Jira
+    runs-on: ubuntu-latest
+    # Only run for issues, not pull requests
+    if: "!github.event.issue.pull_request"
+    permissions:
+      issues: write
+      contents: read
+
+    steps:
+      - name: Login to Jira
+        uses: atlassian/gajira-login@v3
+        env:
+          JIRA_BASE_URL: ${{ secrets.JIRA_BASE_URL }}
+          JIRA_USER_EMAIL: ${{ secrets.JIRA_USER_EMAIL }}
+          JIRA_API_TOKEN: ${{ secrets.JIRA_API_TOKEN }}
+
+      # ========================================
+      # Issue Created - Jira 티켓 생성
+      # ========================================
+      - name: Create Jira Issue
+        if: github.event.action == 'opened'
+        id: create
+        continue-on-error: true
+        uses: atlassian/gajira-create@v3
+        with:
+          project: ${{ inputs.jira-project-key }}
+          issuetype: ${{ inputs.issue-type }}
+          summary: "[GH-${{ github.event.issue.number }}] ${{ github.event.issue.title }}"
+          description: |
+            *Synced from GitHub Issue:* ${{ github.event.issue.html_url }}
+
+            h3. Description
+            ${{ github.event.issue.body || 'No description provided' }}
+
+            ---
+            *Created by:* ${{ github.event.issue.user.login }}
+            *Labels:* ${{ join(github.event.issue.labels.*.name, ', ') || 'None' }}
+            *GitHub Issue Number:* #${{ github.event.issue.number }}
+            *Repository:* ${{ github.repository }}
+
+      - name: Add Jira Link to GitHub Issue
+        if: github.event.action == 'opened' && steps.create.outputs.issue
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const jiraKey = '${{ steps.create.outputs.issue }}';
+            const jiraUrl = '${{ secrets.JIRA_BASE_URL }}';
+
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              body: `✅ Jira 이슈가 생성되었습니다: [${jiraKey}](${jiraUrl}/browse/${jiraKey})`
+            });
+
+            await github.rest.issues.addLabels({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              labels: ['jira-synced']
+            });
+
+      - name: Trigger n8n Webhook (New Issue)
+        if: github.event.action == 'opened' && steps.create.outputs.issue && inputs.enable-n8n-webhook
+        run: |
+          curl -X POST "${{ secrets.N8N_WEBHOOK_URL }}" \
+            -H "Content-Type: application/json" \
+            -d '{
+              "github_issue": "#${{ github.event.issue.number }}",
+              "jira_key": "${{ steps.create.outputs.issue }}",
+              "title": "${{ github.event.issue.title }}",
+              "body": ${{ toJSON(github.event.issue.body) }},
+              "author": "${{ github.event.issue.user.login }}",
+              "url": "${{ github.event.issue.html_url }}",
+              "labels": "${{ join(github.event.issue.labels.*.name, ', ') }}",
+              "repository": "${{ github.repository }}",
+              "event_type": "new"
+            }'
+
+      - name: Handle Jira Creation Failure
+        if: github.event.action == 'opened' && steps.create.outcome == 'failure'
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              body: `⚠️ Jira 이슈 생성에 실패했습니다.\n\n` +
+                    `프로젝트 키: ${{ inputs.jira-project-key }}\n` +
+                    `이슈 타입: ${{ inputs.issue-type }}\n\n` +
+                    `Jira 설정을 확인해주세요.`
+            });
+
+            await github.rest.issues.addLabels({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              labels: ['jira-sync-failed']
+            });
+
+      # ========================================
+      # Find Jira Issue (for updates)
+      # ========================================
+      - name: Find Jira Issue from Comments
+        if: github.event.action != 'opened'
+        id: find
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const comments = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number
+            });
+
+            const jiraKeyRegex = /\[([A-Z]+-\d+)\](?:\([^\)]+\))?/;
+            const simpleKeyRegex = /([A-Z]+-\d+)/;
+
+            for (const comment of comments.data) {
+              let match = comment.body.match(jiraKeyRegex);
+              if (match) {
+                core.setOutput('issue', match[1]);
+                return;
+              }
+
+              if (comment.user.type === 'Bot' || comment.user.login.includes('[bot]')) {
+                match = comment.body.match(simpleKeyRegex);
+                if (match) {
+                  core.setOutput('issue', match[1]);
+                  return;
+                }
+              }
+            }
+
+            const titleMatch = context.payload.issue.title.match(simpleKeyRegex);
+            if (titleMatch) {
+              core.setOutput('issue', titleMatch[1]);
+            }
+
+      # ========================================
+      # Issue Status Updates
+      # ========================================
+      - name: Update Jira Issue Status (Closed)
+        if: inputs.sync-status && github.event.action == 'closed' && steps.find.outputs.issue
+        continue-on-error: true
+        run: |
+          curl -X POST "${{ secrets.JIRA_BASE_URL }}/rest/api/3/issue/${{ steps.find.outputs.issue }}/transitions" \
+            -u "${{ secrets.JIRA_USER_EMAIL }}:${{ secrets.JIRA_API_TOKEN }}" \
+            -H "Content-Type: application/json" \
+            -d '{"transition": {"id": "${{ inputs.transition-id-done }}"}}'
+
+      - name: Update Jira Issue Status (Reopened)
+        if: inputs.sync-status && github.event.action == 'reopened' && steps.find.outputs.issue
+        continue-on-error: true
+        run: |
+          curl -X POST "${{ secrets.JIRA_BASE_URL }}/rest/api/3/issue/${{ steps.find.outputs.issue }}/transitions" \
+            -u "${{ secrets.JIRA_USER_EMAIL }}:${{ secrets.JIRA_API_TOKEN }}" \
+            -H "Content-Type: application/json" \
+            -d '{"transition": {"id": "${{ inputs.transition-id-todo }}"}}'
+
+      # ========================================
+      # Re-review Flow (needs-review label)
+      # ========================================
+      - name: Trigger Re-review on Label
+        if: github.event.action == 'labeled' && github.event.label.name == 'needs-review' && steps.find.outputs.issue && inputs.enable-n8n-webhook
+        run: |
+          # Jira를 To Do로 전환
+          curl -X POST "${{ secrets.JIRA_BASE_URL }}/rest/api/3/issue/${{ steps.find.outputs.issue }}/transitions" \
+            -u "${{ secrets.JIRA_USER_EMAIL }}:${{ secrets.JIRA_API_TOKEN }}" \
+            -H "Content-Type: application/json" \
+            -d '{"transition": {"id": "${{ inputs.transition-id-todo }}"}}'
+
+          # n8n 웹훅으로 재검토 요청 전송
+          curl -X POST "${{ secrets.N8N_WEBHOOK_URL }}" \
+            -H "Content-Type: application/json" \
+            -d '{
+              "github_issue": "#${{ github.event.issue.number }}",
+              "jira_key": "${{ steps.find.outputs.issue }}",
+              "title": "[재검토] ${{ github.event.issue.title }}",
+              "body": ${{ toJSON(github.event.issue.body) }},
+              "author": "${{ github.event.issue.user.login }}",
+              "url": "${{ github.event.issue.html_url }}",
+              "labels": "${{ join(github.event.issue.labels.*.name, ', ') }}",
+              "repository": "${{ github.repository }}",
+              "event_type": "re-review"
+            }'
+
+      # ========================================
+      # Comment Sync
+      # ========================================
+      - name: Add Comment to Jira
+        if: inputs.sync-comments && github.event_name == 'issue_comment' && steps.find.outputs.issue
+        uses: atlassian/gajira-comment@v3
+        with:
+          issue: ${{ steps.find.outputs.issue }}
+          comment: |
+            GitHub Comment by ${{ github.event.comment.user.login }}:
+
+            ${{ github.event.comment.body }}
+
+            [View on GitHub](${{ github.event.comment.html_url }})
