@@ -1269,6 +1269,19 @@
     },
     {
       "parameters": {
+        "jsCode": "// Base64 인코딩 함수\nfunction btoa(str) {\n  return Buffer.from(str, 'utf-8').toString('base64');\n}\n\nconst data = $input.first().json;\nconst content = data.currentFile.content;\nconst base64Content = btoa(content);\n\nreturn {\n  ...data,\n  base64Content: base64Content\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        4352,
+        -656
+      ],
+      "id": "b2c3d4e5-f6a7-8901-bcde-f23456789012",
+      "name": "Encode Fix Base64"
+    },
+    {
+      "parameters": {
         "method": "DELETE",
         "url": "=https://api.github.com/repos/{{ $json.repoName }}/contents/{{ $json.currentFile.path }}",
         "authentication": "predefinedCredentialType",
@@ -1325,7 +1338,7 @@
         },
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={{ Object.assign({ message: 'fix: apply AI review suggestions for ' + $json.currentFile.path, content: $json.currentFile.content.toBase64(), branch: $json.branch }, $json.sha ? { sha: $json.sha } : {}) }}",
+        "jsonBody": "={{ Object.assign({ message: 'fix: apply AI review suggestions for ' + $json.currentFile.path, content: $json.base64Content, branch: $json.branch }, $json.sha ? { sha: $json.sha } : {}) }}",
         "options": {
           "response": {
             "response": {
@@ -2294,6 +2307,17 @@
             "index": 0
           }
         ],
+        [
+          {
+            "node": "Encode Fix Base64",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Encode Fix Base64": {
+      "main": [
         [
           {
             "node": "Create/Update File",
