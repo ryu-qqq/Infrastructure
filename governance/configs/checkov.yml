@@ -153,7 +153,7 @@ skip-check:
   # Note: Actual application traffic uses HTTPS only
   - CKV_AWS_378  # AWS Load Balancer uses HTTP protocol (redirect to HTTPS)
 
-  # ALB Drop HTTP Headers - Not required for internal services
+  # ALB Drop HTTP Headers.txt - Not required for internal services
   # Justification: Internal services may need HTTP headers for routing/debugging
   # Impact: Preserves header information for troubleshooting
   # Review Date: 2025-07-01

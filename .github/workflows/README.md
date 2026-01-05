@@ -127,7 +127,7 @@ jobs:
     with:
       project-name: CrawlingHub
       environment: prod
-      status: ${{ needs.deploy-web-api.result }}
+      status: ${{ needs.deploy-web-api.result.txt }}
       components: |
         [
           {"name": "web-api", "status": "${{ needs.deploy-web-api.result }}", "image": "${{ needs.build-web-api.outputs.image-tag }}"}

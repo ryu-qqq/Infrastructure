@@ -38,7 +38,7 @@ variable "origins" {
       origin_read_timeout      = optional(number, 30)
     }))
 
-    # Custom Headers
+    # Custom Headers.txt
     custom_headers = optional(map(string), {})
   }))
 

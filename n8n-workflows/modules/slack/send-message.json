@@ -1,0 +1,310 @@
+{
+  "name": "[Module] Slack - Send Message",
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "trigger-001",
+      "name": "Module Input",
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1,
+      "position": [0, 0]
+    },
+    {
+      "parameters": {
+        "jsCode": "// ============================================\n// Slack Message Module - Input Validator & Router\n// ============================================\n\nconst input = $input.first().json;\n\n// 기본 프로젝트 설정\nconst defaultProjectConfigs = {\n  'ryu-qqq/Infrastructure': {\n    channel: 'C0A5JRE5K09',\n    emoji: ':terraform:',\n    color: '#7B42BC',\n    name: 'Infrastructure'\n  },\n  'ryu-qqq/AuthHub': {\n    channel: 'C0B6KSF6L10',\n    emoji: ':lock:',\n    color: '#2ECC71',\n    name: 'AuthHub'\n  },\n  'ryu-qqq/CrawlingHub': {\n    channel: 'C0C7LTG7M11',\n    emoji: ':spider:',\n    color: '#E74C3C',\n    name: 'CrawlingHub'\n  }\n};\n\nconst repoName = input.data?.repoName || input.repoName || '';\nconst projectConfig = {\n  ...defaultProjectConfigs[repoName],\n  ...(input.projectConfig || {})\n};\n\nconst channel = input.channel || projectConfig.channel || 'C0A5JRE5K09';\n\nreturn {\n  messageType: input.messageType || 'notification',\n  channel: channel,\n  projectConfig: projectConfig,\n  data: input.data || {},\n  originalInput: input\n};"
+      },
+      "id": "validate-001",
+      "name": "Validate Input",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [220, 0]
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "cond-review",
+                    "leftValue": "={{ $json.messageType }}",
+                    "rightValue": "review_suggestion",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              }
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "cond-success",
+                    "leftValue": "={{ $json.messageType }}",
+                    "rightValue": "apply_success",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              }
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "cond-error",
+                    "leftValue": "={{ $json.messageType }}",
+                    "rightValue": "apply_error",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              }
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "cond-notification",
+                    "leftValue": "={{ $json.messageType }}",
+                    "rightValue": "notification",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              }
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "router-001",
+      "name": "Message Type Router",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.2,
+      "position": [440, 0]
+    },
+    {
+      "parameters": {
+        "jsCode": "const { channel, projectConfig, data } = $input.first().json;\n\nconst reviewerEmoji = data.reviewerType === 'coderabbit' ? ':rabbit:' : \n                     data.reviewerType === 'gemini' ? ':gem:' : ':bust_in_silhouette:';\nconst reviewerName = data.reviewerType === 'coderabbit' ? 'CodeRabbit' : \n                    data.reviewerType === 'gemini' ? 'Gemini' : data.reviewer;\n\nconst blocks = [\n  {\n    type: 'header',\n    text: { type: 'plain_text', text: ':robot_face: AI 리뷰 분석 완료', emoji: true }\n  },\n  {\n    type: 'section',\n    fields: [\n      { type: 'mrkdwn', text: '*리뷰어:*\\n' + reviewerEmoji + ' ' + reviewerName },\n      { type: 'mrkdwn', text: '*PR:*\\n<' + data.prUrl + '|#' + data.prNumber + '>' }\n    ]\n  },\n  { type: 'divider' },\n  {\n    type: 'section',\n    text: { type: 'mrkdwn', text: '*:clipboard: 요약:*\\n' + (data.aiSummary || 'N/A') }\n  },\n  {\n    type: 'section',\n    text: { type: 'mrkdwn', text: '*:wrench: 수정 필요 항목 (' + (data.aiItemCount || 0) + '개):*\\n' + (data.aiItems || 'N/A') }\n  },\n  {\n    type: 'context',\n    elements: [{ type: 'mrkdwn', text: ':bulb: ' + (data.aiRecommendation || '리뷰 내용을 확인해주세요.') }]\n  },\n  { type: 'divider' },\n  {\n    type: 'actions',\n    elements: [\n      {\n        type: 'button',\n        text: { type: 'plain_text', text: ':white_check_mark: 수정 적용', emoji: true },\n        style: 'primary',\n        value: 'apply_review|' + data.prNumber + '|' + data.issueNum + '|' + data.repoName,\n        action_id: 'apply_ai_review'\n      },\n      {\n        type: 'button',\n        text: { type: 'plain_text', text: ':link: PR 보기', emoji: true },\n        url: data.prUrl\n      },\n      {\n        type: 'button',\n        text: { type: 'plain_text', text: ':x: 무시', emoji: true },\n        value: 'ignore_review|' + data.prNumber,\n        action_id: 'ignore_review'\n      }\n    ]\n  }\n];\n\nconst payload = {\n  channel: channel,\n  text: 'AI 리뷰 분석 완료 - PR #' + data.prNumber,\n  blocks: blocks\n};\n\nreturn { slackPayload: JSON.stringify(payload) };"
+      },
+      "id": "build-review-001",
+      "name": "Build Review Message",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [660, -150]
+    },
+    {
+      "parameters": {
+        "jsCode": "const { channel, projectConfig, data } = $input.first().json;\n\nconst blocks = [\n  {\n    type: 'header',\n    text: { type: 'plain_text', text: ':white_check_mark: AI 수정 적용 완료', emoji: true }\n  },\n  {\n    type: 'section',\n    fields: [\n      { type: 'mrkdwn', text: '*PR:*\\n<' + data.prUrl + '|#' + data.prNumber + '>' },\n      { type: 'mrkdwn', text: '*수정 파일:*\\n' + (data.filesChanged || 1) + '개' }\n    ]\n  },\n  { type: 'divider' },\n  {\n    type: 'section',\n    text: { type: 'mrkdwn', text: '*:memo: 커밋 메시지:*\\n`' + (data.commitMessage || 'AI 리뷰 반영') + '`' }\n  },\n  {\n    type: 'context',\n    elements: [{ type: 'mrkdwn', text: ':robot_face: 자동으로 커밋되었습니다. PR에서 변경사항을 확인하세요.' }]\n  },\n  {\n    type: 'actions',\n    elements: [\n      {\n        type: 'button',\n        text: { type: 'plain_text', text: ':link: PR 확인', emoji: true },\n        url: data.prUrl\n      }\n    ]\n  }\n];\n\nconst payload = {\n  channel: channel,\n  text: 'AI 수정 적용 완료 - PR #' + data.prNumber,\n  blocks: blocks\n};\n\nreturn { slackPayload: JSON.stringify(payload) };"
+      },
+      "id": "build-success-001",
+      "name": "Build Success Message",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [660, -50]
+    },
+    {
+      "parameters": {
+        "jsCode": "const { channel, projectConfig, data } = $input.first().json;\n\nconst blocks = [\n  {\n    type: 'header',\n    text: { type: 'plain_text', text: ':x: AI 수정 적용 실패', emoji: true }\n  },\n  {\n    type: 'section',\n    fields: [\n      { type: 'mrkdwn', text: '*PR:*\\n<' + data.prUrl + '|#' + data.prNumber + '>' },\n      { type: 'mrkdwn', text: '*상태:*\\n:warning: 실패' }\n    ]\n  },\n  { type: 'divider' },\n  {\n    type: 'section',\n    text: { type: 'mrkdwn', text: '*:rotating_light: 에러:*\\n```' + (data.error || 'Unknown error') + '```' }\n  },\n  {\n    type: 'context',\n    elements: [{ type: 'mrkdwn', text: ':information_source: 수동으로 확인이 필요합니다.' }]\n  },\n  {\n    type: 'actions',\n    elements: [\n      {\n        type: 'button',\n        text: { type: 'plain_text', text: ':link: PR 확인', emoji: true },\n        url: data.prUrl\n      }\n    ]\n  }\n];\n\nconst payload = {\n  channel: channel,\n  text: 'AI 수정 적용 실패 - PR #' + data.prNumber,\n  blocks: blocks\n};\n\nreturn { slackPayload: JSON.stringify(payload) };"
+      },
+      "id": "build-error-001",
+      "name": "Build Error Message",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [660, 50]
+    },
+    {
+      "parameters": {
+        "jsCode": "const { channel, projectConfig, data } = $input.first().json;\n\nconst blocks = [\n  {\n    type: 'header',\n    text: { type: 'plain_text', text: data.title || ':bell: 알림', emoji: true }\n  },\n  {\n    type: 'section',\n    text: { type: 'mrkdwn', text: data.message || 'No message provided' }\n  }\n];\n\nif (data.fields && Array.isArray(data.fields)) {\n  blocks.push({\n    type: 'section',\n    fields: data.fields.map(f => ({ type: 'mrkdwn', text: '*' + f.label + ':*\\n' + f.value }))\n  });\n}\n\nif (data.actionUrl) {\n  blocks.push({ type: 'divider' });\n  blocks.push({\n    type: 'actions',\n    elements: [{\n      type: 'button',\n      text: { type: 'plain_text', text: data.actionText || ':link: 확인', emoji: true },\n      url: data.actionUrl\n    }]\n  });\n}\n\nconst payload = {\n  channel: channel,\n  text: data.title || '알림',\n  blocks: blocks\n};\n\nreturn { slackPayload: JSON.stringify(payload) };"
+      },
+      "id": "build-notification-001",
+      "name": "Build Notification Message",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [660, 150]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://slack.com/api/chat.postMessage",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "slackApi",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ $json.slackPayload }}",
+        "options": {}
+      },
+      "id": "slack-send-001",
+      "name": "Send to Slack",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [880, 0]
+    },
+    {
+      "parameters": {
+        "jsCode": "const response = $input.first().json;\n\nreturn {\n  success: response.ok === true,\n  messageTs: response.ts,\n  channel: response.channel,\n  error: response.error || null\n};"
+      },
+      "id": "output-001",
+      "name": "Module Output",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1100, 0]
+    }
+  ],
+  "connections": {
+    "Module Input": {
+      "main": [
+        [
+          {
+            "node": "Validate Input",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Validate Input": {
+      "main": [
+        [
+          {
+            "node": "Message Type Router",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Message Type Router": {
+      "main": [
+        [
+          {
+            "node": "Build Review Message",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Build Success Message",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Build Error Message",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Build Notification Message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Review Message": {
+      "main": [
+        [
+          {
+            "node": "Send to Slack",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Success Message": {
+      "main": [
+        [
+          {
+            "node": "Send to Slack",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Error Message": {
+      "main": [
+        [
+          {
+            "node": "Send to Slack",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Notification Message": {
+      "main": [
+        [
+          {
+            "node": "Send to Slack",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send to Slack": {
+      "main": [
+        [
+          {
+            "node": "Module Output",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "meta": {
+    "instanceId": "module-slack-send-message"
+  }
+}

@@ -111,8 +111,8 @@ jobs:
     with:
       project-name: AuthHub
       environment: prod
-      status: ${{ needs.deploy.result }}
-      components: '[{"name":"api","status":"${{ needs.build.result }}"}]'
+      status: ${{ needs.deploy.result.txt }}
+      components: '[{"name":"api","status":"${{ needs.build.result.txt }}"}]'
     secrets:
       SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
 ```

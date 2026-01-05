@@ -779,6 +779,14 @@ resource "aws_iam_policy" "github-actions-services" {
           "firehose:*"
         ]
         Resource = "*"
+      },
+      {
+        Sid    = "KinesisManagement"
+        Effect = "Allow"
+        Action = [
+          "kinesis:*"
+        ]
+        Resource = "*"
       }
     ]
   })

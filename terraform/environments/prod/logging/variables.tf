@@ -128,3 +128,9 @@ variable "log_filter_pattern" {
   type        = string
   default     = ""
 }
+
+variable "opensearch_index_prefix" {
+  description = "Index name prefix for logs in OpenSearch (service name appended automatically)"
+  type        = string
+  default     = "logs"
+}

@@ -7,9 +7,10 @@ ECS 서비스의 CloudWatch Logs를 OpenSearch로 스트리밍하는 방법을 �
 1. [개요](#개요)
 2. [사전 조건](#사전-조건)
 3. [설정 방법](#설정-방법)
-4. [필터 패턴 예시](#필터-패턴-예시)
-5. [확인 방법](#확인-방법)
-6. [문제 해결](#문제-해결)
+4. [인덱스 패턴](#인덱스-패턴)
+5. [필터 패턴 예시](#필터-패턴-예시)
+6. [확인 방법](#확인-방법)
+7. [문제 해결](#문제-해결)
 
 ---
 
@@ -29,7 +30,7 @@ ECS 서비스의 CloudWatch Logs를 OpenSearch로 스트리밍하는 방법을 �
 │           ▼                                                             │
 │  ┌─────────────────┐     ┌──────────────────────────────────────────┐  │
 │  │ CloudWatch Logs │────▶│ Subscription Filter (모듈로 생성)           │  │
-│  │  /aws/ecs/...   │     │ log-subscription-filter 모듈 사용          │  │
+│  │  /aws/ecs/...   │     │ log-subscription-filter-v2 모듈 사용       │  │
 │  └─────────────────┘     └──────────────────────────────────────────┘  │
 │                                           │                            │
 └───────────────────────────────────────────┼────────────────────────────┘
@@ -39,15 +40,16 @@ ECS 서비스의 CloudWatch Logs를 OpenSearch로 스트리밍하는 방법을 �
 │  Infrastructure 레포 (중앙 관리)                                          │
 │                                                                         │
 │  ┌─────────────────┐     ┌─────────────────┐     ┌─────────────────┐   │
-│  │ Kinesis Firehose │────▶│ Lambda Transform │────▶│   OpenSearch    │   │
-│  │                 │     │ (로그 포맷 변환)   │     │   Dashboard     │   │
+│  │ Kinesis Data    │────▶│ Lambda          │────▶│   OpenSearch    │   │
+│  │ Streams         │     │ (log-router)    │     │   Dashboard     │   │
+│  │                 │     │ 개별 문서 전송    │     │                 │   │
 │  └─────────────────┘     └─────────────────┘     └─────────────────┘   │
-│           │                                              │              │
-│           ▼                                              ▼              │
-│  ┌─────────────────┐                           ┌─────────────────┐     │
-│  │   S3 Backup     │                           │    Alerting     │     │
-│  │ (실패 로그 저장)  │                           │   → n8n → Slack │     │
-│  └─────────────────┘                           └─────────────────┘     │
+│                                   │                      │              │
+│                                   ▼                      ▼              │
+│                          ┌─────────────────┐    ┌─────────────────┐    │
+│                          │   DLQ (SQS)     │    │    Alerting     │    │
+│                          │  (실패 레코드)    │    │   → n8n → Slack │    │
+│                          └─────────────────┘    └─────────────────┘    │
 └─────────────────────────────────────────────────────────────────────────┘
 ```
 
@@ -55,10 +57,17 @@ ECS 서비스의 CloudWatch Logs를 OpenSearch로 스트리밍하는 방법을 �
 
 1. **ECS 서비스** → 애플리케이션 로그 출력
 2. **CloudWatch Logs** → 로그 수집 및 저장
-3. **Subscription Filter** → 로그 필터링 및 전송 (이 가이드에서 설정)
-4. **Kinesis Firehose** → 버퍼링 및 배치 전송
-5. **Lambda** → 로그 포맷 변환 (CloudWatch → OpenSearch 형식)
+3. **Subscription Filter** → 로그 필터링 및 Kinesis 전송 (이 가이드에서 설정)
+4. **Kinesis Data Streams** → 버퍼링 및 Lambda 트리거
+5. **Lambda (log-router)** → 로그 파싱, 서비스별 인덱스 라우팅, 개별 문서 변환
 6. **OpenSearch** → 로그 저장, 검색, 대시보드, 알림
+
+### 주요 특징
+
+- **개별 문서 저장**: 각 로그 이벤트가 개별 OpenSearch 문서로 저장됨
+- **서비스별 인덱스**: `logs-{service}-YYYY-MM-DD` 형식으로 자동 라우팅
+- **자동 스케일링**: Kinesis ON_DEMAND 모드로 샤드 관리 불필요
+- **실패 처리**: DLQ로 실패 레코드 보관 (14일)
 
 ---
 
@@ -77,13 +86,13 @@ cat terraform/environments/prod/logging/terraform.tfvars
 ### 2. SSM Parameters가 존재해야 함
 
 다음 SSM 파라미터들이 AWS에 존재해야 합니다:
-- `/shared/logging/firehose-arn`
-- `/shared/logging/cloudwatch-to-firehose-role-arn`
+- `/shared/logging/kinesis-stream-arn`
+- `/shared/logging/cloudwatch-to-kinesis-role-arn`
 
 ```bash
 # AWS CLI로 확인
-aws ssm get-parameter --name "/shared/logging/firehose-arn" --query "Parameter.Value" --output text
-aws ssm get-parameter --name "/shared/logging/cloudwatch-to-firehose-role-arn" --query "Parameter.Value" --output text
+aws ssm get-parameter --name "/shared/logging/kinesis-stream-arn" --query "Parameter.Value" --output text
+aws ssm get-parameter --name "/shared/logging/cloudwatch-to-kinesis-role-arn" --query "Parameter.Value" --output text
 ```
 
 ### 3. CloudWatch Log Group이 이미 생성되어 있어야 함
@@ -110,11 +119,11 @@ module "web_api_logs" {
 
 ```hcl
 # ========================================
-# Log Streaming to OpenSearch
+# Log Streaming to OpenSearch (V2 - Kinesis)
 # ========================================
 
 module "log_streaming" {
-  source = "git::https://github.com/ryu-qqq/Infrastructure.git//terraform/modules/log-subscription-filter?ref=main"
+  source = "git::https://github.com/ryu-qqq/Infrastructure.git//terraform/modules/log-subscription-filter-v2?ref=main"
 
   log_group_name = module.web_api_logs.log_group_name
   service_name   = "${var.project_name}-web-api"
@@ -144,6 +153,33 @@ aws logs describe-subscription-filters \
 
 ---
 
+## 인덱스 패턴
+
+로그는 서비스별로 분리된 인덱스에 저장됩니다:
+
+```
+logs-{service}-YYYY-MM-DD
+```
+
+### 예시
+
+| 서비스 | 인덱스 패턴 |
+|--------|------------|
+| Atlantis | `logs-atlantis-2024-01-15` |
+| Gateway | `logs-gateway-2024-01-15` |
+| AuthHub | `logs-authhub-2024-01-15` |
+| CrawlingHub | `logs-crawlinghub-2024-01-15` |
+| Fileflow | `logs-fileflow-2024-01-15` |
+
+### OpenSearch에서 인덱스 패턴 생성
+
+1. OpenSearch Dashboards 접속
+2. **Management** → **Index Patterns** 이동
+3. `logs-*` 또는 `logs-{service}-*` 패턴 생성
+4. `@timestamp` 필드를 시간 필드로 선택
+
+---
+
 ## 프로젝트별 설정 예시
 
 ### CrawlingHub
@@ -151,39 +187,11 @@ aws logs describe-subscription-filters \
 `crawlinghub/terraform/ecs-web-api/main.tf`:
 
 ```hcl
-# 기존 로그 그룹 모듈 아래에 추가
-
-# ========================================
-# Log Streaming to OpenSearch
-# ========================================
-
 module "log_streaming" {
-  source = "git::https://github.com/ryu-qqq/Infrastructure.git//terraform/modules/log-subscription-filter?ref=main"
+  source = "git::https://github.com/ryu-qqq/Infrastructure.git//terraform/modules/log-subscription-filter-v2?ref=main"
 
   log_group_name = module.web_api_logs.log_group_name
   service_name   = "crawlinghub-web-api"
-}
-```
-
-`crawlinghub/terraform/ecs-scheduler/main.tf`:
-
-```hcl
-module "log_streaming" {
-  source = "git::https://github.com/ryu-qqq/Infrastructure.git//terraform/modules/log-subscription-filter?ref=main"
-
-  log_group_name = module.scheduler_logs.log_group_name
-  service_name   = "crawlinghub-scheduler"
-}
-```
-
-`crawlinghub/terraform/ecs-crawl-worker/main.tf`:
-
-```hcl
-module "log_streaming" {
-  source = "git::https://github.com/ryu-qqq/Infrastructure.git//terraform/modules/log-subscription-filter?ref=main"
-
-  log_group_name = module.worker_logs.log_group_name
-  service_name   = "crawlinghub-worker"
 }
 ```
 
@@ -193,56 +201,10 @@ module "log_streaming" {
 
 ```hcl
 module "log_streaming" {
-  source = "git::https://github.com/ryu-qqq/Infrastructure.git//terraform/modules/log-subscription-filter?ref=main"
+  source = "git::https://github.com/ryu-qqq/Infrastructure.git//terraform/modules/log-subscription-filter-v2?ref=main"
 
   log_group_name = module.web_api_logs.log_group_name
   service_name   = "authhub-web-api"
-}
-```
-
-### Fileflow
-
-`fileflow/terraform/ecs-web-api/main.tf`:
-
-```hcl
-module "log_streaming" {
-  source = "git::https://github.com/ryu-qqq/Infrastructure.git//terraform/modules/log-subscription-filter?ref=main"
-
-  log_group_name = module.web_api_logs.log_group_name
-  service_name   = "fileflow-web-api"
-}
-```
-
-`fileflow/terraform/ecs-scheduler/main.tf`:
-
-```hcl
-module "log_streaming" {
-  source = "git::https://github.com/ryu-qqq/Infrastructure.git//terraform/modules/log-subscription-filter?ref=main"
-
-  log_group_name = module.scheduler_logs.log_group_name
-  service_name   = "fileflow-scheduler"
-}
-```
-
-`fileflow/terraform/ecs-resizing-worker/main.tf`:
-
-```hcl
-module "log_streaming" {
-  source = "git::https://github.com/ryu-qqq/Infrastructure.git//terraform/modules/log-subscription-filter?ref=main"
-
-  log_group_name = module.resizing_worker_logs.log_group_name
-  service_name   = "fileflow-resizing-worker"
-}
-```
-
-`fileflow/terraform/ecs-download-worker/main.tf`:
-
-```hcl
-module "log_streaming" {
-  source = "git::https://github.com/ryu-qqq/Infrastructure.git//terraform/modules/log-subscription-filter?ref=main"
-
-  log_group_name = module.download_worker_logs.log_group_name
-  service_name   = "fileflow-download-worker"
 }
 ```
 
@@ -252,7 +214,7 @@ module "log_streaming" {
 
 ```hcl
 module "log_streaming" {
-  source = "git::https://github.com/ryu-qqq/Infrastructure.git//terraform/modules/log-subscription-filter?ref=main"
+  source = "git::https://github.com/ryu-qqq/Infrastructure.git//terraform/modules/log-subscription-filter-v2?ref=main"
 
   log_group_name = module.gateway_logs.log_group_name
   service_name   = "gateway"
@@ -267,7 +229,7 @@ module "log_streaming" {
 
 ```hcl
 module "log_streaming" {
-  source = "git::https://github.com/ryu-qqq/Infrastructure.git//terraform/modules/log-subscription-filter?ref=main"
+  source = "git::https://github.com/ryu-qqq/Infrastructure.git//terraform/modules/log-subscription-filter-v2?ref=main"
 
   log_group_name = module.web_api_logs.log_group_name
   service_name   = "crawlinghub-web-api"
@@ -279,7 +241,7 @@ module "log_streaming" {
 
 ```hcl
 module "error_log_streaming" {
-  source = "git::https://github.com/ryu-qqq/Infrastructure.git//terraform/modules/log-subscription-filter?ref=main"
+  source = "git::https://github.com/ryu-qqq/Infrastructure.git//terraform/modules/log-subscription-filter-v2?ref=main"
 
   log_group_name = module.web_api_logs.log_group_name
   service_name   = "crawlinghub-web-api-errors"
@@ -298,17 +260,6 @@ filter_pattern = "{ $.level = \"ERROR\" || $.level = \"WARN\" }"
 
 # 특정 logger
 filter_pattern = "{ $.logger_name = \"*PaymentService*\" }"
-
-# 복합 조건
-filter_pattern = "{ $.level = \"ERROR\" && $.thread_name = \"*http*\" }"
-```
-
-### Exception 포함 로그만
-
-```hcl
-filter_pattern = "Exception"
-# 또는
-filter_pattern = "{ $.stack_trace = \"*\" }"
 ```
 
 ---
@@ -326,36 +277,43 @@ aws logs describe-subscription-filters \
 # {
 #   "subscriptionFilters": [
 #     {
-#       "filterName": "crawlinghub-web-api-to-opensearch",
+#       "filterName": "crawlinghub-web-api-to-kinesis",
 #       "logGroupName": "/aws/ecs/crawlinghub-web-api-prod/application",
-#       "destinationArn": "arn:aws:firehose:ap-northeast-2:...:deliverystream/prod-logs-to-opensearch",
+#       "destinationArn": "arn:aws:kinesis:ap-northeast-2:...:stream/prod-cloudwatch-logs",
 #       ...
 #     }
 #   ]
 # }
 ```
 
-### 2. Kinesis Firehose 상태 확인
+### 2. Kinesis 상태 확인
 
 ```bash
-aws firehose describe-delivery-stream \
-  --delivery-stream-name "prod-logs-to-opensearch" \
-  --query "DeliveryStreamDescription.DeliveryStreamStatus"
-# 출력: "ACTIVE"
+aws kinesis describe-stream-summary \
+  --stream-name "prod-cloudwatch-logs"
+# StreamStatus: ACTIVE
 ```
 
-### 3. OpenSearch에서 로그 확인
+### 3. Lambda 로그 확인
+
+```bash
+aws logs tail "/aws/lambda/prod-log-router" --follow
+```
+
+### 4. OpenSearch에서 로그 확인
 
 1. OpenSearch Dashboards 접속
 2. **Discover** 메뉴로 이동
-3. 인덱스 패턴: `logs-*`
+3. 인덱스 패턴: `logs-*` 또는 `logs-{service}-*`
 4. 시간 범위 설정 후 로그 검색
 
-### 4. 실패 로그 확인 (S3)
+### 5. DLQ 확인 (실패 레코드)
 
 ```bash
-# 실패한 로그가 있는지 확인
-aws s3 ls s3://prod-log-firehose-backup-{account-id}/failed-logs/ --recursive
+# DLQ 메시지 수 확인
+aws sqs get-queue-attributes \
+  --queue-url "https://sqs.ap-northeast-2.amazonaws.com/{account}/prod-log-router-dlq" \
+  --attribute-names ApproximateNumberOfMessages
 ```
 
 ---
@@ -365,7 +323,7 @@ aws s3 ls s3://prod-log-firehose-backup-{account-id}/failed-logs/ --recursive
 ### SSM Parameter를 찾을 수 없음
 
 ```
-Error: Error reading SSM Parameter /shared/logging/firehose-arn: ParameterNotFound
+Error: Error reading SSM Parameter /shared/logging/kinesis-stream-arn: ParameterNotFound
 ```
 
 **원인**: 중앙 로그 스트리밍 인프라가 활성화되지 않음
@@ -403,32 +361,34 @@ aws logs delete-subscription-filter \
    aws logs describe-subscription-filters --log-group-name "YOUR_LOG_GROUP"
    ```
 
-2. **Firehose 상태 확인**
+2. **Kinesis 상태 확인**
    ```bash
-   aws firehose describe-delivery-stream --delivery-stream-name "prod-logs-to-opensearch"
+   aws kinesis describe-stream-summary --stream-name "prod-cloudwatch-logs"
    ```
 
 3. **Lambda 로그 확인**
    ```bash
-   aws logs tail "/aws/lambda/prod-log-transformer" --follow
+   aws logs tail "/aws/lambda/prod-log-router" --follow
    ```
 
-4. **S3 백업에서 실패 로그 확인**
+4. **DLQ 확인**
    ```bash
-   aws s3 ls s3://prod-log-firehose-backup-{account-id}/failed-logs/
+   aws sqs get-queue-attributes \
+     --queue-url "https://sqs.ap-northeast-2.amazonaws.com/{account}/prod-log-router-dlq" \
+     --attribute-names ApproximateNumberOfMessages
    ```
 
 5. **OpenSearch 클러스터 상태 확인**
    - OpenSearch Dashboards → Management → Cluster settings
 
-### 특정 로그만 누락됨
+### Lambda 에러: OpenSearch 연결 실패
 
-**원인**: filter_pattern이 너무 제한적
+**원인**: Lambda가 OpenSearch에 접근할 수 없음
 
-**해결**:
-- filter_pattern을 임시로 빈 문자열(`""`)로 설정
-- 모든 로그가 들어오는지 확인
-- filter_pattern 문법 재검토
+**확인**:
+- Lambda가 VPC 내에 있는지 확인
+- Security Group 설정 확인
+- OpenSearch 도메인 접근 정책 확인
 
 ---
 
@@ -439,7 +399,7 @@ aws logs delete-subscription-filter \
 - [ ] Infrastructure 레포의 `enable_log_streaming = true` 확인
 - [ ] SSM Parameters 존재 확인
 - [ ] CloudWatch Log Group 이름 확인
-- [ ] `log-subscription-filter` 모듈 추가
+- [ ] `log-subscription-filter-v2` 모듈 추가
 - [ ] `terraform plan`으로 변경사항 확인
 - [ ] `terraform apply` 실행
 - [ ] 구독 필터 생성 확인
@@ -447,8 +407,33 @@ aws logs delete-subscription-filter \
 
 ---
 
+## Migration from V1 (Firehose)
+
+기존 `log-subscription-filter` 모듈(Firehose)을 사용하고 있다면:
+
+```hcl
+# Before (V1 - Firehose)
+module "log_streaming" {
+  source = ".../log-subscription-filter"
+  ...
+}
+
+# After (V2 - Kinesis)
+module "log_streaming" {
+  source = ".../log-subscription-filter-v2"
+  ...
+}
+```
+
+**주요 변경 사항**:
+- 각 로그 이벤트가 개별 OpenSearch 문서로 저장됨
+- 서비스별 인덱스 자동 라우팅 (`logs-{service}-*`)
+- DLQ로 실패 레코드 보관
+
+---
+
 ## 관련 문서
 
 - [CloudWatch Logs Filter Pattern Syntax](https://docs.aws.amazon.com/AmazonCloudWatch/latest/logs/FilterAndPatternSyntax.html)
-- [Kinesis Firehose 문서](https://docs.aws.amazon.com/firehose/latest/dev/what-is-this-service.html)
+- [Kinesis Data Streams 문서](https://docs.aws.amazon.com/streams/latest/dev/what-is-this-service.html)
 - [OpenSearch 문서](https://opensearch.org/docs/latest/)

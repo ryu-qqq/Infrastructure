@@ -521,7 +521,7 @@ jobs:
     with:
       project-name: MyApp
       environment: prod
-      status: ${{ (needs.deploy-web-api.result == 'success' && needs.deploy-scheduler.result == 'success') && 'success' || 'failure' }}
+      status: ${{ (needs.deploy-web-api.result.txt == 'success' && needs.deploy-scheduler.result.txt == 'success') && 'success' || 'failure' }}
       components: |
         [
           {"name": "web-api", "status": "${{ needs.deploy-web-api.result }}", "image": "${{ needs.build-web-api.outputs.image-tag || 'N/A' }}"},
@@ -641,7 +641,7 @@ jobs:
     with:
       project-name: MyApp
       environment: prod
-      status: ${{ (needs.deploy-web-api.result == 'success' && needs.deploy-scheduler.result == 'success') && 'success' || 'failure' }}
+      status: ${{ (needs.deploy-web-api.result.txt == 'success' && needs.deploy-scheduler.result.txt == 'success') && 'success' || 'failure' }}
       components: |
         [
           {"name": "web-api", "status": "${{ needs.deploy-web-api.result }}", "image": "${{ needs.build-web-api.outputs.image-tag || 'N/A' }}"},

@@ -64,7 +64,7 @@ resource "aws_cloudfront_distribution" "this" {
         }
       }
 
-      # Custom Headers
+      # Custom Headers.txt
       dynamic "custom_header" {
         for_each = origin.value.custom_headers
         content {

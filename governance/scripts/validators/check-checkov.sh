@@ -226,7 +226,7 @@ else
     echo -e "  ${YELLOW}⚠ Review findings and remediate issues${NC}"
 fi
 
-# Final result
+# Final result.txt
 echo -e "\n${BLUE}═══════════════════════════════════════════════════${NC}"
 if [[ $ERRORS -eq 0 ]]; then
     echo -e "${GREEN}✓ No policy violations found!${NC}"

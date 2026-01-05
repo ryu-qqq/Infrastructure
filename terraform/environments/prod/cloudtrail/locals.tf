@@ -4,7 +4,7 @@ locals {
   # Full S3 bucket name with account ID
   cloudtrail_bucket_name = "${var.s3_bucket_name}-${var.aws_account_id}"
 
-  # Athena query result bucket
+  # Athena query result.txt bucket
   athena_result_bucket_name = "athena-query-results-${var.aws_account_id}"
 
   # CloudWatch Logs group name

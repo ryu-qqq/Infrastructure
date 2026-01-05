@@ -154,10 +154,10 @@ echo -e "\n${CYAN}Issue Breakdown:${NC}"
 [[ $MEDIUM_COUNT -gt 0 ]] && echo -e "  ${YELLOW}⚠️  Medium: $MEDIUM_COUNT${NC}" || echo -e "  ${GREEN}⚠️  Medium: 0${NC}"
 [[ $LOW_COUNT -gt 0 ]] && echo -e "  ${CYAN}ℹ️  Low: $LOW_COUNT${NC}" || echo -e "  ${GREEN}ℹ️  Low: 0${NC}"
 
-# Show result file location
+# Show result.txt file location
 echo -e "\n${CYAN}📄 Detailed results: $OUTPUT_FILE${NC}"
 
-# Final result
+# Final result.txt
 echo ""
 if [[ $ERRORS -eq 0 ]]; then
     echo -e "${GREEN}✓ No security issues found!${NC}"

@@ -1814,6 +1814,37 @@
       ],
       "id": "pr-exists-check-001",
       "name": "PR Exists?"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Prepare data for Slack module\nconst input = $input.first().json;\n\nreturn {\n  messageType: \"review_suggestion\",\n  data: {\n    repoName: input.repoName || 'ryu-qqq/Infrastructure',\n    prNumber: input.prNumber,\n    prUrl: input.prUrl,\n    reviewerType: input.reviewerType,\n    reviewer: input.reviewer,\n    aiSummary: input.aiSummary,\n    aiItems: input.aiItems,\n    aiItemCount: input.aiItemCount,\n    aiRecommendation: input.aiRecommendation,\n    issueNum: input.issueNum\n  }\n};"
+      },
+      "id": "test-prepare-001",
+      "name": "Test: Prepare Module Data",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3200,
+        -632
+      ]
+    },
+    {
+      "parameters": {
+        "source": "database",
+        "workflowId": {
+          "__rl": true,
+          "mode": "list",
+          "value": ""
+        }
+      },
+      "id": "test-execute-001",
+      "name": "Test: Call Slack Module",
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.1,
+      "position": [
+        3420,
+        -632
+      ]
     }
   ],
   "pinData": {},
@@ -2214,6 +2245,11 @@
             "node": "Slack Review Suggestion",
             "type": "main",
             "index": 0
+          },
+          {
+            "node": "Test: Prepare Module Data",
+            "type": "main",
+            "index": 0
           }
         ]
       ]
@@ -2399,6 +2435,17 @@
         [
           {
             "node": "Prepare Fix Commits",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Test: Prepare Module Data": {
+      "main": [
+        [
+          {
+            "node": "Test: Call Slack Module",
             "type": "main",
             "index": 0
           }

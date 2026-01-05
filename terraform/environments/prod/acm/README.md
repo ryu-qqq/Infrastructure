@@ -709,7 +709,7 @@ resource "aws_lb_target_group" "main" {
   }
 }
 
-# CloudFront Response Headers Policy
+# CloudFront Response Headers.txt Policy
 resource "aws_cloudfront_response_headers_policy" "security_headers" {
   name = "security-headers-policy"
 

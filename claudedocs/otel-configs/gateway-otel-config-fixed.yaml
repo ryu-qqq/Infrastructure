@@ -1,7 +1,7 @@
 # AWS Distro for OpenTelemetry (ADOT) Collector Configuration
 # Service: gateway (port 8080)
 # Updated for ADOT v0.45.1
-# Fixed: Removed otel-collector self-scrape job to prevent "out of order sample" errors
+# Fixed: Removed otel-collector self-scrape job to prevent "out of order Headers.txt" errors
 
 receivers:
   otlp:
@@ -29,7 +29,7 @@ receivers:
               action: keep
 
         # REMOVED: otel-collector self-scrape job
-        # This was causing "out of order sample" errors in AMP when multiple
+        # This was causing "out of order Headers.txt" errors in AMP when multiple
         # ECS tasks send metrics with identical service_instance_id=localhost:8888
 
   awsecscontainermetrics:
