@@ -493,7 +493,7 @@ resource "aws_iam_role_policy" "atlantis-terraform-operations" {
           "ssm:GetParameters",
           "ssm:GetParametersByPath"
         ]
-        Resource = "arn:aws:ssm:ap-northeast-2:646886795421:parameter/crawlinghub/eventbridge/*"
+        Resource = "arn:aws:ssm:${var.aws_region}:${data.aws_caller_identity.current.account_id}:parameter/crawlinghub/eventbridge/*"
         # Required for managing EventBridge configuration in SSM Parameter Store
       },
       {
@@ -539,13 +539,16 @@ resource "aws_iam_role_policy" "atlantis-terraform-operations" {
         Action = [
           "iam:PassRole",
           "iam:PutRolePolicy",
-          "iam:DeleteRolePolicy"
+          "iam:DeleteRolePolicy",
+          "iam:AttachRolePolicy",
+          "iam:DetachRolePolicy"
         ]
         Resource = [
-          "arn:aws:iam::646886795421:role/crawlinghub-*-task-role-prod",
-          "arn:aws:iam::646886795421:role/crawlinghub-*-execution-role-prod"
+          "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/crawlinghub-*-task-role-prod",
+          "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/crawlinghub-*-execution-role-prod"
         ]
         # Required for managing all crawlinghub task and execution roles
+        # AttachRolePolicy/DetachRolePolicy added for Issue #115: CrawlingHub ECS Scheduler SQS policy attachment
       },
       {
         Sid    = "ManageCrawlingHubSSMParameters"
@@ -559,7 +562,7 @@ resource "aws_iam_role_policy" "atlantis-terraform-operations" {
           "ssm:AddTagsToResource",
           "ssm:RemoveTagsFromResource"
         ]
-        Resource = "arn:aws:ssm:ap-northeast-2:646886795421:parameter/crawlinghub/*"
+        Resource = "arn:aws:ssm:${var.aws_region}:${data.aws_caller_identity.current.account_id}:parameter/crawlinghub/*"
         # Required for managing crawlinghub SSM parameters
       },
       {
