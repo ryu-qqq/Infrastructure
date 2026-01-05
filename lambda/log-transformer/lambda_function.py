@@ -52,26 +52,9 @@ def handler(event, context):
             transformed_records = transform_log_events(log_data)
 
             if transformed_records:
-                # 여러 로그 이벤트가 있으면 배치 문서로 병합
-                if len(transformed_records) == 1:
-                    # 단일 이벤트: 그대로 사용
-                    output_doc = transformed_records[0]
-                else:
-                    # 다중 이벤트: 배치 문서로 병합
-                    # 첫 번째 이벤트의 메타데이터 사용, events 배열로 모든 이벤트 포함
-                    first = transformed_records[0]
-                    output_doc = {
-                        '@timestamp': first.get('@timestamp'),
-                        'log_group': first.get('log_group'),
-                        'log_stream': first.get('log_stream'),
-                        'service': first.get('service'),
-                        'aws_account': first.get('aws_account'),
-                        'event_count': len(transformed_records),
-                        'events': transformed_records
-                    }
-
-                # 줄바꿈 필수 (Firehose OpenSearch 형식)
-                output_data = json.dumps(output_doc) + '\n'
+                # 각 로그 이벤트를 개별 문서로 저장 (NDJSON 형식)
+                # Firehose OpenSearch 목적지는 줄바꿈으로 구분된 각 JSON을 개별 문서로 인덱싱
+                output_data = '\n'.join([json.dumps(doc) for doc in transformed_records]) + '\n'
 
                 output.append({
                     'recordId': record['recordId'],
