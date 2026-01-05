@@ -108,7 +108,7 @@ variable "data_class" {
 variable "enable_log_streaming" {
   description = "Enable log streaming to OpenSearch"
   type        = bool
-  default     = false
+  default     = true
 }
 
 variable "opensearch_domain_name" {
