@@ -116,13 +116,13 @@ module "atlantis_task_role" {
 }
 
 # ============================================================================
-# Terraform Operations Policies (Split to avoid 10KB limit)
+# Terraform Operations Policies (Customer Managed Policies to avoid 10KB inline limit)
 # ============================================================================
 
 # Policy 1: Core Terraform Operations (State, DynamoDB, Plan, KMS, IAM ReadOnly)
-resource "aws_iam_role_policy" "atlantis-terraform-core" {
-  name = "terraform-core-operations"
-  role = module.atlantis_task_role.role_name
+resource "aws_iam_policy" "atlantis-terraform-core" {
+  name        = "atlantis-terraform-core-operations"
+  description = "Core Terraform operations for Atlantis - State, DynamoDB, Plan, KMS"
 
   policy = jsonencode({
     Version = "2012-10-17"
@@ -233,12 +233,25 @@ resource "aws_iam_role_policy" "atlantis-terraform-core" {
       }
     ]
   })
+
+  tags = merge(
+    local.required_tags,
+    {
+      Name      = "atlantis-terraform-core-operations"
+      Component = "atlantis"
+    }
+  )
+}
+
+resource "aws_iam_role_policy_attachment" "atlantis-terraform-core" {
+  role       = module.atlantis_task_role.role_name
+  policy_arn = aws_iam_policy.atlantis-terraform-core.arn
 }
 
 # Policy 2: Compute and Network Operations
-resource "aws_iam_role_policy" "atlantis-terraform-compute-network" {
-  name = "terraform-compute-network"
-  role = module.atlantis_task_role.role_name
+resource "aws_iam_policy" "atlantis-terraform-compute-network" {
+  name        = "atlantis-terraform-compute-network"
+  description = "Compute and Network operations for Atlantis - EC2, ECS, ELB, VPC"
 
   policy = jsonencode({
     Version = "2012-10-17"
@@ -322,12 +335,25 @@ resource "aws_iam_role_policy" "atlantis-terraform-compute-network" {
       }
     ]
   })
+
+  tags = merge(
+    local.required_tags,
+    {
+      Name      = "atlantis-terraform-compute-network"
+      Component = "atlantis"
+    }
+  )
+}
+
+resource "aws_iam_role_policy_attachment" "atlantis-terraform-compute-network" {
+  role       = module.atlantis_task_role.role_name
+  policy_arn = aws_iam_policy.atlantis-terraform-compute-network.arn
 }
 
 # Policy 3: Storage Services Operations
-resource "aws_iam_role_policy" "atlantis-terraform-storage" {
-  name = "terraform-storage-services"
-  role = module.atlantis_task_role.role_name
+resource "aws_iam_policy" "atlantis-terraform-storage" {
+  name        = "atlantis-terraform-storage-services"
+  description = "Storage services operations for Atlantis - S3, ElastiCache, SQS, RDS, ECR"
 
   policy = jsonencode({
     Version = "2012-10-17"
@@ -423,12 +449,25 @@ resource "aws_iam_role_policy" "atlantis-terraform-storage" {
       }
     ]
   })
+
+  tags = merge(
+    local.required_tags,
+    {
+      Name      = "atlantis-terraform-storage-services"
+      Component = "atlantis"
+    }
+  )
+}
+
+resource "aws_iam_role_policy_attachment" "atlantis-terraform-storage" {
+  role       = module.atlantis_task_role.role_name
+  policy_arn = aws_iam_policy.atlantis-terraform-storage.arn
 }
 
 # Policy 4: Monitoring and Events Operations
-resource "aws_iam_role_policy" "atlantis-terraform-monitoring" {
-  name = "terraform-monitoring-events"
-  role = module.atlantis_task_role.role_name
+resource "aws_iam_policy" "atlantis-terraform-monitoring" {
+  name        = "atlantis-terraform-monitoring-events"
+  description = "Monitoring and Events operations for Atlantis - CloudWatch, EventBridge, SSM, AutoScaling"
 
   policy = jsonencode({
     Version = "2012-10-17"
@@ -545,12 +584,25 @@ resource "aws_iam_role_policy" "atlantis-terraform-monitoring" {
       }
     ]
   })
+
+  tags = merge(
+    local.required_tags,
+    {
+      Name      = "atlantis-terraform-monitoring-events"
+      Component = "atlantis"
+    }
+  )
+}
+
+resource "aws_iam_role_policy_attachment" "atlantis-terraform-monitoring" {
+  role       = module.atlantis_task_role.role_name
+  policy_arn = aws_iam_policy.atlantis-terraform-monitoring.arn
 }
 
 # Policy 5: IAM Management Operations
-resource "aws_iam_role_policy" "atlantis-terraform-iam" {
-  name = "terraform-iam-management"
-  role = module.atlantis_task_role.role_name
+resource "aws_iam_policy" "atlantis-terraform-iam" {
+  name        = "atlantis-terraform-iam-management"
+  description = "IAM management operations for Atlantis - Role and Policy management"
 
   policy = jsonencode({
     Version = "2012-10-17"
@@ -657,6 +709,19 @@ resource "aws_iam_role_policy" "atlantis-terraform-iam" {
       }
     ]
   })
+
+  tags = merge(
+    local.required_tags,
+    {
+      Name      = "atlantis-terraform-iam-management"
+      Component = "atlantis"
+    }
+  )
+}
+
+resource "aws_iam_role_policy_attachment" "atlantis-terraform-iam" {
+  role       = module.atlantis_task_role.role_name
+  policy_arn = aws_iam_policy.atlantis-terraform-iam.arn
 }
 
 # Inline Policy for EFS Access
