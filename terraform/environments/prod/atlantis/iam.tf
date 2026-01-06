@@ -275,8 +275,10 @@ resource "aws_iam_role_policy" "atlantis-terraform-operations" {
           "logs:DeleteSubscriptionFilter",
           "logs:DescribeSubscriptionFilters"
         ]
-        Resource = "*"
-        # Added subscription filter permissions for Issue #119
+        Resource = [
+          "arn:aws:logs:${var.aws_region}:${data.aws_caller_identity.current.account_id}:log-group:*"
+        ]
+        # Scoped to account/region for subscription filter permissions (Issue #119)
       },
       {
         Sid    = "ManageTargetGroups"
@@ -389,9 +391,9 @@ resource "aws_iam_role_policy" "atlantis-terraform-operations" {
         Resource = [
           "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/fileflow-*",
           "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/atlantis-*",
-          "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/*-log-delivery-role"
+          "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/ryuqqq-*-log-delivery-role"
         ]
-        # Added log-delivery-role pattern for Issue #119 (subscription filter)
+        # Scoped log-delivery-role pattern with service prefix for Issue #119
       },
       {
         Sid    = "ManageLoadBalancers"
