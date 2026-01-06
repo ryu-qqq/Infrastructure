@@ -115,9 +115,13 @@ module "atlantis_task_role" {
   }
 }
 
-# Inline Policy for Terraform Operations
-resource "aws_iam_role_policy" "atlantis-terraform-operations" {
-  name = "terraform-operations"
+# ============================================================================
+# Terraform Operations Policies (Split to avoid 10KB limit)
+# ============================================================================
+
+# Policy 1: Core Terraform Operations (State, DynamoDB, Plan, KMS, IAM ReadOnly)
+resource "aws_iam_role_policy" "atlantis-terraform-core" {
+  name = "terraform-core-operations"
   role = module.atlantis_task_role.role_name
 
   policy = jsonencode({
@@ -209,7 +213,6 @@ resource "aws_iam_role_policy" "atlantis-terraform-operations" {
           "kms:GenerateDataKey"
         ]
         Resource = "*"
-        # Required for decrypting Terraform state files encrypted with KMS
       },
       {
         Sid    = "IAMReadOnlyForTerraformResources"
@@ -227,17 +230,19 @@ resource "aws_iam_role_policy" "atlantis-terraform-operations" {
           "iam:GetOpenIDConnectProvider"
         ]
         Resource = "*"
-      },
-      {
-        Sid    = "ManageECSRoles"
-        Effect = "Allow"
-        Action = [
-          "iam:PutRolePolicy",
-          "iam:DeleteRolePolicy",
-          "iam:GetRolePolicy"
-        ]
-        Resource = "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/fileflow-prod-*"
-      },
+      }
+    ]
+  })
+}
+
+# Policy 2: Compute and Network Operations
+resource "aws_iam_role_policy" "atlantis-terraform-compute-network" {
+  name = "terraform-compute-network"
+  role = module.atlantis_task_role.role_name
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
       {
         Sid    = "ManageSecurityGroups"
         Effect = "Allow"
@@ -258,27 +263,39 @@ resource "aws_iam_role_policy" "atlantis-terraform-operations" {
         ]
       },
       {
-        Sid    = "ManageCloudWatchLogs"
+        Sid    = "ManageECS"
         Effect = "Allow"
         Action = [
-          "logs:CreateLogGroup",
-          "logs:DeleteLogGroup",
-          "logs:DescribeLogGroups",
-          "logs:PutRetentionPolicy",
-          "logs:DeleteRetentionPolicy",
-          "logs:TagResource",
-          "logs:TagLogGroup",
-          "logs:UntagLogGroup",
-          "logs:CreateLogStream",
-          "logs:PutLogEvents",
-          "logs:PutSubscriptionFilter",
-          "logs:DeleteSubscriptionFilter",
-          "logs:DescribeSubscriptionFilters"
+          "ecs:CreateCluster",
+          "ecs:DeleteCluster",
+          "ecs:UpdateCluster",
+          "ecs:RegisterTaskDefinition",
+          "ecs:DeregisterTaskDefinition",
+          "ecs:CreateService",
+          "ecs:UpdateService",
+          "ecs:DeleteService",
+          "ecs:TagResource",
+          "ecs:UntagResource"
         ]
-        Resource = [
-          "arn:aws:logs:${var.aws_region}:${data.aws_caller_identity.current.account_id}:log-group:*"
+        Resource = "*"
+      },
+      {
+        Sid    = "ManageLoadBalancers"
+        Effect = "Allow"
+        Action = [
+          "elasticloadbalancing:CreateLoadBalancer",
+          "elasticloadbalancing:DeleteLoadBalancer",
+          "elasticloadbalancing:CreateTargetGroup",
+          "elasticloadbalancing:DeleteTargetGroup",
+          "elasticloadbalancing:CreateListener",
+          "elasticloadbalancing:DeleteListener",
+          "elasticloadbalancing:ModifyListener",
+          "elasticloadbalancing:ModifyTargetGroupAttributes",
+          "elasticloadbalancing:ModifyLoadBalancerAttributes",
+          "elasticloadbalancing:AddTags",
+          "elasticloadbalancing:RemoveTags"
         ]
-        # Scoped to account/region for subscription filter permissions (Issue #119)
+        Resource = "*"
       },
       {
         Sid    = "ManageTargetGroups"
@@ -289,6 +306,32 @@ resource "aws_iam_role_policy" "atlantis-terraform-operations" {
         ]
         Resource = "*"
       },
+      {
+        Sid    = "ManageVPC"
+        Effect = "Allow"
+        Action = [
+          "ec2:CreateVpc",
+          "ec2:DeleteVpc",
+          "ec2:ModifyVpcAttribute",
+          "ec2:CreateSubnet",
+          "ec2:DeleteSubnet",
+          "ec2:DescribeVpcs",
+          "ec2:DescribeSubnets"
+        ]
+        Resource = "*"
+      }
+    ]
+  })
+}
+
+# Policy 3: Storage Services Operations
+resource "aws_iam_role_policy" "atlantis-terraform-storage" {
+  name = "terraform-storage-services"
+  role = module.atlantis_task_role.role_name
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
       {
         Sid    = "ManageS3Buckets"
         Effect = "Allow"
@@ -345,71 +388,19 @@ resource "aws_iam_role_policy" "atlantis-terraform-operations" {
         Resource = "arn:aws:sqs:${var.aws_region}:${data.aws_caller_identity.current.account_id}:*"
       },
       {
-        Sid    = "ManageCloudWatchAlarms"
+        Sid    = "ManageRDS"
         Effect = "Allow"
         Action = [
-          "cloudwatch:PutMetricAlarm",
-          "cloudwatch:DeleteAlarms",
-          "cloudwatch:DescribeAlarms",
-          "cloudwatch:ListTagsForResource",
-          "cloudwatch:TagResource",
-          "cloudwatch:UntagResource"
-        ]
-        Resource = "arn:aws:cloudwatch:${var.aws_region}:${data.aws_caller_identity.current.account_id}:alarm:*"
-      },
-      {
-        Sid    = "ManageECS"
-        Effect = "Allow"
-        Action = [
-          "ecs:CreateCluster",
-          "ecs:DeleteCluster",
-          "ecs:UpdateCluster",
-          "ecs:RegisterTaskDefinition",
-          "ecs:DeregisterTaskDefinition",
-          "ecs:CreateService",
-          "ecs:UpdateService",
-          "ecs:DeleteService",
-          "ecs:TagResource",
-          "ecs:UntagResource"
-        ]
-        Resource = "*"
-      },
-      {
-        Sid    = "ManageIAMRoles"
-        Effect = "Allow"
-        Action = [
-          "iam:CreateRole",
-          "iam:DeleteRole",
-          "iam:AttachRolePolicy",
-          "iam:DetachRolePolicy",
-          "iam:PutRolePolicy",
-          "iam:DeleteRolePolicy",
-          "iam:PassRole",
-          "iam:TagRole",
-          "iam:UntagRole"
-        ]
-        Resource = [
-          "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/fileflow-*",
-          "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/atlantis-*",
-          "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/ryuqqq-*-log-delivery-role"
-        ]
-        # Scoped log-delivery-role pattern with service prefix for Issue #119
-      },
-      {
-        Sid    = "ManageLoadBalancers"
-        Effect = "Allow"
-        Action = [
-          "elasticloadbalancing:CreateLoadBalancer",
-          "elasticloadbalancing:DeleteLoadBalancer",
-          "elasticloadbalancing:CreateTargetGroup",
-          "elasticloadbalancing:DeleteTargetGroup",
-          "elasticloadbalancing:CreateListener",
-          "elasticloadbalancing:DeleteListener",
-          "elasticloadbalancing:ModifyListener",
-          "elasticloadbalancing:ModifyTargetGroupAttributes",
-          "elasticloadbalancing:ModifyLoadBalancerAttributes",
-          "elasticloadbalancing:AddTags",
-          "elasticloadbalancing:RemoveTags"
+          "rds:CreateDBInstance",
+          "rds:DeleteDBInstance",
+          "rds:ModifyDBInstance",
+          "rds:CreateDBSubnetGroup",
+          "rds:DeleteDBSubnetGroup",
+          "rds:CreateDBParameterGroup",
+          "rds:DeleteDBParameterGroup",
+          "rds:ModifyDBParameterGroup",
+          "rds:AddTagsToResource",
+          "rds:RemoveTagsFromResource"
         ]
         Resource = "*"
       },
@@ -429,51 +420,53 @@ resource "aws_iam_role_policy" "atlantis-terraform-operations" {
           "ecr:UntagResource"
         ]
         Resource = "arn:aws:ecr:${var.aws_region}:${data.aws_caller_identity.current.account_id}:repository/*"
-      },
+      }
+    ]
+  })
+}
+
+# Policy 4: Monitoring and Events Operations
+resource "aws_iam_role_policy" "atlantis-terraform-monitoring" {
+  name = "terraform-monitoring-events"
+  role = module.atlantis_task_role.role_name
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
       {
-        Sid    = "ManageRDS"
+        Sid    = "ManageCloudWatchLogs"
         Effect = "Allow"
         Action = [
-          "rds:CreateDBInstance",
-          "rds:DeleteDBInstance",
-          "rds:ModifyDBInstance",
-          "rds:CreateDBSubnetGroup",
-          "rds:DeleteDBSubnetGroup",
-          "rds:CreateDBParameterGroup",
-          "rds:DeleteDBParameterGroup",
-          "rds:ModifyDBParameterGroup",
-          "rds:AddTagsToResource",
-          "rds:RemoveTagsFromResource"
-        ]
-        Resource = "*"
-      },
-      {
-        Sid    = "ManageVPC"
-        Effect = "Allow"
-        Action = [
-          "ec2:CreateVpc",
-          "ec2:DeleteVpc",
-          "ec2:ModifyVpcAttribute",
-          "ec2:CreateSubnet",
-          "ec2:DeleteSubnet",
-          "ec2:DescribeVpcs",
-          "ec2:DescribeSubnets"
-        ]
-        Resource = "*"
-      },
-      {
-        Sid    = "ManageRoute53Records"
-        Effect = "Allow"
-        Action = [
-          "route53:ChangeResourceRecordSets",
-          "route53:GetChange",
-          "route53:ListResourceRecordSets"
+          "logs:CreateLogGroup",
+          "logs:DeleteLogGroup",
+          "logs:DescribeLogGroups",
+          "logs:PutRetentionPolicy",
+          "logs:DeleteRetentionPolicy",
+          "logs:TagResource",
+          "logs:TagLogGroup",
+          "logs:UntagLogGroup",
+          "logs:CreateLogStream",
+          "logs:PutLogEvents",
+          "logs:PutSubscriptionFilter",
+          "logs:DeleteSubscriptionFilter",
+          "logs:DescribeSubscriptionFilters"
         ]
         Resource = [
-          "arn:aws:route53:::hostedzone/*",
-          "arn:aws:route53:::change/*"
+          "arn:aws:logs:${var.aws_region}:${data.aws_caller_identity.current.account_id}:log-group:*"
         ]
-        # Required for CrawlingHub ecs-web-api DNS management
+      },
+      {
+        Sid    = "ManageCloudWatchAlarms"
+        Effect = "Allow"
+        Action = [
+          "cloudwatch:PutMetricAlarm",
+          "cloudwatch:DeleteAlarms",
+          "cloudwatch:DescribeAlarms",
+          "cloudwatch:ListTagsForResource",
+          "cloudwatch:TagResource",
+          "cloudwatch:UntagResource"
+        ]
+        Resource = "arn:aws:cloudwatch:${var.aws_region}:${data.aws_caller_identity.current.account_id}:alarm:*"
       },
       {
         Sid    = "ManageEventBridgeRules"
@@ -489,7 +482,6 @@ resource "aws_iam_role_policy" "atlantis-terraform-operations" {
           "events:RemoveTargets"
         ]
         Resource = "*"
-        # Required for EventBridge rule management
       },
       {
         Sid    = "ManageSSMParametersForEventBridge"
@@ -502,7 +494,6 @@ resource "aws_iam_role_policy" "atlantis-terraform-operations" {
           "ssm:GetParametersByPath"
         ]
         Resource = "arn:aws:ssm:${var.aws_region}:${data.aws_caller_identity.current.account_id}:parameter/crawlinghub/eventbridge/*"
-        # Required for managing EventBridge configuration in SSM Parameter Store
       },
       {
         Sid    = "ManageApplicationAutoScaling"
@@ -517,7 +508,6 @@ resource "aws_iam_role_policy" "atlantis-terraform-operations" {
           "application-autoscaling:DeleteScalingPolicy"
         ]
         Resource = "*"
-        # Required for managing ECS service auto-scaling
       },
       {
         Sid    = "ServiceDiscoveryAccess"
@@ -539,7 +529,61 @@ resource "aws_iam_role_policy" "atlantis-terraform-operations" {
           "servicediscovery:ListTagsForResource"
         ]
         Resource = "*"
-        # Required for AWS Cloud Map (Service Discovery) operations
+      },
+      {
+        Sid    = "ManageRoute53Records"
+        Effect = "Allow"
+        Action = [
+          "route53:ChangeResourceRecordSets",
+          "route53:GetChange",
+          "route53:ListResourceRecordSets"
+        ]
+        Resource = [
+          "arn:aws:route53:::hostedzone/*",
+          "arn:aws:route53:::change/*"
+        ]
+      }
+    ]
+  })
+}
+
+# Policy 5: IAM Management Operations
+resource "aws_iam_role_policy" "atlantis-terraform-iam" {
+  name = "terraform-iam-management"
+  role = module.atlantis_task_role.role_name
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Sid    = "ManageECSRoles"
+        Effect = "Allow"
+        Action = [
+          "iam:PutRolePolicy",
+          "iam:DeleteRolePolicy",
+          "iam:GetRolePolicy"
+        ]
+        Resource = "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/fileflow-prod-*"
+      },
+      {
+        Sid    = "ManageIAMRoles"
+        Effect = "Allow"
+        Action = [
+          "iam:CreateRole",
+          "iam:DeleteRole",
+          "iam:AttachRolePolicy",
+          "iam:DetachRolePolicy",
+          "iam:PutRolePolicy",
+          "iam:DeleteRolePolicy",
+          "iam:PassRole",
+          "iam:TagRole",
+          "iam:UntagRole"
+        ]
+        Resource = [
+          "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/fileflow-*",
+          "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/atlantis-*",
+          "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/ryuqqq-*-log-delivery-role"
+        ]
       },
       {
         Sid    = "ManageCrawlingHubRoles"
@@ -555,8 +599,6 @@ resource "aws_iam_role_policy" "atlantis-terraform-operations" {
           "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/crawlinghub-*-task-role-prod",
           "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/crawlinghub-*-execution-role-prod"
         ]
-        # Required for managing all crawlinghub task and execution roles
-        # AttachRolePolicy/DetachRolePolicy added for Issue #115: CrawlingHub ECS Scheduler SQS policy attachment
       },
       {
         Sid    = "ManageCrawlingHubSSMParameters"
@@ -571,7 +613,6 @@ resource "aws_iam_role_policy" "atlantis-terraform-operations" {
           "ssm:RemoveTagsFromResource"
         ]
         Resource = "arn:aws:ssm:${var.aws_region}:${data.aws_caller_identity.current.account_id}:parameter/crawlinghub/*"
-        # Required for managing crawlinghub SSM parameters
       },
       {
         Sid    = "ManageCrawlingHubIAMPolicies"
@@ -588,7 +629,6 @@ resource "aws_iam_role_policy" "atlantis-terraform-operations" {
           "iam:UntagPolicy"
         ]
         Resource = "arn:aws:iam::${data.aws_caller_identity.current.account_id}:policy/crawlinghub-*"
-        # Required for managing crawlinghub IAM policies (e.g., SQS access policy)
       },
       {
         Sid    = "ManageGatewayRoles"
@@ -602,7 +642,6 @@ resource "aws_iam_role_policy" "atlantis-terraform-operations" {
           "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/gateway-task-role-prod",
           "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/gateway-execution-role-prod"
         ]
-        # Required for managing gateway ECS task and execution roles
       },
       {
         Sid    = "ManageAuthHubRoles"
@@ -615,7 +654,6 @@ resource "aws_iam_role_policy" "atlantis-terraform-operations" {
         Resource = [
           "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/authhub-web-api-*"
         ]
-        # Required for managing AuthHub ECS task and execution roles
       }
     ]
   })
