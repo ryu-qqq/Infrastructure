@@ -669,7 +669,10 @@ resource "aws_iam_role_policy" "atlantis-log-subscription" {
           "iam:TagRole",
           "iam:UntagRole"
         ]
-        Resource = "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/*-log-delivery-role"
+        Resource = [
+          "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/*-log-delivery-role",
+          "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/*-cloudwatch-to-kinesis-role"
+        ]
       }
     ]
   })
