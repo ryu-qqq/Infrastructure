@@ -270,9 +270,13 @@ resource "aws_iam_role_policy" "atlantis-terraform-operations" {
           "logs:TagLogGroup",
           "logs:UntagLogGroup",
           "logs:CreateLogStream",
-          "logs:PutLogEvents"
+          "logs:PutLogEvents",
+          "logs:PutSubscriptionFilter",
+          "logs:DeleteSubscriptionFilter",
+          "logs:DescribeSubscriptionFilters"
         ]
         Resource = "*"
+        # Added subscription filter permissions for Issue #119
       },
       {
         Sid    = "ManageTargetGroups"
@@ -384,8 +388,10 @@ resource "aws_iam_role_policy" "atlantis-terraform-operations" {
         ]
         Resource = [
           "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/fileflow-*",
-          "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/atlantis-*"
+          "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/atlantis-*",
+          "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/*-log-delivery-role"
         ]
+        # Added log-delivery-role pattern for Issue #119 (subscription filter)
       },
       {
         Sid    = "ManageLoadBalancers"
