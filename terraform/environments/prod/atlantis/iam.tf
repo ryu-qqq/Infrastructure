@@ -270,10 +270,7 @@ resource "aws_iam_role_policy" "atlantis-terraform-operations" {
           "logs:TagLogGroup",
           "logs:UntagLogGroup",
           "logs:CreateLogStream",
-          "logs:PutLogEvents",
-          "logs:PutSubscriptionFilter",
-          "logs:DeleteSubscriptionFilter",
-          "logs:DescribeSubscriptionFilters"
+          "logs:PutLogEvents"
         ]
         Resource = "*"
       },
@@ -611,23 +608,6 @@ resource "aws_iam_role_policy" "atlantis-terraform-operations" {
           "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/authhub-web-api-*"
         ]
         # Required for managing AuthHub ECS task and execution roles
-      },
-      {
-        Sid    = "ManageLogDeliveryRoles"
-        Effect = "Allow"
-        Action = [
-          "iam:CreateRole",
-          "iam:DeleteRole",
-          "iam:PassRole",
-          "iam:PutRolePolicy",
-          "iam:DeleteRolePolicy",
-          "iam:TagRole",
-          "iam:UntagRole"
-        ]
-        Resource = [
-          "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/*-log-delivery-role"
-        ]
-        # Required for CloudWatch Logs subscription filter to Kinesis
       }
     ]
   })
@@ -654,6 +634,42 @@ resource "aws_iam_role_policy" "atlantis-efs-access" {
             "elasticfilesystem:AccessPointArn" = aws_efs_access_point.atlantis.arn
           }
         }
+      }
+    ]
+  })
+}
+
+# Inline Policy for CloudWatch Logs Subscription Filter (Issue #119)
+resource "aws_iam_role_policy" "atlantis-log-subscription" {
+  name = "log-subscription-filter"
+  role = module.atlantis_task_role.role_name
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Sid    = "ManageSubscriptionFilters"
+        Effect = "Allow"
+        Action = [
+          "logs:PutSubscriptionFilter",
+          "logs:DeleteSubscriptionFilter",
+          "logs:DescribeSubscriptionFilters"
+        ]
+        Resource = "arn:aws:logs:${var.aws_region}:${data.aws_caller_identity.current.account_id}:log-group:*"
+      },
+      {
+        Sid    = "ManageLogDeliveryRoles"
+        Effect = "Allow"
+        Action = [
+          "iam:CreateRole",
+          "iam:DeleteRole",
+          "iam:PassRole",
+          "iam:PutRolePolicy",
+          "iam:DeleteRolePolicy",
+          "iam:TagRole",
+          "iam:UntagRole"
+        ]
+        Resource = "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/*-log-delivery-role"
       }
     ]
   })
