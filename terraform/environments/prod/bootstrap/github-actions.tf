@@ -346,7 +346,8 @@ resource "aws_iam_policy" "github-actions-infrastructure" {
         Resource = [
           "arn:aws:iam::${local.account_id}:policy/*-prod-*",
           "arn:aws:iam::${local.account_id}:policy/*-prod",
-          "arn:aws:iam::${local.account_id}:policy/fileflow-*"
+          "arn:aws:iam::${local.account_id}:policy/fileflow-*",
+          "arn:aws:iam::${local.account_id}:policy/atlantis-*"
         ]
       }
     ]
