@@ -642,7 +642,7 @@ resource "aws_iam_role_policy" "atlantis-efs-access" {
 # Managed Policy for CloudWatch Logs Subscription Filter (Issue #119)
 # Converted from inline to managed policy to avoid 10KB limit
 resource "aws_iam_policy" "atlantis-log-subscription" {
-  name        = "atlantis-log-subscription-filter"
+  name        = "atlantis-prod-log-subscription-filter"
   description = "Policy for managing CloudWatch Logs Subscription Filters"
 
   policy = jsonencode({
@@ -681,7 +681,7 @@ resource "aws_iam_policy" "atlantis-log-subscription" {
   tags = merge(
     local.required_tags,
     {
-      Name      = "atlantis-log-subscription-filter"
+      Name      = "atlantis-prod-log-subscription-filter"
       Component = "atlantis"
     }
   )
