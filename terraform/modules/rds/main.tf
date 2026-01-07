@@ -64,15 +64,18 @@ resource "aws_db_parameter_group" "this" {
 resource "aws_db_instance" "this" {
   identifier = var.identifier
 
-  # Engine Configuration
+  # Snapshot Restore (when specified, engine/db_name/username/password are inherited from snapshot)
+  snapshot_identifier = var.snapshot_identifier
+
+  # Engine Configuration (ignored when restoring from snapshot)
   engine         = var.engine
-  engine_version = var.engine_version
+  engine_version = var.snapshot_identifier != null ? null : var.engine_version
   instance_class = var.instance_class
 
-  # Database Configuration
-  db_name  = var.db_name
-  username = var.master_username
-  password = var.master_password
+  # Database Configuration (ignored when restoring from snapshot)
+  db_name  = var.snapshot_identifier != null ? null : var.db_name
+  username = var.snapshot_identifier != null ? null : var.master_username
+  password = var.snapshot_identifier != null ? null : var.master_password
   port     = var.port
 
   # Storage Configuration
