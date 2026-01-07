@@ -5,15 +5,8 @@ data "aws_vpc" "main" {
   id = var.vpc_id
 }
 
-# KMS 키 정보 (AWS 관리형 RDS 암호화 키)
-data "aws_kms_key" "rds" {
-  key_id = "alias/aws/rds"
-}
-
-# KMS 키 정보 (AWS 관리형 Secrets Manager 암호화 키)
-data "aws_kms_key" "secrets_manager" {
-  key_id = "alias/aws/secretsmanager"
-}
+# KMS 키는 kms.tf에서 고객 관리형 키로 직접 생성
+# Zero-Tolerance: AWS 관리형 키(alias/aws/*) 사용 금지
 
 # 현재 AWS 계정 정보
 data "aws_caller_identity" "current" {}

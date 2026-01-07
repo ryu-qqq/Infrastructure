@@ -32,7 +32,7 @@ module "rds" {
   max_allocated_storage = var.max_allocated_storage
   storage_type          = var.storage_type
   storage_encrypted     = var.storage_encrypted
-  kms_key_id            = data.aws_kms_key.rds.arn
+  kms_key_id            = aws_kms_key.rds.arn
   iops                  = var.iops
 
   # High Availability (disabled for staging)

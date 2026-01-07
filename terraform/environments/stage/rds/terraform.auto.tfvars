@@ -129,6 +129,6 @@ enable_rds_proxy = false
 
 # Additional Tags
 tags = {
-  Purpose     = "Staging environment for pre-production testing"
+  Purpose      = "Staging environment for pre-production testing"
   RefreshCycle = "Monthly"
 }
