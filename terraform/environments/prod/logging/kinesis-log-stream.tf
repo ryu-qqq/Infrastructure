@@ -66,7 +66,7 @@ resource "aws_lambda_function" "log_router" {
 
   environment {
     variables = {
-      OPENSEARCH_ENDPOINT = data.aws_opensearch_domain.logs[0].endpoint
+      OPENSEARCH_ENDPOINT = aws_opensearch_domain.logs.endpoint
       INDEX_PREFIX        = var.opensearch_index_prefix
     }
   }
@@ -151,8 +151,8 @@ resource "aws_iam_role_policy" "log_router" {
           "es:ESHttpGet"
         ]
         Resource = [
-          data.aws_opensearch_domain.logs[0].arn,
-          "${data.aws_opensearch_domain.logs[0].arn}/*"
+          aws_opensearch_domain.logs.arn,
+          "${aws_opensearch_domain.logs.arn}/*"
         ]
       },
       {

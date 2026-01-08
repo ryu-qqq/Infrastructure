@@ -11,11 +11,8 @@
 data "aws_caller_identity" "current" {}
 data "aws_region" "current" {}
 
-# OpenSearch domain reference (existing)
-data "aws_opensearch_domain" "logs" {
-  count       = var.enable_log_streaming ? 1 : 0
-  domain_name = var.opensearch_domain_name
-}
+# OpenSearch domain is now managed as a Terraform resource
+# See: opensearch.tf (aws_opensearch_domain.logs)
 
 # ============================================================================
 # DEPRECATED: Firehose Infrastructure
