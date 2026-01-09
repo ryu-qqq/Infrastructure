@@ -326,8 +326,10 @@ sync_db_password() {
         return 1
     fi
 
-    log_info "RDS 암호 변경 대기 중... (최대 5분)"
-    sleep 30  # 변경 적용 대기
+    log_info "RDS 암호 변경 대기 중... (인스턴스 available 상태까지)"
+    aws rds wait db-instance-available \
+        --db-instance-identifier "${db_identifier}" \
+        --region "${AWS_REGION}"
 
     # Secrets Manager 업데이트
     log_info "Secrets Manager 시크릿 업데이트 중..."

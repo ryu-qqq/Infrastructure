@@ -4,23 +4,10 @@ resource "aws_kms_key" "terraform-state" {
   deletion_window_in_days = 30
   enable_key_rotation     = true
 
-  tags = merge(
-    {
-      Owner       = var.owner
-      CostCenter  = var.cost_center
-      Environment = var.environment
-      Lifecycle   = var.resource_lifecycle
-      DataClass   = var.data_class
-      Service     = var.service
-      Team        = var.team
-      ManagedBy   = "terraform"
-      Project     = var.project
-    },
-    {
-      Name      = "stage-terraform-state-encryption"
-      Component = "kms"
-    }
-  )
+  tags = merge(local.required_tags, {
+    Name      = "stage-terraform-state-encryption"
+    Component = "kms"
+  })
 }
 
 resource "aws_kms_alias" "terraform-state" {
