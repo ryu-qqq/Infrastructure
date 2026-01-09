@@ -134,3 +134,91 @@ variable "opensearch_index_prefix" {
   type        = string
   default     = "logs"
 }
+
+# ============================================================================
+# OpenSearch Domain Configuration
+# ============================================================================
+
+variable "opensearch_engine_version" {
+  description = "OpenSearch engine version"
+  type        = string
+  default     = "OpenSearch_2.11"
+}
+
+variable "opensearch_kms_key_id" {
+  description = "Existing KMS key ID for OpenSearch encryption (required, no default for security)"
+  type        = string
+  # No default - must be provided via tfvars or CLI
+}
+
+variable "opensearch_instance_type" {
+  description = "OpenSearch instance type"
+  type        = string
+  default     = "t3.medium.search" # Upgraded from t3.small.search (4GB RAM, JVM 2GB)
+}
+
+variable "opensearch_instance_count" {
+  description = "Number of OpenSearch instances"
+  type        = number
+  default     = 1
+}
+
+variable "opensearch_dedicated_master_enabled" {
+  description = "Enable dedicated master nodes"
+  type        = bool
+  default     = false
+}
+
+variable "opensearch_zone_awareness_enabled" {
+  description = "Enable zone awareness for high availability"
+  type        = bool
+  default     = false
+}
+
+variable "opensearch_availability_zone_count" {
+  description = "Number of availability zones (requires zone_awareness_enabled)"
+  type        = number
+  default     = 2
+}
+
+variable "opensearch_volume_type" {
+  description = "EBS volume type"
+  type        = string
+  default     = "gp3"
+}
+
+variable "opensearch_volume_size" {
+  description = "EBS volume size in GB"
+  type        = number
+  default     = 50 # Upgraded from 20GB
+}
+
+variable "opensearch_iops" {
+  description = "IOPS for gp3 volumes"
+  type        = number
+  default     = 3000
+}
+
+variable "opensearch_throughput" {
+  description = "Throughput in MiB/s for gp3 volumes"
+  type        = number
+  default     = 250
+}
+
+variable "opensearch_allowed_ips" {
+  description = "List of IP addresses allowed to access OpenSearch (required, no default for security)"
+  type        = list(string)
+  # No default - must be provided via tfvars or CLI
+}
+
+variable "vpc_cidr_block" {
+  description = "VPC CIDR block for OpenSearch access"
+  type        = string
+  default     = "10.0.0.0/16"
+}
+
+variable "alarm_sns_topic_arns" {
+  description = "List of SNS topic ARNs for CloudWatch alarms"
+  type        = list(string)
+  default     = []
+}

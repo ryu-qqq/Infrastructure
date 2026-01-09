@@ -107,9 +107,9 @@ output "log_router_dlq" {
 output "opensearch_integration" {
   description = "OpenSearch integration details"
   value = var.enable_log_streaming ? {
-    domain_name   = var.opensearch_domain_name
-    domain_arn    = data.aws_opensearch_domain.logs[0].arn
-    endpoint      = data.aws_opensearch_domain.logs[0].endpoint
+    domain_name   = aws_opensearch_domain.logs.domain_name
+    domain_arn    = aws_opensearch_domain.logs.arn
+    endpoint      = aws_opensearch_domain.logs.endpoint
     index_prefix  = var.opensearch_index_prefix
     index_pattern = "${var.opensearch_index_prefix}-{service}-YYYY-MM-DD"
   } : null
