@@ -146,9 +146,9 @@ variable "opensearch_engine_version" {
 }
 
 variable "opensearch_kms_key_id" {
-  description = "Existing KMS key ID for OpenSearch encryption"
+  description = "Existing KMS key ID for OpenSearch encryption (required, no default for security)"
   type        = string
-  default     = "36652d15-0352-4c5a-97ff-bdf555a4790d"
+  # No default - must be provided via tfvars or CLI
 }
 
 variable "opensearch_instance_type" {
@@ -206,9 +206,9 @@ variable "opensearch_throughput" {
 }
 
 variable "opensearch_allowed_ips" {
-  description = "List of IP addresses allowed to access OpenSearch"
+  description = "List of IP addresses allowed to access OpenSearch (required, no default for security)"
   type        = list(string)
-  default     = ["61.73.26.214", "112.148.103.88"]
+  # No default - must be provided via tfvars or CLI
 }
 
 variable "vpc_cidr_block" {
