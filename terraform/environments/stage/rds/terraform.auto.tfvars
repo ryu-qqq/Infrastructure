@@ -29,12 +29,12 @@ allowed_cidr_blocks        = [] # Add CIDR blocks as needed
 
 # RDS Configuration
 identifier     = "shared-mysql"
-mysql_version  = "8.0.35"
+mysql_version  = "8.0.44"
 instance_class = "db.t4g.micro" # Smaller instance for staging
 
-# Storage Configuration (reduced for staging)
-allocated_storage     = 20
-max_allocated_storage = 100
+# Storage Configuration (must match prod snapshot: 200GB)
+allocated_storage     = 200
+max_allocated_storage = 500
 storage_type          = "gp3"
 storage_encrypted     = true
 
@@ -54,7 +54,7 @@ storage_encrypted     = true
 #   restore_from_snapshot = true
 #   snapshot_identifier   = "rds:prod-shared-mysql-2025-01-07-backup"
 #
-restore_from_snapshot = false # Set to true when refreshing from prod
+restore_from_snapshot = true # Restore from prod snapshot
 snapshot_identifier   = null  # Or specify exact snapshot ID
 
 # Database Configuration
@@ -74,7 +74,7 @@ final_snapshot_identifier = null
 copy_tags_to_snapshot     = true
 
 # Monitoring Configuration
-enable_performance_insights           = true # Keep for debugging
+enable_performance_insights           = false # db.t4g.micro doesn't support Performance Insights
 performance_insights_retention_period = 7
 enable_enhanced_monitoring            = true
 monitoring_interval                   = 60
