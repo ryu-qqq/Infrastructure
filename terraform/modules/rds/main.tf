@@ -64,15 +64,21 @@ resource "aws_db_parameter_group" "this" {
 resource "aws_db_instance" "this" {
   identifier = var.identifier
 
-  # Engine Configuration
+  # Snapshot Restore (when specified, engine/db_name/username/password are inherited from snapshot)
+  snapshot_identifier = var.snapshot_identifier
+
+  # Engine Configuration (ignored when restoring from snapshot)
   engine         = var.engine
-  engine_version = var.engine_version
+  engine_version = var.snapshot_identifier != null ? null : var.engine_version
   instance_class = var.instance_class
 
   # Database Configuration
-  db_name  = var.db_name
-  username = var.master_username
-  password = var.master_password
+  # Note: db_name, username은 스냅샷 복원 시 무시됨 (스냅샷에서 상속)
+  # password는 항상 전달 - 스냅샷 복원 시 AWS가 무시함
+  # 조건문에서 sensitive 값 사용 시 Terraform 1.6.x 버그로 크래시 발생하므로 회피
+  db_name  = var.snapshot_identifier != null ? null : var.db_name
+  username = var.snapshot_identifier != null ? null : var.master_username
+  password = var.master_password # RDS ignores this during snapshot restore
   port     = var.port
 
   # Storage Configuration

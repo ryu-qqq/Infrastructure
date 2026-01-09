@@ -405,3 +405,11 @@ variable "iam_database_authentication_enabled" {
   type        = bool
   default     = false
 }
+
+# Optional Variables - Snapshot Restore
+
+variable "snapshot_identifier" {
+  description = "Specifies whether or not to create this database from a snapshot. This corresponds to the snapshot ID to restore from."
+  type        = string
+  default     = null
+}
