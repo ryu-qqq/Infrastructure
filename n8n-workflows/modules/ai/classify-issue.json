@@ -1,0 +1,78 @@
+{
+  "_module": {
+    "name": "AI Issue Classifier",
+    "description": "OpenAI로 이슈 분류 (타입, 우선순위, 라벨)",
+    "version": "1.0.0",
+    "inputs": ["title", "description", "context"],
+    "outputs": ["type", "priority", "labels", "category"]
+  },
+  "nodes": [
+    {
+      "parameters": {
+        "model": "gpt-4o",
+        "messages": {
+          "values": [
+            {
+              "role": "system",
+              "content": "당신은 소프트웨어 이슈 분류 전문가입니다. 주어진 이슈를 분석하고 JSON 형식으로 분류 결과를 반환하세요.\n\n분류 기준:\n- type: bug, feature, task, question, documentation\n- priority: critical, high, medium, low\n- category: frontend, backend, database, infra, security, performance, ux\n- labels: 관련 기술 스택이나 컴포넌트 (예: java, spring, react, api)\n\n응답 형식:\n{\n  \"type\": \"bug\",\n  \"priority\": \"high\",\n  \"category\": \"backend\",\n  \"labels\": [\"java\", \"api\", \"auth\"],\n  \"confidence\": 0.85,\n  \"reasoning\": \"분류 이유 (한글 1문장)\"\n}"
+            },
+            {
+              "role": "user",
+              "content": "=다음 이슈를 분류해주세요:\n\n**제목**: {{ $json.title }}\n\n**내용**:\n{{ $json.description }}\n\n**추가 컨텍스트**:\n{{ $json.context || 'N/A' }}"
+            }
+          ]
+        },
+        "options": {
+          "responseFormat": "json_object",
+          "temperature": 0.2
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 1.8,
+      "position": [500, 300],
+      "id": "classify-with-ai",
+      "name": "Classify With AI",
+      "credentials": {
+        "openAiApi": {
+          "id": "{{OPENAI_CREDENTIAL_ID}}",
+          "name": "OpenAI API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const aiResponse = $input.first().json;\nlet classification;\n\ntry {\n  const content = aiResponse.message?.content || aiResponse.text || '{}';\n  classification = JSON.parse(content);\n} catch (e) {\n  classification = {\n    type: 'task',\n    priority: 'medium',\n    category: 'unknown',\n    labels: ['needs-review'],\n    confidence: 0,\n    reasoning: '분류 실패 - 수동 검토 필요'\n  };\n}\n\n// Jira 이슈 타입 매핑\nconst jiraTypeMap = {\n  'bug': 'Bug',\n  'feature': 'Story',\n  'task': 'Task',\n  'question': 'Task',\n  'documentation': 'Task'\n};\n\n// Jira 우선순위 매핑\nconst jiraPriorityMap = {\n  'critical': 'Highest',\n  'high': 'High',\n  'medium': 'Medium',\n  'low': 'Low'\n};\n\nreturn {\n  ...classification,\n  jira_type: jiraTypeMap[classification.type] || 'Task',\n  jira_priority: jiraPriorityMap[classification.priority] || 'Medium',\n  auto_labels: ['ai-classified', ...classification.labels]\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [700, 300],
+      "id": "parse-classification",
+      "name": "Parse Classification"
+    }
+  ],
+  "connections": {
+    "Classify With AI": {
+      "main": [[{"node": "Parse Classification", "type": "main", "index": 0}]]
+    }
+  },
+  "_usage": {
+    "type_definitions": {
+      "bug": "소프트웨어 결함, 에러, 예상치 못한 동작",
+      "feature": "새로운 기능 요청",
+      "task": "일반 작업, 리팩토링, 설정 변경",
+      "question": "질문, 문의",
+      "documentation": "문서화 필요"
+    },
+    "example_output": {
+      "type": "bug",
+      "priority": "high",
+      "category": "backend",
+      "labels": ["java", "spring", "api"],
+      "jira_type": "Bug",
+      "jira_priority": "High",
+      "auto_labels": ["ai-classified", "java", "spring", "api"],
+      "confidence": 0.92,
+      "reasoning": "NullPointerException은 명확한 런타임 버그"
+    }
+  }
+}

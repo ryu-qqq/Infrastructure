@@ -1,0 +1,46 @@
+{
+  "_module": {
+    "name": "Weekly Report Slack Message",
+    "description": "주간 개발 리포트 Slack Block Kit 메시지",
+    "version": "1.0.0",
+    "inputs": ["build_metrics", "jira_metrics", "sentry_metrics", "ai_summary"],
+    "outputs": ["slack_blocks"]
+  },
+  "nodes": [
+    {
+      "parameters": {
+        "jsCode": "const input = $input.first().json;\n\n// 날짜 범위 계산\nconst today = new Date();\nconst weekAgo = new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000);\nconst dateRange = `${weekAgo.getMonth()+1}/${weekAgo.getDate()} ~ ${today.getMonth()+1}/${today.getDate()}`;\n\n// 빌드 메트릭\nconst build = input.build_metrics || {};\nconst buildSuccessRate = build.total > 0 \n  ? Math.round((build.success / build.total) * 100) \n  : 0;\n\n// Jira 메트릭\nconst jira = input.jira_metrics || {};\n\n// Sentry 메트릭\nconst sentry = input.sentry_metrics || {};\nconst errorTrend = sentry.trend_percent > 0 \n  ? `+${sentry.trend_percent}%` \n  : `${sentry.trend_percent}%`;\nconst trendEmoji = sentry.trend_percent > 0 ? ':chart_with_upwards_trend:' : ':chart_with_downwards_trend:';\n\n// AI 요약\nconst aiSummary = input.ai_summary || '요약 데이터 없음';\n\nconst blocks = [\n  {\n    \"type\": \"header\",\n    \"text\": {\n      \"type\": \"plain_text\",\n      \"text\": `:bar_chart: 주간 개발 리포트 (${dateRange})`,\n      \"emoji\": true\n    }\n  },\n  {\n    \"type\": \"divider\"\n  },\n  {\n    \"type\": \"section\",\n    \"text\": {\n      \"type\": \"mrkdwn\",\n      \"text\": \"*:hammer_and_wrench: 빌드 & 배포*\"\n    }\n  },\n  {\n    \"type\": \"section\",\n    \"fields\": [\n      {\n        \"type\": \"mrkdwn\",\n        \"text\": `*총 빌드*\\n${build.total || 0}회`\n      },\n      {\n        \"type\": \"mrkdwn\",\n        \"text\": `*성공률*\\n${buildSuccessRate}%`\n      },\n      {\n        \"type\": \"mrkdwn\",\n        \"text\": `*평균 시간*\\n${build.avg_duration || 'N/A'}`\n      },\n      {\n        \"type\": \"mrkdwn\",\n        \"text\": `*배포*\\n${build.deployments || 0}회`\n      }\n    ]\n  },\n  {\n    \"type\": \"divider\"\n  },\n  {\n    \"type\": \"section\",\n    \"text\": {\n      \"type\": \"mrkdwn\",\n      \"text\": \"*:ticket: Jira 티켓*\"\n    }\n  },\n  {\n    \"type\": \"section\",\n    \"fields\": [\n      {\n        \"type\": \"mrkdwn\",\n        \"text\": `*완료*\\n${jira.completed || 0}개`\n      },\n      {\n        \"type\": \"mrkdwn\",\n        \"text\": `*신규*\\n${jira.created || 0}개`\n      },\n      {\n        \"type\": \"mrkdwn\",\n        \"text\": `*진행중*\\n${jira.in_progress || 0}개`\n      },\n      {\n        \"type\": \"mrkdwn\",\n        \"text\": `*스토리 포인트*\\n${jira.story_points || 0} SP`\n      }\n    ]\n  },\n  {\n    \"type\": \"divider\"\n  },\n  {\n    \"type\": \"section\",\n    \"text\": {\n      \"type\": \"mrkdwn\",\n      \"text\": \"*:bug: Sentry 에러*\"\n    }\n  },\n  {\n    \"type\": \"section\",\n    \"fields\": [\n      {\n        \"type\": \"mrkdwn\",\n        \"text\": `*새 이슈*\\n${sentry.new_issues || 0}개`\n      },\n      {\n        \"type\": \"mrkdwn\",\n        \"text\": `*해결*\\n${sentry.resolved || 0}개`\n      },\n      {\n        \"type\": \"mrkdwn\",\n        \"text\": `*총 이벤트*\\n${sentry.total_events?.toLocaleString() || 0}회`\n      },\n      {\n        \"type\": \"mrkdwn\",\n        \"text\": `*추세* ${trendEmoji}\\n${errorTrend} (전주 대비)`\n      }\n    ]\n  },\n  {\n    \"type\": \"divider\"\n  },\n  {\n    \"type\": \"section\",\n    \"text\": {\n      \"type\": \"mrkdwn\",\n      \"text\": `*:robot_face: AI 요약*\\n${aiSummary}`\n    }\n  },\n  {\n    \"type\": \"divider\"\n  },\n  {\n    \"type\": \"context\",\n    \"elements\": [\n      {\n        \"type\": \"mrkdwn\",\n        \"text\": \":link: <https://jira.example.com|Jira> | <https://sentry.io|Sentry> | <https://github.com|GitHub Actions>\"\n      }\n    ]\n  }\n];\n\nreturn {\n  blocks: blocks,\n  channel: input.channel || '#dev-reports',\n  text: `주간 개발 리포트 (${dateRange})`\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [500, 300],
+      "id": "format-weekly-report",
+      "name": "Format Weekly Report"
+    }
+  ],
+  "connections": {},
+  "_usage": {
+    "input_structure": {
+      "build_metrics": {
+        "total": 45,
+        "success": 42,
+        "avg_duration": "4m 32s",
+        "deployments": 8
+      },
+      "jira_metrics": {
+        "completed": 12,
+        "created": 8,
+        "in_progress": 15,
+        "story_points": 28
+      },
+      "sentry_metrics": {
+        "new_issues": 3,
+        "resolved": 5,
+        "total_events": 1247,
+        "trend_percent": -15
+      },
+      "ai_summary": "이번 주 백엔드 안정성이 개선되었습니다. 주요 NullPointerException 이슈 3건이 해결되었고...",
+      "channel": "#dev-reports"
+    }
+  }
+}

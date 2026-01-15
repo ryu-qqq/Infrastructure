@@ -1,0 +1,87 @@
+{
+  "_module": {
+    "name": "Jira Create Issue",
+    "description": "Jira 이슈 생성 (버그/태스크/스토리 지원)",
+    "version": "1.0.0",
+    "inputs": ["title", "description", "issue_type", "priority", "labels"],
+    "outputs": ["issue_key", "issue_url"]
+  },
+  "nodes": [
+    {
+      "parameters": {
+        "operation": "create",
+        "project": "={{ $json.jira_project }}",
+        "issueType": "={{ $json.issue_type || 'Bug' }}",
+        "summary": "={{ $json.title }}",
+        "additionalFields": {
+          "description": {
+            "type": "doc",
+            "version": 1,
+            "content": [
+              {
+                "type": "paragraph",
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "={{ $json.description }}"
+                  }
+                ]
+              }
+            ]
+          },
+          "priority": {
+            "name": "={{ $json.priority || 'Medium' }}"
+          },
+          "labels": "={{ $json.labels || ['auto-created'] }}"
+        }
+      },
+      "type": "n8n-nodes-base.jira",
+      "typeVersion": 1,
+      "position": [500, 300],
+      "id": "create-jira-issue",
+      "name": "Create Jira Issue",
+      "credentials": {
+        "jiraApi": {
+          "id": "{{JIRA_CREDENTIAL_ID}}",
+          "name": "Jira API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const result = $input.first().json;\n\nreturn {\n  issue_key: result.key,\n  issue_id: result.id,\n  issue_url: `https://your-domain.atlassian.net/browse/${result.key}`,\n  self: result.self,\n  created: new Date().toISOString()\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [700, 300],
+      "id": "format-output",
+      "name": "Format Output"
+    }
+  ],
+  "connections": {
+    "Create Jira Issue": {
+      "main": [[{"node": "Format Output", "type": "main", "index": 0}]]
+    }
+  },
+  "_usage": {
+    "description": "이슈 생성에 필요한 필드들",
+    "required_fields": {
+      "jira_project": "Jira 프로젝트 키",
+      "title": "이슈 제목",
+      "description": "이슈 설명 (마크다운 가능)"
+    },
+    "optional_fields": {
+      "issue_type": "Bug, Task, Story (기본: Bug)",
+      "priority": "Highest, High, Medium, Low, Lowest (기본: Medium)",
+      "labels": "라벨 배열 (기본: ['auto-created'])"
+    },
+    "example_input": {
+      "jira_project": "PROD",
+      "title": "[Sentry] NullPointerException in UserService",
+      "description": "## Error Details\n...",
+      "issue_type": "Bug",
+      "priority": "High",
+      "labels": ["sentry-auto", "backend"]
+    }
+  }
+}

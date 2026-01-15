@@ -1,0 +1,396 @@
+{
+  "name": "GitHub Metrics Collector",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "github-workflow",
+        "options": {
+          "responseMode": "onReceived",
+          "responseData": "allEntries"
+        }
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [250, 300],
+      "id": "github-webhook",
+      "name": "GitHub Webhook",
+      "webhookId": "github-workflow-webhook"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "workflow-run-check",
+              "leftValue": "={{ $json.headers['x-github-event'] }}",
+              "rightValue": "workflow_run",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            },
+            {
+              "id": "completed-check",
+              "leftValue": "={{ $json.body.action }}",
+              "rightValue": "completed",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        }
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [450, 300],
+      "id": "filter-workflow-run",
+      "name": "Is Completed Workflow?"
+    },
+    {
+      "parameters": {
+        "jsCode": "const body = $input.first().json.body;\nconst workflow_run = body.workflow_run;\nconst repository = body.repository;\n\n// Calculate duration in seconds\nconst startTime = new Date(workflow_run.run_started_at);\nconst endTime = new Date(workflow_run.updated_at);\nconst durationSeconds = Math.round((endTime - startTime) / 1000);\n\n// Format duration as human readable\nconst formatDuration = (seconds) => {\n  const mins = Math.floor(seconds / 60);\n  const secs = seconds % 60;\n  return mins > 0 ? `${mins}m ${secs}s` : `${secs}s`;\n};\n\n// Determine if this is a deployment\nconst isDeployment = workflow_run.name.toLowerCase().includes('deploy') ||\n                     workflow_run.name.toLowerCase().includes('cd') ||\n                     body.workflow?.name?.toLowerCase().includes('deploy');\n\n// Extract environment from workflow name or branch\nlet environment = 'unknown';\nif (workflow_run.head_branch === 'main' || workflow_run.head_branch === 'master') {\n  environment = 'prod';\n} else if (workflow_run.head_branch.includes('staging') || workflow_run.head_branch.includes('stage')) {\n  environment = 'staging';\n} else if (workflow_run.head_branch.includes('dev')) {\n  environment = 'dev';\n}\n\nreturn {\n  timestamp: new Date().toISOString(),\n  repository: repository.full_name,\n  repository_name: repository.name,\n  workflow: workflow_run.name,\n  workflow_id: workflow_run.workflow_id,\n  run_id: workflow_run.id,\n  run_number: workflow_run.run_number,\n  status: workflow_run.conclusion,\n  duration_seconds: durationSeconds,\n  duration_formatted: formatDuration(durationSeconds),\n  triggered_by: workflow_run.event,\n  actor: workflow_run.actor?.login || 'unknown',\n  branch: workflow_run.head_branch,\n  commit_sha: workflow_run.head_sha?.substring(0, 7),\n  commit_message: workflow_run.head_commit?.message?.split('\\n')[0] || '',\n  is_deployment: isDeployment,\n  environment: environment,\n  html_url: workflow_run.html_url,\n  created_at: workflow_run.created_at,\n  updated_at: workflow_run.updated_at\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [650, 200],
+      "id": "parse-workflow-data",
+      "name": "Parse Workflow Data"
+    },
+    {
+      "parameters": {
+        "jsCode": "const input = $input.first().json;\n\n// Generate file path based on current month\nconst now = new Date();\nconst year = now.getFullYear();\nconst month = String(now.getMonth() + 1).padStart(2, '0');\nconst fileName = `github-metrics-${year}-${month}.json`;\nconst filePath = `/data/github-metrics/${fileName}`;\n\n// Try to read existing file or start with empty array\nlet existingMetrics = [];\ntry {\n  // In production, this would read from actual file storage\n  // For now, we'll pass data to next node for storage\n} catch (e) {\n  existingMetrics = [];\n}\n\n// Add new metric\nexistingMetrics.push(input);\n\nreturn {\n  metrics: existingMetrics,\n  new_metric: input,\n  file_path: filePath,\n  file_name: fileName,\n  total_count: existingMetrics.length\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [850, 200],
+      "id": "prepare-storage",
+      "name": "Prepare for Storage"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "is-deployment",
+              "leftValue": "={{ $json.new_metric.is_deployment }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        }
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [1050, 200],
+      "id": "is-deployment-check",
+      "name": "Is Deployment?"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "is-failure",
+              "leftValue": "={{ $json.new_metric.status }}",
+              "rightValue": "failure",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        }
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [1250, 100],
+      "id": "is-failure-check",
+      "name": "Is Failure?"
+    },
+    {
+      "parameters": {
+        "authentication": "oAuth2",
+        "select": "channel",
+        "channelId": {
+          "__rl": true,
+          "mode": "name",
+          "value": "#deployments"
+        },
+        "text": "={{ $json.new_metric.status === 'success' ? ':white_check_mark:' : ':x:' }} *Deployment {{ $json.new_metric.status }}*\n\n*Repository*: {{ $json.new_metric.repository }}\n*Workflow*: {{ $json.new_metric.workflow }}\n*Branch*: `{{ $json.new_metric.branch }}`\n*Environment*: {{ $json.new_metric.environment }}\n*Duration*: {{ $json.new_metric.duration_formatted }}\n*Triggered by*: {{ $json.new_metric.actor }} ({{ $json.new_metric.triggered_by }})\n\n<{{ $json.new_metric.html_url }}|View Run Details>",
+        "otherOptions": {
+          "includeLinkToWorkflow": false
+        }
+      },
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.2,
+      "position": [1450, 0],
+      "id": "slack-deployment-failure",
+      "name": "Slack: Deployment Alert",
+      "credentials": {
+        "slackOAuth2Api": {
+          "id": "{{SLACK_CREDENTIAL_ID}}",
+          "name": "Slack OAuth"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "authentication": "oAuth2",
+        "select": "channel",
+        "channelId": {
+          "__rl": true,
+          "mode": "name",
+          "value": "#deployments"
+        },
+        "text": ":rocket: *Deployment Success*\n\n*Repository*: {{ $json.new_metric.repository }}\n*Branch*: `{{ $json.new_metric.branch }}` → {{ $json.new_metric.environment }}\n*Duration*: {{ $json.new_metric.duration_formatted }}",
+        "otherOptions": {
+          "includeLinkToWorkflow": false
+        }
+      },
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.2,
+      "position": [1450, 200],
+      "id": "slack-deployment-success",
+      "name": "Slack: Deployment Success",
+      "credentials": {
+        "slackOAuth2Api": {
+          "id": "{{SLACK_CREDENTIAL_ID}}",
+          "name": "Slack OAuth"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "build-failure",
+              "leftValue": "={{ $json.new_metric.status }}",
+              "rightValue": "failure",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        }
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [1250, 400],
+      "id": "build-failure-check",
+      "name": "Build Failed?"
+    },
+    {
+      "parameters": {
+        "authentication": "oAuth2",
+        "select": "channel",
+        "channelId": {
+          "__rl": true,
+          "mode": "name",
+          "value": "#builds"
+        },
+        "text": ":x: *Build Failed*\n\n*Repository*: {{ $json.new_metric.repository }}\n*Workflow*: {{ $json.new_metric.workflow }}\n*Branch*: `{{ $json.new_metric.branch }}`\n*Actor*: {{ $json.new_metric.actor }}\n*Commit*: `{{ $json.new_metric.commit_sha }}` - {{ $json.new_metric.commit_message }}\n\n<{{ $json.new_metric.html_url }}|View Failure Details>",
+        "otherOptions": {
+          "includeLinkToWorkflow": false
+        }
+      },
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.2,
+      "position": [1450, 350],
+      "id": "slack-build-failure",
+      "name": "Slack: Build Failed",
+      "credentials": {
+        "slackOAuth2Api": {
+          "id": "{{SLACK_CREDENTIAL_ID}}",
+          "name": "Slack OAuth"
+        }
+      }
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [1450, 500],
+      "id": "build-success-noop",
+      "name": "Build Success (No Alert)"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [650, 400],
+      "id": "skip-non-workflow",
+      "name": "Skip Non-Workflow Events"
+    }
+  ],
+  "connections": {
+    "GitHub Webhook": {
+      "main": [
+        [
+          {
+            "node": "Is Completed Workflow?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Is Completed Workflow?": {
+      "main": [
+        [
+          {
+            "node": "Parse Workflow Data",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Skip Non-Workflow Events",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse Workflow Data": {
+      "main": [
+        [
+          {
+            "node": "Prepare for Storage",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare for Storage": {
+      "main": [
+        [
+          {
+            "node": "Is Deployment?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Is Deployment?": {
+      "main": [
+        [
+          {
+            "node": "Is Failure?",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Build Failed?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Is Failure?": {
+      "main": [
+        [
+          {
+            "node": "Slack: Deployment Alert",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Slack: Deployment Success",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Failed?": {
+      "main": [
+        [
+          {
+            "node": "Slack: Build Failed",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Build Success (No Alert)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "meta": {
+    "templateId": "github-metrics-collector",
+    "description": "GitHub Actions workflow_run webhook receiver. Collects build/deployment metrics and sends alerts for failures.",
+    "version": "1.0.0"
+  },
+  "_workflow_info": {
+    "webhook_path": "/webhook/github-workflow",
+    "github_webhook_config": {
+      "content_type": "application/json",
+      "events": ["workflow_run"],
+      "secret": "GITHUB_WEBHOOK_SECRET (configure in GitHub repo settings)"
+    },
+    "collected_metrics": {
+      "timestamp": "ISO timestamp",
+      "repository": "full repo name (owner/repo)",
+      "workflow": "workflow name",
+      "status": "success/failure/cancelled",
+      "duration_seconds": "execution time in seconds",
+      "triggered_by": "push/pull_request/schedule/etc",
+      "branch": "head branch name",
+      "is_deployment": "boolean - detected from workflow name",
+      "environment": "prod/staging/dev/unknown"
+    },
+    "slack_channels": {
+      "deployments": "#deployments - deployment success/failure alerts",
+      "builds": "#builds - build failure alerts only"
+    },
+    "storage_location": "/data/github-metrics/github-metrics-YYYY-MM.json"
+  }
+}

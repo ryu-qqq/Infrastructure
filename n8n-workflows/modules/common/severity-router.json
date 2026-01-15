@@ -1,0 +1,97 @@
+{
+  "_module": {
+    "name": "Severity Router",
+    "description": "심각도 기반 라우팅 패턴 (Critical/High/Medium/Low)",
+    "version": "1.0.0",
+    "inputs": ["severity", "event_count", "error_level"],
+    "outputs": ["critical", "high", "medium", "low"]
+  },
+  "nodes": [
+    {
+      "parameters": {
+        "jsCode": "const input = $input.first().json;\n\n// 심각도 판단 로직\nconst eventCount = input.event_count || 1;\nconst errorLevel = (input.error_level || input.level || 'error').toLowerCase();\nconst aiSeverity = (input.ai_severity || input.severity || 'medium').toLowerCase();\n\nlet calculatedSeverity = 'low';\n\n// 규칙 1: AI 분석 결과가 critical이면 무조건 critical\nif (aiSeverity === 'critical') {\n  calculatedSeverity = 'critical';\n}\n// 규칙 2: fatal 레벨이면 critical\nelse if (errorLevel === 'fatal' || errorLevel === 'critical') {\n  calculatedSeverity = 'critical';\n}\n// 규칙 3: 이벤트 수 100 이상이면 critical\nelse if (eventCount >= 100) {\n  calculatedSeverity = 'critical';\n}\n// 규칙 4: AI가 high이거나 이벤트 50 이상이면 high\nelse if (aiSeverity === 'high' || eventCount >= 50) {\n  calculatedSeverity = 'high';\n}\n// 규칙 5: error 레벨이면 medium\nelse if (errorLevel === 'error') {\n  calculatedSeverity = 'medium';\n}\n// 규칙 6: warning이면 low\nelse if (errorLevel === 'warning') {\n  calculatedSeverity = 'low';\n}\n// 기본값\nelse {\n  calculatedSeverity = aiSeverity;\n}\n\n// 액션 결정\nconst actions = {\n  create_jira: calculatedSeverity === 'critical' || calculatedSeverity === 'high',\n  send_slack: true, // 모든 레벨에서 Slack 알림\n  send_pagerduty: calculatedSeverity === 'critical',\n  auto_fix_eligible: calculatedSeverity === 'high' || calculatedSeverity === 'medium'\n};\n\n// Jira 우선순위 매핑\nconst jiraPriority = {\n  'critical': 'Highest',\n  'high': 'High',\n  'medium': 'Medium',\n  'low': 'Low'\n};\n\nreturn {\n  ...input,\n  calculated_severity: calculatedSeverity,\n  jira_priority: jiraPriority[calculatedSeverity],\n  actions: actions,\n  severity_reason: `Level: ${errorLevel}, Events: ${eventCount}, AI: ${aiSeverity}`\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [500, 300],
+      "id": "calculate-severity",
+      "name": "Calculate Severity"
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {"caseSensitive": true, "leftValue": "", "typeValidation": "strict", "version": 2},
+                "conditions": [
+                  {"leftValue": "={{ $json.calculated_severity }}", "rightValue": "critical", "operator": {"type": "string", "operation": "equals"}}
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "critical"
+            },
+            {
+              "conditions": {
+                "options": {"caseSensitive": true, "leftValue": "", "typeValidation": "strict", "version": 2},
+                "conditions": [
+                  {"leftValue": "={{ $json.calculated_severity }}", "rightValue": "high", "operator": {"type": "string", "operation": "equals"}}
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "high"
+            },
+            {
+              "conditions": {
+                "options": {"caseSensitive": true, "leftValue": "", "typeValidation": "strict", "version": 2},
+                "conditions": [
+                  {"leftValue": "={{ $json.calculated_severity }}", "rightValue": "medium", "operator": {"type": "string", "operation": "equals"}}
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "medium"
+            },
+            {
+              "conditions": {
+                "options": {"caseSensitive": true, "leftValue": "", "typeValidation": "strict", "version": 2},
+                "conditions": [
+                  {"leftValue": "={{ $json.calculated_severity }}", "rightValue": "low", "operator": {"type": "string", "operation": "equals"}}
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "low"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3,
+      "position": [700, 300],
+      "id": "route-by-severity",
+      "name": "Route By Severity"
+    }
+  ],
+  "connections": {
+    "Calculate Severity": {
+      "main": [[{"node": "Route By Severity", "type": "main", "index": 0}]]
+    }
+  },
+  "_usage": {
+    "severity_rules": {
+      "critical": ["AI severity = critical", "error_level = fatal", "event_count >= 100"],
+      "high": ["AI severity = high", "event_count >= 50"],
+      "medium": ["error_level = error"],
+      "low": ["error_level = warning", "default"]
+    },
+    "actions_by_severity": {
+      "critical": ["Jira (Highest)", "Slack", "PagerDuty"],
+      "high": ["Jira (High)", "Slack", "Auto-fix eligible"],
+      "medium": ["Slack", "Auto-fix eligible"],
+      "low": ["Slack only"]
+    }
+  }
+}

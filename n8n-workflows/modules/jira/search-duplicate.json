@@ -1,0 +1,57 @@
+{
+  "_module": {
+    "name": "Jira Duplicate Search",
+    "description": "JQL 쿼리로 기존 이슈 검색하여 중복 방지",
+    "version": "1.0.0",
+    "inputs": ["identifier"],
+    "outputs": ["exists", "issue_key", "issue_data"]
+  },
+  "nodes": [
+    {
+      "parameters": {
+        "operation": "search",
+        "jqlQuery": "={{ 'project = ' + $json.jira_project + ' AND summary ~ \"' + $json.fingerprint + '\" AND status NOT IN (Done, Closed) ORDER BY created DESC' }}",
+        "options": {
+          "maxResults": 1
+        }
+      },
+      "type": "n8n-nodes-base.jira",
+      "typeVersion": 1,
+      "position": [500, 300],
+      "id": "search-existing-issue",
+      "name": "Search Existing Issue",
+      "credentials": {
+        "jiraApi": {
+          "id": "{{JIRA_CREDENTIAL_ID}}",
+          "name": "Jira API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const searchResult = $input.first().json;\nconst issues = searchResult.issues || [];\n\nif (issues.length > 0) {\n  const existingIssue = issues[0];\n  return {\n    exists: true,\n    issue_key: existingIssue.key,\n    issue_id: existingIssue.id,\n    issue_url: `https://your-domain.atlassian.net/browse/${existingIssue.key}`,\n    issue_data: existingIssue,\n    event_count: (existingIssue.fields?.customfield_10001 || 0) + 1\n  };\n} else {\n  return {\n    exists: false,\n    issue_key: null,\n    issue_id: null,\n    issue_url: null,\n    issue_data: null,\n    event_count: 1\n  };\n}"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [700, 300],
+      "id": "check-exists",
+      "name": "Check Exists"
+    }
+  ],
+  "connections": {
+    "Search Existing Issue": {
+      "main": [[{"node": "Check Exists", "type": "main", "index": 0}]]
+    }
+  },
+  "_usage": {
+    "description": "이 모듈 사용 전에 입력 데이터에 다음 필드가 필요합니다",
+    "required_fields": {
+      "fingerprint": "에러/이벤트 고유 식별자 (Sentry fingerprint, 호스트명 등)",
+      "jira_project": "Jira 프로젝트 키 (예: PROD, DEV)"
+    },
+    "example_input": {
+      "fingerprint": "NullPointerException-UserService-getUser",
+      "jira_project": "PROD"
+    }
+  }
+}
