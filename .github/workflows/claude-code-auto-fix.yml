@@ -1,0 +1,85 @@
+name: Claude Code Auto Fix
+
+on:
+  issue_comment:
+    types: [created]
+  issues:
+    types: [opened]
+
+jobs:
+  claude-fix:
+    # @claude 멘션이 있는 코멘트 또는 Issue 본문에서 트리거
+    if: |
+      (github.event_name == 'issue_comment' && contains(github.event.comment.body, '@claude')) ||
+      (github.event_name == 'issues' && contains(github.event.issue.body, '@claude'))
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+      issues: write
+      id-token: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - name: Run Claude Code Action
+        id: claude
+        uses: anthropics/claude-code-action@v1
+        with:
+          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          trigger_phrase: "@claude"
+          # Claude가 코드 수정 및 PR 생성 가능하도록 도구 허용
+          claude_args: |
+            --model claude-sonnet-4-5
+            --allowedTools "Read,Write,Edit,Glob,Grep,Bash(git:*),Bash(gh pr create:*),Bash(gh pr comment:*)"
+
+      - name: Check for changes
+        id: changes
+        run: |
+          if [[ -n $(git status --porcelain) ]]; then
+            echo "has_changes=true" >> $GITHUB_OUTPUT
+            echo "Changes detected"
+          else
+            echo "has_changes=false" >> $GITHUB_OUTPUT
+            echo "No changes"
+          fi
+
+      - name: Create PR if changes exist
+        if: steps.changes.outputs.has_changes == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          ISSUE_NUMBER="${{ github.event.issue.number || github.event.comment.issue_url && github.event.comment.issue_url | split('/') | last }}"
+          BRANCH_NAME="fix/claude-issue-${ISSUE_NUMBER}-$(date +%s)"
+
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "github-actions[bot]"
+
+          git checkout -b "$BRANCH_NAME"
+          git add -A
+          git commit -m "fix: auto-fix from Claude Code
+
+          Resolves #${ISSUE_NUMBER}
+
+          🤖 Generated with Claude Code Action"
+
+          git push origin "$BRANCH_NAME"
+
+          gh pr create \
+            --title "🤖 Claude Auto-fix for #${ISSUE_NUMBER}" \
+            --body "## 🤖 Claude Code 자동 수정
+
+          @claude 멘션에 의해 자동으로 생성된 PR입니다.
+
+          ### 관련 이슈
+          Closes #${ISSUE_NUMBER}
+
+          ### ⚠️ 주의
+          **반드시 코드 리뷰 후 머지해주세요!**
+
+          ---
+          _🤖 Generated with [Claude Code Action](https://github.com/anthropics/claude-code-action)_" \
+            --label "auto-fix,claude-code"

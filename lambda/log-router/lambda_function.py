@@ -121,7 +121,7 @@ def transform_log_event(log_event: dict, log_data: dict) -> dict:
         'log_stream': log_data.get('logStream', 'unknown'),
         'service': extract_service_name(log_data.get('logGroup', '')),
         'aws_account': log_data.get('owner', 'unknown'),
-        'message': message,
+        'raw_message': message,  # 원본 메시지는 raw_message로 저장
         'event_id': log_event.get('id', ''),
         'level': extract_log_level(message),
     }
@@ -179,8 +179,8 @@ def extract_log_level(message: str) -> str:
 
 def parse_log_message(message: str) -> dict:
     """
-    로그 메시지를 파싱하여 구조화된 필드를 추출합니다.
-    JSON 형식인 경우 파싱을 시도합니다.
+    로그 메시지를 파싱하여 모든 JSON 필드를 최상위로 평탄화합니다.
+    JSON 형식인 경우 전체 필드를 추출하고, 추가 정규화를 수행합니다.
     """
     parsed = {}
 
@@ -189,84 +189,88 @@ def parse_log_message(message: str) -> dict:
         if message.strip().startswith('{'):
             json_data = json.loads(message)
 
-            # === 기본 필드 ===
-            level = json_data.get('level') or json_data.get('log_level') or json_data.get('severity')
+            # === 모든 JSON 필드를 최상위로 평탄화 ===
+            parsed = flatten_json(json_data)
+
+            # === 필드 정규화 (일관된 필드명으로 변환) ===
+            # 로그 레벨 정규화
+            level = parsed.get('level') or parsed.get('log_level') or parsed.get('severity')
             if level:
                 parsed['log_level'] = str(level).upper()
 
-            logger_name = json_data.get('logger') or json_data.get('logger_name') or json_data.get('caller')
+            # 로거 정규화
+            logger_name = parsed.get('logger') or parsed.get('logger_name') or parsed.get('caller')
             if logger_name:
                 parsed['logger'] = logger_name
 
-            thread = json_data.get('thread') or json_data.get('thread_name')
+            # 스레드 정규화
+            thread = parsed.get('thread') or parsed.get('thread_name')
             if thread:
                 parsed['thread'] = thread
 
-            if 'message' in json_data and isinstance(json_data['message'], str):
-                parsed['parsed_message'] = json_data['message']
-            elif 'msg' in json_data:
-                parsed['parsed_message'] = json_data['msg']
+            # 메시지 정규화 (원본 JSON의 message 필드)
+            if 'message' in parsed and isinstance(parsed['message'], str):
+                parsed['parsed_message'] = parsed['message']
+                del parsed['message']  # raw_message에 원본이 있으므로 중복 제거
+            elif 'msg' in parsed:
+                parsed['parsed_message'] = parsed['msg']
 
-            # === 에러 관련 필드 ===
-            stack_trace = json_data.get('stack_trace') or json_data.get('stacktrace') or json_data.get('exception')
+            # 스택 트레이스 정규화
+            stack_trace = parsed.get('stack_trace') or parsed.get('stacktrace') or parsed.get('exception')
             if stack_trace:
                 parsed['stack_trace'] = stack_trace
-                exception_class = extract_exception_class(stack_trace)
+                exception_class = extract_exception_class(str(stack_trace))
                 if exception_class:
                     parsed['exception_class'] = exception_class
 
-            error_msg = json_data.get('error_message') or json_data.get('error')
-            if error_msg and isinstance(error_msg, str):
-                parsed['error_message'] = error_msg
-
-            # === HTTP 관련 필드 ===
-            http_method = json_data.get('http_method') or json_data.get('method') or json_data.get('httpMethod')
+            # HTTP 관련 필드 정규화
+            http_method = parsed.get('http_method') or parsed.get('method') or parsed.get('httpMethod')
             if http_method:
                 parsed['http_method'] = http_method
 
-            http_path = json_data.get('http_path') or json_data.get('path') or json_data.get('uri') or json_data.get('url')
+            http_path = parsed.get('http_path') or parsed.get('path') or parsed.get('uri') or parsed.get('url')
             if http_path:
                 parsed['http_path'] = http_path
 
-            status_code = json_data.get('status_code') or json_data.get('statusCode') or json_data.get('status') or json_data.get('http_status')
+            status_code = parsed.get('status_code') or parsed.get('statusCode') or parsed.get('status') or parsed.get('http_status')
             if status_code:
                 parsed['status_code'] = int(status_code) if str(status_code).isdigit() else status_code
 
-            duration = json_data.get('duration') or json_data.get('duration_ms') or json_data.get('response_time') or json_data.get('elapsed')
+            duration = parsed.get('duration') or parsed.get('duration_ms') or parsed.get('response_time') or parsed.get('elapsed')
             if duration:
                 parsed['duration_ms'] = duration
 
-            client_ip = json_data.get('client_ip') or json_data.get('clientIp') or json_data.get('remote_addr') or json_data.get('ip')
+            client_ip = parsed.get('client_ip') or parsed.get('clientIp') or parsed.get('remote_addr') or parsed.get('ip')
             if client_ip:
                 parsed['client_ip'] = client_ip
 
-            # === 분산 추적 필드 ===
-            trace_id = json_data.get('trace_id') or json_data.get('traceId') or json_data.get('x-amzn-trace-id')
+            # 분산 추적 필드 정규화
+            trace_id = parsed.get('trace_id') or parsed.get('traceId') or parsed.get('x-amzn-trace-id')
             if trace_id:
                 parsed['trace_id'] = trace_id
 
-            span_id = json_data.get('span_id') or json_data.get('spanId')
+            span_id = parsed.get('span_id') or parsed.get('spanId')
             if span_id:
                 parsed['span_id'] = span_id
 
-            request_id = json_data.get('request_id') or json_data.get('requestId') or json_data.get('correlationId')
+            request_id = parsed.get('request_id') or parsed.get('requestId') or parsed.get('correlationId')
             if request_id:
                 parsed['request_id'] = request_id
 
-            # === 비즈니스 컨텍스트 ===
-            user_id = json_data.get('user_id') or json_data.get('userId')
+            # 비즈니스 컨텍스트 정규화
+            user_id = parsed.get('user_id') or parsed.get('userId')
             if user_id:
                 parsed['user_id'] = user_id
 
-            action = json_data.get('action') or json_data.get('operation')
+            action = parsed.get('action') or parsed.get('operation')
             if action:
                 parsed['action'] = action
 
-            app_name = json_data.get('APP_NAME') or json_data.get('application') or json_data.get('service')
+            app_name = parsed.get('APP_NAME') or parsed.get('application') or parsed.get('service') or parsed.get('SERVICE_NAME')
             if app_name:
                 parsed['app_name'] = app_name
 
-            env = json_data.get('APP_ENV') or json_data.get('environment') or json_data.get('env')
+            env = parsed.get('APP_ENV') or parsed.get('environment') or parsed.get('env') or parsed.get('ENVIRONMENT')
             if env:
                 parsed['environment'] = env
 
@@ -274,6 +278,40 @@ def parse_log_message(message: str) -> dict:
         pass
 
     return parsed
+
+
+def flatten_json(obj: dict, parent_key: str = '', separator: str = '_') -> dict:
+    """
+    중첩된 JSON 객체를 평탄화합니다.
+
+    Args:
+        obj: 평탄화할 JSON 객체
+        parent_key: 부모 키 (재귀 호출용)
+        separator: 키 구분자
+
+    Returns:
+        평탄화된 딕셔너리
+
+    예시:
+        {'a': {'b': 1, 'c': 2}} → {'a_b': 1, 'a_c': 2}
+        {'items': [1, 2, 3]} → {'items': [1, 2, 3]}  # 배열은 그대로 유지
+    """
+    items = {}
+
+    for key, value in obj.items():
+        new_key = f"{parent_key}{separator}{key}" if parent_key else key
+
+        if isinstance(value, dict):
+            # 중첩된 객체는 재귀적으로 평탄화
+            items.update(flatten_json(value, new_key, separator))
+        elif isinstance(value, list):
+            # 리스트는 그대로 유지 (OpenSearch에서 배열 지원)
+            items[new_key] = value
+        else:
+            # 기본 값은 그대로 저장
+            items[new_key] = value
+
+    return items
 
 
 def extract_exception_class(stack_trace: str) -> str:

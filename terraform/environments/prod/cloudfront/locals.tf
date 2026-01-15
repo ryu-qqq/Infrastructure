@@ -32,5 +32,12 @@ locals {
       domain_name = "fileflow-uploads-prod.s3.${var.aws_region}.amazonaws.com"
       origin_id   = "S3-fileflow-uploads-prod"
     }
+
+    # Legacy Images 오리진: set-of.net (삭제된 CloudFront에서 마이그레이션)
+    # 경로: /product/*, /description/*
+    setof_net_legacy = {
+      domain_name = "set-of.net.s3.${var.aws_region}.amazonaws.com"
+      origin_id   = "S3-set-of-net"
+    }
   }
 }
