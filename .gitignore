@@ -18,10 +18,14 @@ override.tf.json
 # IDE
 .idea/
 .vscode/
+.cursor/
 *.swp
 *.swo
 *~
 .DS_Store
+
+# Build artifacts
+*.zip
 
 # Environment
 .env
