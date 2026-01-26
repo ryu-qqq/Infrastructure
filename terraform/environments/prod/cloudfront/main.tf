@@ -295,6 +295,45 @@ resource "aws_cloudfront_distribution" "cdn" {
   }
 
   # ----------------------------------------------------------------------------
+  # Cache Behavior: /excel/* -> set-of.net (Excel files)
+  # Added for legacy Excel file access (e.g., product_reg.xlsx)
+  # ----------------------------------------------------------------------------
+  ordered_cache_behavior {
+    path_pattern           = "/excel/*"
+    allowed_methods        = ["GET", "HEAD", "OPTIONS"]
+    cached_methods         = ["GET", "HEAD"]
+    target_origin_id       = local.origins.setof_net_legacy.origin_id
+    viewer_protocol_policy = "redirect-to-https"
+    compress               = true
+
+    cache_policy_id          = "658327ea-f89d-4fab-a63d-7e88639e58f6" # CachingOptimized
+    origin_request_policy_id = "88a5eaf4-2fd4-4709-b370-b4c650ea3fcf" # CORS-S3Origin
+
+    min_ttl     = 0
+    default_ttl = 86400    # 1 day
+    max_ttl     = 31536000 # 1 year
+  }
+
+  # ----------------------------------------------------------------------------
+  # Cache Behavior: /EXCEL/* -> set-of.net (Excel files - uppercase)
+  # ----------------------------------------------------------------------------
+  ordered_cache_behavior {
+    path_pattern           = "/EXCEL/*"
+    allowed_methods        = ["GET", "HEAD", "OPTIONS"]
+    cached_methods         = ["GET", "HEAD"]
+    target_origin_id       = local.origins.setof_net_legacy.origin_id
+    viewer_protocol_policy = "redirect-to-https"
+    compress               = true
+
+    cache_policy_id          = "658327ea-f89d-4fab-a63d-7e88639e58f6" # CachingOptimized
+    origin_request_policy_id = "88a5eaf4-2fd4-4709-b370-b4c650ea3fcf" # CORS-S3Origin
+
+    min_ttl     = 0
+    default_ttl = 86400    # 1 day
+    max_ttl     = 31536000 # 1 year
+  }
+
+  # ----------------------------------------------------------------------------
   # SSL/TLS Configuration
   # ----------------------------------------------------------------------------
   viewer_certificate {
@@ -467,7 +506,9 @@ resource "aws_s3_bucket_policy" "setof-net-legacy" {
           "arn:aws:s3:::set-of.net/content/*",
           "arn:aws:s3:::set-of.net/CONTENT/*",
           "arn:aws:s3:::set-of.net/logo/*",
-          "arn:aws:s3:::set-of.net/seo/*"
+          "arn:aws:s3:::set-of.net/seo/*",
+          "arn:aws:s3:::set-of.net/excel/*",
+          "arn:aws:s3:::set-of.net/EXCEL/*"
         ]
         Condition = {
           StringEquals = {
