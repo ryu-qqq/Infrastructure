@@ -1,0 +1,11 @@
+{
+    "Effect": "Allow",
+    "Action": [
+      "scheduler:GetSchedule",
+      "scheduler:CreateSchedule",
+      "scheduler:UpdateSchedule",
+      "scheduler:DeleteSchedule",
+      "scheduler:ListSchedules"
+    ],
+    "Resource": "arn:aws:scheduler:ap-northeast-2:646886795421:schedule/*"
+  }     

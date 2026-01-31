@@ -33,10 +33,11 @@ n8n_image_tag     = "latest"
 n8n_desired_count = 1
 
 # RDS Configuration
-db_instance_class          = "db.t3.micro"
+# Upgraded for shared usage (n8n, API, MCP)
+db_instance_class          = "db.t4g.small"  # Graviton-based, cost-effective
 db_allocated_storage       = 20
 db_max_allocated_storage   = 100
-db_multi_az                = false
+db_multi_az                = true            # HA for production shared DB
 db_backup_retention_period = 7
 
 # ALB Configuration

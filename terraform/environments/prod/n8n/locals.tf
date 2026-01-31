@@ -28,8 +28,13 @@ locals {
   n8n_container_name = "n8n"
   n8n_container_port = 5678
 
-  # Database configuration
+  # Database configuration (n8n)
   db_name     = "n8n"
   db_port     = 5432
   db_username = "n8nadmin"
+
+  # Shared API/MCP database configuration
+  # Note: Database and user must be created manually in PostgreSQL after apply
+  shared_api_db_name     = "shared_api"
+  shared_api_db_username = "shared_api_user"
 }

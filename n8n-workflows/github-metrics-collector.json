@@ -139,7 +139,7 @@
           "mode": "name",
           "value": "#deployments"
         },
-        "text": "={{ $json.new_metric.status === 'success' ? ':white_check_mark:' : ':x:' }} *Deployment {{ $json.new_metric.status }}*\n\n*Repository*: {{ $json.new_metric.repository }}\n*Workflow*: {{ $json.new_metric.workflow }}\n*Branch*: `{{ $json.new_metric.branch }}`\n*Environment*: {{ $json.new_metric.environment }}\n*Duration*: {{ $json.new_metric.duration_formatted }}\n*Triggered by*: {{ $json.new_metric.actor }} ({{ $json.new_metric.triggered_by }})\n\n<{{ $json.new_metric.html_url }}|View Run Details>",
+        "text": "=:x: *Deployment Failed*\n\n:package: *Repository*: `{{ $json.new_metric.repository_name }}`\n:gear: *Workflow*: {{ $json.new_metric.workflow }} `#{{ $json.new_metric.run_number }}`\n:seedling: *Branch*: `{{ $json.new_metric.branch }}` → :earth_asia: `{{ $json.new_metric.environment }}`\n:bust_in_silhouette: *Actor*: {{ $json.new_metric.actor }} ({{ $json.new_metric.triggered_by }})\n:memo: *Commit*: `{{ $json.new_metric.commit_sha }}` - {{ $json.new_metric.commit_message }}\n:stopwatch: *Duration*: {{ $json.new_metric.duration_formatted }}\n\n<{{ $json.new_metric.html_url }}|:link: View Run Details>",
         "otherOptions": {
           "includeLinkToWorkflow": false
         }
@@ -165,7 +165,7 @@
           "mode": "name",
           "value": "#deployments"
         },
-        "text": ":rocket: *Deployment Success*\n\n*Repository*: {{ $json.new_metric.repository }}\n*Branch*: `{{ $json.new_metric.branch }}` → {{ $json.new_metric.environment }}\n*Duration*: {{ $json.new_metric.duration_formatted }}",
+        "text": "=:white_check_mark: *Deployment Success*\n\n:package: *Repository*: `{{ $json.new_metric.repository_name }}`\n:gear: *Workflow*: {{ $json.new_metric.workflow }} `#{{ $json.new_metric.run_number }}`\n:seedling: *Branch*: `{{ $json.new_metric.branch }}` → :earth_asia: `{{ $json.new_metric.environment }}`\n:bust_in_silhouette: *Actor*: {{ $json.new_metric.actor }} ({{ $json.new_metric.triggered_by }})\n:memo: *Commit*: `{{ $json.new_metric.commit_sha }}` - {{ $json.new_metric.commit_message }}\n:stopwatch: *Duration*: {{ $json.new_metric.duration_formatted }}\n\n<{{ $json.new_metric.html_url }}|:link: View Run Details>",
         "otherOptions": {
           "includeLinkToWorkflow": false
         }

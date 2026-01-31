@@ -85,7 +85,8 @@ variable "allowed_github_repos" {
     "AuthHub",
     "Gateway",
     "MarketPlace",
-    "setof-commerce"
+    "setof-commerce",
+    "conventionHub"
   ]
 }
 

@@ -8,7 +8,7 @@
         "options": {}
       },
       "type": "n8n-nodes-base.webhook",
-      "typeVersion": 2.1,
+      "typeVersion": 2,
       "position": [200, 300],
       "id": "webhook-sentry",
       "name": "Sentry Webhook",
@@ -16,7 +16,7 @@
     },
     {
       "parameters": {
-        "jsCode": "// Sentry 웹훅에서 에러 정보 파싱\nconst input = $input.first().json;\n\nlet errorData = {};\n\n// Sentry Direct Webhook 형식\nif (input.event) {\n  const event = input.event;\n  errorData = {\n    source: 'sentry_direct',\n    title: event.title || 'Unknown Error',\n    message: event.message || event.title,\n    level: event.level || 'error',\n    platform: event.platform || 'unknown',\n    environment: event.environment || 'production',\n    project: input.project_name || input.project?.name || 'unknown',\n    project_slug: input.project_slug || input.project?.slug || 'unknown',\n    culprit: event.culprit || '',\n    url: input.url || '',\n    issue_id: input.id || event.event_id || '',\n    stacktrace: '',\n    tags: event.tags || [],\n    timestamp: event.timestamp || new Date().toISOString(),\n    event_count: input.event_count || 1\n  };\n  \n  // 스택트레이스 추출\n  if (event.exception?.values?.[0]?.stacktrace?.frames) {\n    const frames = event.exception.values[0].stacktrace.frames.slice(-10);\n    errorData.stacktrace = frames.map(f => \n      `  at ${f.function || 'anonymous'} (${f.filename}:${f.lineno}:${f.colno})`\n    ).reverse().join('\\n');\n  }\n  \n  // 에러 타입 추출\n  if (event.exception?.values?.[0]) {\n    errorData.error_type = event.exception.values[0].type || 'Error';\n  }\n}\n// Slack 메시지 형식 (Sentry → Slack → n8n)\nelse if (input.event?.text || input.text) {\n  const text = input.event?.text || input.text;\n  errorData = {\n    source: 'slack_sentry',\n    title: text.split('\\n')[0] || 'Sentry Alert',\n    message: text,\n    level: 'error',\n    platform: 'unknown',\n    environment: 'production',\n    project: 'unknown',\n    project_slug: 'unknown',\n    culprit: '',\n    url: '',\n    issue_id: '',\n    stacktrace: text,\n    tags: [],\n    timestamp: new Date().toISOString(),\n    event_count: 1,\n    error_type: 'Unknown'\n  };\n  \n  // Slack 메시지에서 프로젝트명 추출 시도\n  const projectMatch = text.match(/\\[([^\\]]+)\\]/);\n  if (projectMatch) {\n    errorData.project = projectMatch[1];\n    errorData.project_slug = projectMatch[1].toLowerCase().replace(/\\s+/g, '-');\n  }\n}\nelse {\n  errorData = {\n    source: 'unknown',\n    title: JSON.stringify(input).substring(0, 100),\n    message: JSON.stringify(input),\n    level: 'error',\n    platform: 'unknown',\n    environment: 'production',\n    project: 'unknown',\n    project_slug: 'unknown',\n    culprit: '',\n    url: '',\n    issue_id: '',\n    stacktrace: '',\n    tags: [],\n    timestamp: new Date().toISOString(),\n    event_count: 1,\n    error_type: 'Unknown'\n  };\n}\n\nreturn errorData;"
+        "jsCode": "// Sentry 웹훅 payload 파싱\nconst rawInput = $input.first().json;\n\n// ═══════════════════════════════════════════════════════════════\n// 🔧 프로젝트 매핑 설정 (여기서 한 번에 관리!)\n// Sentry 프로젝트 slug → Jira 프로젝트 키, GitHub 레포, 버그 이슈타입 ID\n// ⚠️ AUT, MAR 프로젝트는 Jira에서 버그 이슈타입 추가 필요!\n// ═══════════════════════════════════════════════════════════════\nconst PROJECT_CONFIG = {\n  'authhub': { jira: 'AUT', github: 'ryu-qqq/AuthHub', bugTypeId: '10260' },\n  'fileflow': { jira: 'KAN', github: 'ryu-qqq/FileFlow', bugTypeId: '10260' },\n  'setof-commerce': { jira: 'SC', github: 'ryu-qqq/setof-commerce', bugTypeId: '10262' },\n  'crawlinghub': { jira: 'CRAW', github: 'ryu-qqq/CrawlingHub', bugTypeId: '10261' },\n  'marketplace': { jira: 'MAR', github: 'ryu-qqq/MarketPlace', bugTypeId: '10260' },\n  'connectly-gateway': { jira: 'GAT', github: 'ryu-qqq/Gateway', bugTypeId: '10259' }\n};\nconst DEFAULT_CONFIG = { jira: 'KAN', github: 'ryu-qqq/AuthHub', bugTypeId: '10260' };\n// ═══════════════════════════════════════════════════════════════\n\n// 디버깅: 실제 들어온 데이터 구조 확인\nconst debugInfo = {\n  rawInputKeys: Object.keys(rawInput),\n  hasBody: !!rawInput.body,\n  hasAction: !!rawInput.action,\n  hasData: !!rawInput.data,\n  actionValue: rawInput.action || rawInput.body?.action || 'none',\n  dataKeys: rawInput.data ? Object.keys(rawInput.data) : (rawInput.body?.data ? Object.keys(rawInput.body.data) : [])\n};\n\n// n8n이 headers/body로 래핑한 경우 body 추출, 아니면 그대로 사용\nconst input = rawInput.body || rawInput;\n\nlet errorData = {\n  project: 'unknown',\n  project_slug: 'unknown',\n  title: 'Unknown Error',\n  message: '',\n  level: 'error',\n  environment: 'production',\n  url: '',\n  web_url: '',\n  culprit: '',\n  filename: '',\n  lineno: '',\n  function: '',\n  stacktrace: '',\n  timestamp: new Date().toISOString(),\n  event_count: 1,\n  issue_id: ''\n};\n\n// URL에서 프로젝트 slug 추출하는 함수\nfunction extractProjectSlug(url) {\n  if (!url) return 'unknown';\n  // /projects/org/project-slug/events/ 형식에서 추출\n  const match = url.match(/\\/projects\\/[^\\/]+\\/([^\\/]+)\\//);  \n  return match ? match[1] : 'unknown';\n}\n\n// Sentry Event Alert 형식 (action: triggered, data.event)\nif (input.action === 'triggered' && input.data?.event) {\n  const event = input.data.event;\n  \n  // URL에서 프로젝트 slug 추출\n  const projectSlug = extractProjectSlug(event.url);\n  \n  // 기본 정보\n  errorData.project = projectSlug;\n  errorData.project_slug = projectSlug;\n  errorData.title = event.message || event.title || 'Unknown Error';\n  errorData.message = event.message || '';\n  errorData.culprit = event.culprit || '';\n  errorData.environment = event.environment || 'production';\n  errorData.url = event.url || '';\n  errorData.web_url = event.web_url || '';\n  errorData.issue_id = event.issue_id || '';\n  errorData.timestamp = event.datetime || new Date().toISOString();\n  errorData.triggered_rule = input.data.triggered_rule || '';\n  \n  // tags에서 level 추출 (tags는 [[key, value], ...] 형식)\n  if (Array.isArray(event.tags)) {\n    const levelTag = event.tags.find(t => t[0] === 'level');\n    errorData.level = levelTag ? levelTag[1] : 'error';\n    \n    const envTag = event.tags.find(t => t[0] === 'environment');\n    if (envTag) errorData.environment = envTag[1];\n  }\n  \n  // culprit에서 파일/함수 정보 추출 (예: \"io.sentry.example.ApiRequest in perform\")\n  if (event.culprit) {\n    const match = event.culprit.match(/(.+?)\\s+in\\s+(.+)/);\n    if (match) {\n      errorData.filename = match[1];\n      errorData.function = match[2];\n    } else {\n      errorData.filename = event.culprit;\n    }\n  }\n  \n  // 스택트레이스에서 파일/라인 정보 추출\n  if (event.exception?.values?.[0]?.stacktrace?.frames) {\n    const frames = event.exception.values[0].stacktrace.frames;\n    // in_app: true인 프레임 또는 마지막 프레임\n    const appFrame = frames.find(f => f.in_app) || frames[frames.length - 1];\n    if (appFrame) {\n      errorData.filename = appFrame.filename || errorData.filename;\n      errorData.lineno = appFrame.lineno || '';\n      errorData.function = appFrame.function || errorData.function;\n    }\n    \n    // 스택트레이스 문자열 생성 (in_app 프레임 우선, 마지막 5개)\n    const relevantFrames = frames.filter(f => f.in_app).slice(-5);\n    const framesToShow = relevantFrames.length > 0 ? relevantFrames : frames.slice(-5);\n    errorData.stacktrace = framesToShow.map(f => \n      `  at ${f.function || 'anonymous'} (${f.filename}:${f.lineno})`\n    ).reverse().join('\\\\n');\n  }\n  \n  errorData.source = 'event_alert';\n}\n// Sentry Issue Alert 형식 (action + data.issue)\nelse if (input.action && input.data?.issue) {\n  const issue = input.data.issue;\n  \n  errorData.project = issue.project?.slug || issue.project?.name || 'unknown';\n  errorData.project_slug = issue.project?.slug || 'unknown';\n  errorData.title = issue.title || 'Unknown Error';\n  errorData.message = issue.metadata?.value || issue.culprit || '';\n  errorData.level = issue.level || 'error';\n  errorData.url = issue.permalink || '';\n  errorData.culprit = issue.culprit || '';\n  errorData.issue_id = issue.id || '';\n  errorData.event_count = issue.count || 1;\n  errorData.timestamp = issue.lastSeen || issue.firstSeen || new Date().toISOString();\n  \n  if (issue.culprit) {\n    const match = issue.culprit.match(/(.+?)\\s+in\\s+(.+)/);\n    if (match) {\n      errorData.filename = match[1];\n      errorData.function = match[2];\n    } else {\n      errorData.filename = issue.culprit;\n    }\n  }\n  \n  errorData.source = 'issue_alert';\n}\nelse {\n  errorData.title = 'Sentry Alert (파싱 필요)';\n  errorData.message = JSON.stringify(input).substring(0, 500);\n  errorData.source = 'unknown_format';\n  errorData.raw_keys = Object.keys(input);\n}\n\n// 프로젝트 설정 조회\nconst projectConfig = PROJECT_CONFIG[errorData.project_slug] || DEFAULT_CONFIG;\n\n// 디버깅 정보 포함해서 반환\nerrorData.debug = debugInfo;\nerrorData.projectConfig = projectConfig;\nreturn errorData;"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
@@ -26,206 +26,62 @@
     },
     {
       "parameters": {
-        "model": "gpt-4o",
-        "messages": {
-          "values": [
-            {
-              "role": "system",
-              "content": "당신은 시니어 백엔드 개발자입니다. Sentry 에러를 분석하고 해결 방안을 제시해주세요.\n\n응답 형식 (JSON):\n{\n  \"severity\": \"critical|high|medium|low\",\n  \"category\": \"runtime|network|database|auth|config|unknown\",\n  \"root_cause\": \"에러의 근본 원인 (한글, 2-3문장)\",\n  \"solution\": \"해결 방안 (한글, 구체적인 코드 수정 방향)\",\n  \"affected_files\": [\"예상되는 수정 대상 파일 경로들\"],\n  \"labels\": [\"GitHub Issue에 붙일 라벨들\"]\n}"
-            },
-            {
-              "role": "user",
-              "content": "=다음 에러를 분석해주세요:\n\n**프로젝트**: {{ $json.project }}\n**환경**: {{ $json.environment }}\n**에러 레벨**: {{ $json.level }}\n**에러 타입**: {{ $json.error_type }}\n**제목**: {{ $json.title }}\n**메시지**: {{ $json.message }}\n**Culprit**: {{ $json.culprit }}\n\n**스택트레이스**:\n```\n{{ $json.stacktrace }}\n```"
-            }
-          ]
-        },
-        "options": {
-          "responseFormat": "json_object",
-          "temperature": 0.3
-        }
-      },
-      "type": "@n8n/n8n-nodes-langchain.openAi",
-      "typeVersion": 1.8,
-      "position": [640, 300],
-      "id": "analyze-error",
-      "name": "Analyze Error",
-      "credentials": {
-        "openAiApi": {
-          "id": "{{OPENAI_CREDENTIAL_ID}}",
-          "name": "OpenAI API"
-        }
-      }
-    },
-    {
-      "parameters": {
-        "jsCode": "const errorData = $('Parse Sentry Data').first().json;\nconst analysisRaw = $('Analyze Error').first().json.message?.content || $('Analyze Error').first().json.text || '{}';\n\nlet analysis;\ntry {\n  analysis = JSON.parse(analysisRaw);\n} catch (e) {\n  analysis = {\n    severity: 'medium',\n    category: 'unknown',\n    root_cause: '분석 실패',\n    solution: '수동 확인 필요',\n    affected_files: [],\n    labels: ['bug']\n  };\n}\n\n// 프로젝트 → Jira 프로젝트 매핑\nconst projectMapping = {\n  'product-hub': 'PROD',\n  'producthub': 'PROD',\n  'auth-hub': 'AUTH',\n  'authhub': 'AUTH',\n  'crawler': 'CRAWL',\n  'mcp-server': 'MCP',\n  'infrastructure': 'INFRA',\n  'musinsa-api': 'MAPI'\n};\n\nconst projectKey = errorData.project_slug?.toLowerCase() || errorData.project?.toLowerCase() || 'unknown';\nconst jiraProject = projectMapping[projectKey] || projectMapping[projectKey.replace(/-/g, '')] || 'DEV';\n\n// Fingerprint 생성 (중복 체크용)\nconst fingerprint = [\n  errorData.project_slug || errorData.project,\n  errorData.error_type || 'Error',\n  errorData.culprit || 'unknown'\n].join('-').replace(/[^a-zA-Z0-9-]/g, '_').substring(0, 100);\n\n// Jira 우선순위 매핑\nconst priorityMap = {\n  'critical': 'Highest',\n  'high': 'High',\n  'medium': 'Medium',\n  'low': 'Low'\n};\n\n// Jira 라벨 생성\nconst jiraLabels = ['sentry-auto'];\nif (analysis.category) jiraLabels.push(analysis.category);\nif (analysis.severity === 'critical' || analysis.severity === 'high') jiraLabels.push('urgent');\n\nreturn {\n  errorData,\n  analysis,\n  jira: {\n    project: jiraProject,\n    fingerprint: fingerprint,\n    priority: priorityMap[analysis.severity] || 'Medium',\n    labels: jiraLabels,\n    summary: `[Sentry] ${errorData.title.substring(0, 80)}`,\n    search_jql: `project = ${jiraProject} AND summary ~ \"${fingerprint}\" AND status NOT IN (Done, Closed, Resolved) ORDER BY created DESC`\n  }\n};"
+        "jsCode": "const errorData = $input.first().json;\n\n// Parse Sentry Data에서 전달받은 프로젝트 설정 사용\nconst jiraProject = errorData.projectConfig?.jira || 'DEV';\n\n// Jira 우선순위 (error, fatal → Highest + hotfix)\nconst isUrgent = ['error', 'fatal', 'critical'].includes(errorData.level);\nconst priority = isUrgent ? 'Highest' : 'High';\n\n// 라벨 (Jira에 라벨이 없으면 빈 배열로)\n// TODO: Jira 프로젝트에 존재하는 라벨로 변경하세요\nconst labels = [];\n\n// 위치 정보 문자열\nlet locationInfo = '';\nif (errorData.filename) {\n  locationInfo = errorData.filename;\n  if (errorData.lineno) locationInfo += `:${errorData.lineno}`;\n  if (errorData.function) locationInfo += ` in ${errorData.function}`;\n}\n\n// Jira Description (단순 텍스트 - ADF에서 표시됨)\nconst description = `🚨 Sentry 에러 알림\n\n[프로젝트] ${errorData.project}\n[환경] ${errorData.environment}\n[심각도] ${errorData.level.toUpperCase()}\n[발생 횟수] ${errorData.event_count}회\n[최근 발생] ${errorData.timestamp}\n\n--- 에러 메시지 ---\n${errorData.title}\n\n${errorData.message ? `--- 상세 내용 ---\\n${errorData.message}\\n\\n` : ''}\n--- 📍 Sentry가 지목한 위치 ---\n${locationInfo ? `${locationInfo}\\n👆 이 파일/라인을 확인해보세요!` : '위치 정보 없음'}\n\n${errorData.stacktrace ? `--- 스택트레이스 ---\\n${errorData.stacktrace}\\n\\n` : ''}\n${errorData.web_url ? `🔗 Sentry: ${errorData.web_url}\\n\\n` : ''}\n⚡ 이 티켓은 Sentry → n8n 자동화로 생성되었습니다.\\n🔥 긴급 핫픽스가 필요합니다!`;\n\nreturn {\n  errorData: errorData,\n  locationInfo: locationInfo,\n  jira: {\n    project: jiraProject,\n    issueType: '버그',\n    bugTypeId: errorData.projectConfig?.bugTypeId || '10260',\n    summary: `[Sentry][${errorData.project}] ${errorData.title.substring(0, 80)}`,\n    priority: priority,\n    labels: labels,\n    description: description\n  }\n};"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [860, 300],
+      "position": [640, 300],
       "id": "prepare-jira",
       "name": "Prepare Jira Data"
     },
     {
       "parameters": {
-        "operation": "search",
-        "jqlQuery": "={{ $json.jira.search_jql }}",
+        "method": "POST",
+        "url": "https://ryuqqq.atlassian.net/rest/api/3/issue",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpBasicAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ fields: { project: { key: $json.jira.project }, issuetype: { id: $json.jira.bugTypeId }, summary: $json.jira.summary, description: { type: 'doc', version: 1, content: [{ type: 'paragraph', content: [{ type: 'text', text: $json.jira.description }] }] } } }) }}",
         "options": {
-          "maxResults": 1
+          "response": {
+            "response": {
+              "fullResponse": false
+            }
+          }
         }
       },
-      "type": "n8n-nodes-base.jira",
-      "typeVersion": 1,
-      "position": [1080, 300],
-      "id": "search-jira",
-      "name": "Search Existing Jira",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [860, 300],
+      "id": "create-jira",
+      "name": "Create Jira Ticket",
       "credentials": {
-        "jiraApi": {
-          "id": "{{JIRA_CREDENTIAL_ID}}",
-          "name": "Jira API"
+        "httpBasicAuth": {
+          "id": "JIRA_BASIC_AUTH_ID",
+          "name": "Jira Basic Auth"
         }
       }
     },
     {
       "parameters": {
-        "jsCode": "const preparedData = $('Prepare Jira Data').first().json;\nconst searchResult = $('Search Existing Jira').first().json;\nconst issues = searchResult.issues || [];\n\nconst exists = issues.length > 0;\nconst existingIssue = exists ? issues[0] : null;\n\nreturn {\n  ...preparedData,\n  jira: {\n    ...preparedData.jira,\n    exists: exists,\n    existing_key: existingIssue?.key || null,\n    existing_id: existingIssue?.id || null,\n    existing_url: existingIssue ? `https://your-domain.atlassian.net/browse/${existingIssue.key}` : null\n  }\n};"
+        "jsCode": "const jiraResult = $input.first().json;\nconst preparedData = $('Prepare Jira Data').first().json;\n\n// Jira 도메인 설정 (TODO: 본인 도메인으로 변경)\nconst jiraDomain = 'ryuqqq.atlassian.net';\n\nreturn {\n  errorData: preparedData.errorData,\n  locationInfo: preparedData.locationInfo,\n  jira: {\n    key: jiraResult.key,\n    id: jiraResult.id,\n    url: `https://${jiraDomain}/browse/${jiraResult.key}`,\n    summary: preparedData.jira.summary,\n    priority: preparedData.jira.priority,\n    labels: preparedData.jira.labels\n  }\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1080, 300],
+      "id": "format-jira-result",
+      "name": "Format Jira Result"
+    },
+    {
+      "parameters": {
+        "jsCode": "const data = $input.first().json;\nconst errorData = data.errorData;\n\n// Parse Sentry Data에서 전달받은 프로젝트 설정 사용\nconst repo = errorData.projectConfig?.github || 'ryu-qqq/ProductHub';\nconst [owner, repository] = repo.split('/');\n\n// GitHub Issue 라벨 (레포에 없는 라벨은 422 에러 발생하므로 빈 배열로)\nconst labels = [];\n\n// GitHub Issue 본문\nconst body = `## 🚨 Sentry 에러 알림\n\n### 에러 정보\n| 항목 | 값 |\n|------|----|\n| **프로젝트** | ${errorData.project} |\n| **환경** | ${errorData.environment} |\n| **심각도** | \\`${errorData.level.toUpperCase()}\\` |\n| **발생 횟수** | ${errorData.event_count}회 |\n| **Jira 티켓** | [${data.jira.key}](${data.jira.url}) |\n\n### 에러 메시지\n\\`\\`\\`\n${errorData.title}\n\\`\\`\\`\n\n### 📍 Sentry가 지목한 위치\n${data.locationInfo ? `\\`\\`\\`\\n${data.locationInfo}\\n\\`\\`\\`\\n\\n👆 **이 파일/라인을 확인해보세요!**` : '_위치 정보 없음_'}\n\n${errorData.stacktrace ? `### 스택트레이스\\n\\`\\`\\`\\n${errorData.stacktrace}\\n\\`\\`\\`\\n\\n` : ''}\n\n---\n- 🔗 [Jira 티켓](${data.jira.url})\n${errorData.web_url ? `- 🔗 [Sentry에서 보기](${errorData.web_url})` : ''}\n\n---\n_이 이슈는 Sentry → n8n 자동화로 생성되었습니다._\n_🔥 긴급 핫픽스가 필요합니다!_`;\n\nreturn {\n  ...data,\n  github: {\n    owner: owner,\n    repository: repository,\n    title: `[Sentry][Hotfix] ${errorData.title.substring(0, 80)}`,\n    body: body,\n    labels: labels\n  }\n};"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [1300, 300],
-      "id": "check-duplicate",
-      "name": "Check Duplicate"
-    },
-    {
-      "parameters": {
-        "conditions": {
-          "options": {
-            "caseSensitive": true,
-            "leftValue": "",
-            "typeValidation": "strict",
-            "version": 2
-          },
-          "conditions": [
-            {
-              "id": "exists-check",
-              "leftValue": "={{ $json.jira.exists }}",
-              "rightValue": true,
-              "operator": {
-                "type": "boolean",
-                "operation": "equals"
-              }
-            }
-          ],
-          "combinator": "and"
-        }
-      },
-      "type": "n8n-nodes-base.if",
-      "typeVersion": 2,
-      "position": [1520, 300],
-      "id": "if-exists",
-      "name": "IF Ticket Exists"
-    },
-    {
-      "parameters": {
-        "operation": "comment",
-        "issueKey": "={{ $json.jira.existing_key }}",
-        "comment": "=## 🔄 동일 에러 재발생\n\n**발생 시각**: {{ $json.errorData.timestamp }}\n**환경**: {{ $json.errorData.environment }}\n**이벤트 수**: +1\n\n### AI 분석\n{{ $json.analysis.root_cause }}\n\n### Sentry\n[이슈 보기]({{ $json.errorData.url }})"
-      },
-      "type": "n8n-nodes-base.jira",
-      "typeVersion": 1,
-      "position": [1740, 200],
-      "id": "add-jira-comment",
-      "name": "Add Comment to Existing",
-      "credentials": {
-        "jiraApi": {
-          "id": "{{JIRA_CREDENTIAL_ID}}",
-          "name": "Jira API"
-        }
-      }
-    },
-    {
-      "parameters": {
-        "jsCode": "const data = $input.first().json;\n\nreturn {\n  ...data,\n  jira_result: {\n    action: 'comment_added',\n    key: data.jira.existing_key,\n    url: data.jira.existing_url\n  }\n};"
-      },
-      "type": "n8n-nodes-base.code",
-      "typeVersion": 2,
-      "position": [1960, 200],
-      "id": "format-existing",
-      "name": "Format Existing Result"
-    },
-    {
-      "parameters": {
-        "operation": "create",
-        "project": "={{ $json.jira.project }}",
-        "issueType": "Bug",
-        "summary": "={{ $json.jira.summary }}",
-        "additionalFields": {
-          "priority": {
-            "name": "={{ $json.jira.priority }}"
-          },
-          "labels": "={{ $json.jira.labels }}",
-          "description": {
-            "type": "doc",
-            "version": 1,
-            "content": [
-              {
-                "type": "paragraph",
-                "content": [
-                  {
-                    "type": "text",
-                    "text": "={{ '## Sentry 에러 정보\\n\\n' + '| 항목 | 값 |\\n|------|------|\\n' + '| 프로젝트 | ' + $json.errorData.project + ' |\\n' + '| 환경 | ' + $json.errorData.environment + ' |\\n' + '| 에러 타입 | ' + $json.errorData.error_type + ' |\\n' + '| 심각도 | ' + $json.analysis.severity + ' |\\n' + '| Culprit | ' + $json.errorData.culprit + ' |\\n\\n' + '## 에러 메시지\\n```\\n' + $json.errorData.title + '\\n```\\n\\n' + '## 스택트레이스\\n```\\n' + ($json.errorData.stacktrace || 'N/A') + '\\n```\\n\\n' + '## AI 분석 결과\\n\\n' + '### 근본 원인\\n' + $json.analysis.root_cause + '\\n\\n' + '### 해결 방안\\n' + $json.analysis.solution + '\\n\\n' + '### 예상 수정 파일\\n' + ($json.analysis.affected_files || []).map(f => '- ' + f).join('\\n') + '\\n\\n' + '---\\n' + '[Sentry 이슈 보기](' + $json.errorData.url + ')\\n\\n' + '_이 티켓은 n8n 자동화로 생성되었습니다._' }}"
-                  }
-                ]
-              }
-            ]
-          }
-        }
-      },
-      "type": "n8n-nodes-base.jira",
-      "typeVersion": 1,
-      "position": [1740, 400],
-      "id": "create-jira-issue",
-      "name": "Create New Jira Issue",
-      "credentials": {
-        "jiraApi": {
-          "id": "{{JIRA_CREDENTIAL_ID}}",
-          "name": "Jira API"
-        }
-      }
-    },
-    {
-      "parameters": {
-        "jsCode": "const data = $('Check Duplicate').first().json;\nconst newIssue = $('Create New Jira Issue').first().json;\n\nreturn {\n  ...data,\n  jira_result: {\n    action: 'created',\n    key: newIssue.key,\n    id: newIssue.id,\n    url: `https://your-domain.atlassian.net/browse/${newIssue.key}`\n  }\n};"
-      },
-      "type": "n8n-nodes-base.code",
-      "typeVersion": 2,
-      "position": [1960, 400],
-      "id": "format-new",
-      "name": "Format New Result"
-    },
-    {
-      "parameters": {
-        "mode": "combine",
-        "mergeByFields": {
-          "values": []
-        },
-        "options": {}
-      },
-      "type": "n8n-nodes-base.merge",
-      "typeVersion": 3,
-      "position": [2180, 300],
-      "id": "merge-results",
-      "name": "Merge Results"
-    },
-    {
-      "parameters": {
-        "jsCode": "const data = $input.first().json;\nconst errorData = data.errorData;\nconst analysis = data.analysis;\nconst jiraResult = data.jira_result;\n\n// GitHub Issue 본문 생성\nconst issueBody = `## 🚨 Sentry 에러 알림\n\n### 에러 정보\n| 항목 | 값 |\n|------|----|\n| **프로젝트** | ${errorData.project} |\n| **환경** | ${errorData.environment} |\n| **심각도** | ${analysis.severity} |\n| **카테고리** | ${analysis.category} |\n| **Jira** | [${jiraResult.key}](${jiraResult.url}) |\n\n### 에러 메시지\n\\`\\`\\`\n${errorData.title}\n\\`\\`\\`\n\n### 스택트레이스\n\\`\\`\\`\n${errorData.stacktrace || 'N/A'}\n\\`\\`\\`\n\n### 🔍 AI 분석 결과\n\n#### 근본 원인\n${analysis.root_cause}\n\n#### 💡 해결 방안\n${analysis.solution}\n\n#### 📁 예상 수정 파일\n${analysis.affected_files?.map(f => '- \\`' + f + '\\`').join('\\n') || '- 분석 필요'}\n\n---\n_이 이슈는 Sentry → n8n 자동화로 생성되었습니다._\n`;\n\n// 라벨 결정\nconst labels = ['sentry-auto'];\nif (analysis.severity === 'critical') labels.push('priority:critical');\nelse if (analysis.severity === 'high') labels.push('priority:high');\nif (analysis.category) labels.push(`type:${analysis.category}`);\n\n// GitHub 레포지토리 매핑\nconst repoMapping = {\n  'product-hub': 'ryu-qqq/product-hub',\n  'auth-hub': 'ryu-qqq/auth-hub',\n  'crawler': 'ryu-qqq/crawler',\n  'infrastructure': 'ryu-qqq/infrastructure'\n};\n\nconst projectKey = errorData.project_slug?.toLowerCase() || errorData.project?.toLowerCase();\nconst repo = repoMapping[projectKey] || 'ryu-qqq/product-hub';\nconst [owner, repository] = repo.split('/');\n\nreturn {\n  ...data,\n  github: {\n    owner: owner,\n    repository: repository,\n    title: `[Sentry][${errorData.project}] ${errorData.title.substring(0, 80)}`,\n    body: issueBody,\n    labels: labels\n  }\n};"
-      },
-      "type": "n8n-nodes-base.code",
-      "typeVersion": 2,
-      "position": [2400, 300],
-      "id": "format-github-issue",
-      "name": "Format GitHub Issue"
+      "id": "prepare-github",
+      "name": "Prepare GitHub Issue"
     },
     {
       "parameters": {
@@ -234,50 +90,168 @@
         "owner": "={{ $json.github.owner }}",
         "repository": "={{ $json.github.repository }}",
         "title": "={{ $json.github.title }}",
-        "body": "={{ $json.github.body }}",
-        "labels": "={{ $json.github.labels }}"
+        "body": "={{ $json.github.body }}"
       },
       "type": "n8n-nodes-base.github",
       "typeVersion": 1,
-      "position": [2620, 300],
+      "position": [1520, 300],
       "id": "create-github-issue",
       "name": "Create GitHub Issue",
       "credentials": {
         "githubApi": {
-          "id": "{{GITHUB_CREDENTIAL_ID}}",
+          "id": "GITHUB_CREDENTIAL_ID",
           "name": "GitHub API"
         }
       }
     },
     {
       "parameters": {
-        "method": "POST",
-        "url": "https://slack.com/api/chat.postMessage",
-        "authentication": "predefinedCredentialType",
-        "nodeCredentialType": "slackApi",
-        "sendHeaders": true,
-        "headerParameters": {
-          "parameters": [
-            {
-              "name": "Content-Type",
-              "value": "application/json"
-            }
-          ]
+        "jsCode": "const data = $('Prepare GitHub Issue').first().json;\nconst githubResult = $input.first().json;\n\nreturn {\n  errorData: data.errorData,\n  locationInfo: data.locationInfo,\n  jira: data.jira,\n  github: {\n    number: githubResult.number,\n    url: githubResult.html_url,\n    title: data.github.title\n  }\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1740, 300],
+      "id": "format-github-result",
+      "name": "Format GitHub Result"
+    },
+    {
+      "parameters": {
+        "authentication": "oAuth2",
+        "select": "channel",
+        "channelId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "C0A8RU0UR4M"
         },
-        "sendBody": true,
-        "specifyBody": "json",
-        "jsonBody": "={\n  \"channel\": \"sentry-alerts\",\n  \"blocks\": [\n    {\n      \"type\": \"header\",\n      \"text\": {\"type\": \"plain_text\", \"text\": \"🚨 Sentry 에러 → Jira 티켓 {{ $('Format GitHub Issue').first().json.jira_result.action === 'created' ? '생성' : '업데이트' }}\", \"emoji\": true}\n    },\n    {\n      \"type\": \"section\",\n      \"fields\": [\n        {\"type\": \"mrkdwn\", \"text\": \"*프로젝트:*\\n{{ $('Format GitHub Issue').first().json.errorData.project }}\"},\n        {\"type\": \"mrkdwn\", \"text\": \"*심각도:*\\n{{ $('Format GitHub Issue').first().json.analysis.severity }}\"}\n      ]\n    },\n    {\n      \"type\": \"section\",\n      \"text\": {\"type\": \"mrkdwn\", \"text\": \"*에러:*\\n```{{ $('Format GitHub Issue').first().json.errorData.title.substring(0, 200) }}```\"}\n    },\n    {\n      \"type\": \"section\",\n      \"fields\": [\n        {\"type\": \"mrkdwn\", \"text\": \"*Jira:*\\n<{{ $('Format GitHub Issue').first().json.jira_result.url }}|{{ $('Format GitHub Issue').first().json.jira_result.key }}>\"},\n        {\"type\": \"mrkdwn\", \"text\": \"*GitHub:*\\n<{{ $('Create GitHub Issue').first().json.html_url }}|#{{ $('Create GitHub Issue').first().json.number }}>\"}\n      ]\n    },\n    {\n      \"type\": \"context\",\n      \"elements\": [\n        {\"type\": \"mrkdwn\", \"text\": \"💡 *AI 분석:* {{ $('Format GitHub Issue').first().json.analysis.root_cause.substring(0, 150) }}...\"}\n      ]\n    }\n  ]\n}",
+        "text": "=:rotating_light: *Sentry 에러 → 자동 핫픽스 요청*\n\n<@U0A8KTYFCKU> 아래 버그를 분석하고 hotfix PR을 생성해주세요.\n\n*레포지토리*: `{{ $json.errorData.projectConfig.github }}`\n*프로젝트*: `{{ $json.errorData.project }}`\n*심각도*: `{{ $json.errorData.level.toUpperCase() }}` {{ ['error', 'fatal', 'critical'].includes($json.errorData.level) ? ':fire: *긴급*' : '' }}\n*환경*: {{ $json.errorData.environment }}\n\n*에러 메시지*:\n```{{ $json.errorData.title }}```\n\n{{ $json.locationInfo ? ':mag: *에러 위치*: `' + $json.locationInfo + '`' : '' }}\n{{ $json.errorData.stacktrace ? '\\n*스택트레이스*:\\n```' + $json.errorData.stacktrace + '```' : '' }}\n\n---\n:jira: *Jira*: <{{ $json.jira.url }}|{{ $json.jira.key }}>\n:github: *Issue*: <{{ $json.github.url }}|#{{ $json.github.number }}>\n{{ $json.errorData.web_url ? ':sentry: <' + $json.errorData.web_url + '|Sentry에서 보기>' : '' }}\n\n:robot_face: *요청*: 위 에러를 분석하고 `hotfix/sentry-{{ $json.github.number }}` 브랜치에 수정 PR을 생성해주세요.\\n\\n:warning: *PR 생성 시 필수 포함*:\\n• PR 본문에 `Closes #{{ $json.github.number }}` (Issue 자동 닫기)\\n• PR 본문에 `Jira: {{ $json.jira.key }}` (Jira 연동)\\n{{ $json.errorData.web_url ? '• PR 본문에 Sentry 링크: ' + $json.errorData.web_url + ' (Sentry 자동 해결)' : '' }}",
+        "otherOptions": {
+          "includeLinkToWorkflow": false
+        }
+      },
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.2,
+      "position": [1960, 300],
+      "id": "notify-slack",
+      "name": "Send Slack Notification",
+      "credentials": {
+        "slackOAuth2Api": {
+          "id": "SLACK_CREDENTIAL_ID",
+          "name": "Slack OAuth"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "github-pr-merged",
         "options": {}
       },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [200, 600],
+      "id": "webhook-pr-merge",
+      "name": "GitHub PR Webhook",
+      "webhookId": "github-pr-merged-webhook"
+    },
+    {
+      "parameters": {
+        "jsCode": "const rawInput = $input.first().json;\nconst input = rawInput.body || rawInput;\n\n// PR 이벤트가 아니거나 머지가 아니면 스킵\nif (input.action !== 'closed' || !input.pull_request?.merged) {\n  return { skip: true, reason: 'Not a merged PR' };\n}\n\nconst pr = input.pull_request;\nconst branch = pr.head?.ref || '';\n\n// hotfix 브랜치가 아니면 스킵 (이 워크플로우는 Sentry 핫픽스 전용)\nif (!branch.startsWith('hotfix/')) {\n  return { skip: true, reason: 'Not a hotfix branch: ' + branch };\n}\n\nconst body = pr.body || '';\n\n// PR 본문에서 Jira 키 추출 (예: GAT-123, KAN-456)\nconst jiraMatch = body.match(/Jira:\\s*([A-Z]+-\\d+)/i) || body.match(/([A-Z]+-\\d+)/);\nconst jiraKey = jiraMatch ? jiraMatch[1] : null;\n\n// PR 본문에서 GitHub Issue 번호 추출 (Closes #123)\nconst issueMatch = body.match(/Closes\\s*#(\\d+)/i) || body.match(/Fixes\\s*#(\\d+)/i);\nconst issueNumber = issueMatch ? issueMatch[1] : null;\n\nreturn {\n  skip: false,\n  pr: {\n    number: pr.number,\n    title: pr.title,\n    url: pr.html_url,\n    branch: branch,\n    mergedBy: pr.merged_by?.login || 'unknown',\n    mergedAt: pr.merged_at\n  },\n  jiraKey: jiraKey,\n  issueNumber: issueNumber,\n  repo: input.repository?.full_name || 'unknown'\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [420, 600],
+      "id": "parse-pr-merge",
+      "name": "Parse PR Merge"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "condition-jira",
+              "leftValue": "={{ $json.skip }}",
+              "rightValue": false,
+              "operator": {
+                "type": "boolean",
+                "operation": "equals"
+              }
+            },
+            {
+              "id": "condition-jira-key",
+              "leftValue": "={{ $json.jiraKey }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "isNotEmpty"
+              }
+            }
+          ],
+          "combinator": "and"
+        }
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [640, 600],
+      "id": "check-jira-key",
+      "name": "Has Jira Key?"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://ryuqqq.atlassian.net/rest/api/3/issue/{{ $json.jiraKey }}/transitions",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpBasicAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={ \"transition\": { \"id\": \"31\" } }",
+        "options": {
+          "response": {
+            "response": {
+              "fullResponse": false
+            }
+          }
+        }
+      },
       "type": "n8n-nodes-base.httpRequest",
-      "typeVersion": 4.3,
-      "position": [2840, 300],
-      "id": "notify-slack",
-      "name": "Notify Slack",
+      "typeVersion": 4.2,
+      "position": [860, 550],
+      "id": "update-jira-done",
+      "name": "Update Jira to Done",
       "credentials": {
-        "slackApi": {
-          "id": "{{SLACK_CREDENTIAL_ID}}",
-          "name": "Slack API"
+        "httpBasicAuth": {
+          "id": "JIRA_BASIC_AUTH_ID",
+          "name": "Jira Basic Auth"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "authentication": "oAuth2",
+        "select": "channel",
+        "channelId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "C0A8RU0UR4M"
+        },
+        "text": "=:white_check_mark: *핫픽스 완료!*\n\n*PR*: <{{ $('Parse PR Merge').first().json.pr.url }}|#{{ $('Parse PR Merge').first().json.pr.number }}> {{ $('Parse PR Merge').first().json.pr.title }}\n*머지한 사람*: {{ $('Parse PR Merge').first().json.pr.mergedBy }}\n*레포*: `{{ $('Parse PR Merge').first().json.repo }}`\n{{ $('Parse PR Merge').first().json.jiraKey ? ':jira: *Jira*: ' + $('Parse PR Merge').first().json.jiraKey + ' → *완료* 처리됨' : '' }}\n{{ $('Parse PR Merge').first().json.issueNumber ? ':github: *Issue*: #' + $('Parse PR Merge').first().json.issueNumber + ' → 자동 닫힘' : '' }}\n\n:tada: 에러가 해결되었습니다!",
+        "otherOptions": {
+          "includeLinkToWorkflow": false
+        }
+      },
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.2,
+      "position": [1080, 550],
+      "id": "notify-completion",
+      "name": "Send Completion Slack",
+      "credentials": {
+        "slackOAuth2Api": {
+          "id": "SLACK_CREDENTIAL_ID",
+          "name": "Slack OAuth"
         }
       }
     }
@@ -290,68 +264,58 @@
     },
     "Parse Sentry Data": {
       "main": [
-        [{"node": "Analyze Error", "type": "main", "index": 0}]
-      ]
-    },
-    "Analyze Error": {
-      "main": [
         [{"node": "Prepare Jira Data", "type": "main", "index": 0}]
       ]
     },
     "Prepare Jira Data": {
       "main": [
-        [{"node": "Search Existing Jira", "type": "main", "index": 0}]
+        [{"node": "Create Jira Ticket", "type": "main", "index": 0}]
       ]
     },
-    "Search Existing Jira": {
+    "Create Jira Ticket": {
       "main": [
-        [{"node": "Check Duplicate", "type": "main", "index": 0}]
+        [{"node": "Format Jira Result", "type": "main", "index": 0}]
       ]
     },
-    "Check Duplicate": {
+    "Format Jira Result": {
       "main": [
-        [{"node": "IF Ticket Exists", "type": "main", "index": 0}]
+        [{"node": "Prepare GitHub Issue", "type": "main", "index": 0}]
       ]
     },
-    "IF Ticket Exists": {
-      "main": [
-        [{"node": "Add Comment to Existing", "type": "main", "index": 0}],
-        [{"node": "Create New Jira Issue", "type": "main", "index": 0}]
-      ]
-    },
-    "Add Comment to Existing": {
-      "main": [
-        [{"node": "Format Existing Result", "type": "main", "index": 0}]
-      ]
-    },
-    "Create New Jira Issue": {
-      "main": [
-        [{"node": "Format New Result", "type": "main", "index": 0}]
-      ]
-    },
-    "Format Existing Result": {
-      "main": [
-        [{"node": "Merge Results", "type": "main", "index": 0}]
-      ]
-    },
-    "Format New Result": {
-      "main": [
-        [{"node": "Merge Results", "type": "main", "index": 1}]
-      ]
-    },
-    "Merge Results": {
-      "main": [
-        [{"node": "Format GitHub Issue", "type": "main", "index": 0}]
-      ]
-    },
-    "Format GitHub Issue": {
+    "Prepare GitHub Issue": {
       "main": [
         [{"node": "Create GitHub Issue", "type": "main", "index": 0}]
       ]
     },
     "Create GitHub Issue": {
       "main": [
-        [{"node": "Notify Slack", "type": "main", "index": 0}]
+        [{"node": "Format GitHub Result", "type": "main", "index": 0}]
+      ]
+    },
+    "Format GitHub Result": {
+      "main": [
+        [{"node": "Send Slack Notification", "type": "main", "index": 0}]
+      ]
+    },
+    "GitHub PR Webhook": {
+      "main": [
+        [{"node": "Parse PR Merge", "type": "main", "index": 0}]
+      ]
+    },
+    "Parse PR Merge": {
+      "main": [
+        [{"node": "Has Jira Key?", "type": "main", "index": 0}]
+      ]
+    },
+    "Has Jira Key?": {
+      "main": [
+        [{"node": "Update Jira to Done", "type": "main", "index": 0}],
+        []
+      ]
+    },
+    "Update Jira to Done": {
+      "main": [
+        [{"node": "Send Completion Slack", "type": "main", "index": 0}]
       ]
     }
   },
@@ -359,27 +323,39 @@
     "executionOrder": "v1"
   },
   "staticData": null,
-  "tags": [
-    {"name": "sentry", "id": "sentry-tag"},
-    {"name": "jira", "id": "jira-tag"},
-    {"name": "automation", "id": "automation-tag"}
-  ],
-  "_meta": {
-    "version": "2.0.0",
-    "description": "Sentry 에러 → AI 분석 → Jira 티켓 (중복 방지) → GitHub Issue → Slack 알림",
+  "meta": {
+    "templateId": "sentry-jira-orchestrator",
+    "description": "Sentry 에러 → Jira 티켓 → GitHub Issue → Slack (@Claude 핫픽스 요청) + PR 머지 시 Jira 완료 처리",
+    "version": "2.1.0",
     "created": "2025-01-15",
+    "updated": "2025-01-16",
+    "flows": {
+      "sentry_to_hotfix": "Sentry Webhook → Parse → Jira → GitHub Issue → Slack @Claude",
+      "pr_merge_completion": "GitHub PR Webhook → Parse PR → Jira Done → Slack 완료"
+    },
     "credentials_required": [
-      "OPENAI_CREDENTIAL_ID",
-      "JIRA_CREDENTIAL_ID",
-      "GITHUB_CREDENTIAL_ID",
-      "SLACK_CREDENTIAL_ID"
+      "JIRA_CREDENTIAL_ID - Jira Cloud API",
+      "GITHUB_CREDENTIAL_ID - GitHub Personal Access Token",
+      "SLACK_CREDENTIAL_ID - Slack OAuth2"
+    ],
+    "setup_notes": [
+      "1. Format Jira Result 노드에서 jiraDomain을 본인 Jira 도메인으로 변경",
+      "2. Send Slack Notification 노드에서 채널 ID를 실제 채널 ID로 변경",
+      "3. Prepare GitHub Issue 노드에서 repoMapping을 본인 레포지토리로 확인/수정",
+      "4. 각 크리덴셜 ID를 실제 n8n 크리덴셜 ID로 변경",
+      "5. GitHub → Settings → Webhooks에서 PR 이벤트(Pull requests) webhook 추가:",
+      "   - URL: {n8n-webhook-url}/github-pr-merged",
+      "   - Content type: application/json",
+      "   - Events: Pull requests (Let me select individual events)",
+      "6. Update Jira to Done 노드의 transition ID '31'이 본인 Jira의 'Done' 상태 ID인지 확인",
+      "   - GET /rest/api/3/issue/{issueKey}/transitions 로 확인 가능"
     ],
     "project_mapping": {
-      "product-hub": "PROD",
-      "auth-hub": "AUTH",
-      "crawler": "CRAWL",
-      "mcp-server": "MCP",
-      "infrastructure": "INFRA"
+      "product-hub": {"jira": "PROD", "github": "ryu-qqq/ProductHub"},
+      "auth-hub": {"jira": "AUTH", "github": "ryu-qqq/AuthHub"},
+      "crawler": {"jira": "CRAWL", "github": "ryu-qqq/Crawler"},
+      "mcp-server": {"jira": "MCP", "github": "ryu-qqq/mcp-server"},
+      "infrastructure": {"jira": "INFRA", "github": "ryu-qqq/infrastructure"}
     }
   }
 }

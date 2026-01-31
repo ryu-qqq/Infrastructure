@@ -1,465 +1,344 @@
 {
-  "name": "Weekly Dev Report",
-  "nodes": [
-    {
-      "parameters": {
-        "rule": {
-          "interval": [
-            {
-              "field": "cronExpression",
-              "expression": "0 9 * * 1"
-            }
-          ]
-        }
-      },
-      "type": "n8n-nodes-base.scheduleTrigger",
-      "typeVersion": 1.2,
-      "position": [250, 300],
-      "id": "weekly-trigger",
-      "name": "Weekly Trigger (Mon 9AM)"
-    },
-    {
-      "parameters": {
-        "jsCode": "const now = new Date();\n\n// Last week Monday (7 days ago)\nconst weekStart = new Date(now);\nweekStart.setDate(now.getDate() - 7);\nweekStart.setHours(0, 0, 0, 0);\n\n// Last week Sunday (yesterday)\nconst weekEnd = new Date(now);\nweekEnd.setDate(now.getDate() - 1);\nweekEnd.setHours(23, 59, 59, 999);\n\n// ISO format for API queries\nconst formatDate = (d) => d.toISOString().split('T')[0];\nconst formatDateKR = (d) => `${d.getMonth()+1}/${d.getDate()}`;\n\nreturn {\n  trigger_time: now.toISOString(),\n  week_start: weekStart.toISOString(),\n  week_end: weekEnd.toISOString(),\n  week_start_date: formatDate(weekStart),\n  week_end_date: formatDate(weekEnd),\n  date_range: `${formatDateKR(weekStart)} ~ ${formatDateKR(weekEnd)}`,\n  jql_date_range: `created >= \"${formatDate(weekStart)}\" AND created <= \"${formatDate(weekEnd)}\"`,\n  github_since: weekStart.toISOString(),\n  github_until: weekEnd.toISOString()\n};"
-      },
-      "type": "n8n-nodes-base.code",
-      "typeVersion": 2,
-      "position": [450, 300],
-      "id": "calculate-week-range",
-      "name": "Calculate Week Range"
-    },
-    {
-      "parameters": {
-        "operation": "getAll",
-        "jqlQuery": "=project IN (PROD, AUTH, CRAWL, MCP, INFRA) AND resolutiondate >= {{ $json.week_start_date }} AND resolutiondate <= {{ $json.week_end_date }}",
-        "limit": 100,
-        "options": {}
-      },
-      "type": "n8n-nodes-base.jira",
-      "typeVersion": 1,
-      "position": [700, 100],
-      "id": "jira-completed-issues",
-      "name": "Jira: Completed Issues",
-      "credentials": {
-        "jiraSoftwareCloudApi": {
-          "id": "{{JIRA_CREDENTIAL_ID}}",
-          "name": "Jira Cloud"
-        }
-      }
-    },
-    {
-      "parameters": {
-        "operation": "getAll",
-        "jqlQuery": "=project IN (PROD, AUTH, CRAWL, MCP, INFRA) AND {{ $json.jql_date_range }}",
-        "limit": 100,
-        "options": {}
-      },
-      "type": "n8n-nodes-base.jira",
-      "typeVersion": 1,
-      "position": [700, 250],
-      "id": "jira-created-issues",
-      "name": "Jira: Created Issues",
-      "credentials": {
-        "jiraSoftwareCloudApi": {
-          "id": "{{JIRA_CREDENTIAL_ID}}",
-          "name": "Jira Cloud"
-        }
-      }
-    },
-    {
-      "parameters": {
-        "operation": "getAll",
-        "jqlQuery": "=project IN (PROD, AUTH, CRAWL, MCP, INFRA) AND status IN ('In Progress', 'In Review')",
-        "limit": 100,
-        "options": {}
-      },
-      "type": "n8n-nodes-base.jira",
-      "typeVersion": 1,
-      "position": [700, 400],
-      "id": "jira-in-progress",
-      "name": "Jira: In Progress Issues",
-      "credentials": {
-        "jiraSoftwareCloudApi": {
-          "id": "{{JIRA_CREDENTIAL_ID}}",
-          "name": "Jira Cloud"
-        }
-      }
-    },
-    {
-      "parameters": {
-        "url": "=https://api.github.com/repos/ryu-qqq/product-hub/pulls?state=closed&since={{ $json.week_start }}",
-        "authentication": "predefinedCredentialType",
-        "nodeCredentialType": "githubApi",
-        "options": {}
-      },
-      "type": "n8n-nodes-base.httpRequest",
-      "typeVersion": 4.2,
-      "position": [700, 550],
-      "id": "github-prs-product-hub",
-      "name": "GitHub: PRs (product-hub)",
-      "credentials": {
-        "githubApi": {
-          "id": "{{GITHUB_CREDENTIAL_ID}}",
-          "name": "GitHub API"
-        }
-      }
-    },
-    {
-      "parameters": {
-        "url": "=https://api.github.com/repos/ryu-qqq/auth-hub/pulls?state=closed&since={{ $json.week_start }}",
-        "authentication": "predefinedCredentialType",
-        "nodeCredentialType": "githubApi",
-        "options": {}
-      },
-      "type": "n8n-nodes-base.httpRequest",
-      "typeVersion": 4.2,
-      "position": [700, 700],
-      "id": "github-prs-auth-hub",
-      "name": "GitHub: PRs (auth-hub)",
-      "credentials": {
-        "githubApi": {
-          "id": "{{GITHUB_CREDENTIAL_ID}}",
-          "name": "GitHub API"
-        }
-      }
-    },
-    {
-      "parameters": {
-        "url": "=https://sentry.io/api/0/organizations/ryuqqq/issues/?query=is:unresolved+firstSeen:>={{ $json.week_start_date }}&statsPeriod=7d",
-        "authentication": "predefinedCredentialType",
-        "nodeCredentialType": "httpHeaderAuth",
-        "options": {}
-      },
-      "type": "n8n-nodes-base.httpRequest",
-      "typeVersion": 4.2,
-      "position": [700, 850],
-      "id": "sentry-new-issues",
-      "name": "Sentry: New Issues",
-      "credentials": {
-        "httpHeaderAuth": {
-          "id": "{{SENTRY_CREDENTIAL_ID}}",
-          "name": "Sentry API"
-        }
-      }
-    },
-    {
-      "parameters": {
-        "url": "=https://sentry.io/api/0/organizations/ryuqqq/issues/?query=is:resolved&statsPeriod=7d",
-        "authentication": "predefinedCredentialType",
-        "nodeCredentialType": "httpHeaderAuth",
-        "options": {}
-      },
-      "type": "n8n-nodes-base.httpRequest",
-      "typeVersion": 4.2,
-      "position": [700, 1000],
-      "id": "sentry-resolved-issues",
-      "name": "Sentry: Resolved Issues",
-      "credentials": {
-        "httpHeaderAuth": {
-          "id": "{{SENTRY_CREDENTIAL_ID}}",
-          "name": "Sentry API"
-        }
-      }
-    },
-    {
-      "parameters": {
-        "mode": "passThrough",
-        "output": "all"
-      },
-      "type": "n8n-nodes-base.merge",
-      "typeVersion": 3,
-      "position": [950, 300],
-      "id": "merge-data",
-      "name": "Merge All Data"
-    },
-    {
-      "parameters": {
-        "jsCode": "const items = $input.all();\n\n// Extract date range from first item\nconst dateRange = items[0]?.json?.date_range || 'N/A';\nconst weekStart = items[0]?.json?.week_start_date || 'N/A';\nconst weekEnd = items[0]?.json?.week_end_date || 'N/A';\n\n// Parse Jira completed issues\nconst jiraCompleted = items.filter(i => i.json?.key && i.json?.fields?.resolutiondate);\nconst jiraCreated = items.filter(i => i.json?.key && !i.json?.fields?.resolutiondate);\nconst jiraInProgress = items.filter(i => i.json?.key && ['In Progress', 'In Review'].includes(i.json?.fields?.status?.name));\n\n// Calculate story points\nconst storyPoints = jiraCompleted.reduce((sum, issue) => {\n  const sp = issue.json?.fields?.customfield_10016 || 0; // Story Points field\n  return sum + sp;\n}, 0);\n\n// Count by type\nconst completedBugs = jiraCompleted.filter(i => i.json?.fields?.issuetype?.name === 'Bug').length;\nconst completedFeatures = jiraCompleted.filter(i => ['Story', 'Feature'].includes(i.json?.fields?.issuetype?.name)).length;\nconst completedTasks = jiraCompleted.filter(i => i.json?.fields?.issuetype?.name === 'Task').length;\n\n// Parse GitHub PRs (filter merged ones in date range)\nconst githubPRs = items.filter(i => i.json?.merged_at);\nconst mergedPRs = githubPRs.length;\n\n// Parse Sentry data\nconst sentryNew = items.filter(i => i.json?.id && i.json?.firstSeen).length;\nconst sentryResolved = items.filter(i => i.json?.id && i.json?.status === 'resolved').length;\n\n// Build metrics stub (would read from stored file in production)\nconst buildMetrics = {\n  total: 45,\n  success: 42,\n  avg_duration: '4m 32s',\n  deployments: 8\n};\n\n// Sentry event total (placeholder - would come from Sentry stats API)\nconst totalEvents = 1247;\nconst lastWeekEvents = 1467;\nconst trendPercent = Math.round(((totalEvents - lastWeekEvents) / lastWeekEvents) * 100);\n\nreturn {\n  date_range: dateRange,\n  week_start: weekStart,\n  week_end: weekEnd,\n  \n  // Build metrics\n  build_metrics: buildMetrics,\n  \n  // Jira metrics\n  jira_metrics: {\n    completed: jiraCompleted.length,\n    created: jiraCreated.length,\n    in_progress: jiraInProgress.length,\n    story_points: storyPoints,\n    by_type: {\n      bugs: completedBugs,\n      features: completedFeatures,\n      tasks: completedTasks\n    }\n  },\n  \n  // GitHub metrics\n  github_metrics: {\n    merged_prs: mergedPRs\n  },\n  \n  // Sentry metrics\n  sentry_metrics: {\n    new_issues: sentryNew,\n    resolved: sentryResolved,\n    total_events: totalEvents,\n    trend_percent: trendPercent\n  },\n  \n  // For AI analysis\n  raw_summary: `Jira: ${jiraCompleted.length} completed, ${jiraCreated.length} created. GitHub: ${mergedPRs} PRs merged. Sentry: ${sentryNew} new issues, ${sentryResolved} resolved.`\n};"
-      },
-      "type": "n8n-nodes-base.code",
-      "typeVersion": 2,
-      "position": [1150, 300],
-      "id": "aggregate-metrics",
-      "name": "Aggregate Metrics"
-    },
-    {
-      "parameters": {
-        "model": "gpt-4o",
-        "messages": {
-          "values": [
-            {
-              "role": "system",
-              "content": "당신은 개발팀의 주간 리포트를 요약하는 AI 어시스턴트입니다.\n\n주어진 메트릭을 분석하고 2-3문장으로 핵심 인사이트를 한국어로 제공하세요.\n\n포함할 내용:\n- 이번 주 주요 성과\n- 주목할 만한 트렌드 (긍정적 또는 부정적)\n- 다음 주 권장 액션 (있다면)\n\n간결하고 액션 가능한 인사이트를 제공하세요."
+    "name": "Weekly Dev Report",
+    "nodes": [
+        {
+            "parameters": {
+                "rule": {
+                    "interval": [
+                        {
+                            "field": "cronExpression",
+                            "expression": "0 9 * * 1"
+                        }
+                    ]
+                }
             },
-            {
-              "role": "user",
-              "content": "=이번 주 개발 메트릭:\n\n빌드: 총 {{ $json.build_metrics.total }}회, 성공률 {{ Math.round($json.build_metrics.success / $json.build_metrics.total * 100) }}%\n배포: {{ $json.build_metrics.deployments }}회\n\nJira:\n- 완료: {{ $json.jira_metrics.completed }}개 (버그 {{ $json.jira_metrics.by_type.bugs }}, 기능 {{ $json.jira_metrics.by_type.features }}, 태스크 {{ $json.jira_metrics.by_type.tasks }})\n- 신규: {{ $json.jira_metrics.created }}개\n- 스토리포인트: {{ $json.jira_metrics.story_points }} SP\n\nGitHub: {{ $json.github_metrics.merged_prs }}개 PR 머지됨\n\nSentry:\n- 새 이슈: {{ $json.sentry_metrics.new_issues }}개\n- 해결: {{ $json.sentry_metrics.resolved }}개\n- 에러 이벤트: {{ $json.sentry_metrics.total_events }}회 ({{ $json.sentry_metrics.trend_percent }}% 전주 대비)\n\n위 데이터를 기반으로 주간 요약을 작성해주세요."
+            "type": "n8n-nodes-base.scheduleTrigger",
+            "typeVersion": 1.2,
+            "position": [
+                4752,
+                -496
+            ],
+            "id": "c5dfb9b4-9f03-49ac-8b7b-23470e1c5463",
+            "name": "Weekly Trigger (Mon 9AM)"
+        },
+        {
+            "parameters": {
+                "jsCode": "const now = new Date();\n\n// Last week Monday (7 days ago)\nconst weekStart = new Date(now);\nweekStart.setDate(now.getDate() - 7);\nweekStart.setHours(0, 0, 0, 0);\n\n// Last week Sunday (yesterday)\nconst weekEnd = new Date(now);\nweekEnd.setDate(now.getDate() - 1);\nweekEnd.setHours(23, 59, 59, 999);\n\n// ISO format for API queries\nconst formatDate = (d) => d.toISOString().split('T')[0];\nconst formatDateKR = (d) => `${d.getMonth()+1}/${d.getDate()}`;\n\nreturn {\n  trigger_time: now.toISOString(),\n  week_start: weekStart.toISOString(),\n  week_end: weekEnd.toISOString(),\n  week_start_date: formatDate(weekStart),\n  week_end_date: formatDate(weekEnd),\n  date_range: `${formatDateKR(weekStart)} ~ ${formatDateKR(weekEnd)}`,\n  jql_date_range: `created >= \"${formatDate(weekStart)}\" AND created <= \"${formatDate(weekEnd)}\"`,\n  github_since: weekStart.toISOString(),\n  github_until: weekEnd.toISOString()\n};"
+            },
+            "type": "n8n-nodes-base.code",
+            "typeVersion": 2,
+            "position": [
+                4944,
+                -496
+            ],
+            "id": "eb2d8af3-d99d-4a79-a94b-f8b7180e3c53",
+            "name": "Calculate Week Range"
+        },
+        {
+            "parameters": {
+                "operation": "getAll",
+                "limit": 100,
+                "options": {
+                    "jql": "={{ `updated >= '${$json.week_start_date}' OR created >= '${$json.week_start_date}' ORDER BY updated DESC` }}"
+                }
+            },
+            "type": "n8n-nodes-base.jira",
+            "typeVersion": 1,
+            "position": [
+                5200,
+                -496
+            ],
+            "id": "109a26a7-023d-49ef-b73b-fc1c5d3d7dee",
+            "name": "Jira: All Issues",
+            "credentials": {
+                "jiraSoftwareCloudApi": {
+                    "id": "tOQBMtEJQivj7pgn",
+                    "name": "Jira SW Cloud account"
+                }
             }
-          ]
         },
-        "options": {
-          "temperature": 0.3
-        }
-      },
-      "type": "@n8n/n8n-nodes-langchain.openAi",
-      "typeVersion": 1.8,
-      "position": [1350, 300],
-      "id": "ai-summarize",
-      "name": "AI Summarize",
-      "credentials": {
-        "openAiApi": {
-          "id": "{{OPENAI_CREDENTIAL_ID}}",
-          "name": "OpenAI API"
-        }
-      }
-    },
-    {
-      "parameters": {
-        "jsCode": "const input = $input.first().json;\nconst metricsInput = $('Aggregate Metrics').first().json;\n\n// Extract AI summary\nconst aiSummary = input.message?.content || input.text || '요약 데이터 없음';\n\nconst buildSuccessRate = metricsInput.build_metrics.total > 0\n  ? Math.round((metricsInput.build_metrics.success / metricsInput.build_metrics.total) * 100)\n  : 0;\n\nconst errorTrend = metricsInput.sentry_metrics.trend_percent > 0\n  ? `+${metricsInput.sentry_metrics.trend_percent}%`\n  : `${metricsInput.sentry_metrics.trend_percent}%`;\nconst trendEmoji = metricsInput.sentry_metrics.trend_percent > 0\n  ? ':chart_with_upwards_trend:'\n  : ':chart_with_downwards_trend:';\n\nconst blocks = [\n  {\n    \"type\": \"header\",\n    \"text\": {\n      \"type\": \"plain_text\",\n      \"text\": `:bar_chart: 주간 개발 리포트 (${metricsInput.date_range})`,\n      \"emoji\": true\n    }\n  },\n  {\n    \"type\": \"divider\"\n  },\n  {\n    \"type\": \"section\",\n    \"text\": {\n      \"type\": \"mrkdwn\",\n      \"text\": \"*:hammer_and_wrench: 빌드 & 배포*\"\n    }\n  },\n  {\n    \"type\": \"section\",\n    \"fields\": [\n      {\n        \"type\": \"mrkdwn\",\n        \"text\": `*총 빌드*\\n${metricsInput.build_metrics.total}회`\n      },\n      {\n        \"type\": \"mrkdwn\",\n        \"text\": `*성공률*\\n${buildSuccessRate}%`\n      },\n      {\n        \"type\": \"mrkdwn\",\n        \"text\": `*평균 시간*\\n${metricsInput.build_metrics.avg_duration}`\n      },\n      {\n        \"type\": \"mrkdwn\",\n        \"text\": `*배포*\\n${metricsInput.build_metrics.deployments}회`\n      }\n    ]\n  },\n  {\n    \"type\": \"divider\"\n  },\n  {\n    \"type\": \"section\",\n    \"text\": {\n      \"type\": \"mrkdwn\",\n      \"text\": \"*:ticket: Jira 티켓*\"\n    }\n  },\n  {\n    \"type\": \"section\",\n    \"fields\": [\n      {\n        \"type\": \"mrkdwn\",\n        \"text\": `*완료*\\n${metricsInput.jira_metrics.completed}개`\n      },\n      {\n        \"type\": \"mrkdwn\",\n        \"text\": `*신규*\\n${metricsInput.jira_metrics.created}개`\n      },\n      {\n        \"type\": \"mrkdwn\",\n        \"text\": `*진행중*\\n${metricsInput.jira_metrics.in_progress}개`\n      },\n      {\n        \"type\": \"mrkdwn\",\n        \"text\": `*스토리 포인트*\\n${metricsInput.jira_metrics.story_points} SP`\n      }\n    ]\n  },\n  {\n    \"type\": \"divider\"\n  },\n  {\n    \"type\": \"section\",\n    \"text\": {\n      \"type\": \"mrkdwn\",\n      \"text\": \"*:bug: Sentry 에러*\"\n    }\n  },\n  {\n    \"type\": \"section\",\n    \"fields\": [\n      {\n        \"type\": \"mrkdwn\",\n        \"text\": `*새 이슈*\\n${metricsInput.sentry_metrics.new_issues}개`\n      },\n      {\n        \"type\": \"mrkdwn\",\n        \"text\": `*해결*\\n${metricsInput.sentry_metrics.resolved}개`\n      },\n      {\n        \"type\": \"mrkdwn\",\n        \"text\": `*총 이벤트*\\n${metricsInput.sentry_metrics.total_events.toLocaleString()}회`\n      },\n      {\n        \"type\": \"mrkdwn\",\n        \"text\": `*추세* ${trendEmoji}\\n${errorTrend} (전주 대비)`\n      }\n    ]\n  },\n  {\n    \"type\": \"divider\"\n  },\n  {\n    \"type\": \"section\",\n    \"text\": {\n      \"type\": \"mrkdwn\",\n      \"text\": `*:robot_face: AI 요약*\\n${aiSummary}`\n    }\n  },\n  {\n    \"type\": \"divider\"\n  },\n  {\n    \"type\": \"context\",\n    \"elements\": [\n      {\n        \"type\": \"mrkdwn\",\n        \"text\": \":link: <https://your-domain.atlassian.net/jira/|Jira> | <https://sentry.io/organizations/ryuqqq/|Sentry> | <https://github.com/ryu-qqq|GitHub>\"\n      }\n    ]\n  }\n];\n\nreturn {\n  blocks: blocks,\n  channel: '#dev-reports',\n  text: `주간 개발 리포트 (${metricsInput.date_range})`,\n  metrics: metricsInput,\n  ai_summary: aiSummary\n};"
-      },
-      "type": "n8n-nodes-base.code",
-      "typeVersion": 2,
-      "position": [1550, 300],
-      "id": "format-slack-message",
-      "name": "Format Slack Message"
-    },
-    {
-      "parameters": {
-        "authentication": "oAuth2",
-        "select": "channel",
-        "channelId": {
-          "__rl": true,
-          "mode": "name",
-          "value": "#dev-reports"
+        {
+            "parameters": {
+                "url": "={{ `https://api.github.com/search/issues?q=repo:ryu-qqq/setof-commerce+repo:ryu-qqq/Gateway+repo:ryu-qqq/CrawlingHub+repo:ryu-qqq/FileFlow+repo:ryu-qqq/AuthHub+repo:ryu-qqq/MarketPlace+repo:ryu-qqq/claude-spring-standards+is:pr+is:merged+merged:${$('Calculate Week Range').first().json.week_start_date}..${$('Calculate Week Range').first().json.week_end_date}&per_page=100` }}",
+                "authentication": "predefinedCredentialType",
+                "nodeCredentialType": "githubApi",
+                "options": {}
+            },
+            "type": "n8n-nodes-base.httpRequest",
+            "typeVersion": 4.2,
+            "position": [
+                5456,
+                -496
+            ],
+            "id": "79b50fc1-7fd4-427b-8a12-192f2f8c72be",
+            "name": "GitHub: All PRs",
+            "credentials": {
+                "githubApi": {
+                    "id": "uJpJHjMJj6qdmUVx",
+                    "name": "GitHub Token"
+                }
+            }
         },
-        "messageType": "block",
-        "blocksUi": "={{ $json.blocks }}",
-        "text": "={{ $json.text }}",
-        "otherOptions": {
-          "includeLinkToWorkflow": false
+        {
+            "parameters": {
+                "url": "=https://sentry.io/api/0/organizations/ryu-qqq/issues/?query=is:unresolved&statsPeriod=7d&limit=50",
+                "authentication": "predefinedCredentialType",
+                "nodeCredentialType": "sentryIoApi",
+                "options": {}
+            },
+            "type": "n8n-nodes-base.httpRequest",
+            "typeVersion": 4.2,
+            "position": [
+                5712,
+                -496
+            ],
+            "id": "fcb28660-c455-40ea-b3a9-ab3d8127ff81",
+            "name": "Sentry: New Issues",
+            "credentials": {
+                "httpHeaderAuth": {
+                    "id": "RtPMxDsX1GBCYVwn",
+                    "name": "Header Auth account"
+                },
+                "sentryIoApi": {
+                    "id": "WEbDEtSQ3lq4WQeY",
+                    "name": "Sentry.io account"
+                }
+            }
+        },
+        {
+            "parameters": {
+                "url": "=https://sentry.io/api/0/organizations/ryu-qqq/issues/?query=is:resolved&statsPeriod=7d&limit=50",
+                "authentication": "predefinedCredentialType",
+                "nodeCredentialType": "sentryIoApi",
+                "options": {}
+            },
+            "type": "n8n-nodes-base.httpRequest",
+            "typeVersion": 4.2,
+            "position": [
+                5968,
+                -496
+            ],
+            "id": "4131e09e-1ee7-4a8f-9e4e-83a317d1e3bf",
+            "name": "Sentry: Resolved Issues",
+            "credentials": {
+                "httpHeaderAuth": {
+                    "id": "RtPMxDsX1GBCYVwn",
+                    "name": "Header Auth account"
+                },
+                "sentryIoApi": {
+                    "id": "WEbDEtSQ3lq4WQeY",
+                    "name": "Sentry.io account"
+                }
+            }
+        },
+        {
+            "parameters": {
+                "jsCode": "// 각 노드에서 직접 데이터 가져오기\nconst weekRange = $('Calculate Week Range').first().json;\nconst allJiraIssues = $('Jira: All Issues').all();\n\n// GitHub PRs - 통합 노드에서 가져오기\nconst githubResult = $('GitHub: All PRs').first().json;\nconst allPRs = githubResult?.items || [];\n\nconst sentryNewItems = $('Sentry: New Issues').all();\nconst sentryResolvedItems = $('Sentry: Resolved Issues').all();\n\n// Date range\nconst dateRange = weekRange?.date_range || 'N/A';\nconst weekStart = weekRange?.week_start_date || 'N/A';\nconst weekEnd = weekRange?.week_end_date || 'N/A';\nconst weekStartDate = new Date(weekRange?.week_start);\nconst weekEndDate = new Date(weekRange?.week_end);\n\n// Jira 이슈를 status별로 분류\nconst completedStatuses = ['Done', '완료', 'Closed', 'Resolved'];\nconst inProgressStatuses = ['In Progress', '진행 중', 'In Review', '검토 중'];\n\nconst jiraCompleted = allJiraIssues.filter(i => {\n  const status = i.json?.fields?.status?.name || '';\n  return completedStatuses.includes(status);\n});\n\nconst jiraInProgress = allJiraIssues.filter(i => {\n  const status = i.json?.fields?.status?.name || '';\n  return inProgressStatuses.includes(status);\n});\n\n// 해당 주간에 생성된 이슈\nconst jiraCreated = allJiraIssues.filter(i => {\n  const created = new Date(i.json?.fields?.created);\n  return created >= weekStartDate && created <= weekEndDate;\n});\n\n// Calculate story points (완료된 이슈만)\nconst storyPoints = jiraCompleted.reduce((sum, issue) => {\n  const sp = issue.json?.fields?.customfield_10016 || 0;\n  return sum + sp;\n}, 0);\n\n// Count by type (완료된 이슈 기준)\nconst completedBugs = jiraCompleted.filter(i => i.json?.fields?.issuetype?.name === 'Bug' || i.json?.fields?.issuetype?.name === '버그').length;\nconst completedFeatures = jiraCompleted.filter(i => ['Story', 'Feature', '스토리'].includes(i.json?.fields?.issuetype?.name)).length;\nconst completedTasks = jiraCompleted.filter(i => i.json?.fields?.issuetype?.name === 'Task' || i.json?.fields?.issuetype?.name === '작업').length;\n\n// GitHub PRs (Search API로 이미 머지된 PR만 가져옴)\nconst mergedPRs = allPRs.length;\n\n// Sentry data - handle array response\nconst sentryNewList = Array.isArray(sentryNewItems[0]?.json) ? sentryNewItems[0].json : sentryNewItems.map(i => i.json);\nconst sentryResolvedList = Array.isArray(sentryResolvedItems[0]?.json) ? sentryResolvedItems[0].json : sentryResolvedItems.map(i => i.json);\nconst sentryNew = sentryNewList.length;\nconst sentryResolved = sentryResolvedList.length;\n\n// Build metrics stub (would read from stored file in production)\nconst buildMetrics = {\n  total: 45,\n  success: 42,\n  avg_duration: '4m 32s',\n  deployments: 8\n};\n\n// Sentry event total (placeholder - would come from Sentry stats API)\nconst totalEvents = 1247;\nconst lastWeekEvents = 1467;\nconst trendPercent = Math.round(((totalEvents - lastWeekEvents) / lastWeekEvents) * 100);\n\nreturn {\n  date_range: dateRange,\n  week_start: weekStart,\n  week_end: weekEnd,\n  \n  build_metrics: buildMetrics,\n  \n  jira_metrics: {\n    completed: jiraCompleted.length,\n    created: jiraCreated.length,\n    in_progress: jiraInProgress.length,\n    story_points: storyPoints,\n    by_type: {\n      bugs: completedBugs,\n      features: completedFeatures,\n      tasks: completedTasks\n    }\n  },\n  \n  github_metrics: {\n    merged_prs: mergedPRs\n  },\n  \n  sentry_metrics: {\n    new_issues: sentryNew,\n    resolved: sentryResolved,\n    total_events: totalEvents,\n    trend_percent: trendPercent\n  },\n  \n  raw_summary: `Jira: ${jiraCompleted.length} completed, ${jiraCreated.length} created. GitHub: ${mergedPRs} PRs merged. Sentry: ${sentryNew} new issues, ${sentryResolved} resolved.`\n};"
+            },
+            "type": "n8n-nodes-base.code",
+            "typeVersion": 2,
+            "position": [
+                6224,
+                -496
+            ],
+            "id": "97bfb072-02dc-4ed9-8d6e-20a727a900f7",
+            "name": "Aggregate Metrics"
+        },
+        {
+            "parameters": {
+                "modelId": {
+                    "__rl": true,
+                    "value": "gpt-5.2-pro",
+                    "mode": "list",
+                    "cachedResultName": "GPT-5.2-PRO"
+                },
+                "messages": {
+                    "values": [
+                        {
+                            "content": "당신은 개발팀의 주간 리포트를 요약하는 AI 어시스턴트입니다.\n\n주어진 메트릭을 분석하고 2-3문장으로 핵심 인사이트를 한국어로 제공하세요.\n\n포함할 내용:\n- 이번 주 주요 성과\n- 주목할 만한 트렌드 (긍정적 또는 부정적)\n- 다음 주 권장 액션 (있다면)\n\n간결하고 액션 가능한 인사이트를 제공하세요.",
+                            "role": "system"
+                        },
+                        {
+                            "content": "=이번 주 개발 메트릭:\n\n빌드: 총 {{ $json.build_metrics.total }}회, 성공률 {{ Math.round($json.build_metrics.success / $json.build_metrics.total * 100) }}%\n배포: {{ $json.build_metrics.deployments }}회\n\nJira:\n- 완료: {{ $json.jira_metrics.completed }}개 (버그 {{ $json.jira_metrics.by_type.bugs }}, 기능 {{ $json.jira_metrics.by_type.features }}, 태스크 {{ $json.jira_metrics.by_type.tasks }})\n- 신규: {{ $json.jira_metrics.created }}개\n- 스토리포인트: {{ $json.jira_metrics.story_points }} SP\n\nGitHub: {{ $json.github_metrics.merged_prs }}개 PR 머지됨\n\nSentry:\n- 새 이슈: {{ $json.sentry_metrics.new_issues }}개\n- 해결: {{ $json.sentry_metrics.resolved }}개\n- 에러 이벤트: {{ $json.sentry_metrics.total_events }}회 ({{ $json.sentry_metrics.trend_percent }}% 전주 대비)\n\n위 데이터를 기반으로 주간 요약을 작성해주세요."
+                        }
+                    ]
+                },
+                "options": {
+                    "temperature": 0.3
+                }
+            },
+            "type": "@n8n/n8n-nodes-langchain.openAi",
+            "typeVersion": 1.8,
+            "position": [
+                6480,
+                -496
+            ],
+            "id": "e99bb4c3-269e-4cc9-9a9a-c9a7e2696f63",
+            "name": "AI Summarize",
+            "credentials": {
+                "openAiApi": {
+                    "id": "Ula5jc00tgdawbTH",
+                    "name": "OpenAi account"
+                }
+            }
+        },
+        {
+            "parameters": {
+                "jsCode": "const input = $input.first().json;\nconst metricsInput = $('Aggregate Metrics').first().json;\n\n// Extract AI summary\nconst aiSummary = input.message?.content || input.text || '요약 데이터 없음';\n\nconst buildSuccessRate = metricsInput.build_metrics.total > 0\n  ? Math.round((metricsInput.build_metrics.success / metricsInput.build_metrics.total) * 100)\n  : 0;\n\nconst errorTrend = metricsInput.sentry_metrics.trend_percent > 0\n  ? `+${metricsInput.sentry_metrics.trend_percent}%`\n  : `${metricsInput.sentry_metrics.trend_percent}%`;\nconst trendEmoji = metricsInput.sentry_metrics.trend_percent > 0\n  ? ':chart_with_upwards_trend:'\n  : ':chart_with_downwards_trend:';\n\nconst blocks = [\n  {\n    \"type\": \"header\",\n    \"text\": {\n      \"type\": \"plain_text\",\n      \"text\": `:bar_chart: 주간 개발 리포트 (${metricsInput.date_range})`,\n      \"emoji\": true\n    }\n  },\n  {\n    \"type\": \"divider\"\n  },\n  {\n    \"type\": \"section\",\n    \"text\": {\n      \"type\": \"mrkdwn\",\n      \"text\": \"*:hammer_and_wrench: 빌드 & 배포*\"\n    }\n  },\n  {\n    \"type\": \"section\",\n    \"fields\": [\n      {\n        \"type\": \"mrkdwn\",\n        \"text\": `*총 빌드*\\n${metricsInput.build_metrics.total}회`\n      },\n      {\n        \"type\": \"mrkdwn\",\n        \"text\": `*성공률*\\n${buildSuccessRate}%`\n      },\n      {\n        \"type\": \"mrkdwn\",\n        \"text\": `*평균 시간*\\n${metricsInput.build_metrics.avg_duration}`\n      },\n      {\n        \"type\": \"mrkdwn\",\n        \"text\": `*배포*\\n${metricsInput.build_metrics.deployments}회`\n      }\n    ]\n  },\n  {\n    \"type\": \"divider\"\n  },\n  {\n    \"type\": \"section\",\n    \"text\": {\n      \"type\": \"mrkdwn\",\n      \"text\": \"*:ticket: Jira 티켓*\"\n    }\n  },\n  {\n    \"type\": \"section\",\n    \"fields\": [\n      {\n        \"type\": \"mrkdwn\",\n        \"text\": `*완료*\\n${metricsInput.jira_metrics.completed}개`\n      },\n      {\n        \"type\": \"mrkdwn\",\n        \"text\": `*신규*\\n${metricsInput.jira_metrics.created}개`\n      },\n      {\n        \"type\": \"mrkdwn\",\n        \"text\": `*진행중*\\n${metricsInput.jira_metrics.in_progress}개`\n      },\n      {\n        \"type\": \"mrkdwn\",\n        \"text\": `*스토리 포인트*\\n${metricsInput.jira_metrics.story_points} SP`\n      }\n    ]\n  },\n  {\n    \"type\": \"divider\"\n  },\n  {\n    \"type\": \"section\",\n    \"text\": {\n      \"type\": \"mrkdwn\",\n      \"text\": \"*:bug: Sentry 에러*\"\n    }\n  },\n  {\n    \"type\": \"section\",\n    \"fields\": [\n      {\n        \"type\": \"mrkdwn\",\n        \"text\": `*새 이슈*\\n${metricsInput.sentry_metrics.new_issues}개`\n      },\n      {\n        \"type\": \"mrkdwn\",\n        \"text\": `*해결*\\n${metricsInput.sentry_metrics.resolved}개`\n      },\n      {\n        \"type\": \"mrkdwn\",\n        \"text\": `*총 이벤트*\\n${metricsInput.sentry_metrics.total_events.toLocaleString()}회`\n      },\n      {\n        \"type\": \"mrkdwn\",\n        \"text\": `*추세* ${trendEmoji}\\n${errorTrend} (전주 대비)`\n      }\n    ]\n  },\n  {\n    \"type\": \"divider\"\n  },\n  {\n    \"type\": \"section\",\n    \"text\": {\n      \"type\": \"mrkdwn\",\n      \"text\": `*:robot_face: AI 요약*\\n${aiSummary}`\n    }\n  },\n  {\n    \"type\": \"divider\"\n  },\n  {\n    \"type\": \"context\",\n    \"elements\": [\n      {\n        \"type\": \"mrkdwn\",\n        \"text\": \":link: <https://your-domain.atlassian.net/jira/|Jira> | <https://sentry.io/organizations/ryu-qqq/|Sentry> | <https://github.com/ryu-qqq|GitHub>\"\n      }\n    ]\n  }\n];\n\nreturn {\n  blocks: blocks,\n  channel: '#dev-reports',\n  text: `주간 개발 리포트 (${metricsInput.date_range})`,\n  metrics: metricsInput,\n  ai_summary: aiSummary\n};"
+            },
+            "type": "n8n-nodes-base.code",
+            "typeVersion": 2,
+            "position": [
+                6736,
+                -496
+            ],
+            "id": "b8a6e8f6-d1ff-4033-b55f-05cad2c5494c",
+            "name": "Format Slack Message"
+        },
+        {
+            "parameters": {
+                "select": "channel",
+                "channelId": {
+                    "__rl": true,
+                    "value": "C0A8M6YU477",
+                    "mode": "id"
+                },
+                "messageType": "block",
+                "blocksUi": "={{ $json.blocks }}",
+                "text": "={{ $json.text }}",
+                "otherOptions": {
+                    "includeLinkToWorkflow": false
+                }
+            },
+            "type": "n8n-nodes-base.slack",
+            "typeVersion": 2.2,
+            "position": [
+                6992,
+                -496
+            ],
+            "id": "748608ad-96d1-4371-943e-e0d8ba7ca21e",
+            "name": "Send Weekly Report",
+            "webhookId": "0c3e1091-127b-42c3-8b7c-2060b1c8e26f",
+            "credentials": {
+                "slackApi": {
+                    "id": "JudHaRQYOjQVx9Xo",
+                    "name": "n8n Automation Bot"
+                }
+            }
         }
-      },
-      "type": "n8n-nodes-base.slack",
-      "typeVersion": 2.2,
-      "position": [1750, 300],
-      "id": "send-slack-report",
-      "name": "Send Weekly Report",
-      "credentials": {
-        "slackOAuth2Api": {
-          "id": "{{SLACK_CREDENTIAL_ID}}",
-          "name": "Slack OAuth"
+    ],
+    "pinData": {},
+    "connections": {
+        "Weekly Trigger (Mon 9AM)": {
+            "main": [
+                [
+                    {
+                        "node": "Calculate Week Range",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Calculate Week Range": {
+            "main": [
+                [
+                    {
+                        "node": "Jira: All Issues",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Jira: All Issues": {
+            "main": [
+                [
+                    {
+                        "node": "GitHub: All PRs",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "GitHub: All PRs": {
+            "main": [
+                [
+                    {
+                        "node": "Sentry: New Issues",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Sentry: New Issues": {
+            "main": [
+                [
+                    {
+                        "node": "Sentry: Resolved Issues",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Sentry: Resolved Issues": {
+            "main": [
+                [
+                    {
+                        "node": "Aggregate Metrics",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Aggregate Metrics": {
+            "main": [
+                [
+                    {
+                        "node": "AI Summarize",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "AI Summarize": {
+            "main": [
+                [
+                    {
+                        "node": "Format Slack Message",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Format Slack Message": {
+            "main": [
+                [
+                    {
+                        "node": "Send Weekly Report",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
         }
-      }
-    }
-  ],
-  "connections": {
-    "Weekly Trigger (Mon 9AM)": {
-      "main": [
-        [
-          {
-            "node": "Calculate Week Range",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
     },
-    "Calculate Week Range": {
-      "main": [
-        [
-          {
-            "node": "Jira: Completed Issues",
-            "type": "main",
-            "index": 0
-          },
-          {
-            "node": "Jira: Created Issues",
-            "type": "main",
-            "index": 0
-          },
-          {
-            "node": "Jira: In Progress Issues",
-            "type": "main",
-            "index": 0
-          },
-          {
-            "node": "GitHub: PRs (product-hub)",
-            "type": "main",
-            "index": 0
-          },
-          {
-            "node": "GitHub: PRs (auth-hub)",
-            "type": "main",
-            "index": 0
-          },
-          {
-            "node": "Sentry: New Issues",
-            "type": "main",
-            "index": 0
-          },
-          {
-            "node": "Sentry: Resolved Issues",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
+    "active": true,
+    "settings": {
+        "executionOrder": "v1",
+        "availableInMCP": false
     },
-    "Jira: Completed Issues": {
-      "main": [
-        [
-          {
-            "node": "Merge All Data",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
+    "versionId": "5cac9360-6ebe-458e-a4c5-ee392b83e3ab",
+    "meta": {
+        "templateCredsSetupCompleted": true,
+        "instanceId": "ad7743d079695bc43ae4d02129a8effe323aa22a80de3b109fc6ceb5c0bcec7f"
     },
-    "Jira: Created Issues": {
-      "main": [
-        [
-          {
-            "node": "Merge All Data",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Jira: In Progress Issues": {
-      "main": [
-        [
-          {
-            "node": "Merge All Data",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "GitHub: PRs (product-hub)": {
-      "main": [
-        [
-          {
-            "node": "Merge All Data",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "GitHub: PRs (auth-hub)": {
-      "main": [
-        [
-          {
-            "node": "Merge All Data",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Sentry: New Issues": {
-      "main": [
-        [
-          {
-            "node": "Merge All Data",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Sentry: Resolved Issues": {
-      "main": [
-        [
-          {
-            "node": "Merge All Data",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Merge All Data": {
-      "main": [
-        [
-          {
-            "node": "Aggregate Metrics",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Aggregate Metrics": {
-      "main": [
-        [
-          {
-            "node": "AI Summarize",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "AI Summarize": {
-      "main": [
-        [
-          {
-            "node": "Format Slack Message",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Format Slack Message": {
-      "main": [
-        [
-          {
-            "node": "Send Weekly Report",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    }
-  },
-  "settings": {
-    "executionOrder": "v1"
-  },
-  "staticData": null,
-  "meta": {
-    "templateId": "weekly-dev-report",
-    "description": "Weekly development metrics report with AI-powered summary sent to Slack every Monday at 9 AM",
-    "version": "1.0.0"
-  },
-  "_workflow_info": {
-    "schedule": "Every Monday 9:00 AM (server timezone)",
-    "cron": "0 9 * * 1",
-    "data_sources": {
-      "jira": {
-        "completed_issues": "Issues resolved in the past week",
-        "created_issues": "Issues created in the past week",
-        "in_progress": "Currently active issues"
-      },
-      "github": {
-        "pull_requests": "Merged PRs from configured repositories"
-      },
-      "sentry": {
-        "new_issues": "New error issues in the past week",
-        "resolved_issues": "Resolved issues in the past week"
-      },
-      "build_metrics": "Placeholder - integrate with github-metrics-collector storage"
-    },
-    "output_channel": "#dev-reports",
-    "ai_model": "GPT-4o for Korean summary generation",
-    "customization": {
-      "repositories": "Add more GitHub repos in the workflow",
-      "jira_projects": "Modify JQL queries for different projects",
-      "slack_channel": "Change channelId in Send Weekly Report node"
-    }
-  }
+    "id": "b1kHYS3PRNc2qoVO",
+    "tags": []
 }

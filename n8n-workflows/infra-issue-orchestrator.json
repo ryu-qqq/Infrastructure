@@ -8,1780 +8,21 @@
         "options": {}
       },
       "type": "n8n-nodes-base.webhook",
-      "typeVersion": 2.1,
-      "position": [
-        1728,
-        -2432
-      ],
-      "id": "69dcad4b-7a26-4333-a92f-a91bf3962c3f",
-      "name": "Webhook",
-      "webhookId": "487b7679-97c7-4838-ade3-1ac3115bb39c"
+      "typeVersion": 2,
+      "position": [200, 300],
+      "id": "webhook-github-issue",
+      "name": "GitHub Issue Webhook",
+      "webhookId": "infra-issue-webhook"
     },
     {
       "parameters": {
-        "method": "POST",
-        "url": "https://slack.com/api/chat.postMessage ",
-        "authentication": "predefinedCredentialType",
-        "nodeCredentialType": "slackApi",
-        "sendHeaders": true,
-        "headerParameters": {
-          "parameters": [
-            {
-              "name": "Content-Type",
-              "value": "application/json"
-            }
-          ]
-        },
-        "sendBody": true,
-        "specifyBody": "json",
-        "jsonBody": "={\n    \"channel\": \"C0A5JRE5K09\",\n    \"blocks\": [\n      {\n        \"type\": \"header\",\n        \"text\": {\"type\": \"plain_text\", \"text\": \"🏗️ 새로운 인프라 변경 요청\", \"emoji\": true}\n      },\n      {\n        \"type\": \"section\",\n        \"fields\": [\n          {\"type\": \"mrkdwn\", \"text\": \"*Issue:*\\n<{{ $json.url }}|{{ $json.github_issue }}>\"},\n          {\"type\": \"mrkdwn\", \"text\": \"*Jira:*\\n{{ $json.jira_key }}\"}\n        ]\n      },\n      {\n        \"type\": \"section\",\n        \"fields\": [\n          {\"type\": \"mrkdwn\", \"text\": \"*제목:*\\n{{ $json.title }}\"},\n          {\"type\": \"mrkdwn\", \"text\": \"*작성자:*\\n{{ $json.author }}\"}\n        ]\n      },\n      {\"type\": \"divider\"},\n      {\n        \"type\": \"section\",\n        \"text\": {\"type\": \"mrkdwn\", \"text\": \"*내용:*\\n{{ $json.body }}\"}\n      },\n      {\n        \"type\": \"actions\",\n        \"elements\": [\n          {\"type\": \"button\", \"text\": {\"type\": \"plain_text\", \"text\": \"✅ 승인\", \"emoji\": true}, \"style\": \"primary\", \"value\": \"approve_{{ $json.github_issue }}_{{ $json.jira_key }}\", \"action_id\": \"approve_action\"},\n          {\"type\": \"button\", \"text\": {\"type\": \"plain_text\", \"text\": \"❌ 거절\", \"emoji\": true}, \"style\": \"danger\", \"value\": \"reject_{{ $json.github_issue }}_{{ $json.jira_key }}\", \"action_id\": \"reject_action\"},\n          {\"type\": \"button\", \"text\": {\"type\": \"plain_text\", \"text\": \"📝 수정요청\", \"emoji\": true}, \"value\": \"revise_{{ $json.github_issue }}_{{ $json.jira_key }}\", \"action_id\": \"revise_action\"}\n        ]\n      }\n    ]\n  }",
-        "options": {}
-      },
-      "type": "n8n-nodes-base.httpRequest",
-      "typeVersion": 4.3,
-      "position": [
-        2064,
-        -2432
-      ],
-      "id": "95be1cde-caff-4035-8e5b-91ecfc5cc1cb",
-      "name": "HTTP Request",
-      "credentials": {
-        "slackApi": {
-          "id": "JudHaRQYOjQVx9Xo",
-          "name": "DevOps Bot"
-        }
-      }
-    },
-    {
-      "parameters": {
-        "httpMethod": "POST",
-        "path": "slack-interactive",
-        "options": {}
-      },
-      "type": "n8n-nodes-base.webhook",
-      "typeVersion": 2.1,
-      "position": [
-        1728,
-        -1808
-      ],
-      "id": "5490496f-4e02-4d48-a392-8c40d787ae1f",
-      "name": "Slack Interactive",
-      "webhookId": "6157c06d-e687-49ce-a0b1-a53ebc80d8b9"
-    },
-    {
-      "parameters": {
-        "jsCode": "const payload = JSON.parse($input.first().json.body.payload);\nconst action = payload.actions[0];\nconst actionId = action.action_id;\nconst value = action.value || '';\nconst user = payload.user.name;\nconst channel = payload.channel.id;\n\nconst responseUrl = payload.response_url;\nconst messageTs = payload.message.ts;\n\nlet actionType = '';\nlet issueNumber = '';\nlet issueNum = '';\nlet jiraKey = '';\nlet prNumber = '';\nlet repoName = '';\nlet aiSuggestion = '';\n\n// AI 리뷰 적용 액션 (apply_review|PR번호|이슈번호|레포명)\nif (actionId === 'apply_ai_review') {\n  const parts = value.split('|');\n  actionType = 'apply_ai_review';\n  prNumber = parts[1] || '';\n  issueNum = parts[2] || '';\n  issueNumber = issueNum ? '#' + issueNum : '';\n  repoName = parts[3] || 'ryu-qqq/infrastructure';\n  \n  // 메시지에서 AI 제안 추출\n  const blocks = payload.message.blocks || [];\n  for (const block of blocks) {\n    if (block.text && block.text.text && block.text.text.includes('AI 수정 제안')) {\n      aiSuggestion = block.text.text.replace('*🤖 AI 수정 제안:*\\n', '');\n    }\n  }\n} \n// 리뷰 무시 액션\nelse if (actionId === 'ignore_review') {\n  const parts = value.split('|');\n  actionType = 'ignore_review';\n  prNumber = parts[1] || '';\n}\n// 기존 승인/거절/수정요청 액션 (approve_#123_JIRA-456)\nelse {\n  const parts = value.split('_');\n  actionType = parts[0];\n  issueNumber = parts[1] || '';\n  jiraKey = parts.slice(2).join('_');\n  issueNum = issueNumber.replace('#', '');\n}\n\nconst blocks = payload.message.blocks || [];\nlet issueTitle = '';\nlet issueBody = '';\nlet prUrl = '';\nlet prTitle = '';\n\nfor (const block of blocks) {\n  if (block.text && block.text.text) {\n    const text = block.text.text;\n    if (text.startsWith('*제목:*')) {\n      issueTitle = text.replace('*제목:* ', '');\n    }\n    if (text.startsWith('*내용:*')) {\n      issueBody = text.replace('*내용:*\\n```', '').replace('```', '');\n    }\n    // PR 정보 추출\n    if (text.includes('*PR:*')) {\n      const prMatch = text.match(/<([^|]+)\\|#(\\d+)>\\s*(.*)/);\n      if (prMatch) {\n        prUrl = prMatch[1];\n        prNumber = prNumber || prMatch[2];\n        prTitle = prMatch[3];\n      }\n    }\n  }\n  if (block.fields) {\n    for (const field of block.fields) {\n      if (field.text && field.text.startsWith('*제목:*')) {\n        issueTitle = field.text.replace('*제목:*\\n', '');\n      }\n      if (field.text && field.text.includes('*PR:*')) {\n        const prMatch = field.text.match(/<([^|]+)\\|#(\\d+)>/);\n        if (prMatch) {\n          prUrl = prMatch[1];\n          prNumber = prNumber || prMatch[2];\n        }\n      }\n    }\n  }\n}\n\nconst actionLabels = {\n  'approve': '✅ 승인 처리 중...',\n  'reject': '❌ 거절 처리 중...',\n  'revise': '📝 수정요청 처리 중...',\n  'apply_ai_review': '🤖 AI 수정 적용 중...',\n  'ignore_review': '❌ 리뷰 무시됨'\n};\n\nreturn {\n  actionType,\n  issueNumber,\n  issueNum,\n  jiraKey,\n  prNumber,\n  prUrl,\n  prTitle,\n  repoName,\n  aiSuggestion,\n  user,\n  channel,\n  issueTitle,\n  issueBody,\n  responseUrl,\n  messageTs,\n  actionLabel: actionLabels[actionType] || '처리 중...'\n};\n"
+        "jsCode": "const rawInput = $input.first().json;\nconst input = rawInput.body || rawInput;\n\n// Issue opened 이벤트만 처리\nif (input.action !== 'opened') {\n  return { skip: true, reason: 'Not an opened issue' };\n}\n\nconst issue = input.issue || {};\nconst repo = input.repository || {};\n\n// 본문에서 변경 타입 추출 (terraform, docker, ci 등)\nconst body = issue.body || '';\nlet changeType = 'general';\nif (body.toLowerCase().includes('terraform')) changeType = 'terraform';\nelse if (body.toLowerCase().includes('docker')) changeType = 'docker';\nelse if (body.toLowerCase().includes('ci/cd') || body.toLowerCase().includes('github action')) changeType = 'ci';\nelse if (body.toLowerCase().includes('monitoring') || body.toLowerCase().includes('alert')) changeType = 'monitoring';\n\nreturn {\n  skip: false,\n  issue: {\n    number: issue.number,\n    title: issue.title || 'No Title',\n    body: body.substring(0, 1000),\n    url: issue.html_url,\n    author: issue.user?.login || 'unknown',\n    labels: (issue.labels || []).map(l => l.name).join(', ')\n  },\n  repo: {\n    name: repo.name || 'infrastructure',\n    fullName: repo.full_name || 'ryu-qqq/infrastructure'\n  },\n  changeType: changeType,\n  timestamp: new Date().toISOString()\n};"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [
-        1952,
-        -1808
-      ],
-      "id": "b2bada38-2c90-41ef-a03e-60d5700a84d7",
-      "name": "Parse Action"
-    },
-    {
-      "parameters": {
-        "method": "POST",
-        "url": "={{ $json.responseUrl }}",
-        "sendHeaders": true,
-        "headerParameters": {
-          "parameters": [
-            {
-              "name": "Content-Type",
-              "value": "application/json"
-            }
-          ]
-        },
-        "sendBody": true,
-        "specifyBody": "json",
-        "jsonBody": "={\n  \"replace_original\": true,\n  \"blocks\": [\n    {\n      \"type\": \"header\",\n      \"text\": {\"type\": \"plain_text\", \"text\": \"🏗️ 인프라 변경 요청\", \"emoji\": true}\n    },\n    {\n      \"type\": \"section\",\n      \"fields\": [\n        {\"type\": \"mrkdwn\", \"text\": \"*Issue:*\\n{{ $json.issueNumber }}\"},\n        {\"type\": \"mrkdwn\", \"text\": \"*Jira:*\\n{{ $json.jiraKey }}\"}\n      ]\n    },\n    {\"type\": \"divider\"},\n    {\n      \"type\": \"section\",\n      \"text\": {\"type\": \"mrkdwn\", \"text\": \"{{ $json.actionLabel }}\\n\\n*처리자:* {{ $json.user }}\"}\n    },\n    {\n      \"type\": \"context\",\n      \"elements\": [\n        {\"type\": \"mrkdwn\", \"text\": \"⏳ 요청이 처리 중입니다. 잠시만 기다려주세요...\"}\n      ]\n    }\n  ]\n}",
-        "options": {
-          "response": {
-            "response": {
-              "neverError": true
-            }
-          }
-        }
-      },
-      "type": "n8n-nodes-base.httpRequest",
-      "typeVersion": 4.3,
-      "position": [
-        2160,
-        -1904
-      ],
-      "id": "ac0a4d75-28b8-4fa8-ad61-5c49d23f0454",
-      "name": "Disable Buttons"
-    },
-    {
-      "parameters": {
-        "rules": {
-          "values": [
-            {
-              "conditions": {
-                "options": {
-                  "caseSensitive": true,
-                  "leftValue": "",
-                  "typeValidation": "strict",
-                  "version": 3
-                },
-                "conditions": [
-                  {
-                    "leftValue": "={{ $('Parse Action').first().json.actionType }}",
-                    "rightValue": "approve",
-                    "operator": {
-                      "type": "string",
-                      "operation": "equals"
-                    },
-                    "id": "d962c46a-41a7-42fb-a0a3-0c7765df6ad2"
-                  }
-                ],
-                "combinator": "and"
-              }
-            },
-            {
-              "conditions": {
-                "options": {
-                  "caseSensitive": true,
-                  "leftValue": "",
-                  "typeValidation": "strict",
-                  "version": 3
-                },
-                "conditions": [
-                  {
-                    "id": "162966e8-6925-4fa9-bc8c-a7933ff8990e",
-                    "leftValue": "={{ $('Parse Action').first().json.actionType }}",
-                    "rightValue": "reject",
-                    "operator": {
-                      "type": "string",
-                      "operation": "equals",
-                      "name": "filter.operator.equals"
-                    }
-                  }
-                ],
-                "combinator": "and"
-              }
-            },
-            {
-              "conditions": {
-                "options": {
-                  "caseSensitive": true,
-                  "leftValue": "",
-                  "typeValidation": "strict",
-                  "version": 3
-                },
-                "conditions": [
-                  {
-                    "id": "d4d4fa7d-39fc-42ee-aa51-3fa674dc8583",
-                    "leftValue": "={{ $('Parse Action').first().json.actionType }}",
-                    "rightValue": "revise",
-                    "operator": {
-                      "type": "string",
-                      "operation": "equals",
-                      "name": "filter.operator.equals"
-                    }
-                  }
-                ],
-                "combinator": "and"
-              }
-            },
-            {
-              "conditions": {
-                "options": {
-                  "caseSensitive": true,
-                  "leftValue": "",
-                  "typeValidation": "strict",
-                  "version": 3
-                },
-                "conditions": [
-                  {
-                    "id": "e5f6a7b8-c9d0-1234-ef56-789012345678",
-                    "leftValue": "={{ $('Parse Action').first().json.actionType }}",
-                    "rightValue": "apply_ai_review",
-                    "operator": {
-                      "type": "string",
-                      "operation": "equals",
-                      "name": "filter.operator.equals"
-                    }
-                  }
-                ],
-                "combinator": "and"
-              }
-            },
-            {
-              "conditions": {
-                "options": {
-                  "caseSensitive": true,
-                  "leftValue": "",
-                  "typeValidation": "strict",
-                  "version": 3
-                },
-                "conditions": [
-                  {
-                    "id": "f6a7b8c9-d0e1-2345-f678-901234567890",
-                    "leftValue": "={{ $('Parse Action').first().json.actionType }}",
-                    "rightValue": "ignore_review",
-                    "operator": {
-                      "type": "string",
-                      "operation": "equals",
-                      "name": "filter.operator.equals"
-                    }
-                  }
-                ],
-                "combinator": "and"
-              }
-            }
-          ]
-        },
-        "options": {}
-      },
-      "type": "n8n-nodes-base.switch",
-      "typeVersion": 3.4,
-      "position": [
-        2368,
-        -1808
-      ],
-      "id": "01c37a8e-d3bd-49c9-b425-ca1f41f2c1ca",
-      "name": "Route Action"
-    },
-    {
-      "parameters": {
-        "method": "POST",
-        "url": "=https://ryuqqq.atlassian.net/rest/api/3/issue/{{ $('Extract SHA').first().json.jiraKey }}/transitions",
-        "authentication": "predefinedCredentialType",
-        "nodeCredentialType": "jiraSoftwareCloudApi",
-        "sendHeaders": true,
-        "headerParameters": {
-          "parameters": [
-            {
-              "name": "Content-Type",
-              "value": "application/json"
-            }
-          ]
-        },
-        "sendBody": true,
-        "specifyBody": "json",
-        "jsonBody": "{\n    \"transition\": {\n      \"id\": \"21\"\n    }\n  }\n",
-        "options": {}
-      },
-      "type": "n8n-nodes-base.httpRequest",
-      "typeVersion": 4.3,
-      "position": [
-        2944,
-        -2016
-      ],
-      "id": "04351277-08d0-4bb3-a1d4-e18f80f9a0fc",
-      "name": "Update Jira",
-      "credentials": {
-        "jiraSoftwareCloudApi": {
-          "id": "tOQBMtEJQivj7pgn",
-          "name": "Jira SW Cloud account"
-        }
-      }
-    },
-    {
-      "parameters": {
-        "modelId": {
-          "__rl": true,
-          "value": "gpt-4o",
-          "mode": "list",
-          "cachedResultName": "GPT-4O"
-        },
-        "responses": {
-          "values": [
-            {
-              "content": "=System:\n  당신은 AWS 인프라 전문가입니다. Terraform 코드를 생성합니다.\n\n  [컨벤션]\n  - 필수 태그: Owner, CostCenter, Environment, Lifecycle, DataClass, Service\n  - 모든 태그는 merge(local.required_tags, {...}) 패턴 사용\n  - KMS 암호화 필수 (AES256 금지)\n  - 네이밍: 리소스는 kebab-case, 변수는 snake_case\n\n  [출력 형식 - 반드시 이 형식을 따르세요]\n  각 파일을 아래 형식으로 구분하여 출력하세요:\n\n  ---FILE: terraform/environments/prod/{서비스명}/main.tf---\n  (main.tf 내용)\n  ---END FILE---\n\n  ---FILE: terraform/environments/prod/{서비스명}/variables.tf---\n  (variables.tf 내용)\n  ---END FILE---\n\n  ---FILE: terraform/environments/prod/{서비스명}/outputs.tf---\n  (outputs.tf 내용)\n  ---END FILE---\n\n  User:\n  다음 GitHub 이슈를 분석하고 Terraform 코드를 생성해주세요.\n\n  제목: {{ $('Parse Action').item.json.issueTitle }}\n\n  내용:\n  {{ $('Parse Action').item.json.issueBody }}\n"
-            }
-          ]
-        },
-        "builtInTools": {},
-        "options": {}
-      },
-      "type": "@n8n/n8n-nodes-langchain.openAi",
-      "typeVersion": 2.1,
-      "position": [
-        3120,
-        -2016
-      ],
-      "id": "df30bf6e-64f6-46f1-9c49-7e63e1f3d9fa",
-      "name": "Generate Code",
-      "credentials": {
-        "openAiApi": {
-          "id": "Ula5jc00tgdawbTH",
-          "name": "OpenAi account"
-        }
-      }
-    },
-    {
-      "parameters": {
-        "jsCode": "// OpenAI 응답 구조 확인 - 여러 가능한 경로 시도\nconst input = $input.first().json;\nlet aiResponse = '';\n\n// n8n OpenAI 노드의 다양한 응답 구조 처리\nif (input.output && Array.isArray(input.output)) {\n  // 구조: output[0].content[0].text\n  aiResponse = input.output[0]?.content?.[0]?.text || '';\n} else if (input.message && input.message.content) {\n  // 구조: message.content\n  aiResponse = input.message.content;\n} else if (input.choices && input.choices[0]) {\n  // 구조: choices[0].message.content\n  aiResponse = input.choices[0].message?.content || '';\n} else if (input.text) {\n  // 구조: text\n  aiResponse = input.text;\n} else if (typeof input === 'string') {\n  aiResponse = input;\n} else {\n  // 전체 입력을 문자열로 변환하여 디버깅\n  aiResponse = JSON.stringify(input);\n}\n\nconst extractSha = $('Extract SHA').first().json;\n\n// 파일별로 파싱\nconst fileRegex = /---FILE:\\s*([^-]+)---([\\s\\S]*?)---END FILE---/g;\nconst files = [];\nlet match;\n\nwhile ((match = fileRegex.exec(aiResponse)) !== null) {\n  const filePath = match[1].trim();\n  let content = match[2].trim();\n  // 마크다운 코드 블록 제거 (```hcl, ```terraform, ``` 등)\n  content = content.replace(/^```(?:hcl|terraform|tf)?\\n?/i, '').replace(/\\n?```$/g, '').trim();\n  if (filePath && content) {\n    files.push({ path: filePath, content: content });\n  }\n}\n\n// 파일이 없으면 전체를 단일 파일로 처리\nif (files.length === 0 && aiResponse.length > 100) {\n  // 이슈 제목에서 서비스명 추출 시도\n  const issueTitle = extractSha.issueTitle || '';\n  const serviceName = issueTitle.toLowerCase().replace(/[^a-z0-9]/g, '-').substring(0, 30) || 'infra-change';\n  files.push({\n    path: `terraform/environments/prod/${serviceName}/main.tf`,\n    content: aiResponse\n  });\n}\n\nconst issueNum = extractSha.issueNum;\n// 브랜치명에서 # 제거\nconst branchName = `feature/issue-${issueNum}`;\nconst githubUrl = `https://github.com/ryu-qqq/infrastructure/issues/${issueNum}`;\n\nreturn {\n  user: extractSha.user,\n  channel: extractSha.channel,\n  issueNumber: extractSha.issueNumber,\n  issueNum: issueNum,\n  jiraKey: extractSha.jiraKey,\n  branchName: branchName,\n  branchSha: extractSha.sha,\n  files: files,\n  fileCount: files.length,\n  filePaths: files.map(f => f.path).join(', '),\n  githubUrl: githubUrl,\n  responseUrl: extractSha.responseUrl,\n  rawResponse: aiResponse.substring(0, 500),\n  debug: { inputKeys: Object.keys(input), responseLength: aiResponse.length }\n};"
-      },
-      "type": "n8n-nodes-base.code",
-      "typeVersion": 2,
-      "position": [
-        3296,
-        -2016
-      ],
-      "id": "edffa7c6-1e28-47b8-ad50-9096d857463c",
-      "name": "Parse Code Files"
-    },
-    {
-      "parameters": {
-        "jsCode": "const data = $input.first().json;\nconst files = data.files;\nconst branchName = data.branchName;\n\n// 각 파일을 순차적으로 커밋하기 위해 배열로 반환\n// SplitInBatches 노드와 함께 사용\nreturn files.map((file, index) => ({\n  ...data,\n  currentFile: file,\n  fileIndex: index,\n  isLastFile: index === files.length - 1\n}));"
-      },
-      "type": "n8n-nodes-base.code",
-      "typeVersion": 2,
-      "position": [
-        3472,
-        -2016
-      ],
-      "id": "8e2683f2-e6d7-4aee-8476-f27f3a8deea3",
-      "name": "Prepare Commits"
-    },
-    {
-      "parameters": {
-        "options": {}
-      },
-      "type": "n8n-nodes-base.splitInBatches",
-      "typeVersion": 3,
-      "position": [
-        3648,
-        -2016
-      ],
-      "id": "2cff0c1e-a556-422d-8396-b99e727fb639",
-      "name": "Split Files"
-    },
-    {
-      "parameters": {
-        "jsCode": "// Base64 인코딩 함수\nfunction btoa(str) {\n  return Buffer.from(str, 'utf-8').toString('base64');\n}\n\nconst data = $input.first().json;\nconst content = data.currentFile.content;\nconst base64Content = btoa(content);\n\nreturn {\n  ...data,\n  base64Content: base64Content\n};"
-      },
-      "type": "n8n-nodes-base.code",
-      "typeVersion": 2,
-      "position": [
-        3824,
-        -2128
-      ],
-      "id": "18ae52e1-0381-4c60-8886-dabb89ccf905",
-      "name": "Encode Base64"
-    },
-    {
-      "parameters": {
-        "method": "PUT",
-        "url": "=https://api.github.com/repos/ryu-qqq/infrastructure/contents/{{ $json.currentFile.path }}",
-        "authentication": "predefinedCredentialType",
-        "nodeCredentialType": "githubApi",
-        "sendHeaders": true,
-        "headerParameters": {
-          "parameters": [
-            {
-              "name": "Accept",
-              "value": "application/vnd.github.v3+json"
-            }
-          ]
-        },
-        "sendBody": true,
-        "specifyBody": "json",
-        "jsonBody": "={\n  \"message\": \"feat: add {{ $json.currentFile.path }} - AI generated for {{ $json.issueNumber }}\",\n  \"content\": \"{{ $json.base64Content }}\",\n  \"branch\": \"{{ $json.branchName }}\"\n}",
-        "options": {
-          "response": {
-            "response": {
-              "neverError": true
-            }
-          }
-        }
-      },
-      "type": "n8n-nodes-base.httpRequest",
-      "typeVersion": 4.3,
-      "position": [
-        4000,
-        -2128
-      ],
-      "id": "5bf51111-c588-439c-9314-e05173dba911",
-      "name": "Commit File to Branch",
-      "credentials": {
-        "githubApi": {
-          "id": "uJpJHjMJj6qdmUVx",
-          "name": "Infrastructure GitHub"
-        }
-      }
-    },
-    {
-      "parameters": {
-        "conditions": {
-          "options": {
-            "caseSensitive": true,
-            "leftValue": "",
-            "typeValidation": "strict",
-            "version": 3
-          },
-          "conditions": [
-            {
-              "id": "check-last-file",
-              "leftValue": "={{ $json.isLastFile }}",
-              "rightValue": true,
-              "operator": {
-                "type": "boolean",
-                "operation": "equals"
-              }
-            }
-          ],
-          "combinator": "and"
-        },
-        "options": {}
-      },
-      "type": "n8n-nodes-base.if",
-      "typeVersion": 2.2,
-      "position": [
-        4176,
-        -2128
-      ],
-      "id": "c9937b2e-4825-40db-8fae-de8247b29d3b",
-      "name": "Is Last File?"
-    },
-    {
-      "parameters": {
-        "method": "POST",
-        "url": "https://api.github.com/repos/ryu-qqq/infrastructure/pulls",
-        "authentication": "predefinedCredentialType",
-        "nodeCredentialType": "githubApi",
-        "sendHeaders": true,
-        "headerParameters": {
-          "parameters": [
-            {
-              "name": "Accept",
-              "value": "application/vnd.github.v3+json"
-            }
-          ]
-        },
-        "sendBody": true,
-        "specifyBody": "json",
-        "jsonBody": "={\n  \"title\": \"[AI Generated] {{ $('Parse Code Files').first().json.issueNumber }}: {{ $('Parse Action').first().json.issueTitle }}\",\n  \"head\": \"{{ $('Parse Code Files').first().json.branchName }}\",\n  \"base\": \"main\",\n  \"body\": \"## 🤖 AI 생성 코드\\n\\n**관련 이슈:** #{{ $('Parse Code Files').first().json.issueNum }}\\n**Jira:** {{ $('Parse Code Files').first().json.jiraKey }}\\n**승인자:** {{ $('Parse Code Files').first().json.user }}\\n\\n---\\n\\n### 📁 생성된 파일\\n{{ $('Parse Code Files').first().json.filePaths }}\\n\\n---\\n\\n> 이 PR은 AI에 의해 자동 생성되었습니다.\\n> CodeRabbit과 Gemini의 리뷰를 확인해주세요.\",\n  \"draft\": true\n}",
-        "options": {}
-      },
-      "type": "n8n-nodes-base.httpRequest",
-      "typeVersion": 4.3,
-      "position": [
-        4352,
-        -2224
-      ],
-      "id": "0a449a02-65da-4448-8820-8bd9c4baa512",
-      "name": "Create Draft PR",
-      "credentials": {
-        "githubApi": {
-          "id": "uJpJHjMJj6qdmUVx",
-          "name": "Infrastructure GitHub"
-        }
-      }
-    },
-    {
-      "parameters": {
-        "jsCode": "const prData = $input.first().json;\nconst parseCodeFiles = $('Parse Code Files').first().json;\n\nreturn {\n  prNumber: prData.number,\n  prUrl: prData.html_url,\n  prTitle: prData.title,\n  user: parseCodeFiles.user,\n  channel: parseCodeFiles.channel,\n  issueNumber: parseCodeFiles.issueNumber,\n  issueNum: parseCodeFiles.issueNum,\n  jiraKey: parseCodeFiles.jiraKey,\n  fileCount: parseCodeFiles.fileCount,\n  filePaths: parseCodeFiles.filePaths,\n  githubUrl: parseCodeFiles.githubUrl,\n  responseUrl: parseCodeFiles.responseUrl\n};"
-      },
-      "type": "n8n-nodes-base.code",
-      "typeVersion": 2,
-      "position": [
-        4528,
-        -2224
-      ],
-      "id": "2bb3a722-b249-46d5-aaa3-4a408ec135d3",
-      "name": "Format PR Response"
-    },
-    {
-      "parameters": {
-        "method": "POST",
-        "url": "https://slack.com/api/chat.postMessage",
-        "authentication": "predefinedCredentialType",
-        "nodeCredentialType": "slackApi",
-        "sendHeaders": true,
-        "headerParameters": {
-          "parameters": [
-            {
-              "name": "Content-Type",
-              "value": "application/json"
-            }
-          ]
-        },
-        "sendBody": true,
-        "specifyBody": "json",
-        "jsonBody": "={\n    \"channel\": \"{{ $json.channel }}\",\n    \"blocks\": [\n      {\n        \"type\": \"header\",\n        \"text\": {\"type\": \"plain_text\", \"text\": \"✅ Draft PR 생성 완료\", \"emoji\": true}\n      },\n      {\n        \"type\": \"section\",\n        \"fields\": [\n          {\"type\": \"mrkdwn\", \"text\": \"*👤 승인자*\\n{{ $json.user }}\"},\n          {\"type\": \"mrkdwn\", \"text\": \"*📁 파일 수*\\n{{ $json.fileCount }}개\"}\n        ]\n      },\n      {\n        \"type\": \"section\",\n        \"fields\": [\n          {\"type\": \"mrkdwn\", \"text\": \"*📌 Issue*\\n<{{ $json.githubUrl }}|{{ $json.issueNumber }}>\"},\n          {\"type\": \"mrkdwn\", \"text\": \"*🎫 Jira*\\n{{ $json.jiraKey }}\"}\n        ]\n      },\n      {\"type\": \"divider\"},\n      {\n        \"type\": \"section\",\n        \"text\": {\"type\": \"mrkdwn\", \"text\": \"*🔗 Pull Request:*\\n<{{ $json.prUrl }}|PR #{{ $json.prNumber }}>\"}\n      },\n      {\n        \"type\": \"context\",\n        \"elements\": [\n          {\"type\": \"mrkdwn\", \"text\": \"🤖 CodeRabbit과 Gemini가 곧 리뷰를 시작합니다. 리뷰 완료 시 알림을 받게 됩니다.\"}\n        ]\n      }\n    ]\n  }",
-        "options": {}
-      },
-      "type": "n8n-nodes-base.httpRequest",
-      "typeVersion": 4.3,
-      "position": [
-        4704,
-        -2224
-      ],
-      "id": "ad9352a3-0c25-43d3-80e2-37e182560824",
-      "name": "Slack PR Result",
-      "credentials": {
-        "slackApi": {
-          "id": "JudHaRQYOjQVx9Xo",
-          "name": "DevOps Bot"
-        }
-      }
-    },
-    {
-      "parameters": {
-        "method": "POST",
-        "url": "={{ $('Parse Code Files').first().json.responseUrl }}",
-        "sendHeaders": true,
-        "headerParameters": {
-          "parameters": [
-            {
-              "name": "Content-Type",
-              "value": "application/json"
-            }
-          ]
-        },
-        "sendBody": true,
-        "specifyBody": "json",
-        "jsonBody": "={\n  \"replace_original\": true,\n  \"blocks\": [\n    {\n      \"type\": \"header\",\n      \"text\": {\"type\": \"plain_text\", \"text\": \"✅ 승인 완료 - Draft PR 생성됨\", \"emoji\": true}\n    },\n    {\n      \"type\": \"section\",\n      \"fields\": [\n        {\"type\": \"mrkdwn\", \"text\": \"*Issue:*\\n{{ $('Parse Code Files').first().json.issueNumber }}\"},\n        {\"type\": \"mrkdwn\", \"text\": \"*Jira:*\\n{{ $('Parse Code Files').first().json.jiraKey }}\"}\n      ]\n    },\n    {\n      \"type\": \"section\",\n      \"fields\": [\n        {\"type\": \"mrkdwn\", \"text\": \"*승인자:*\\n{{ $('Parse Code Files').first().json.user }}\"},\n        {\"type\": \"mrkdwn\", \"text\": \"*PR:*\\n<{{ $json.prUrl }}|#{{ $json.prNumber }}>\"}\n      ]\n    },\n    {\n      \"type\": \"context\",\n      \"elements\": [\n        {\"type\": \"mrkdwn\", \"text\": \"✅ AI 코드가 Draft PR로 생성되었습니다. CodeRabbit/Gemini 리뷰를 기다리세요.\"}\n      ]\n    }\n  ]\n}",
-        "options": {
-          "response": {
-            "response": {
-              "neverError": true
-            }
-          }
-        }
-      },
-      "type": "n8n-nodes-base.httpRequest",
-      "typeVersion": 4.3,
-      "position": [
-        4880,
-        -2224
-      ],
-      "id": "1377ae84-0311-48f7-8a16-f4daddd4e0dd",
-      "name": "Finalize Approve Message"
-    },
-    {
-      "parameters": {
-        "jsCode": "const response = $input.first().json;\nconst sha = response.object.sha;\nconst parseAction = $('Parse Action').first().json;\n\nreturn {\n  sha: sha,\n  issueNumber: parseAction.issueNumber,\n  issueNum: parseAction.issueNum,\n  jiraKey: parseAction.jiraKey,\n  user: parseAction.user,\n  channel: parseAction.channel,\n  issueTitle: parseAction.issueTitle,\n  issueBody: parseAction.issueBody,\n  responseUrl: parseAction.responseUrl\n};"
-      },
-      "type": "n8n-nodes-base.code",
-      "typeVersion": 2,
-      "position": [
-        2592,
-        -2016
-      ],
-      "id": "aca9c2b7-44ff-4aa0-8398-ba39c13c6d97",
-      "name": "Extract SHA"
-    },
-    {
-      "parameters": {
-        "jsCode": "const data = $input.first().json.body;\n\nconst escapedBody = (data.body || '')\n  .replace(/\\\\/g, '\\\\\\\\')\n  .replace(/\"/g, '\\\\\"')\n  .replace(/\\n/g, ' ')\n  .replace(/\\r/g, '');\n\nreturn {\n  github_issue: data.github_issue,\n  jira_key: data.jira_key,\n  title: data.title,\n  body: escapedBody,\n  author: data.author,\n  url: data.url\n};"
-      },
-      "type": "n8n-nodes-base.code",
-      "typeVersion": 2,
-      "position": [
-        1888,
-        -2432
-      ],
-      "id": "5a798d57-e006-4f3c-bef5-2aca22fb90bb",
-      "name": "Escape Body"
-    },
-    {
-      "parameters": {
-        "method": "POST",
-        "url": "https://api.github.com/repos/ryu-qqq/infrastructure/git/refs",
-        "authentication": "predefinedCredentialType",
-        "nodeCredentialType": "githubApi",
-        "sendHeaders": true,
-        "headerParameters": {
-          "parameters": [
-            {
-              "name": "Accept",
-              "value": "application/vnd.github.v3+json"
-            }
-          ]
-        },
-        "sendBody": true,
-        "specifyBody": "json",
-        "jsonBody": "={\n    \"ref\": \"refs/heads/feature/issue-{{ $json.issueNum }}\",\n    \"sha\": \"{{ $json.sha }}\"\n  }",
-        "options": {}
-      },
-      "type": "n8n-nodes-base.httpRequest",
-      "typeVersion": 4.3,
-      "position": [
-        2768,
-        -2016
-      ],
-      "id": "0d0249f1-68d6-4e0b-b243-b06121738020",
-      "name": "Create Branch",
-      "credentials": {
-        "githubApi": {
-          "id": "uJpJHjMJj6qdmUVx",
-          "name": "Infrastructure GitHub"
-        }
-      }
-    },
-    {
-      "parameters": {
-        "url": "https://api.github.com/repos/ryu-qqq/infrastructure/git/ref/heads/main",
-        "authentication": "predefinedCredentialType",
-        "nodeCredentialType": "githubApi",
-        "sendHeaders": true,
-        "headerParameters": {
-          "parameters": [
-            {
-              "name": "Accept",
-              "value": "application/vnd.github.v3+json"
-            }
-          ]
-        },
-        "options": {}
-      },
-      "type": "n8n-nodes-base.httpRequest",
-      "typeVersion": 4.3,
-      "position": [
-        2432,
-        -2016
-      ],
-      "id": "b6980494-92c2-4225-b7b1-80b6eb5eea2e",
-      "name": "Get Main SHA",
-      "credentials": {
-        "githubApi": {
-          "id": "uJpJHjMJj6qdmUVx",
-          "name": "Infrastructure GitHub"
-        }
-      }
-    },
-    {
-      "parameters": {
-        "method": "POST",
-        "url": "=https://ryuqqq.atlassian.net/rest/api/3/issue/{{ $('Parse Action').first().json.jiraKey }}/transitions",
-        "authentication": "predefinedCredentialType",
-        "nodeCredentialType": "jiraSoftwareCloudApi",
-        "sendHeaders": true,
-        "headerParameters": {
-          "parameters": [
-            {
-              "name": "Content-Type",
-              "value": "application/json"
-            }
-          ]
-        },
-        "sendBody": true,
-        "specifyBody": "json",
-        "jsonBody": "{\n    \"transition\": {\n      \"id\": \"41\"\n    }\n  }",
-        "options": {
-          "response": {
-            "response": {
-              "neverError": true
-            }
-          }
-        }
-      },
-      "type": "n8n-nodes-base.httpRequest",
-      "typeVersion": 4.3,
-      "position": [
-        2592,
-        -1584
-      ],
-      "id": "c72994c8-07d4-4be1-8172-6c3760335e69",
-      "name": "Update Jira (Reject)",
-      "credentials": {
-        "jiraSoftwareCloudApi": {
-          "id": "tOQBMtEJQivj7pgn",
-          "name": "Jira SW Cloud account"
-        }
-      }
-    },
-    {
-      "parameters": {
-        "method": "POST",
-        "url": "=https://api.github.com/repos/ryu-qqq/infrastructure/issues/{{ $('Parse Action').first().json.issueNum }}/comments",
-        "authentication": "predefinedCredentialType",
-        "nodeCredentialType": "githubApi",
-        "sendHeaders": true,
-        "headerParameters": {
-          "parameters": [
-            {
-              "name": "Accept",
-              "value": "application/vnd.github+v3+json"
-            },
-            {
-              "name": "Content-Type",
-              "value": "application/json"
-            }
-          ]
-        },
-        "sendBody": true,
-        "specifyBody": "json",
-        "jsonBody": "={\n  \"body\": \"## ❌ 요청이 거절되었습니다\\n\\n**거절자:** {{ $('Parse Action').first().json.user }}\\n**Jira:** {{ $('Parse Action').first().json.jiraKey }}\\n\\n---\\n\\n이 인프라 변경 요청은 검토 결과 거절되었습니다.\\n추가 논의가 필요하시면 담당자에게 문의해주세요.\"\n}",
-        "options": {}
-      },
-      "type": "n8n-nodes-base.httpRequest",
-      "typeVersion": 4.3,
-      "position": [
-        2816,
-        -1584
-      ],
-      "id": "22b6f954-e81a-4360-8287-d0f42c8fee1d",
-      "name": "GitHub Comment (Reject)",
-      "credentials": {
-        "githubApi": {
-          "id": "uJpJHjMJj6qdmUVx",
-          "name": "Infrastructure GitHub"
-        }
-      }
-    },
-    {
-      "parameters": {
-        "method": "PATCH",
-        "url": "=https://api.github.com/repos/ryu-qqq/infrastructure/issues/{{ $('Parse Action').first().json.issueNum }}",
-        "authentication": "predefinedCredentialType",
-        "nodeCredentialType": "githubApi",
-        "sendHeaders": true,
-        "headerParameters": {
-          "parameters": [
-            {
-              "name": "Accept",
-              "value": "application/vnd.github+v3+json"
-            },
-            {
-              "name": "Content-Type",
-              "value": "application/json"
-            }
-          ]
-        },
-        "sendBody": true,
-        "specifyBody": "json",
-        "jsonBody": "{\n  \"state\": \"closed\",\n  \"state_reason\": \"not_planned\"\n}",
-        "options": {}
-      },
-      "type": "n8n-nodes-base.httpRequest",
-      "typeVersion": 4.3,
-      "position": [
-        3040,
-        -1584
-      ],
-      "id": "345ec949-0972-4744-8cc4-5dc6aa102989",
-      "name": "Close Issue",
-      "credentials": {
-        "githubApi": {
-          "id": "uJpJHjMJj6qdmUVx",
-          "name": "Infrastructure GitHub"
-        }
-      }
-    },
-    {
-      "parameters": {
-        "method": "POST",
-        "url": "={{ $('Parse Action').first().json.responseUrl }}",
-        "sendHeaders": true,
-        "headerParameters": {
-          "parameters": [
-            {
-              "name": "Content-Type",
-              "value": "application/json"
-            }
-          ]
-        },
-        "sendBody": true,
-        "specifyBody": "json",
-        "jsonBody": "={\n  \"replace_original\": true,\n  \"blocks\": [\n    {\n      \"type\": \"header\",\n      \"text\": {\"type\": \"plain_text\", \"text\": \"❌ 요청 거절됨\", \"emoji\": true}\n    },\n    {\n      \"type\": \"section\",\n      \"fields\": [\n        {\"type\": \"mrkdwn\", \"text\": \"*Issue:*\\n{{ $('Parse Action').first().json.issueNumber }}\"},\n        {\"type\": \"mrkdwn\", \"text\": \"*Jira:*\\n{{ $('Parse Action').first().json.jiraKey }}\"}\n      ]\n    },\n    {\n      \"type\": \"section\",\n      \"fields\": [\n        {\"type\": \"mrkdwn\", \"text\": \"*거절자:*\\n{{ $('Parse Action').first().json.user }}\"},\n        {\"type\": \"mrkdwn\", \"text\": \"*상태:*\\nCancelled\"}\n      ]\n    },\n    {\n      \"type\": \"context\",\n      \"elements\": [\n        {\"type\": \"mrkdwn\", \"text\": \"❌ 이 요청은 거절되어 GitHub Issue가 닫혔습니다.\"}\n      ]\n    }\n  ]\n}",
-        "options": {
-          "response": {
-            "response": {
-              "neverError": true
-            }
-          }
-        }
-      },
-      "type": "n8n-nodes-base.httpRequest",
-      "typeVersion": 4.3,
-      "position": [
-        3264,
-        -1584
-      ],
-      "id": "7ba34957-b4e4-4751-90c6-957d4d014707",
-      "name": "Finalize Reject Message"
-    },
-    {
-      "parameters": {
-        "method": "POST",
-        "url": "=https://ryuqqq.atlassian.net/rest/api/3/issue/{{ $('Parse Action').first().json.jiraKey }}/transitions",
-        "authentication": "predefinedCredentialType",
-        "nodeCredentialType": "jiraSoftwareCloudApi",
-        "sendHeaders": true,
-        "headerParameters": {
-          "parameters": [
-            {
-              "name": "Content-Type",
-              "value": "application/json"
-            }
-          ]
-        },
-        "sendBody": true,
-        "specifyBody": "json",
-        "jsonBody": "{\n    \"transition\": {\n      \"id\": \"51\"\n    }\n  }",
-        "options": {
-          "response": {
-            "response": {
-              "neverError": true
-            }
-          }
-        }
-      },
-      "type": "n8n-nodes-base.httpRequest",
-      "typeVersion": 4.3,
-      "position": [
-        2592,
-        -1360
-      ],
-      "id": "2691d0ae-cad7-47e5-9bba-cac09c45237a",
-      "name": "Update Jira (Revise)",
-      "credentials": {
-        "jiraSoftwareCloudApi": {
-          "id": "tOQBMtEJQivj7pgn",
-          "name": "Jira SW Cloud account"
-        }
-      }
-    },
-    {
-      "parameters": {
-        "method": "POST",
-        "url": "=https://api.github.com/repos/ryu-qqq/infrastructure/issues/{{ $('Parse Action').first().json.issueNum }}/comments",
-        "authentication": "predefinedCredentialType",
-        "nodeCredentialType": "githubApi",
-        "sendHeaders": true,
-        "headerParameters": {
-          "parameters": [
-            {
-              "name": "Accept",
-              "value": "application/vnd.github+v3+json"
-            },
-            {
-              "name": "Content-Type",
-              "value": "application/json"
-            }
-          ]
-        },
-        "sendBody": true,
-        "specifyBody": "json",
-        "jsonBody": "={\n  \"body\": \"## 📝 수정이 요청되었습니다\\n\\n**요청자:** {{ $('Parse Action').first().json.user }}\\n**Jira:** {{ $('Parse Action').first().json.jiraKey }}\\n\\n---\\n\\n이 인프라 변경 요청에 대해 수정이 필요합니다.\\n이슈 내용을 보완하여 다시 검토 요청해주세요.\\n\\n### 수정 후 재검토 방법\\n1. 이슈 내용을 수정하세요\\n2. `needs-review` 라벨을 추가하세요\\n3. 담당자가 다시 검토합니다\"\n}",
-        "options": {}
-      },
-      "type": "n8n-nodes-base.httpRequest",
-      "typeVersion": 4.3,
-      "position": [
-        2816,
-        -1360
-      ],
-      "id": "7f779d1a-6858-4c04-8928-523183932604",
-      "name": "GitHub Comment (Revise)",
-      "credentials": {
-        "githubApi": {
-          "id": "uJpJHjMJj6qdmUVx",
-          "name": "Infrastructure GitHub"
-        }
-      }
-    },
-    {
-      "parameters": {
-        "method": "POST",
-        "url": "={{ $('Parse Action').first().json.responseUrl }}",
-        "sendHeaders": true,
-        "headerParameters": {
-          "parameters": [
-            {
-              "name": "Content-Type",
-              "value": "application/json"
-            }
-          ]
-        },
-        "sendBody": true,
-        "specifyBody": "json",
-        "jsonBody": "={\n  \"replace_original\": true,\n  \"blocks\": [\n    {\n      \"type\": \"header\",\n      \"text\": {\"type\": \"plain_text\", \"text\": \"📝 수정 요청됨\", \"emoji\": true}\n    },\n    {\n      \"type\": \"section\",\n      \"fields\": [\n        {\"type\": \"mrkdwn\", \"text\": \"*Issue:*\\n{{ $('Parse Action').first().json.issueNumber }}\"},\n        {\"type\": \"mrkdwn\", \"text\": \"*Jira:*\\n{{ $('Parse Action').first().json.jiraKey }}\"}\n      ]\n    },\n    {\n      \"type\": \"section\",\n      \"fields\": [\n        {\"type\": \"mrkdwn\", \"text\": \"*요청자:*\\n{{ $('Parse Action').first().json.user }}\"},\n        {\"type\": \"mrkdwn\", \"text\": \"*상태:*\\nBlocked (수정 대기)\"}\n      ]\n    },\n    {\n      \"type\": \"context\",\n      \"elements\": [\n        {\"type\": \"mrkdwn\", \"text\": \"📝 GitHub Issue에 수정요청 코멘트가 등록되었습니다. 이슈 수정 후 재검토가 필요합니다.\"}\n      ]\n    }\n  ]\n}",
-        "options": {
-          "response": {
-            "response": {
-              "neverError": true
-            }
-          }
-        }
-      },
-      "type": "n8n-nodes-base.httpRequest",
-      "typeVersion": 4.3,
-      "position": [
-        3040,
-        -1360
-      ],
-      "id": "65004316-cf1d-424d-90b1-0ff4372600fa",
-      "name": "Finalize Revise Message"
-    },
-    {
-      "parameters": {
-        "httpMethod": "POST",
-        "path": "pr-review",
-        "options": {}
-      },
-      "type": "n8n-nodes-base.webhook",
-      "typeVersion": 2.1,
-      "position": [
-        1728,
-        -832
-      ],
-      "id": "266dfed0-e1b7-4b1d-a4a0-bcd7751d2253",
-      "name": "PR Review Webhook",
-      "webhookId": "pr-review-webhook-id"
-    },
-    {
-      "parameters": {
-        "jsCode": "let data = $input.first().json.body;\n\n  // body가 배열이면 첫 번째 요소 사용\n  if (Array.isArray(data)) {\n    data = data[0];\n  }\n\n  // 이미 플랫한 형식인지 확인 (reviewer나 prNumber가 직접 있으면 플랫)\n  const isFlat = data.reviewer !== undefined || data.prNumber !== undefined;\n\n  if (isFlat) {\n    // 플랫한 형식 - 직접 속성 접근\n    const reviewBody = data.reviewBody || '';\n    let reviewSummary = reviewBody.substring(0, 500) + (reviewBody.length > 500 ? '...' : '');\n    reviewSummary = reviewSummary\n      .replace(/\\n/g, ' ')\n      .replace(/\\r/g, '')\n      .replace(/\"/g, \"'\")\n      .replace(/\\\\/g, '')\n      .replace(/[\\x00-\\x1F]/g, '');\n\n    const prTitle = data.prTitle || '';\n    const safePrTitle = prTitle\n      .replace(/\"/g, \"'\")\n      .replace(/\\\\/g, '')\n      .replace(/[\\x00-\\x1F]/g, '');\n\n    return {\n      action: data.action || 'submitted',\n      reviewer: data.reviewer || 'unknown',\n      reviewerType: data.reviewerType || 'human',\n      reviewState: data.reviewState || 'commented',\n      reviewBody: reviewBody,\n      reviewSummary: reviewSummary,\n      prNumber: data.prNumber,\n      prTitle: safePrTitle,\n      prUrl: data.prUrl || '',\n      prAuthor: data.prAuthor || '',\n      issueNum: data.issueNum || null,\n      repoName: data.repoName || 'ryu-qqq/infrastructure'\n    };\n  }\n\n  // GitHub 원본 형식 처리 (fallback)\n  const action = data.action;\n  const review = data.review || {};\n  const pr = data.pull_request || {};\n  const repo = data.repository || {};\n\n  const reviewer = review.user?.login || 'unknown';\n  const reviewState = review.state || 'commented';\n  const reviewBody = review.body || '';\n\n  const prNumber = pr.number;\n  const prTitle = pr.title || '';\n  const prUrl = pr.html_url || '';\n  const prAuthor = pr.user?.login || '';\n\n  const issueMatch = prTitle.match(/#(\\d+)/);\n  const issueNum = issueMatch ? issueMatch[1] : null;\n\n  let reviewerType = 'human';\n  if (reviewer.includes('coderabbit') || reviewer === 'coderabbitai') {\n    reviewerType = 'coderabbit';\n  } else if (reviewer.includes('gemini') || reviewer.includes('google')) {\n    reviewerType = 'gemini';\n  }\n\n  let reviewSummary = reviewBody.substring(0, 500) + (reviewBody.length > 500 ? '...' : '');\n  reviewSummary = reviewSummary\n    .replace(/\\n/g, ' ')\n    .replace(/\\r/g, '')\n    .replace(/\"/g, \"'\")\n    .replace(/\\\\/g, '')\n    .replace(/[\\x00-\\x1F]/g, '');\n\n  const safePrTitle = prTitle\n    .replace(/\"/g, \"'\")\n    .replace(/\\\\/g, '')\n    .replace(/[\\x00-\\x1F]/g, '');\n\n  return {\n    action,\n    reviewer,\n    reviewerType,\n    reviewState,\n    reviewBody,\n    reviewSummary,\n    prNumber,\n    prTitle: safePrTitle,\n    prUrl,\n    prAuthor,\n    issueNum,\n    repoName: repo.full_name || 'ryu-qqq/infrastructure'\n  };\n"
-      },
-      "type": "n8n-nodes-base.code",
-      "typeVersion": 2,
-      "position": [
-        1952,
-        -832
-      ],
-      "id": "c8109b44-39de-494e-89df-be4c54667db2",
-      "name": "Parse PR Review"
-    },
-    {
-      "parameters": {
-        "conditions": {
-          "options": {
-            "caseSensitive": true,
-            "leftValue": "",
-            "typeValidation": "strict",
-            "version": 3
-          },
-          "conditions": [
-            {
-              "id": "check-submitted",
-              "leftValue": "={{ $json.action }}",
-              "rightValue": "submitted",
-              "operator": {
-                "type": "string",
-                "operation": "equals"
-              }
-            }
-          ],
-          "combinator": "and"
-        },
-        "options": {}
-      },
-      "type": "n8n-nodes-base.if",
-      "typeVersion": 2.2,
-      "position": [
-        2128,
-        -832
-      ],
-      "id": "8bcaecbc-13f3-43d7-89d9-9812f9ac8052",
-      "name": "Is Review Submitted?"
-    },
-    {
-      "parameters": {
-        "url": "=https://api.github.com/repos/{{ $json.repoName }}/pulls/{{ $json.prNumber }}/files",
-        "authentication": "predefinedCredentialType",
-        "nodeCredentialType": "githubApi",
-        "sendHeaders": true,
-        "headerParameters": {
-          "parameters": [
-            {
-              "name": "Accept",
-              "value": "application/vnd.github.v3+json"
-            }
-          ]
-        },
-        "options": {}
-      },
-      "type": "n8n-nodes-base.httpRequest",
-      "typeVersion": 4.3,
-      "position": [
-        2304,
-        -832
-      ],
-      "id": "43c19431-cf7c-4a64-ba69-e27813e9435b",
-      "name": "Fetch PR Files",
-      "credentials": {
-        "githubApi": {
-          "id": "uJpJHjMJj6qdmUVx",
-          "name": "Infrastructure GitHub"
-        }
-      }
-    },
-    {
-      "parameters": {
-        "jsCode": "// 모든 items를 배열로 수집\n  const prFiles = $input.all().map(item => item.json);\n  const reviewData = $('Parse PR Review').first().json;\n\n  // 변경된 파일 정보 수집\n  const files = prFiles.map(f => ({\n    filename: f.filename,\n    status: f.status,\n    patch: f.patch ? f.patch.substring(0, 2000) : '',\n    additions: f.additions,\n    deletions: f.deletions\n  }));\n\n  // 파일 정보를 요약\n  const filesSummary = files.map(f =>\n    `- ${f.filename} (${f.status}, +${f.additions}/-${f.deletions})`\n  ).join('\\n');\n\n  // 패치 내용 (처음 5개 파일만)\n  const patchContent = files.slice(0, 5).map(f =>\n    `### ${f.filename}\\n\\`\\`\\`diff\\n${f.patch}\\n\\`\\`\\``\n  ).join('\\n\\n');\n\n  return {\n    ...reviewData,\n    files,\n    filesSummary,\n    patchContent,\n    fileCount: files.length\n  };\n"
-      },
-      "type": "n8n-nodes-base.code",
-      "typeVersion": 2,
-      "position": [
-        2480,
-        -832
-      ],
-      "id": "39524bcc-57f4-4762-a3ba-4863f2404e3b",
-      "name": "Prepare Review Context"
-    },
-    {
-      "parameters": {
-        "jsCode": "const openaiResponse = $input.first().json;\n  const reviewData = $('Prepare Review Context').first().json;\n\n  // OpenAI 응답 파싱\n  const rawText = openaiResponse.output?.[0]?.content?.[0]?.text ||\n                  openaiResponse.choices?.[0]?.message?.content ||\n                  '{}';\n\n  let parsed;\n  try {\n    // JSON 추출 (텍스트에서 JSON 부분만)\n    const jsonMatch = rawText.match(/\\{[\\s\\S]*\\}/);\n    parsed = jsonMatch ? JSON.parse(jsonMatch[0]) : {};\n  } catch (e) {\n    parsed = { summary: rawText.substring(0, 500), items: [], recommendation: '' };\n  }\n\n  // 기본값 설정\n  const summary = parsed.summary || '분석 결과를 확인해주세요.';\n  const items = parsed.items || [];\n  const recommendation = parsed.recommendation || '';\n\n  // 우선순위 이모지\n  const priorityEmoji = {\n    'high': '🔴',\n    'medium': '🟡',\n    'low': '🟢'\n  };\n\n  // 항목 리스트 포맷 (줄바꿈을 \\\\n으로 이스케이프)\n  const itemsList = items.map((item, i) =>\n    `${priorityEmoji[item.priority] || '•'} *${item.title}*: ${item.description}`\n  ).join('\\\\n');\n\n  // 모든 문자열에서 줄바꿈 이스케이프\n  const safeSummary = summary.replace(/\\n/g, ' ').replace(/\"/g, \"'\");\n  const safeItems = itemsList.replace(/\"/g, \"'\");\n  const safeRecommendation = recommendation.replace(/\\n/g, ' ').replace(/\"/g, \"'\");\n\n  return {\n    ...reviewData,\n    aiSummary: safeSummary,\n    aiItems: safeItems || '• 특별한 수정 사항 없음',\n    aiItemCount: items.length,\n    aiRecommendation: safeRecommendation,\n    aiSuggestionFull: rawText\n  };\n"
-      },
-      "type": "n8n-nodes-base.code",
-      "typeVersion": 2,
-      "position": [
-        2976,
-        -832
-      ],
-      "id": "bfea5776-7cba-4520-abf3-dde5427acbff",
-      "name": "Format AI Suggestion"
-    },
-    {
-      "parameters": {
-        "method": "POST",
-        "url": "https://slack.com/api/chat.postMessage",
-        "authentication": "predefinedCredentialType",
-        "nodeCredentialType": "slackApi",
-        "sendHeaders": true,
-        "headerParameters": {
-          "parameters": [
-            {
-              "name": "Content-Type",
-              "value": "application/json"
-            }
-          ]
-        },
-        "sendBody": true,
-        "specifyBody": "json",
-        "jsonBody": "={\n    \"channel\": \"C0A5JRE5K09\",\n    \"blocks\": [\n      {\n        \"type\": \"header\",\n        \"text\": {\"type\": \"plain_text\", \"text\": \"🤖 AI 리뷰 분석 완료\", \"emoji\": true}\n      },\n      {\n        \"type\": \"section\",\n        \"fields\": [\n          {\"type\": \"mrkdwn\", \"text\": \"*리뷰어:*\\n{{ $json.reviewerType === 'coderabbit' ? '🐰 CodeRabbit' : ($json.reviewerType === 'gemini' ? '💎 Gemini' : '👤 ' + $json.reviewer) }}\"},\n          {\"type\": \"mrkdwn\", \"text\": \"*PR:*\\n<{{ $json.prUrl }}|#{{ $json.prNumber }}>\"}\n        ]\n      },\n      {\"type\": \"divider\"},\n      {\n        \"type\": \"section\",\n        \"text\": {\"type\": \"mrkdwn\", \"text\": \"*📋 요약:*\\n{{ $json.aiSummary }}\"}\n      },\n      {\n        \"type\": \"section\",\n        \"text\": {\"type\": \"mrkdwn\", \"text\": \"*🔧 수정 필요 항목 ({{ $json.aiItemCount }}개):*\\n{{ $json.aiItems }}\"}\n      },\n      {\n        \"type\": \"context\",\n        \"elements\": [\n          {\"type\": \"mrkdwn\", \"text\": \"💡 {{ $json.aiRecommendation }}\"}\n        ]\n      },\n      {\"type\": \"divider\"},\n      {\n        \"type\": \"actions\",\n        \"elements\": [\n          {\"type\": \"button\", \"text\": {\"type\": \"plain_text\", \"text\": \"✅ 수정 적용\", \"emoji\": true}, \"style\": \"primary\", \"value\": \"apply_review|{{ $json.prNumber }}|{{ $json.issueNum }}|{{ $json.repoName }}\", \"action_id\": \"apply_ai_review\"},\n          {\"type\": \"button\", \"text\": {\"type\": \"plain_text\", \"text\": \"🔗 PR 보기\", \"emoji\": true}, \"url\": \"{{ $json.prUrl }}\"},\n          {\"type\": \"button\", \"text\": {\"type\": \"plain_text\", \"text\": \"❌ 무시\", \"emoji\": true}, \"value\": \"ignore_review|{{ $json.prNumber }}\", \"action_id\": \"ignore_review\"}\n        ]\n      }\n    ]\n  }\n\n",
-        "options": {}
-      },
-      "type": "n8n-nodes-base.httpRequest",
-      "typeVersion": 4.3,
-      "position": [
-        3200,
-        -832
-      ],
-      "id": "3d9b1a54-6d16-4372-9420-03da79b2d807",
-      "name": "Slack Review Suggestion",
-      "credentials": {
-        "slackApi": {
-          "id": "JudHaRQYOjQVx9Xo",
-          "name": "DevOps Bot"
-        }
-      }
-    },
-    {
-      "parameters": {
-        "url": "=https://api.github.com/repos/{{ $('Parse Action').first().json.repoName }}/pulls/{{ $('Parse Action').first().json.prNumber }}/files",
-        "authentication": "predefinedCredentialType",
-        "nodeCredentialType": "githubApi",
-        "sendHeaders": true,
-        "headerParameters": {
-          "parameters": [
-            {
-              "name": "Accept",
-              "value": "application/vnd.github.v3+json"
-            }
-          ]
-        },
-        "options": {}
-      },
-      "type": "n8n-nodes-base.httpRequest",
-      "typeVersion": 4.3,
-      "position": [
-        2512,
-        -544
-      ],
-      "id": "106f905f-5fa6-4618-8ea8-1b982e0f595c",
-      "name": "Fetch PR Files for Apply",
-      "credentials": {
-        "githubApi": {
-          "id": "uJpJHjMJj6qdmUVx",
-          "name": "Infrastructure GitHub"
-        }
-      }
-    },
-    {
-      "parameters": {
-        "jsCode": "const prFiles = $input.all().map(item => item.json);\n  const parseAction = $('Parse Action').first().json;\n\n  // 변경된 파일 정보 수집\n  const files = prFiles.map(f => ({\n    filename: f.filename,\n    status: f.status,\n    patch: f.patch ? f.patch.substring(0, 3000) : '',\n    additions: f.additions,\n    deletions: f.deletions,\n    raw_url: f.raw_url,\n    sha: f.sha\n  }));\n\n  // 패치 내용\n  const patchContent = files.map(f =>\n    `### ${f.filename}\\n\\`\\`\\`diff\\n${f.patch}\\n\\`\\`\\``\n  ).join('\\n\\n');\n\n  return {\n    ...parseAction,\n    files,\n    patchContent,\n    fileCount: files.length\n  };\n"
-      },
-      "type": "n8n-nodes-base.code",
-      "typeVersion": 2,
-      "position": [
-        2688,
-        -544
-      ],
-      "id": "43f55a7e-0399-4cb2-8748-c45fa60a0f80",
-      "name": "Prepare Apply Context"
-    },
-    {
-      "parameters": {
-        "jsCode": "const openaiResponse = $input.first().json;\nconst applyContext = $('Prepare Apply Context').first().json;\n\n// OpenAI 응답 파싱\nlet aiResponse = openaiResponse.output?.[0]?.content?.[0]?.text ||\n                 openaiResponse.choices?.[0]?.message?.content ||\n                 '';\n\n// 외부 코드 블록 제거\naiResponse = aiResponse.replace(/^```(?:hcl|terraform|tf)?\\n?/i, '').replace(/\\n?```$/g, '');\n\n// 원본 파일 목록 가져오기\nconst originalFiles = applyContext.files || [];\n\n// 1. 삭제할 파일 파싱\nconst deleteRegex = /---DELETE:\\s*(.+?)---/g;\nconst filesToDelete = [];\nlet deleteMatch;\n\nwhile ((deleteMatch = deleteRegex.exec(aiResponse)) !== null) {\n  const filePath = deleteMatch[1].trim();\n  const originalFile = originalFiles.find(f => f.filename === filePath);\n  if (filePath) {\n    filesToDelete.push({\n      path: filePath,\n      sha: originalFile?.sha || null\n    });\n  }\n}\n\n// 2. 생성/수정할 파일 파싱\nconst fileRegex = /---FILE:\\s*(.+?)---\\n?([\\s\\S]*?)---END FILE---/g;\nconst filesToCreate = [];\nlet fileMatch;\n\nwhile ((fileMatch = fileRegex.exec(aiResponse)) !== null) {\n  const filePath = fileMatch[1].trim();\n  let content = fileMatch[2].trim();\n  content = content.replace(/^```(?:hcl|terraform|tf)?\\n?/i, '').replace(/\\n?```$/g, '').trim();\n  const originalFile = originalFiles.find(f => f.filename === filePath);\n  \n  if (filePath && content) {\n    filesToCreate.push({\n      path: filePath,\n      content: content,\n      sha: originalFile?.sha || null,\n      isNewFile: !originalFile\n    });\n  }\n}\n\nconst deleteCount = filesToDelete.length;\nconst createCount = filesToCreate.length;\nconst hasChanges = deleteCount > 0 || createCount > 0;\n\nreturn {\n  ...applyContext,\n  filesToDelete,\n  filesToCreate,\n  deleteCount,\n  createCount,\n  hasChanges,\n  // 기존 호환성 유지\n  fixedFileCount: deleteCount + createCount,\n  fixedFilePaths: [...filesToDelete.map(f => '(삭제) ' + f.path), ...filesToCreate.map(f => f.path)].join(', '),\n  hasFixedFiles: hasChanges\n};\n"
-      },
-      "type": "n8n-nodes-base.code",
-      "typeVersion": 2,
-      "position": [
-        3184,
-        -544
-      ],
-      "id": "31640a5b-7ff7-4c03-a6d0-c8660770da40",
-      "name": "Parse Fix Files"
-    },
-    {
-      "parameters": {
-        "conditions": {
-          "options": {
-            "caseSensitive": true,
-            "leftValue": "",
-            "typeValidation": "strict",
-            "version": 2
-          },
-          "conditions": [
-            {
-              "id": "check-has-fixes",
-              "leftValue": "={{ $json.hasFixedFiles }}",
-              "rightValue": true,
-              "operator": {
-                "type": "boolean",
-                "operation": "equals"
-              }
-            }
-          ],
-          "combinator": "and"
-        },
-        "options": {}
-      },
-      "type": "n8n-nodes-base.if",
-      "typeVersion": 2.2,
-      "position": [
-        3360,
-        -544
-      ],
-      "id": "1244d201-f816-4bd9-b1ff-da2594a06f85",
-      "name": "Has Fixes?"
-    },
-    {
-      "parameters": {
-        "jsCode": "const prBranchInfo = $input.first().json;\nconst parseFixData = $('Parse Fix Files').first().json;\n\nconst branch = prBranchInfo.head?.ref || 'main';\nconst operations = [];\n\n// 1. 삭제 작업 추가\nconst filesToDelete = parseFixData.filesToDelete || [];\nfilesToDelete.forEach((file, i) => {\n  operations.push({\n    ...parseFixData,\n    branch: branch,\n    operation: 'delete',\n    currentFile: file,\n    sha: file.sha,\n    operationIndex: i\n  });\n});\n\n// 2. 생성/수정 작업 추가\nconst filesToCreate = parseFixData.filesToCreate || [];\nfilesToCreate.forEach((file, i) => {\n  operations.push({\n    ...parseFixData,\n    branch: branch,\n    operation: file.isNewFile ? 'create' : 'update',\n    currentFile: file,\n    sha: file.sha,\n    operationIndex: filesToDelete.length + i\n  });\n});\n\n// 마지막 작업 표시\nif (operations.length > 0) {\n  operations[operations.length - 1].isLastOperation = true;\n}\n\nreturn operations;\n"
-      },
-      "type": "n8n-nodes-base.code",
-      "typeVersion": 2,
-      "position": [
-        3712,
-        -560
-      ],
-      "id": "b68c7318-0d4a-41aa-aebc-252edbdce644",
-      "name": "Prepare Fix Commits"
-    },
-    {
-      "parameters": {
-        "options": {}
-      },
-      "type": "n8n-nodes-base.splitInBatches",
-      "typeVersion": 3,
-      "position": [
-        3888,
-        -560
-      ],
-      "id": "59dec03c-6ad3-496c-9443-6bd44c5d9818",
-      "name": "Split Fix Files"
-    },
-    {
-      "parameters": {
-        "url": "=https://api.github.com/repos/{{ $json.repoName }}/contents/{{ $json.currentFile.path }}?ref={{ $json.branch }}",
-        "authentication": "predefinedCredentialType",
-        "nodeCredentialType": "githubApi",
-        "sendHeaders": true,
-        "headerParameters": {
-          "parameters": [
-            {
-              "name": "Accept",
-              "value": "application/vnd.github.v3+json"
-            }
-          ]
-        },
-        "options": {
-          "response": {
-            "response": {
-              "neverError": true
-            }
-          }
-        }
-      },
-      "type": "n8n-nodes-base.httpRequest",
-      "typeVersion": 4.3,
-      "position": [
-        4176,
-        -464
-      ],
-      "id": "ef7f5444-f15e-49b1-a496-25aa9b86a62a",
-      "name": "Get File SHA",
-      "credentials": {
-        "githubApi": {
-          "id": "uJpJHjMJj6qdmUVx",
-          "name": "Infrastructure GitHub"
-        }
-      },
-      "disabled": true
-    },
-    {
-      "parameters": {
-        "jsCode": "const prevData = $('Split Fix Files').first().json;\nconst fileInfo = $input.first().json;\n\n// 기존 파일의 SHA 가져오기 (업데이트 시 필요)\nconst existingSha = fileInfo.sha || null;\n\nreturn {\n  ...prevData,\n  existingSha\n};"
-      },
-      "type": "n8n-nodes-base.code",
-      "typeVersion": 2,
-      "position": [
-        4352,
-        -464
-      ],
-      "id": "72cf07dc-3886-4f1d-a3bc-e82b78b499f4",
-      "name": "Extract File SHA",
-      "disabled": true
-    },
-    {
-      "parameters": {
-        "conditions": {
-          "options": {
-            "caseSensitive": true,
-            "leftValue": "",
-            "typeValidation": "strict",
-            "version": 2
-          },
-          "conditions": [
-            {
-              "id": "check-is-delete",
-              "leftValue": "={{ $json.operation }}",
-              "rightValue": "delete",
-              "operator": {
-                "type": "string",
-                "operation": "equals"
-              }
-            }
-          ],
-          "combinator": "and"
-        },
-        "options": {}
-      },
-      "type": "n8n-nodes-base.if",
-      "typeVersion": 2.2,
-      "position": [
-        4176,
-        -560
-      ],
-      "id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
-      "name": "Is Delete?"
-    },
-    {
-      "parameters": {
-        "jsCode": "// Base64 인코딩 함수\nfunction btoa(str) {\n  return Buffer.from(str, 'utf-8').toString('base64');\n}\n\nconst data = $input.first().json;\nconst content = data.currentFile.content;\nconst base64Content = btoa(content);\n\nreturn {\n  ...data,\n  base64Content: base64Content\n};"
-      },
-      "type": "n8n-nodes-base.code",
-      "typeVersion": 2,
-      "position": [
-        4352,
-        -656
-      ],
-      "id": "b2c3d4e5-f6a7-8901-bcde-f23456789012",
-      "name": "Encode Fix Base64"
-    },
-    {
-      "parameters": {
-        "method": "DELETE",
-        "url": "=https://api.github.com/repos/{{ $json.repoName }}/contents/{{ $json.currentFile.path }}",
-        "authentication": "predefinedCredentialType",
-        "nodeCredentialType": "githubApi",
-        "sendHeaders": true,
-        "headerParameters": {
-          "parameters": [
-            {
-              "name": "Accept",
-              "value": "application/vnd.github.v3+json"
-            }
-          ]
-        },
-        "sendBody": true,
-        "specifyBody": "json",
-        "jsonBody": "={\n    \"message\": \"refactor: delete {{ $json.currentFile.path }} - AI review\",\n    \"sha\": \"{{ $json.sha }}\",\n    \"branch\": \"{{ $json.branch }}\"\n  }",
-        "options": {
-          "response": {
-            "response": {
-              "neverError": true
-            }
-          }
-        }
-      },
-      "type": "n8n-nodes-base.httpRequest",
-      "typeVersion": 4.3,
-      "position": [
-        4352,
-        -656
-      ],
-      "id": "b2c3d4e5-f6a7-8901-bcde-f23456789012",
-      "name": "Delete File",
-      "credentials": {
-        "githubApi": {
-          "id": "uJpJHjMJj6qdmUVx",
-          "name": "Infrastructure GitHub"
-        }
-      }
-    },
-    {
-      "parameters": {
-        "method": "PUT",
-        "url": "=https://api.github.com/repos/{{ $json.repoName }}/contents/{{ $json.currentFile.path }}?ref={{ $json.branch }}",
-        "authentication": "predefinedCredentialType",
-        "nodeCredentialType": "githubApi",
-        "sendHeaders": true,
-        "headerParameters": {
-          "parameters": [
-            {
-              "name": "Accept",
-              "value": "application/vnd.github.v3+json"
-            }
-          ]
-        },
-        "sendBody": true,
-        "specifyBody": "json",
-        "jsonBody": "={{ Object.assign({ message: 'fix: apply AI review suggestions for ' + $json.currentFile.path, content: $json.base64Content, branch: $json.branch }, $json.sha ? { sha: $json.sha } : {}) }}",
-        "options": {
-          "response": {
-            "response": {
-              "neverError": true
-            }
-          }
-        }
-      },
-      "type": "n8n-nodes-base.httpRequest",
-      "typeVersion": 4.3,
-      "position": [
-        4528,
-        -464
-      ],
-      "id": "826ca3a2-eb06-491a-8095-51b56005ba57",
-      "name": "Create/Update File",
-      "credentials": {
-        "githubApi": {
-          "id": "uJpJHjMJj6qdmUVx",
-          "name": "Infrastructure GitHub"
-        }
-      }
-    },
-    {
-      "parameters": {
-        "conditions": {
-          "options": {
-            "caseSensitive": true,
-            "leftValue": "",
-            "typeValidation": "strict",
-            "version": 2
-          },
-          "conditions": [
-            {
-              "id": "check-last-fix-file",
-              "leftValue": "={{ $json.isLastOperation }}",
-              "rightValue": true,
-              "operator": {
-                "type": "boolean",
-                "operation": "equals"
-              }
-            }
-          ],
-          "combinator": "and"
-        },
-        "options": {}
-      },
-      "type": "n8n-nodes-base.if",
-      "typeVersion": 2.2,
-      "position": [
-        4704,
-        -464
-      ],
-      "id": "621e28c1-84a2-405f-be01-b83fa25115af",
-      "name": "Is Last Operation?"
-    },
-    {
-      "parameters": {
-        "method": "POST",
-        "url": "https://slack.com/api/chat.postMessage",
-        "authentication": "predefinedCredentialType",
-        "nodeCredentialType": "slackApi",
-        "sendHeaders": true,
-        "headerParameters": {
-          "parameters": [
-            {
-              "name": "Content-Type",
-              "value": "application/json"
-            }
-          ]
-        },
-        "sendBody": true,
-        "specifyBody": "json",
-        "jsonBody": "={\n  \"channel\": \"{{ $('Parse Action').first().json.channel }}\",\n  \"blocks\": [\n    {\n      \"type\": \"header\",\n      \"text\": {\"type\": \"plain_text\", \"text\": \"✅ AI 수정 적용 완료\", \"emoji\": true}\n    },\n    {\n      \"type\": \"section\",\n      \"fields\": [\n        {\"type\": \"mrkdwn\", \"text\": \"*👤 적용자*\\n{{ $('Parse Action').first().json.user }}\"},\n        {\"type\": \"mrkdwn\", \"text\": \"*📁 수정 파일*\\n{{ $('Parse Fix Files').first().json.fixedFileCount }}개\"}\n      ]\n    },\n    {\n      \"type\": \"section\",\n      \"text\": {\"type\": \"mrkdwn\", \"text\": \"*수정된 파일:*\\n{{ $('Parse Fix Files').first().json.fixedFilePaths }}\"}\n    },\n    {\"type\": \"divider\"},\n    {\n      \"type\": \"section\",\n      \"text\": {\"type\": \"mrkdwn\", \"text\": \"*🔗 PR:* <{{ $('Parse Action').first().json.prUrl }}|#{{ $('Parse Action').first().json.prNumber }}>\"}\n    },\n    {\n      \"type\": \"context\",\n      \"elements\": [\n        {\"type\": \"mrkdwn\", \"text\": \"🤖 AI가 제안한 수정사항이 브랜치에 커밋되었습니다. PR을 확인해주세요.\"}\n      ]\n    }\n  ]\n}",
-        "options": {}
-      },
-      "type": "n8n-nodes-base.httpRequest",
-      "typeVersion": 4.3,
-      "position": [
-        4880,
-        -368
-      ],
-      "id": "9f4e8d25-c5de-4bf7-a87a-3d2e9f4bd421",
-      "name": "Slack Apply Success",
-      "credentials": {
-        "slackApi": {
-          "id": "JudHaRQYOjQVx9Xo",
-          "name": "DevOps Bot"
-        }
-      }
-    },
-    {
-      "parameters": {
-        "method": "POST",
-        "url": "={{ $('Parse Action').first().json.responseUrl }}",
-        "sendHeaders": true,
-        "headerParameters": {
-          "parameters": [
-            {
-              "name": "Content-Type",
-              "value": "application/json"
-            }
-          ]
-        },
-        "sendBody": true,
-        "specifyBody": "json",
-        "jsonBody": "={\n  \"replace_original\": true,\n  \"blocks\": [\n    {\n      \"type\": \"header\",\n      \"text\": {\"type\": \"plain_text\", \"text\": \"✅ AI 수정 적용 완료\", \"emoji\": true}\n    },\n    {\n      \"type\": \"section\",\n      \"fields\": [\n        {\"type\": \"mrkdwn\", \"text\": \"*적용자:*\\n{{ $('Parse Action').first().json.user }}\"},\n        {\"type\": \"mrkdwn\", \"text\": \"*수정 파일:*\\n{{ $('Parse Fix Files').first().json.fixedFileCount }}개\"}\n      ]\n    },\n    {\n      \"type\": \"context\",\n      \"elements\": [\n        {\"type\": \"mrkdwn\", \"text\": \"✅ AI 수정사항이 브랜치에 커밋되었습니다.\"}\n      ]\n    }\n  ]\n}",
-        "options": {
-          "response": {
-            "response": {
-              "neverError": true
-            }
-          }
-        }
-      },
-      "type": "n8n-nodes-base.httpRequest",
-      "typeVersion": 4.3,
-      "position": [
-        5056,
-        -368
-      ],
-      "id": "afe1b2bd-5e83-4015-b2d1-7508a6df75df",
-      "name": "Finalize Apply Message"
-    },
-    {
-      "parameters": {
-        "method": "POST",
-        "url": "={{ $('Parse Action').first().json.responseUrl }}",
-        "sendHeaders": true,
-        "headerParameters": {
-          "parameters": [
-            {
-              "name": "Content-Type",
-              "value": "application/json"
-            }
-          ]
-        },
-        "sendBody": true,
-        "specifyBody": "json",
-        "jsonBody": "={\n  \"replace_original\": true,\n  \"blocks\": [\n    {\n      \"type\": \"header\",\n      \"text\": {\"type\": \"plain_text\", \"text\": \"⚠️ 수정할 파일이 없습니다\", \"emoji\": true}\n    },\n    {\n      \"type\": \"section\",\n      \"text\": {\"type\": \"mrkdwn\", \"text\": \"AI가 수정이 필요한 코드를 찾지 못했습니다. PR을 직접 확인해주세요.\"}\n    },\n    {\n      \"type\": \"context\",\n      \"elements\": [\n        {\"type\": \"mrkdwn\", \"text\": \"💡 수동으로 수정하거나 리뷰 내용을 다시 확인하세요.\"}\n      ]\n    }\n  ]\n}",
-        "options": {
-          "response": {
-            "response": {
-              "neverError": true
-            }
-          }
-        }
-      },
-      "type": "n8n-nodes-base.httpRequest",
-      "typeVersion": 4.3,
-      "position": [
-        3552,
-        -48
-      ],
-      "id": "661fc611-fa29-4550-84d0-a0de68da9aa8",
-      "name": "No Fixes Message"
-    },
-    {
-      "parameters": {
-        "method": "POST",
-        "url": "={{ $('Parse Action').first().json.responseUrl }}",
-        "sendHeaders": true,
-        "headerParameters": {
-          "parameters": [
-            {
-              "name": "Content-Type",
-              "value": "application/json"
-            }
-          ]
-        },
-        "sendBody": true,
-        "specifyBody": "json",
-        "jsonBody": "={\n  \"replace_original\": true,\n  \"blocks\": [\n    {\n      \"type\": \"header\",\n      \"text\": {\"type\": \"plain_text\", \"text\": \"❌ 리뷰 무시됨\", \"emoji\": true}\n    },\n    {\n      \"type\": \"section\",\n      \"fields\": [\n        {\"type\": \"mrkdwn\", \"text\": \"*처리자:*\\n{{ $('Parse Action').first().json.user }}\"},\n        {\"type\": \"mrkdwn\", \"text\": \"*PR:*\\n#{{ $('Parse Action').first().json.prNumber }}\"}\n      ]\n    },\n    {\n      \"type\": \"context\",\n      \"elements\": [\n        {\"type\": \"mrkdwn\", \"text\": \"❌ 이 리뷰는 무시되었습니다. 필요시 PR에서 직접 확인하세요.\"}\n      ]\n    }\n  ]\n}",
-        "options": {
-          "response": {
-            "response": {
-              "neverError": true
-            }
-          }
-        }
-      },
-      "type": "n8n-nodes-base.httpRequest",
-      "typeVersion": 4.3,
-      "position": [
-        2512,
-        -304
-      ],
-      "id": "5290ceab-b18b-44ee-959a-5da05ad0c69b",
-      "name": "Ignore Review Message"
-    },
-    {
-      "parameters": {
-        "content": "## 🤖 AI 수정 적용 플로우\n\nSlack 버튼 클릭 → OpenAI 수정 생성 →\nGitHub 커밋 → Slack 결과 알림",
-        "height": 168,
-        "width": 2416,
-        "color": 7
-      },
-      "type": "n8n-nodes-base.stickyNote",
-      "typeVersion": 1,
-      "position": [
-        2464,
-        -944
-      ],
-      "id": "a66f8c1f-3733-417e-a116-7fdb3c466ffa",
-      "name": "Sticky Note - Apply AI Review Flow"
-    },
-    {
-      "parameters": {
-        "content": "## 📥 Issue 접수 플로우\n\nGitHub Issue → Jira 동기화 후\nSlack 알림 발송 (승인 버튼 포함)",
-        "height": 200,
-        "width": 480,
-        "color": 4
-      },
-      "type": "n8n-nodes-base.stickyNote",
-      "typeVersion": 1,
-      "position": [
-        1680,
-        -2560
-      ],
-      "id": "13a6732d-91aa-4374-aaa6-1d1e652a3ad2",
-      "name": "Sticky Note - Issue Flow"
-    },
-    {
-      "parameters": {
-        "content": "## 🔀 액션 라우팅\n\nSlack 버튼 클릭 → 파싱 → 라우팅\n버튼 즉시 비활성화 (중복 방지)",
-        "height": 280,
-        "width": 360,
-        "color": 5
-      },
-      "type": "n8n-nodes-base.stickyNote",
-      "typeVersion": 1,
-      "position": [
-        1680,
-        -1936
-      ],
-      "id": "778bcf3b-7697-456b-a1df-6e66df0a37b5",
-      "name": "Sticky Note - Routing"
-    },
-    {
-      "parameters": {
-        "content": "## ✅ 승인 플로우 (Draft PR 자동 생성)\n\n1. 브랜치 생성\n2. Jira → 진행 중\n3. OpenAI 코드 생성\n4. 파일별 커밋\n5. Draft PR 생성\n6. Slack 알림 (PR 링크)",
-        "height": 240,
-        "width": 2560,
-        "color": 3
-      },
-      "type": "n8n-nodes-base.stickyNote",
-      "typeVersion": 1,
-      "position": [
-        2384,
-        -2320
-      ],
-      "id": "8e70154b-2c8c-4337-994a-864a32aaaf53",
-      "name": "Sticky Note - Approve Flow"
-    },
-    {
-      "parameters": {
-        "content": "## ❌ 거절 플로우\n\n1. Jira → Cancelled\n2. GitHub 코멘트\n3. Issue 종료\n4. Slack 최종 업데이트",
-        "height": 200,
-        "width": 840,
-        "color": 2
-      },
-      "type": "n8n-nodes-base.stickyNote",
-      "typeVersion": 1,
-      "position": [
-        2544,
-        -1728
-      ],
-      "id": "7be58413-ed4d-4174-88b4-542109aee15a",
-      "name": "Sticky Note - Reject Flow"
-    },
-    {
-      "parameters": {
-        "content": "## 📝 수정요청 플로우\n\n1. Jira → Blocked\n2. GitHub 코멘트 (수정 가이드)\n3. Slack 최종 업데이트",
-        "height": 200,
-        "width": 620,
-        "color": 6
-      },
-      "type": "n8n-nodes-base.stickyNote",
-      "typeVersion": 1,
-      "position": [
-        2544,
-        -1504
-      ],
-      "id": "99dcea44-e2c3-4ca5-8b07-814d70b7644b",
-      "name": "Sticky Note - Revise Flow"
-    },
-    {
-      "parameters": {
-        "content": "## 🔔 PR 리뷰 알림 플로우\n\nGitHub PR Review Webhook →\nCodeRabbit/Gemini 리뷰 감지 →\nSlack 알림 (리뷰 요약 + 액션 버튼)",
-        "height": 200,
-        "width": 700,
-        "color": 7
-      },
-      "type": "n8n-nodes-base.stickyNote",
-      "typeVersion": 1,
-      "position": [
-        1712,
-        -992
-      ],
-      "id": "7162a9bc-5215-4cc0-bb52-1ae2ed437c80",
-      "name": "Sticky Note - PR Review Flow"
-    },
-    {
-      "parameters": {
-        "modelId": {
-          "__rl": true,
-          "value": "gpt-4o",
-          "mode": "list",
-          "cachedResultName": "GPT-4O"
-        },
-        "responses": {
-          "values": [
-            {
-              "content": "= System:\n  당신은 Terraform/Infrastructure 코드 리뷰 전문가입니다. PR 리뷰 피드백을 분석하고, 구체적인 수정 제안을 제공합니다.\n\n  규칙:\n  1. Required Tags: merge(local.required_tags, {...}) 패턴 필수\n  2. KMS Encryption: 고객 관리형 KMS 키 사용 필수\n  3. Naming: 리소스는 kebab-case, 변수는 snake_case\n  4. Security: 하드코딩된 시크릿 금지\n\n  중요: 반드시 아래 JSON 형식으로만 응답하세요. 다른 텍스트 없이 JSON만 출력하세요.\n\n  {\n    \"summary\": \"리뷰 요약 (1-2문장)\",\n    \"items\": [\n      {\"title\": \"수정 항목 제목\", \"description\": \"간단한 설명\", \"priority\": \"high|medium|low\"}\n    ],\n    \"recommendation\": \"전체적인 권장사항 (1문장)\"\n  }\n\n  User:\n  다음 PR 리뷰를 분석하고 수정 제안을 해주세요.\n\n  ## 리뷰어: {{ $json.reviewer }} ({{ $json.reviewerType }})\n  ## 리뷰 상태: {{ $json.reviewState }}\n  ## 리뷰 내용: {{ $json.reviewBody }}\n  ## 변경된 파일: {{ $json.filesSummary }}\n  ## 코드 변경사항:{{ $json.patchContent }}\n"
-            }
-          ]
-        },
-        "builtInTools": {},
-        "options": {}
-      },
-      "type": "@n8n/n8n-nodes-langchain.openAi",
-      "typeVersion": 2.1,
-      "position": [
-        2656,
-        -832
-      ],
-      "id": "56327da2-67d6-4a91-88ad-573f4dd71079",
-      "name": "Generate Code1",
-      "credentials": {
-        "openAiApi": {
-          "id": "Ula5jc00tgdawbTH",
-          "name": "OpenAi account"
-        }
-      }
-    },
-    {
-      "parameters": {
-        "modelId": {
-          "__rl": true,
-          "value": "gpt-4o",
-          "mode": "list",
-          "cachedResultName": "GPT-4O"
-        },
-        "responses": {
-          "values": [
-            {
-              "content": "=System:\n 당신은 Terraform/Infrastructure 코드 수정 전문가입니다.\n  리뷰 피드백을 기반으로 코드를 수정합니다.\n\n  규칙:\n  1. Required Tags: merge(local.required_tags, {...}) 패턴 필수\n  2. KMS Encryption: 고객 관리형 KMS 키 사용 필수\n  3. Naming: 리소스는 kebab-case, 변수는 snake_case\n  4. Security: 하드코딩된 시크릿 금지\n\n  응답 형식 - 반드시 이 형식을 따르세요:\n\n  1. 삭제할 파일이 있는 경우:\n  ---DELETE: 파일경로---\n\n  2. 생성하거나 수정할 파일:\n  ---FILE: 파일경로---\n  (파일 전체 내용)\n  ---END FILE---\n\n  예시:\n  - 기존 파일을 삭제하고 새 파일을 만드는 경우:\n    ---DELETE: terraform/old-path/main.tf---\n    ---FILE: terraform/new-path/main.tf---\n    (새 파일 내용)\n    ---END FILE---\n\n  - 기존 파일을 수정하는 경우:\n    ---FILE: terraform/existing-path/main.tf---\n    (수정된 전체 파일 내용)\n    ---END FILE---\n\n  User:\n   다음 리뷰 피드백을 기반으로 코드를 수정해주세요.\n      ## AI 수정 제안:\n      {{ $json.aiSuggestion }}\n      ## 현재 코드:\n      {{ $json.patchContent }}"
-            }
-          ]
-        },
-        "builtInTools": {},
-        "options": {}
-      },
-      "type": "@n8n/n8n-nodes-langchain.openAi",
-      "typeVersion": 2.1,
-      "position": [
-        2848,
-        -544
-      ],
-      "id": "4af45a60-0193-49a0-9ede-0fa613859b76",
-      "name": "Generate Code2",
-      "credentials": {
-        "openAiApi": {
-          "id": "Ula5jc00tgdawbTH",
-          "name": "OpenAi account"
-        }
-      }
-    },
-    {
-      "parameters": {
-        "url": "=https://api.github.com/repos/{{ $json.repoName }}/pulls/{{ $json.prNumber }}",
-        "authentication": "predefinedCredentialType",
-        "nodeCredentialType": "githubApi",
-        "sendHeaders": true,
-        "headerParameters": {
-          "parameters": [
-            {
-              "name": "Accept",
-              "value": "application/vnd.github+v3+json"
-            },
-            {
-              "name": "Content-Type",
-              "value": "application/json"
-            }
-          ]
-        },
-        "sendBody": true,
-        "specifyBody": "json",
-        "jsonBody": "={\n  \"body\": \"## ❌ 요청이 거절되었습니다\\n\\n**거절자:** {{ $('Parse Action').first().json.user }}\\n**Jira:** {{ $('Parse Action').first().json.jiraKey }}\\n\\n---\\n\\n이 인프라 변경 요청은 검토 결과 거절되었습니다.\\n추가 논의가 필요하시면 담당자에게 문의해주세요.\"\n}",
-        "options": {}
-      },
-      "type": "n8n-nodes-base.httpRequest",
-      "typeVersion": 4.3,
-      "position": [
-        3536,
-        -560
-      ],
-      "id": "d7d429a8-c71e-40c6-8fb2-d3264cbc473d",
-      "name": "Get PR Branch",
-      "credentials": {
-        "githubApi": {
-          "id": "uJpJHjMJj6qdmUVx",
-          "name": "Infrastructure GitHub"
-        }
-      }
-    },
-    {
-      "parameters": {
-        "method": "GET",
-        "url": "=https://api.github.com/repos/ryu-qqq/infrastructure/pulls?head=ryu-qqq:{{ $('Parse Code Files').first().json.branchName }}&state=open",
-        "authentication": "predefinedCredentialType",
-        "nodeCredentialType": "githubApi",
-        "sendHeaders": true,
-        "headerParameters": {
-          "parameters": [
-            {
-              "name": "Accept",
-              "value": "application/vnd.github.v3+json"
-            }
-          ]
-        },
-        "options": {
-          "response": {
-            "response": {
-              "neverError": true
-            }
-          }
-        }
-      },
-      "type": "n8n-nodes-base.httpRequest",
-      "typeVersion": 4.3,
-      "position": [
-        4176,
-        -2224
-      ],
-      "id": "check-existing-pr-001",
-      "name": "Check Existing PR",
-      "credentials": {
-        "githubApi": {
-          "id": "uJpJHjMJj6qdmUVx",
-          "name": "Infrastructure GitHub"
-        }
-      }
+      "position": [420, 300],
+      "id": "parse-issue",
+      "name": "Parse Issue Data"
     },
     {
       "parameters": {
@@ -1793,676 +34,545 @@
           },
           "conditions": [
             {
-              "id": "pr-exists-check",
-              "leftValue": "={{ $json.length }}",
-              "rightValue": 0,
+              "id": "skip-check",
+              "leftValue": "={{ $json.skip }}",
+              "rightValue": false,
               "operator": {
-                "type": "number",
+                "type": "boolean",
                 "operation": "equals"
               }
             }
           ],
           "combinator": "and"
-        },
-        "options": {}
-      },
-      "type": "n8n-nodes-base.if",
-      "typeVersion": 2.2,
-      "position": [
-        4264,
-        -2224
-      ],
-      "id": "pr-exists-check-001",
-      "name": "PR Exists?"
-    },
-    {
-      "parameters": {
-        "jsCode": "// Prepare data for Slack module\nconst input = $input.first().json;\n\nreturn {\n  messageType: \"review_suggestion\",\n  data: {\n    repoName: input.repoName || 'ryu-qqq/Infrastructure',\n    prNumber: input.prNumber,\n    prUrl: input.prUrl,\n    reviewerType: input.reviewerType,\n    reviewer: input.reviewer,\n    aiSummary: input.aiSummary,\n    aiItems: input.aiItems,\n    aiItemCount: input.aiItemCount,\n    aiRecommendation: input.aiRecommendation,\n    issueNum: input.issueNum\n  }\n};"
-      },
-      "id": "test-prepare-001",
-      "name": "Test: Prepare Module Data",
-      "type": "n8n-nodes-base.code",
-      "typeVersion": 2,
-      "position": [
-        3200,
-        -632
-      ]
-    },
-    {
-      "parameters": {
-        "source": "database",
-        "workflowId": {
-          "__rl": true,
-          "mode": "list",
-          "value": ""
         }
       },
-      "id": "test-execute-001",
-      "name": "Test: Call Slack Module",
-      "type": "n8n-nodes-base.executeWorkflow",
-      "typeVersion": 1.1,
-      "position": [
-        3420,
-        -632
-      ]
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [640, 300],
+      "id": "should-process",
+      "name": "Should Process?"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://slack.com/api/chat.postMessage",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "slackApi",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"channel\": \"C0A5JRE5K09\",\n  \"blocks\": [\n    {\n      \"type\": \"header\",\n      \"text\": {\"type\": \"plain_text\", \"text\": \"🏗️ 새로운 인프라 변경 요청\", \"emoji\": true}\n    },\n    {\n      \"type\": \"section\",\n      \"fields\": [\n        {\"type\": \"mrkdwn\", \"text\": \"*Issue:*\\n<{{ $json.issue.url }}|#{{ $json.issue.number }}>\"},\n        {\"type\": \"mrkdwn\", \"text\": \"*Type:*\\n{{ $json.changeType }}\"}\n      ]\n    },\n    {\n      \"type\": \"section\",\n      \"fields\": [\n        {\"type\": \"mrkdwn\", \"text\": \"*제목:*\\n{{ $json.issue.title }}\"},\n        {\"type\": \"mrkdwn\", \"text\": \"*작성자:*\\n{{ $json.issue.author }}\"}\n      ]\n    },\n    {\"type\": \"divider\"},\n    {\n      \"type\": \"section\",\n      \"text\": {\"type\": \"mrkdwn\", \"text\": \"*내용:*\\n```{{ $json.issue.body }}```\"}\n    },\n    {\n      \"type\": \"actions\",\n      \"elements\": [\n        {\"type\": \"button\", \"text\": {\"type\": \"plain_text\", \"text\": \"✅ 승인\", \"emoji\": true}, \"style\": \"primary\", \"value\": \"approve|{{ $json.issue.number }}|{{ $json.repo.fullName }}\", \"action_id\": \"infra_approve\"},\n        {\"type\": \"button\", \"text\": {\"type\": \"plain_text\", \"text\": \"❌ 거절\", \"emoji\": true}, \"style\": \"danger\", \"value\": \"reject|{{ $json.issue.number }}|{{ $json.repo.fullName }}\", \"action_id\": \"infra_reject\"}\n      ]\n    }\n  ]\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [860, 250],
+      "id": "slack-approval-request",
+      "name": "Slack: Approval Request",
+      "credentials": {
+        "slackApi": {
+          "id": "JudHaRQYOjQVx9Xo",
+          "name": "Slack API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "infra-slack-action",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [200, 600],
+      "id": "webhook-slack-action",
+      "name": "Slack Action Webhook",
+      "webhookId": "infra-slack-action-webhook"
+    },
+    {
+      "parameters": {
+        "jsCode": "const rawInput = $input.first().json;\nconst payload = JSON.parse(rawInput.body?.payload || '{}');\n\nconst action = payload.actions?.[0] || {};\nconst actionId = action.action_id || '';\nconst value = action.value || '';\nconst parts = value.split('|');\n\nconst user = payload.user?.name || 'unknown';\nconst responseUrl = payload.response_url;\nconst messageTs = payload.message?.ts;\n\n// 메시지에서 Issue 정보 추출\nconst blocks = payload.message?.blocks || [];\nlet issueTitle = '';\nlet issueBody = '';\n\nfor (const block of blocks) {\n  if (block.fields) {\n    for (const field of block.fields) {\n      if (field.text?.includes('*제목:*')) {\n        issueTitle = field.text.replace('*제목:*\\n', '');\n      }\n    }\n  }\n  if (block.text?.text?.includes('*내용:*')) {\n    issueBody = block.text.text.replace('*내용:*\\n```', '').replace('```', '');\n  }\n}\n\nreturn {\n  actionType: parts[0] || 'unknown',\n  issueNumber: parts[1] || '',\n  repoFullName: parts[2] || 'ryu-qqq/infrastructure',\n  user: user,\n  responseUrl: responseUrl,\n  messageTs: messageTs,\n  issueTitle: issueTitle,\n  issueBody: issueBody\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [420, 600],
+      "id": "parse-slack-action",
+      "name": "Parse Slack Action"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "is-approve",
+              "leftValue": "={{ $json.actionType }}",
+              "rightValue": "approve",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        }
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [640, 600],
+      "id": "is-approved",
+      "name": "Is Approved?"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://ryuqqq.atlassian.net/rest/api/3/issue",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpBasicAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({\n  fields: {\n    project: { key: 'INF' },\n    issuetype: { name: 'Epic' },\n    summary: '[Infra] ' + $json.issueTitle.substring(0, 80),\n    description: {\n      type: 'doc',\n      version: 1,\n      content: [{\n        type: 'paragraph',\n        content: [{\n          type: 'text',\n          text: 'GitHub Issue: #' + $json.issueNumber + '\\n\\n' + $json.issueBody\n        }]\n      }]\n    }\n  }\n}) }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [860, 500],
+      "id": "create-jira-epic",
+      "name": "Create Jira Epic",
+      "credentials": {
+        "httpBasicAuth": {
+          "id": "n8eFLGr80zDqK1Ie",
+          "name": "Jira Basic Auth"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const jiraResult = $input.first().json;\nconst actionData = $('Parse Slack Action').first().json;\n\nconst jiraKey = jiraResult.key;\nconst jiraDomain = 'ryuqqq.atlassian.net';\n\n// 브랜치명 생성: epic/INF-123-issue-title\nconst branchName = `epic/${jiraKey}-issue-${actionData.issueNumber}`;\n\nreturn {\n  jira: {\n    key: jiraKey,\n    id: jiraResult.id,\n    url: `https://${jiraDomain}/browse/${jiraKey}`\n  },\n  branch: branchName,\n  issueNumber: actionData.issueNumber,\n  issueTitle: actionData.issueTitle,\n  issueBody: actionData.issueBody,\n  repoFullName: actionData.repoFullName,\n  responseUrl: actionData.responseUrl,\n  user: actionData.user\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1080, 500],
+      "id": "format-jira-result",
+      "name": "Format Jira Result"
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "=https://api.github.com/repos/{{ $json.repoFullName }}/git/ref/heads/main",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "githubApi",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1300, 500],
+      "id": "get-main-sha",
+      "name": "Get Main SHA",
+      "credentials": {
+        "githubApi": {
+          "id": "uJpJHjMJj6qdmUVx",
+          "name": "GitHub Token"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://api.github.com/repos/{{ $('Format Jira Result').first().json.repoFullName }}/git/refs",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "githubApi",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({\n  ref: 'refs/heads/' + $('Format Jira Result').first().json.branch,\n  sha: $json.object.sha\n}) }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1520, 500],
+      "id": "create-branch",
+      "name": "Create Branch",
+      "credentials": {
+        "githubApi": {
+          "id": "uJpJHjMJj6qdmUVx",
+          "name": "GitHub Token"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $('Format Jira Result').first().json.responseUrl }}",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"replace_original\": true,\n  \"blocks\": [\n    {\n      \"type\": \"header\",\n      \"text\": {\"type\": \"plain_text\", \"text\": \"✅ 인프라 변경 요청 승인됨\", \"emoji\": true}\n    },\n    {\n      \"type\": \"section\",\n      \"fields\": [\n        {\"type\": \"mrkdwn\", \"text\": \"*Jira:*\\n<{{ $('Format Jira Result').first().json.jira.url }}|{{ $('Format Jira Result').first().json.jira.key }}>\"},\n        {\"type\": \"mrkdwn\", \"text\": \"*Branch:*\\n`{{ $('Format Jira Result').first().json.branch }}`\"}\n      ]\n    },\n    {\"type\": \"divider\"},\n    {\n      \"type\": \"section\",\n      \"text\": {\"type\": \"mrkdwn\", \"text\": \"<@U0A8KTYFCKU> 위 Jira Epic과 브랜치가 생성되었습니다.\\n\\n*요청 내용:*\\n```{{ $('Format Jira Result').first().json.issueTitle }}```\\n\\n:robot_face: `{{ $('Format Jira Result').first().json.branch }}` 브랜치에서 작업 후 PR을 생성해주세요.\"}\n    },\n    {\n      \"type\": \"context\",\n      \"elements\": [\n        {\"type\": \"mrkdwn\", \"text\": \"✅ 승인자: {{ $('Format Jira Result').first().json.user }}\"}\n      ]\n    }\n  ]\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1740, 500],
+      "id": "slack-approve-result",
+      "name": "Slack: Approve Result"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $json.responseUrl }}",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"replace_original\": true,\n  \"blocks\": [\n    {\n      \"type\": \"header\",\n      \"text\": {\"type\": \"plain_text\", \"text\": \"❌ 인프라 변경 요청 거절됨\", \"emoji\": true}\n    },\n    {\n      \"type\": \"section\",\n      \"text\": {\"type\": \"mrkdwn\", \"text\": \"*Issue:* #{{ $json.issueNumber }}\\n*제목:* {{ $json.issueTitle }}\"}\n    },\n    {\n      \"type\": \"context\",\n      \"elements\": [\n        {\"type\": \"mrkdwn\", \"text\": \"❌ 거절자: {{ $json.user }}\"}\n      ]\n    }\n  ]\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [860, 700],
+      "id": "slack-reject-result",
+      "name": "Slack: Reject Result"
+    },
+    {
+      "parameters": {
+        "resource": "issue",
+        "operation": "edit",
+        "owner": "={{ $json.repoFullName.split('/')[0] }}",
+        "repository": "={{ $json.repoFullName.split('/')[1] }}",
+        "issueNumber": "={{ $json.issueNumber }}",
+        "editFields": {
+          "state": "closed"
+        }
+      },
+      "type": "n8n-nodes-base.github",
+      "typeVersion": 1,
+      "position": [1080, 700],
+      "id": "close-github-issue",
+      "name": "Close GitHub Issue",
+      "credentials": {
+        "githubApi": {
+          "id": "uJpJHjMJj6qdmUVx",
+          "name": "GitHub Token"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "atlantis-plan",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [200, 1000],
+      "id": "webhook-atlantis",
+      "name": "Atlantis Plan Webhook",
+      "webhookId": "atlantis-plan-webhook"
+    },
+    {
+      "parameters": {
+        "jsCode": "const rawInput = $input.first().json;\nconst input = rawInput.body || rawInput;\n\n// PR 코멘트 이벤트 + Atlantis 코멘트인지 확인\nif (input.action !== 'created') {\n  return { skip: true, reason: 'Not a created comment' };\n}\n\nconst comment = input.comment?.body || '';\nconst isAtlantis = comment.includes('Ran Plan for') || comment.includes('atlantis plan');\n\nif (!isAtlantis) {\n  return { skip: true, reason: 'Not an Atlantis comment' };\n}\n\nconst pr = input.issue || {};\nconst repo = input.repository || {};\n\n// Plan 결과 파싱 (간단하게 성공/실패 + 변경 요약)\nlet planStatus = 'unknown';\nlet planSummary = '';\n\nif (comment.includes('Plan: ')) {\n  const planMatch = comment.match(/Plan: (\\d+) to add, (\\d+) to change, (\\d+) to destroy/);\n  if (planMatch) {\n    planStatus = 'success';\n    planSummary = `+${planMatch[1]} ~${planMatch[2]} -${planMatch[3]}`;\n  }\n} else if (comment.includes('Error:') || comment.includes('failed')) {\n  planStatus = 'failed';\n  planSummary = 'Plan 실패 - 로그 확인 필요';\n}\n\n// Plan 내용 추출 (```diff ... ``` 블록)\nlet planDiff = '';\nconst diffMatch = comment.match(/```diff([\\s\\S]*?)```/);\nif (diffMatch) {\n  planDiff = diffMatch[1].trim().substring(0, 1500);\n}\n\nreturn {\n  skip: false,\n  pr: {\n    number: pr.number,\n    title: pr.title,\n    url: pr.html_url\n  },\n  repo: {\n    name: repo.name,\n    fullName: repo.full_name\n  },\n  plan: {\n    status: planStatus,\n    summary: planSummary,\n    diff: planDiff\n  },\n  commentUrl: input.comment?.html_url\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [420, 1000],
+      "id": "parse-atlantis-plan",
+      "name": "Parse Atlantis Plan"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "skip-check",
+              "leftValue": "={{ $json.skip }}",
+              "rightValue": false,
+              "operator": {
+                "type": "boolean",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        }
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [640, 1000],
+      "id": "should-notify-plan",
+      "name": "Should Notify?"
+    },
+    {
+      "parameters": {
+        "authentication": "oAuth2",
+        "select": "channel",
+        "channelId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "C0A5JRE5K09"
+        },
+        "text": "=:terraform: *Atlantis Plan 결과*\n\n*PR:* <{{ $json.pr.url }}|#{{ $json.pr.number }}> {{ $json.pr.title }}\n*Status:* {{ $json.plan.status === 'success' ? '✅ Success' : '❌ Failed' }}\n*변경:* `{{ $json.plan.summary }}`\n\n{{ $json.plan.diff ? '*Plan Diff:*\\n```' + $json.plan.diff + '```' : '' }}\n\n<{{ $json.commentUrl }}|Atlantis 코멘트 보기>",
+        "otherOptions": {
+          "includeLinkToWorkflow": false
+        }
+      },
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.2,
+      "position": [860, 950],
+      "id": "slack-plan-result",
+      "name": "Slack: Plan Result",
+      "credentials": {
+        "slackOAuth2Api": {
+          "id": "7CqPgPHDmL7bLv4G",
+          "name": "Slack OAuth"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "infra-pr-merged",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [200, 1300],
+      "id": "webhook-pr-merge",
+      "name": "PR Merged Webhook",
+      "webhookId": "infra-pr-merged-webhook"
+    },
+    {
+      "parameters": {
+        "jsCode": "const rawInput = $input.first().json;\nconst input = rawInput.body || rawInput;\n\n// PR closed + merged 이벤트만 처리\nif (input.action !== 'closed' || !input.pull_request?.merged) {\n  return { skip: true, reason: 'Not a merged PR' };\n}\n\nconst pr = input.pull_request;\nconst branch = pr.head?.ref || '';\n\n// epic/ 브랜치가 아니면 스킵\nif (!branch.startsWith('epic/')) {\n  return { skip: true, reason: 'Not an epic branch' };\n}\n\n// 브랜치명에서 Jira 키 추출 (epic/INF-123-xxx)\nconst jiraMatch = branch.match(/epic\\/([A-Z]+-\\d+)/);\nconst jiraKey = jiraMatch ? jiraMatch[1] : null;\n\nreturn {\n  skip: false,\n  pr: {\n    number: pr.number,\n    title: pr.title,\n    url: pr.html_url,\n    branch: branch,\n    mergedBy: pr.merged_by?.login || 'unknown'\n  },\n  jiraKey: jiraKey,\n  repo: input.repository?.full_name || 'unknown'\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [420, 1300],
+      "id": "parse-pr-merge",
+      "name": "Parse PR Merge"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "not-skip",
+              "leftValue": "={{ $json.skip }}",
+              "rightValue": false,
+              "operator": {
+                "type": "boolean",
+                "operation": "equals"
+              }
+            },
+            {
+              "id": "has-jira",
+              "leftValue": "={{ $json.jiraKey }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "isNotEmpty"
+              }
+            }
+          ],
+          "combinator": "and"
+        }
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [640, 1300],
+      "id": "has-jira-key",
+      "name": "Has Jira Key?"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://ryuqqq.atlassian.net/rest/api/3/issue/{{ $json.jiraKey }}/transitions",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpBasicAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={ \"transition\": { \"id\": \"31\" } }",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [860, 1250],
+      "id": "update-jira-done",
+      "name": "Update Jira to Done",
+      "credentials": {
+        "httpBasicAuth": {
+          "id": "n8eFLGr80zDqK1Ie",
+          "name": "Jira Basic Auth"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "authentication": "oAuth2",
+        "select": "channel",
+        "channelId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "C0A5JRE5K09"
+        },
+        "text": "=:white_check_mark: *인프라 변경 완료!*\n\n*PR:* <{{ $('Parse PR Merge').first().json.pr.url }}|#{{ $('Parse PR Merge').first().json.pr.number }}> {{ $('Parse PR Merge').first().json.pr.title }}\n*Jira:* {{ $('Parse PR Merge').first().json.jiraKey }} → *완료*\n*머지:* {{ $('Parse PR Merge').first().json.pr.mergedBy }}\n\n:tada: 인프라 변경이 성공적으로 배포되었습니다!",
+        "otherOptions": {
+          "includeLinkToWorkflow": false
+        }
+      },
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.2,
+      "position": [1080, 1250],
+      "id": "slack-completion",
+      "name": "Slack: Completion",
+      "credentials": {
+        "slackOAuth2Api": {
+          "id": "7CqPgPHDmL7bLv4G",
+          "name": "Slack OAuth"
+        }
+      }
     }
   ],
-  "pinData": {},
   "connections": {
-    "Webhook": {
+    "GitHub Issue Webhook": {
       "main": [
-        [
-          {
-            "node": "Escape Body",
-            "type": "main",
-            "index": 0
-          }
-        ]
+        [{"node": "Parse Issue Data", "type": "main", "index": 0}]
       ]
     },
-    "Slack Interactive": {
+    "Parse Issue Data": {
       "main": [
-        [
-          {
-            "node": "Parse Action",
-            "type": "main",
-            "index": 0
-          }
-        ]
+        [{"node": "Should Process?", "type": "main", "index": 0}]
       ]
     },
-    "Parse Action": {
+    "Should Process?": {
       "main": [
-        [
-          {
-            "node": "Disable Buttons",
-            "type": "main",
-            "index": 0
-          }
-        ]
+        [{"node": "Slack: Approval Request", "type": "main", "index": 0}],
+        []
       ]
     },
-    "Disable Buttons": {
+    "Slack Action Webhook": {
       "main": [
-        [
-          {
-            "node": "Route Action",
-            "type": "main",
-            "index": 0
-          }
-        ]
+        [{"node": "Parse Slack Action", "type": "main", "index": 0}]
       ]
     },
-    "Route Action": {
+    "Parse Slack Action": {
       "main": [
-        [
-          {
-            "node": "Get Main SHA",
-            "type": "main",
-            "index": 0
-          }
-        ],
-        [
-          {
-            "node": "Update Jira (Reject)",
-            "type": "main",
-            "index": 0
-          }
-        ],
-        [
-          {
-            "node": "Update Jira (Revise)",
-            "type": "main",
-            "index": 0
-          }
-        ],
-        [
-          {
-            "node": "Fetch PR Files for Apply",
-            "type": "main",
-            "index": 0
-          }
-        ],
-        [
-          {
-            "node": "Ignore Review Message",
-            "type": "main",
-            "index": 0
-          }
-        ]
+        [{"node": "Is Approved?", "type": "main", "index": 0}]
+      ]
+    },
+    "Is Approved?": {
+      "main": [
+        [{"node": "Create Jira Epic", "type": "main", "index": 0}],
+        [{"node": "Slack: Reject Result", "type": "main", "index": 0}]
+      ]
+    },
+    "Create Jira Epic": {
+      "main": [
+        [{"node": "Format Jira Result", "type": "main", "index": 0}]
+      ]
+    },
+    "Format Jira Result": {
+      "main": [
+        [{"node": "Get Main SHA", "type": "main", "index": 0}]
       ]
     },
     "Get Main SHA": {
       "main": [
-        [
-          {
-            "node": "Extract SHA",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Extract SHA": {
-      "main": [
-        [
-          {
-            "node": "Create Branch",
-            "type": "main",
-            "index": 0
-          }
-        ]
+        [{"node": "Create Branch", "type": "main", "index": 0}]
       ]
     },
     "Create Branch": {
       "main": [
-        [
-          {
-            "node": "Update Jira",
-            "type": "main",
-            "index": 0
-          }
-        ]
+        [{"node": "Slack: Approve Result", "type": "main", "index": 0}]
       ]
     },
-    "Update Jira": {
+    "Slack: Reject Result": {
       "main": [
-        [
-          {
-            "node": "Generate Code",
-            "type": "main",
-            "index": 0
-          }
-        ]
+        [{"node": "Close GitHub Issue", "type": "main", "index": 0}]
       ]
     },
-    "Generate Code": {
+    "Atlantis Plan Webhook": {
       "main": [
-        [
-          {
-            "node": "Parse Code Files",
-            "type": "main",
-            "index": 0
-          }
-        ]
+        [{"node": "Parse Atlantis Plan", "type": "main", "index": 0}]
       ]
     },
-    "Parse Code Files": {
+    "Parse Atlantis Plan": {
       "main": [
-        [
-          {
-            "node": "Prepare Commits",
-            "type": "main",
-            "index": 0
-          }
-        ]
+        [{"node": "Should Notify?", "type": "main", "index": 0}]
       ]
     },
-    "Prepare Commits": {
+    "Should Notify?": {
       "main": [
-        [
-          {
-            "node": "Split Files",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Split Files": {
-      "main": [
-        [
-          {
-            "node": "Check Existing PR",
-            "type": "main",
-            "index": 0
-          }
-        ],
-        [
-          {
-            "node": "Encode Base64",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Check Existing PR": {
-      "main": [
-        [
-          {
-            "node": "PR Exists?",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "PR Exists?": {
-      "main": [
-        [
-          {
-            "node": "Create Draft PR",
-            "type": "main",
-            "index": 0
-          }
-        ],
+        [{"node": "Slack: Plan Result", "type": "main", "index": 0}],
         []
       ]
     },
-    "Encode Base64": {
+    "PR Merged Webhook": {
       "main": [
-        [
-          {
-            "node": "Commit File to Branch",
-            "type": "main",
-            "index": 0
-          }
-        ]
+        [{"node": "Parse PR Merge", "type": "main", "index": 0}]
       ]
     },
-    "Commit File to Branch": {
+    "Parse PR Merge": {
       "main": [
-        [
-          {
-            "node": "Is Last File?",
-            "type": "main",
-            "index": 0
-          }
-        ]
+        [{"node": "Has Jira Key?", "type": "main", "index": 0}]
       ]
     },
-    "Is Last File?": {
+    "Has Jira Key?": {
       "main": [
-        [],
-        [
-          {
-            "node": "Split Files",
-            "type": "main",
-            "index": 0
-          }
-        ]
+        [{"node": "Update Jira to Done", "type": "main", "index": 0}],
+        []
       ]
     },
-    "Create Draft PR": {
+    "Update Jira to Done": {
       "main": [
-        [
-          {
-            "node": "Format PR Response",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Format PR Response": {
-      "main": [
-        [
-          {
-            "node": "Slack PR Result",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Slack PR Result": {
-      "main": [
-        [
-          {
-            "node": "Finalize Approve Message",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Escape Body": {
-      "main": [
-        [
-          {
-            "node": "HTTP Request",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Update Jira (Reject)": {
-      "main": [
-        [
-          {
-            "node": "GitHub Comment (Reject)",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "GitHub Comment (Reject)": {
-      "main": [
-        [
-          {
-            "node": "Close Issue",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Close Issue": {
-      "main": [
-        [
-          {
-            "node": "Finalize Reject Message",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Update Jira (Revise)": {
-      "main": [
-        [
-          {
-            "node": "GitHub Comment (Revise)",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "GitHub Comment (Revise)": {
-      "main": [
-        [
-          {
-            "node": "Finalize Revise Message",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "PR Review Webhook": {
-      "main": [
-        [
-          {
-            "node": "Parse PR Review",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Parse PR Review": {
-      "main": [
-        [
-          {
-            "node": "Is Review Submitted?",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Is Review Submitted?": {
-      "main": [
-        [
-          {
-            "node": "Fetch PR Files",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Fetch PR Files": {
-      "main": [
-        [
-          {
-            "node": "Prepare Review Context",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Prepare Review Context": {
-      "main": [
-        [
-          {
-            "node": "Generate Code1",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Format AI Suggestion": {
-      "main": [
-        [
-          {
-            "node": "Slack Review Suggestion",
-            "type": "main",
-            "index": 0
-          },
-          {
-            "node": "Test: Prepare Module Data",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Fetch PR Files for Apply": {
-      "main": [
-        [
-          {
-            "node": "Prepare Apply Context",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Prepare Apply Context": {
-      "main": [
-        [
-          {
-            "node": "Generate Code2",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Parse Fix Files": {
-      "main": [
-        [
-          {
-            "node": "Has Fixes?",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Has Fixes?": {
-      "main": [
-        [
-          {
-            "node": "Get PR Branch",
-            "type": "main",
-            "index": 0
-          }
-        ],
-        [
-          {
-            "node": "No Fixes Message",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Prepare Fix Commits": {
-      "main": [
-        [
-          {
-            "node": "Split Fix Files",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Split Fix Files": {
-      "main": [
-        [
-          {
-            "node": "Slack Apply Success",
-            "type": "main",
-            "index": 0
-          }
-        ],
-        [
-          {
-            "node": "Is Delete?",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Is Delete?": {
-      "main": [
-        [
-          {
-            "node": "Delete File",
-            "type": "main",
-            "index": 0
-          }
-        ],
-        [
-          {
-            "node": "Encode Fix Base64",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Encode Fix Base64": {
-      "main": [
-        [
-          {
-            "node": "Create/Update File",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Delete File": {
-      "main": [
-        [
-          {
-            "node": "Is Last Operation?",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Create/Update File": {
-      "main": [
-        [
-          {
-            "node": "Is Last Operation?",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Is Last Operation?": {
-      "main": [
-        [],
-        [
-          {
-            "node": "Split Fix Files",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Slack Apply Success": {
-      "main": [
-        [
-          {
-            "node": "Finalize Apply Message",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Generate Code1": {
-      "main": [
-        [
-          {
-            "node": "Format AI Suggestion",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Generate Code2": {
-      "main": [
-        [
-          {
-            "node": "Parse Fix Files",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Get PR Branch": {
-      "main": [
-        [
-          {
-            "node": "Prepare Fix Commits",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Test: Prepare Module Data": {
-      "main": [
-        [
-          {
-            "node": "Test: Call Slack Module",
-            "type": "main",
-            "index": 0
-          }
-        ]
+        [{"node": "Slack: Completion", "type": "main", "index": 0}]
       ]
     }
   },
-  "active": true,
   "settings": {
-    "executionOrder": "v1",
-    "availableInMCP": false
+    "executionOrder": "v1"
   },
-  "versionId": "dc3ada4f-3f8e-4702-af08-504c0cce7d63",
+  "staticData": null,
   "meta": {
-    "templateCredsSetupCompleted": true,
-    "instanceId": "ad7743d079695bc43ae4d02129a8effe323aa22a80de3b109fc6ceb5c0bcec7f"
-  },
-  "id": "9ng0vIp0PNL5sCJo",
-  "tags": []
+    "templateId": "infra-issue-orchestrator",
+    "description": "인프라 변경 요청 오케스트레이터 - GitHub Issue → Slack 승인 → Jira Epic → Branch → Atlantis Plan → PR Merge",
+    "version": "2.0.0",
+    "flows": {
+      "issue_approval": "GitHub Issue → Slack 승인/거절 → Jira Epic + Branch 생성",
+      "atlantis_plan": "Atlantis Plan 결과 → Slack 알림",
+      "pr_completion": "PR Merge → Jira 완료 → Slack 알림"
+    },
+    "webhooks": {
+      "infra-issue": "GitHub Issues webhook (opened events)",
+      "infra-slack-action": "Slack Interactivity Request URL",
+      "atlantis-plan": "GitHub issue_comment webhook (for Atlantis comments)",
+      "infra-pr-merged": "GitHub Pull Request webhook (closed events)"
+    },
+    "credentials_required": [
+      "Jira Basic Auth - Jira Cloud API",
+      "GitHub Token - GitHub Personal Access Token",
+      "Slack API - Slack Bot Token",
+      "Slack OAuth - Slack OAuth2"
+    ],
+    "setup_notes": [
+      "1. GitHub → Settings → Webhooks 설정:",
+      "   - Issues: /webhook/infra-issue",
+      "   - Issue comments: /webhook/atlantis-plan",
+      "   - Pull requests: /webhook/infra-pr-merged",
+      "2. Slack → App Settings → Interactivity 설정:",
+      "   - Request URL: /webhook/infra-slack-action",
+      "3. Jira 프로젝트 키 (INF) 확인 및 수정",
+      "4. Slack 채널 ID 확인 및 수정",
+      "5. Jira transition ID '31'이 'Done' 상태인지 확인"
+    ]
+  }
 }
