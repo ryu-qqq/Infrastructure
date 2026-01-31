@@ -35,6 +35,65 @@ locals {
 }
 
 # ============================================================================
+# Legacy IAM User - 로컬 개발 및 Terraform 실행용
+# ============================================================================
+# WARNING: 이 사용자는 현재 로컬 환경에서 활발히 사용 중입니다.
+# - 용도: 로컬 Terraform 실행, AWS CLI 작업
+# - 생성일: 2025-10-11
+# - TODO: OIDC 기반 역할(GitHubActionsRole)로 마이그레이션 후 삭제 예정
+# - 관련 정책: 10개 attached + 5개 inline (Terraform 외부에서 관리)
+# ============================================================================
+resource "aws_iam_user" "github-actions-admin" {
+  name = "github-actions-admin"
+
+  tags = {
+    Purpose     = "legacy-local-development"
+    ManagedBy   = "terraform"
+    Environment = var.environment
+    Warning     = "DO-NOT-DELETE-IN-USE"
+  }
+
+  lifecycle {
+    prevent_destroy = true # 실수로 삭제 방지
+  }
+}
+
+# EventBridge Scheduler 권한 정책 (github-actions-admin용)
+# NOTE: Managed policy 10개 제한으로 인해 inline policy로 추가
+resource "aws_iam_user_policy" "github-actions-admin-scheduler" {
+  name = "EventBridgeSchedulerPolicy"
+  user = aws_iam_user.github-actions-admin.name
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Sid    = "EventBridgeSchedulerManagement"
+        Effect = "Allow"
+        Action = [
+          "scheduler:CreateSchedule",
+          "scheduler:DeleteSchedule",
+          "scheduler:GetSchedule",
+          "scheduler:UpdateSchedule",
+          "scheduler:ListSchedules",
+          "scheduler:CreateScheduleGroup",
+          "scheduler:DeleteScheduleGroup",
+          "scheduler:GetScheduleGroup",
+          "scheduler:ListScheduleGroups",
+          "scheduler:TagResource",
+          "scheduler:UntagResource",
+          "scheduler:ListTagsForResource"
+        ]
+        Resource = [
+          "arn:aws:scheduler:${var.aws_region}:${local.account_id}:schedule/*/*",
+          "arn:aws:scheduler:${var.aws_region}:${local.account_id}:schedule-group/*"
+        ]
+      }
+    ]
+  })
+}
+
+# ============================================================================
 # GitHub Actions IAM Role (existing - keep PascalCase name for compatibility)
 # ============================================================================
 resource "aws_iam_role" "github-actions" {
@@ -327,7 +386,17 @@ resource "aws_iam_policy" "github-actions-infrastructure" {
           "arn:aws:iam::${local.account_id}:role/*-prod",
           "arn:aws:iam::${local.account_id}:role/prod-*",
           "arn:aws:iam::${local.account_id}:role/*-role-prod",
-          "arn:aws:iam::${local.account_id}:role/atlantis-*"
+          "arn:aws:iam::${local.account_id}:role/atlantis-*",
+          # All naming patterns for staging roles
+          "arn:aws:iam::${local.account_id}:role/*-staging-*",
+          "arn:aws:iam::${local.account_id}:role/*-staging",
+          "arn:aws:iam::${local.account_id}:role/staging-*",
+          "arn:aws:iam::${local.account_id}:role/*-role-staging",
+          # All naming patterns for stage roles
+          "arn:aws:iam::${local.account_id}:role/*-stage-*",
+          "arn:aws:iam::${local.account_id}:role/*-stage",
+          "arn:aws:iam::${local.account_id}:role/stage-*",
+          "arn:aws:iam::${local.account_id}:role/*-role-stage"
         ]
       },
       {
@@ -346,7 +415,13 @@ resource "aws_iam_policy" "github-actions-infrastructure" {
         Resource = [
           "arn:aws:iam::${local.account_id}:policy/*-prod-*",
           "arn:aws:iam::${local.account_id}:policy/*-prod",
-          "arn:aws:iam::${local.account_id}:policy/fileflow-*"
+          "arn:aws:iam::${local.account_id}:policy/fileflow-*",
+          # Staging environment policies
+          "arn:aws:iam::${local.account_id}:policy/*-staging-*",
+          "arn:aws:iam::${local.account_id}:policy/*-staging",
+          # Stage environment policies
+          "arn:aws:iam::${local.account_id}:policy/*-stage-*",
+          "arn:aws:iam::${local.account_id}:policy/*-stage"
         ]
       }
     ]
@@ -787,6 +862,18 @@ resource "aws_iam_policy" "github-actions-services" {
           "kinesis:*"
         ]
         Resource = "*"
+      },
+      {
+        Sid    = "EventBridgeSchedulerManagement"
+        Effect = "Allow"
+        Action = [
+          "scheduler:GetSchedule",
+          "scheduler:CreateSchedule",
+          "scheduler:UpdateSchedule",
+          "scheduler:DeleteSchedule",
+          "scheduler:ListSchedules"
+        ]
+        Resource = "arn:aws:scheduler:${var.aws_region}:${local.account_id}:schedule/*"
       }
     ]
   })
