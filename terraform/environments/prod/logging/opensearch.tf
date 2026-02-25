@@ -126,6 +126,19 @@ resource "aws_opensearch_domain" "logs" {
             "aws:SourceAccount" = data.aws_caller_identity.current.account_id
           }
         }
+      },
+      {
+        Effect = "Allow"
+        Principal = {
+          AWS = "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/cloudfront-to-opensearch-lambda-role"
+        }
+        Action = [
+          "es:ESHttpPost",
+          "es:ESHttpPut",
+          "es:ESHttpGet",
+          "es:ESHttpHead"
+        ]
+        Resource = "arn:aws:es:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:domain/${var.opensearch_domain_name}/*"
       }
     ]
   })
