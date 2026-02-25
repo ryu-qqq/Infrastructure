@@ -122,3 +122,27 @@ output "cloudwatch_to_kinesis_role" {
     arn  = aws_iam_role.cloudwatch_to_kinesis.arn
   } : null
 }
+
+# ============================================================================
+# OpenSearch ISM Policy & Index Template
+# ============================================================================
+
+output "opensearch_ism_policy" {
+  description = "ISM lifecycle policy for automatic log index deletion"
+  value = {
+    policy_id       = opensearch_ism_policy.logs_lifecycle.policy_id
+    index_pattern   = "logs-*"
+    retention_days  = 14
+    auto_delete     = true
+  }
+}
+
+output "opensearch_index_template" {
+  description = "Index template for optimized shard settings"
+  value = {
+    name               = opensearch_index_template.logs.name
+    index_pattern      = "logs-*"
+    number_of_shards   = 1
+    number_of_replicas = 0
+  }
+}

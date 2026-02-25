@@ -24,6 +24,17 @@ OPENSEARCH_ENDPOINT = os.environ.get('OPENSEARCH_ENDPOINT', '')
 OPENSEARCH_REGION = os.environ.get('AWS_REGION', 'ap-northeast-2')
 INDEX_PREFIX = os.environ.get('INDEX_PREFIX', 'logs')
 
+# 인덱스 설정 - 단일 노드 클러스터 최적화
+INDEX_SETTINGS = {
+    "settings": {
+        "number_of_shards": 1,
+        "number_of_replicas": 0
+    }
+}
+
+# 이미 확인된 인덱스 캐시 (Lambda 실행 컨텍스트 내 재사용)
+_existing_indices = set()
+
 
 def handler(event, context):
     """
@@ -337,6 +348,64 @@ def extract_exception_class(stack_trace: str) -> str:
     return None
 
 
+def _get_sigv4_session():
+    """SigV4 서명을 위한 botocore session과 credentials를 반환합니다."""
+    from botocore.auth import SigV4Auth
+    from botocore.awsrequest import AWSRequest
+    import botocore.session
+
+    session = botocore.session.get_session()
+    credentials = session.get_credentials()
+    return session, credentials, SigV4Auth, AWSRequest
+
+
+def ensure_index_exists(index_name: str):
+    """
+    인덱스가 존재하지 않으면 최적화된 설정으로 생성합니다.
+    단일 노드 클러스터에 맞게 shards=1, replicas=0으로 설정합니다.
+    """
+    global _existing_indices
+
+    if index_name in _existing_indices:
+        return
+
+    if not OPENSEARCH_ENDPOINT:
+        return
+
+    url = f"https://{OPENSEARCH_ENDPOINT}/{index_name}"
+
+    try:
+        _, credentials, SigV4Auth, AWSRequest = _get_sigv4_session()
+
+        # HEAD 요청으로 인덱스 존재 여부 확인
+        head_request = AWSRequest(method='HEAD', url=url, headers={})
+        SigV4Auth(credentials, 'es', OPENSEARCH_REGION).add_auth(head_request)
+        req = Request(url, headers=dict(head_request.headers), method='HEAD')
+
+        try:
+            urlopen(req, timeout=5)
+            _existing_indices.add(index_name)
+            return
+        except HTTPError as e:
+            if e.code != 404:
+                logger.warning(f"Index check failed for {index_name}: {e}")
+                return
+
+        # 인덱스가 없으면 설정과 함께 생성
+        create_body = json.dumps(INDEX_SETTINGS)
+        headers = {'Content-Type': 'application/json'}
+        put_request = AWSRequest(method='PUT', url=url, data=create_body, headers=headers)
+        SigV4Auth(credentials, 'es', OPENSEARCH_REGION).add_auth(put_request)
+
+        req = Request(url, data=create_body.encode('utf-8'), headers=dict(put_request.headers), method='PUT')
+        urlopen(req, timeout=10)
+        _existing_indices.add(index_name)
+        logger.info(f"Created index {index_name} with optimized settings (shards=1, replicas=0)")
+
+    except Exception as e:
+        logger.warning(f"Failed to ensure index {index_name}: {e}")
+
+
 def bulk_index_to_opensearch(documents: list) -> tuple:
     """
     OpenSearch Bulk API로 문서를 전송합니다.
@@ -350,6 +419,11 @@ def bulk_index_to_opensearch(documents: list) -> tuple:
     if not documents or not OPENSEARCH_ENDPOINT:
         logger.warning("No documents to index or OPENSEARCH_ENDPOINT not set")
         return 0, 0
+
+    # 인덱스 존재 확인 및 생성 (최적화된 설정 적용)
+    unique_indices = {doc['index'] for doc in documents}
+    for index_name in unique_indices:
+        ensure_index_exists(index_name)
 
     # Bulk API 형식으로 변환
     # 각 문서는 action + document 두 줄로 구성
@@ -374,15 +448,7 @@ def bulk_index_to_opensearch(documents: list) -> tuple:
     }
 
     try:
-        # AWS SigV4 서명이 필요한 경우 boto3 사용
-        # 여기서는 VPC 내부 또는 IAM 없이 접근 가능한 경우를 가정
-        # 실제 환경에서는 requests-aws4auth 또는 boto3 사용 권장
-        from botocore.auth import SigV4Auth
-        from botocore.awsrequest import AWSRequest
-        import botocore.session
-
-        session = botocore.session.get_session()
-        credentials = session.get_credentials()
+        _, credentials, SigV4Auth, AWSRequest = _get_sigv4_session()
 
         request = AWSRequest(method='POST', url=url, data=bulk_body, headers=headers)
         SigV4Auth(credentials, 'es', OPENSEARCH_REGION).add_auth(request)

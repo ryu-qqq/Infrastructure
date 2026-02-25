@@ -8,6 +8,10 @@ terraform {
       source  = "hashicorp/aws"
       version = "~> 5.0"
     }
+    opensearch = {
+      source  = "opensearch-project/opensearch"
+      version = "~> 2.0"
+    }
   }
 
   backend "s3" {
@@ -29,4 +33,13 @@ provider "aws" {
       Module    = "logging"
     }
   }
+}
+
+# OpenSearch Provider for ISM policy management
+# Uses the OpenSearch domain endpoint with AWS IAM authentication
+provider "opensearch" {
+  url         = "https://${aws_opensearch_domain.logs.endpoint}"
+  healthcheck = false
+  aws_region  = var.aws_region
+  sign_aws_requests = true
 }

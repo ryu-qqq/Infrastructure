@@ -265,6 +265,92 @@ resource "aws_cloudwatch_metric_alarm" "opensearch_free_storage_space" {
 # SSM Parameter Store - OpenSearch Endpoint
 # ============================================================================
 
+# ============================================================================
+# ISM (Index State Management) Policy - Logs Lifecycle
+# ============================================================================
+#
+# 자동으로 오래된 로그 인덱스를 삭제하여 샤드 한도 초과를 방지합니다.
+# - HOT 상태: 0-14일, 활성 읽기/쓰기
+# - DELETE 상태: 14일 이후, 인덱스 자동 삭제
+# - ism_template: 새로 생성되는 logs-* 인덱스에 자동 적용
+#
+# 기존 인덱스에는 OpenSearch API로 수동 적용 필요:
+#   POST _plugins/_ism/add/logs-*
+#   { "policy_id": "logs-lifecycle-policy" }
+# ============================================================================
+
+resource "opensearch_ism_policy" "logs_lifecycle" {
+  policy_id = "logs-lifecycle-policy"
+
+  body = jsonencode({
+    policy = {
+      policy_id     = "logs-lifecycle-policy"
+      description   = "logs-* 인덱스 14일 후 자동 삭제"
+      default_state = "hot"
+      states = [
+        {
+          name    = "hot"
+          actions = []
+          transitions = [
+            {
+              state_name = "delete"
+              conditions = {
+                min_index_age = "14d"
+              }
+            }
+          ]
+        },
+        {
+          name = "delete"
+          actions = [
+            {
+              delete = {}
+            }
+          ]
+          transitions = []
+        }
+      ]
+      ism_template = [
+        {
+          index_patterns = ["logs-*"]
+          priority       = 100
+        }
+      ]
+    }
+  })
+}
+
+# ============================================================================
+# Index Template - logs-* 인덱스 기본 설정
+# ============================================================================
+#
+# 단일 노드 클러스터에 맞게 샤드 설정을 최적화합니다.
+# - number_of_shards: 1 (기존 5 → 1, t3.medium 단일 노드에 적합)
+# - number_of_replicas: 0 (단일 노드에서 replica는 unassigned 상태가 됨)
+#
+# 인덱스당 샤드: 10개 → 1개 (90% 절감)
+# 14일 기준 5개 서비스: 700개 → 70개 샤드
+# ============================================================================
+
+resource "opensearch_index_template" "logs" {
+  name = "logs-template"
+
+  body = jsonencode({
+    index_patterns = ["logs-*"]
+    priority       = 100
+    template = {
+      settings = {
+        number_of_shards   = 1
+        number_of_replicas = 0
+      }
+    }
+  })
+}
+
+# ============================================================================
+# SSM Parameter Store - OpenSearch Endpoint
+# ============================================================================
+
 resource "aws_ssm_parameter" "opensearch_endpoint" {
   name        = "/${var.environment}/logging/opensearch/endpoint"
   description = "OpenSearch domain endpoint"
