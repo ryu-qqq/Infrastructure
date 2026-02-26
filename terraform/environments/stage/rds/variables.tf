@@ -133,7 +133,7 @@ variable "mysql_version" {
 variable "instance_class" {
   description = "RDS instance class (e.g., db.t4g.micro, db.t4g.small)"
   type        = string
-  default     = "db.t4g.micro" # Smaller instance for staging
+  default     = "db.t4g.small" # Upgraded from micro for connection capacity
 }
 
 variable "allocated_storage" {
@@ -430,4 +430,52 @@ variable "enable_rds_proxy" {
   description = "Enable RDS Proxy for connection pooling"
   type        = bool
   default     = false # Disabled for staging
+}
+
+variable "proxy_debug_logging" {
+  description = "Enable debug logging for RDS Proxy"
+  type        = bool
+  default     = true # Staging에서는 디버깅용 활성화
+}
+
+variable "proxy_idle_client_timeout" {
+  description = "Idle client timeout in seconds (default: 1800 = 30 minutes)"
+  type        = number
+  default     = 1800
+}
+
+variable "proxy_require_tls" {
+  description = "Require TLS for connections to the proxy"
+  type        = bool
+  default     = true
+}
+
+variable "proxy_iam_auth" {
+  description = "Enable IAM authentication for the proxy"
+  type        = bool
+  default     = false
+}
+
+variable "proxy_connection_borrow_timeout" {
+  description = "Connection borrow timeout in seconds"
+  type        = number
+  default     = 120
+}
+
+variable "proxy_max_connections_percent" {
+  description = "Maximum percentage of available RDS connections to use"
+  type        = number
+  default     = 100
+}
+
+variable "proxy_max_idle_connections_percent" {
+  description = "Maximum percentage of idle connections to keep in pool"
+  type        = number
+  default     = 50
+}
+
+variable "proxy_ingress_cidr_block" {
+  description = "CIDR block allowed to connect to the proxy (VPC CIDR)"
+  type        = string
+  default     = "10.0.0.0/16"
 }

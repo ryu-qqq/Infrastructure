@@ -30,7 +30,7 @@ allowed_cidr_blocks        = [] # Add CIDR blocks as needed
 # RDS Configuration
 identifier     = "shared-mysql"
 mysql_version  = "8.0.44"
-instance_class = "db.t4g.micro" # Smaller instance for staging
+instance_class = "db.t4g.small" # Upgraded from micro due to Too Many Connections
 
 # Storage Configuration (must match prod snapshot: 200GB)
 allocated_storage     = 200
@@ -74,7 +74,7 @@ final_snapshot_identifier = null
 copy_tags_to_snapshot     = true
 
 # Monitoring Configuration
-enable_performance_insights           = false # db.t4g.micro doesn't support Performance Insights
+enable_performance_insights           = true  # db.t4g.small supports Performance Insights
 performance_insights_retention_period = 7
 enable_enhanced_monitoring            = true
 monitoring_interval                   = 60
@@ -98,7 +98,7 @@ parameters = [
   },
   {
     name  = "max_connections"
-    value = "100" # Reduced for staging
+    value = "200" # Increased for db.t4g.small
   },
   {
     name  = "innodb_buffer_pool_size"
@@ -124,8 +124,29 @@ enable_cloudwatch_alarms = false
 # Secrets Rotation (disabled for staging)
 enable_secrets_rotation = false
 
-# RDS Proxy (disabled for staging)
-enable_rds_proxy = false
+# ============================================================================
+# RDS Proxy Configuration
+# ============================================================================
+# RDS Proxy를 통한 커넥션 풀링 활성화
+# - 다중 ECS 태스크의 커넥션 고갈 방지
+# - 효율적인 커넥션 재사용 (90%+ 효율)
+# - Prod와 동일한 연결 패턴 검증
+
+enable_rds_proxy = true
+
+# Proxy 설정
+proxy_debug_logging       = true  # Staging에서는 디버깅용 활성화
+proxy_idle_client_timeout = 1800  # 30분
+proxy_require_tls         = true  # TLS 필수
+proxy_iam_auth            = false # Secrets Manager 인증 사용
+
+# 커넥션 풀 설정
+proxy_connection_borrow_timeout    = 120 # 커넥션 대기 최대 2분
+proxy_max_connections_percent      = 100 # RDS max_connections의 100% 사용 가능
+proxy_max_idle_connections_percent = 50  # 유휴 커넥션은 50%까지만 유지
+
+# 보안 설정
+proxy_ingress_cidr_block = "10.0.0.0/16" # VPC CIDR
 
 # Additional Tags
 tags = {
