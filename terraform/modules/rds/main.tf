@@ -140,6 +140,8 @@ resource "aws_db_instance" "this" {
     ignore_changes = [
       password,
       final_snapshot_identifier,
+      # 스냅샷 복원 시 원본 KMS 키가 사용되므로 drift 무시
+      kms_key_id,
       # AWS Database Insights Advanced 모드에서 설정된 값은 콘솔에서만 변경 가능
       performance_insights_enabled,
       performance_insights_retention_period
