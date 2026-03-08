@@ -201,15 +201,29 @@ resource "aws_iam_role_policy" "atlantis-terraform-operations" {
         Resource = "*"
       },
       {
+        Sid    = "ManageSSMParameters"
+        Effect = "Allow"
+        Action = [
+          "ssm:PutParameter",
+          "ssm:AddTagsToResource"
+        ]
+        Resource = "*"
+        # Required for Terraform to create/update SSM parameters
+      },
+      {
         Sid    = "KMSDecryptForTerraformState"
         Effect = "Allow"
         Action = [
           "kms:Decrypt",
           "kms:DescribeKey",
-          "kms:GenerateDataKey"
+          "kms:GenerateDataKey",
+          "kms:CreateGrant",
+          "kms:TagResource"
         ]
         Resource = "*"
         # Required for decrypting Terraform state files encrypted with KMS
+        # kms:CreateGrant - Required for RDS, EBS etc. that need to re-encrypt with KMS
+        # kms:TagResource - Required for tagging KMS keys managed by Terraform
       },
       {
         Sid    = "IAMReadOnlyForTerraformResources"
@@ -388,6 +402,18 @@ resource "aws_iam_role_policy" "atlantis-terraform-operations" {
         ]
       },
       {
+        Sid    = "ManageMarketplaceRoles"
+        Effect = "Allow"
+        Action = [
+          "iam:PassRole"
+        ]
+        Resource = [
+          "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/marketplace-*-execution-role-*",
+          "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/marketplace-*-task-role-*"
+        ]
+        # Required for Marketplace ECS service deployment
+      },
+      {
         Sid    = "ManageLoadBalancers"
         Effect = "Allow"
         Action = [
@@ -537,18 +563,15 @@ resource "aws_iam_role_policy" "atlantis-terraform-operations" {
         Sid    = "ManageCrawlingHubRoles"
         Effect = "Allow"
         Action = [
-          "iam:PassRole",
           "iam:PutRolePolicy",
           "iam:DeleteRolePolicy",
           "iam:AttachRolePolicy",
           "iam:DetachRolePolicy"
         ]
         Resource = [
-          "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/crawlinghub-*-task-role-prod",
-          "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/crawlinghub-*-execution-role-prod"
+          "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/crawlinghub-*"
         ]
-        # Required for managing all crawlinghub task and execution roles
-        # AttachRolePolicy/DetachRolePolicy added for Issue #115: CrawlingHub ECS Scheduler SQS policy attachment
+        # Required for managing all crawlinghub roles (task, execution, scheduler)
       },
       {
         Sid    = "ManageCrawlingHubSSMParameters"
@@ -566,7 +589,7 @@ resource "aws_iam_role_policy" "atlantis-terraform-operations" {
         # Required for managing crawlinghub SSM parameters
       },
       {
-        Sid    = "ManageCrawlingHubIAMPolicies"
+        Sid    = "ManageServiceIAMPolicies"
         Effect = "Allow"
         Action = [
           "iam:CreatePolicy",
@@ -579,35 +602,11 @@ resource "aws_iam_role_policy" "atlantis-terraform-operations" {
           "iam:TagPolicy",
           "iam:UntagPolicy"
         ]
-        Resource = "arn:aws:iam::${data.aws_caller_identity.current.account_id}:policy/crawlinghub-*"
-        # Required for managing crawlinghub IAM policies (e.g., SQS access policy)
-      },
-      {
-        Sid    = "ManageGatewayRoles"
-        Effect = "Allow"
-        Action = [
-          "iam:PassRole",
-          "iam:PutRolePolicy",
-          "iam:DeleteRolePolicy"
-        ]
         Resource = [
-          "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/gateway-task-role-prod",
-          "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/gateway-execution-role-prod"
+          "arn:aws:iam::${data.aws_caller_identity.current.account_id}:policy/crawlinghub-*",
+          "arn:aws:iam::${data.aws_caller_identity.current.account_id}:policy/marketplace-*"
         ]
-        # Required for managing gateway ECS task and execution roles
-      },
-      {
-        Sid    = "ManageAuthHubRoles"
-        Effect = "Allow"
-        Action = [
-          "iam:PassRole",
-          "iam:PutRolePolicy",
-          "iam:DeleteRolePolicy"
-        ]
-        Resource = [
-          "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/authhub-web-api-*"
-        ]
-        # Required for managing AuthHub ECS task and execution roles
+        # Required for managing IAM policies (e.g., CrawlingHub SQS, Marketplace ECS)
       }
     ]
   })
@@ -690,6 +689,188 @@ resource "aws_iam_policy" "atlantis-log-subscription" {
 resource "aws_iam_role_policy_attachment" "atlantis-log-subscription" {
   role       = module.atlantis_task_role.role_name
   policy_arn = aws_iam_policy.atlantis-log-subscription.arn
+}
+
+# Managed Policy for WAFv2 WebACL Management
+resource "aws_iam_policy" "atlantis-wafv2" {
+  name        = "atlantis-prod-wafv2-management"
+  description = "Policy for managing WAFv2 WebACL resources"
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Sid    = "ManageWAFv2"
+        Effect = "Allow"
+        Action = [
+          "wafv2:CreateWebACL",
+          "wafv2:DeleteWebACL",
+          "wafv2:GetWebACL",
+          "wafv2:UpdateWebACL",
+          "wafv2:ListTagsForResource",
+          "wafv2:TagResource",
+          "wafv2:UntagResource",
+          "wafv2:ListWebACLs",
+          "wafv2:AssociateWebACL",
+          "wafv2:DisassociateWebACL",
+          "wafv2:GetWebACLForResource"
+        ]
+        Resource = "*"
+      }
+    ]
+  })
+
+  tags = merge(
+    local.required_tags,
+    {
+      Name      = "atlantis-prod-wafv2-management"
+      Component = "atlantis"
+    }
+  )
+}
+
+resource "aws_iam_role_policy_attachment" "atlantis-wafv2" {
+  role       = module.atlantis_task_role.role_name
+  policy_arn = aws_iam_policy.atlantis-wafv2.arn
+}
+
+# Managed Policy for Gateway and AuthHub ECS Roles
+# Separated from inline policy to avoid 10KB limit
+resource "aws_iam_policy" "atlantis-ecs-roles" {
+  name        = "atlantis-prod-ecs-roles-management"
+  description = "Policy for managing Gateway and AuthHub ECS task/execution roles"
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Sid    = "ManageGatewayRoles"
+        Effect = "Allow"
+        Action = [
+          "iam:PassRole",
+          "iam:PutRolePolicy",
+          "iam:DeleteRolePolicy"
+        ]
+        Resource = [
+          "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/gateway-task-role-prod",
+          "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/gateway-execution-role-prod",
+          "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/gateway-task-role-stage",
+          "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/gateway-execution-role-stage"
+        ]
+      },
+      {
+        Sid    = "ManageAuthHubRoles"
+        Effect = "Allow"
+        Action = [
+          "iam:PassRole",
+          "iam:PutRolePolicy",
+          "iam:DeleteRolePolicy"
+        ]
+        Resource = [
+          "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/authhub-web-api-*"
+        ]
+      }
+    ]
+  })
+
+  tags = merge(
+    local.required_tags,
+    {
+      Name      = "atlantis-prod-ecs-roles-management"
+      Component = "atlantis"
+    }
+  )
+}
+
+resource "aws_iam_role_policy_attachment" "atlantis-ecs-roles" {
+  role       = module.atlantis_task_role.role_name
+  policy_arn = aws_iam_policy.atlantis-ecs-roles.arn
+}
+
+# Managed Policy for EventBridge Scheduler Management
+resource "aws_iam_policy" "atlantis-eventbridge-scheduler" {
+  name        = "atlantis-prod-eventbridge-scheduler"
+  description = "Policy for managing EventBridge Scheduler resources"
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Sid    = "AllowEventBridgeScheduler"
+        Effect = "Allow"
+        Action = [
+          "scheduler:GetScheduleGroup",
+          "scheduler:CreateScheduleGroup",
+          "scheduler:DeleteScheduleGroup",
+          "scheduler:UpdateScheduleGroup",
+          "scheduler:ListScheduleGroups",
+          "scheduler:GetSchedule",
+          "scheduler:CreateSchedule",
+          "scheduler:UpdateSchedule",
+          "scheduler:DeleteSchedule",
+          "scheduler:ListSchedules",
+          "scheduler:TagResource",
+          "scheduler:UntagResource",
+          "scheduler:ListTagsForResource"
+        ]
+        Resource = [
+          "arn:aws:scheduler:ap-northeast-2:${data.aws_caller_identity.current.account_id}:schedule-group/*",
+          "arn:aws:scheduler:ap-northeast-2:${data.aws_caller_identity.current.account_id}:schedule/*"
+        ]
+      }
+    ]
+  })
+
+  tags = merge(
+    local.required_tags,
+    {
+      Name      = "atlantis-prod-eventbridge-scheduler"
+      Component = "atlantis"
+    }
+  )
+}
+
+resource "aws_iam_role_policy_attachment" "atlantis-eventbridge-scheduler" {
+  role       = module.atlantis_task_role.role_name
+  policy_arn = aws_iam_policy.atlantis-eventbridge-scheduler.arn
+}
+
+# Managed Policy for CrawlingHub IAM PassRole
+resource "aws_iam_policy" "atlantis-crawlinghub-passrole" {
+  name        = "atlantis-prod-crawlinghub-passrole"
+  description = "Policy for PassRole on crawlinghub roles for ECS task definitions"
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Sid    = "AllowPassRoleForECS"
+        Effect = "Allow"
+        Action = "iam:PassRole"
+        Resource = [
+          "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/crawlinghub-*"
+        ]
+        Condition = {
+          StringEquals = {
+            "iam:PassedToService" = "ecs-tasks.amazonaws.com"
+          }
+        }
+      }
+    ]
+  })
+
+  tags = merge(
+    local.required_tags,
+    {
+      Name      = "atlantis-prod-crawlinghub-passrole"
+      Component = "atlantis"
+    }
+  )
+}
+
+resource "aws_iam_role_policy_attachment" "atlantis-crawlinghub-passrole" {
+  role       = module.atlantis_task_role.role_name
+  policy_arn = aws_iam_policy.atlantis-crawlinghub-passrole.arn
 }
 
 # Outputs

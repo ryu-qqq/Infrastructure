@@ -1,4 +1,4 @@
-# CloudFront Outputs
+# Stage CloudFront Outputs
 
 output "distribution_id" {
   description = "CloudFront distribution ID"
@@ -38,15 +38,4 @@ output "signed_url_key_pair_id" {
 output "signed_url_private_key_secret_arn" {
   description = "Secrets Manager ARN for Signed URL private key"
   value       = aws_secretsmanager_secret.cloudfront_private_key.arn
-}
-
-# URL Examples
-output "url_examples" {
-  description = "Example URLs for each origin"
-  value = {
-    default_origin    = "https://${var.domain_name}/some-file.jpg (connectly-prod bucket)"
-    otel_config       = "https://${var.domain_name}/otel-config/service-name/otel-config.yaml (prod-connectly bucket)"
-    fileflow_public   = "https://${var.domain_name}/public/image.jpg (fileflow-uploads-prod bucket, public)"
-    fileflow_internal = "https://${var.domain_name}/internal/doc.pdf (fileflow-uploads-prod bucket, Signed URL required)"
-  }
 }

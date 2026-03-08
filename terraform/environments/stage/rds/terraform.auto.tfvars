@@ -30,7 +30,7 @@ allowed_cidr_blocks        = [] # Add CIDR blocks as needed
 # RDS Configuration
 identifier     = "shared-mysql"
 mysql_version  = "8.0.44"
-instance_class = "db.t4g.small" # Upgraded from micro due to Too Many Connections
+instance_class = "db.m5.large" # Upgraded for DMS replication support
 
 # Storage Configuration (must match prod snapshot: 200GB)
 allocated_storage     = 200
@@ -98,7 +98,7 @@ parameters = [
   },
   {
     name  = "max_connections"
-    value = "200" # Increased for db.t4g.small
+    value = "683" # db.m5.large (8GiB): DBInstanceClassMemory/12582880
   },
   {
     name  = "innodb_buffer_pool_size"
@@ -115,6 +115,10 @@ parameters = [
   {
     name  = "log_queries_not_using_indexes"
     value = "1"
+  },
+  {
+    name  = "binlog_format"
+    value = "ROW"
   }
 ]
 

@@ -212,3 +212,67 @@ resource "aws_ssm_parameter" "master-password-secret-name" {
     }
   )
 }
+
+# ============================================================================
+# RDS Proxy Outputs
+# ============================================================================
+
+output "proxy_endpoint" {
+  description = "RDS Proxy endpoint (use this instead of direct RDS endpoint)"
+  value       = var.enable_rds_proxy ? aws_db_proxy.main[0].endpoint : null
+}
+
+output "proxy_arn" {
+  description = "RDS Proxy ARN"
+  value       = var.enable_rds_proxy ? aws_db_proxy.main[0].arn : null
+}
+
+output "proxy_security_group_id" {
+  description = "RDS Proxy security group ID"
+  value       = var.enable_rds_proxy ? module.rds_proxy_security_group[0].security_group_id : null
+}
+
+output "proxy_role_arn" {
+  description = "RDS Proxy IAM role ARN"
+  value       = var.enable_rds_proxy ? module.rds_proxy_role[0].role_arn : null
+}
+
+# ============================================================================
+# RDS Proxy SSM Parameters for Cross-Stack References
+# ============================================================================
+
+resource "aws_ssm_parameter" "proxy-endpoint" {
+  count = var.enable_rds_proxy ? 1 : 0
+
+  name        = "/staging/rds/proxy-endpoint"
+  description = "Staging RDS Proxy endpoint for cross-stack references (recommended for applications)"
+  type        = "String"
+  value       = aws_db_proxy.main[0].endpoint
+
+  tags = merge(
+    local.required_tags,
+    var.tags,
+    {
+      Name      = "staging-proxy-endpoint-export"
+      Component = "rds-proxy"
+    }
+  )
+}
+
+resource "aws_ssm_parameter" "proxy-security-group-id" {
+  count = var.enable_rds_proxy ? 1 : 0
+
+  name        = "/staging/rds/proxy-security-group-id"
+  description = "Staging RDS Proxy security group ID for cross-stack references"
+  type        = "String"
+  value       = module.rds_proxy_security_group[0].security_group_id
+
+  tags = merge(
+    local.required_tags,
+    var.tags,
+    {
+      Name      = "staging-proxy-security-group-id-export"
+      Component = "rds-proxy"
+    }
+  )
+}

@@ -15,12 +15,12 @@ terraform {
   }
 
   backend "s3" {
-    bucket         = "prod-connectly"
-    key            = "environments/prod/cloudfront/terraform.tfstate"
+    bucket         = "stage-connectly"
+    key            = "environments/stage/cloudfront/terraform.tfstate"
     region         = "ap-northeast-2"
-    dynamodb_table = "prod-connectly-tf-lock"
+    dynamodb_table = "stage-connectly-tf-lock"
     encrypt        = true
-    kms_key_id     = "arn:aws:kms:ap-northeast-2:646886795421:key/086b1677-614f-46ba-863e-23c215fb5010"
+    kms_key_id     = "arn:aws:kms:ap-northeast-2:646886795421:key/a1169c88-95c9-4906-9a66-c15a1ab3c5ef"
   }
 }
 

@@ -33,6 +33,49 @@ resource "aws_cloudfront_origin_access_control" "s3" {
 }
 
 # ============================================================================
+# Signed URL Key Pair (RSA)
+# ============================================================================
+
+# RSA key pair for CloudFront Signed URL
+resource "tls_private_key" "cloudfront_signing" {
+  algorithm = "RSA"
+  rsa_bits  = 2048
+}
+
+# Store private key in Secrets Manager (backend uses this to generate Signed URLs)
+resource "aws_secretsmanager_secret" "cloudfront_private_key" {
+  name        = "${local.name_prefix}-signing-private-key"
+  description = "CloudFront Signed URL private key for /internal/* path"
+
+  tags = merge(
+    local.required_tags,
+    {
+      Name      = "${local.name_prefix}-signing-private-key"
+      Component = "cloudfront-signing"
+    }
+  )
+}
+
+resource "aws_secretsmanager_secret_version" "cloudfront_private_key" {
+  secret_id     = aws_secretsmanager_secret.cloudfront_private_key.id
+  secret_string = tls_private_key.cloudfront_signing.private_key_pem
+}
+
+# CloudFront Public Key
+resource "aws_cloudfront_public_key" "internal" {
+  name        = "${local.name_prefix}-internal-public-key"
+  comment     = "Public key for /internal/* Signed URL verification"
+  encoded_key = tls_private_key.cloudfront_signing.public_key_pem
+}
+
+# CloudFront Key Group
+resource "aws_cloudfront_key_group" "internal" {
+  name    = "${local.name_prefix}-internal-key-group"
+  comment = "Key group for /internal/* Signed URL access"
+  items   = [aws_cloudfront_public_key.internal.id]
+}
+
+# ============================================================================
 # CloudFront Distribution
 # ============================================================================
 
@@ -119,15 +162,38 @@ resource "aws_cloudfront_distribution" "cdn" {
   }
 
   # ----------------------------------------------------------------------------
-  # Cache Behavior: /uploads/* -> fileflow-uploads-prod
+  # Cache Behavior: /public/* -> fileflow-uploads-prod (public access)
   # ----------------------------------------------------------------------------
   ordered_cache_behavior {
-    path_pattern           = "/uploads/*"
+    path_pattern           = "/public/*"
     allowed_methods        = ["GET", "HEAD", "OPTIONS"]
     cached_methods         = ["GET", "HEAD"]
     target_origin_id       = local.origins.fileflow_uploads.origin_id
     viewer_protocol_policy = "redirect-to-https"
     compress               = true
+
+    cache_policy_id          = "658327ea-f89d-4fab-a63d-7e88639e58f6" # CachingOptimized
+    origin_request_policy_id = "88a5eaf4-2fd4-4709-b370-b4c650ea3fcf" # CORS-S3Origin
+
+    min_ttl     = 0
+    default_ttl = 86400    # 1 day
+    max_ttl     = 31536000 # 1 year
+  }
+
+  # ----------------------------------------------------------------------------
+  # Cache Behavior: /internal/* -> fileflow-uploads-prod (Signed URL required)
+  # Access without valid Signed URL returns 403
+  # Backend generates CloudFront Signed URL and passes to client
+  # ----------------------------------------------------------------------------
+  ordered_cache_behavior {
+    path_pattern           = "/internal/*"
+    allowed_methods        = ["GET", "HEAD", "OPTIONS"]
+    cached_methods         = ["GET", "HEAD"]
+    target_origin_id       = local.origins.fileflow_uploads.origin_id
+    viewer_protocol_policy = "redirect-to-https"
+    compress               = true
+
+    trusted_key_groups = [aws_cloudfront_key_group.internal.id]
 
     cache_policy_id          = "658327ea-f89d-4fab-a63d-7e88639e58f6" # CachingOptimized
     origin_request_policy_id = "88a5eaf4-2fd4-4709-b370-b4c650ea3fcf" # CORS-S3Origin
@@ -334,6 +400,44 @@ resource "aws_cloudfront_distribution" "cdn" {
   }
 
   # ----------------------------------------------------------------------------
+  # Cache Behavior: /html/* -> set-of.net (Legacy HTML files)
+  # ----------------------------------------------------------------------------
+  ordered_cache_behavior {
+    path_pattern           = "/html/*"
+    allowed_methods        = ["GET", "HEAD", "OPTIONS"]
+    cached_methods         = ["GET", "HEAD"]
+    target_origin_id       = local.origins.setof_net_legacy.origin_id
+    viewer_protocol_policy = "redirect-to-https"
+    compress               = true
+
+    cache_policy_id          = "658327ea-f89d-4fab-a63d-7e88639e58f6" # CachingOptimized
+    origin_request_policy_id = "88a5eaf4-2fd4-4709-b370-b4c650ea3fcf" # CORS-S3Origin
+
+    min_ttl     = 0
+    default_ttl = 86400    # 1 day
+    max_ttl     = 31536000 # 1 year
+  }
+
+  # ----------------------------------------------------------------------------
+  # Cache Behavior: /HTML/* -> set-of.net (Legacy HTML files - uppercase)
+  # ----------------------------------------------------------------------------
+  ordered_cache_behavior {
+    path_pattern           = "/HTML/*"
+    allowed_methods        = ["GET", "HEAD", "OPTIONS"]
+    cached_methods         = ["GET", "HEAD"]
+    target_origin_id       = local.origins.setof_net_legacy.origin_id
+    viewer_protocol_policy = "redirect-to-https"
+    compress               = true
+
+    cache_policy_id          = "658327ea-f89d-4fab-a63d-7e88639e58f6" # CachingOptimized
+    origin_request_policy_id = "88a5eaf4-2fd4-4709-b370-b4c650ea3fcf" # CORS-S3Origin
+
+    min_ttl     = 0
+    default_ttl = 86400    # 1 day
+    max_ttl     = 31536000 # 1 year
+  }
+
+  # ----------------------------------------------------------------------------
   # SSL/TLS Configuration
   # ----------------------------------------------------------------------------
   viewer_certificate {
@@ -458,7 +562,7 @@ resource "aws_s3_bucket_policy" "prod-connectly" {
   })
 }
 
-# Policy for fileflow-uploads-prod bucket
+# Policy for fileflow-uploads-prod bucket (/public/* + /internal/*)
 resource "aws_s3_bucket_policy" "fileflow-uploads" {
   bucket = "fileflow-uploads-prod"
   policy = jsonencode({
@@ -466,11 +570,23 @@ resource "aws_s3_bucket_policy" "fileflow-uploads" {
     Id      = "PolicyForCloudFrontFileflowUploads"
     Statement = [
       {
-        Sid       = "AllowCloudFrontServicePrincipal"
+        Sid       = "AllowCloudFrontPublicFiles"
         Effect    = "Allow"
         Principal = { Service = "cloudfront.amazonaws.com" }
         Action    = "s3:GetObject"
-        Resource  = "arn:aws:s3:::fileflow-uploads-prod/uploads/*"
+        Resource  = "arn:aws:s3:::fileflow-uploads-prod/public/*"
+        Condition = {
+          StringEquals = {
+            "AWS:SourceArn" = aws_cloudfront_distribution.cdn.arn
+          }
+        }
+      },
+      {
+        Sid       = "AllowCloudFrontInternalFiles"
+        Effect    = "Allow"
+        Principal = { Service = "cloudfront.amazonaws.com" }
+        Action    = "s3:GetObject"
+        Resource  = "arn:aws:s3:::fileflow-uploads-prod/internal/*"
         Condition = {
           StringEquals = {
             "AWS:SourceArn" = aws_cloudfront_distribution.cdn.arn
@@ -508,7 +624,9 @@ resource "aws_s3_bucket_policy" "setof-net-legacy" {
           "arn:aws:s3:::set-of.net/logo/*",
           "arn:aws:s3:::set-of.net/seo/*",
           "arn:aws:s3:::set-of.net/excel/*",
-          "arn:aws:s3:::set-of.net/EXCEL/*"
+          "arn:aws:s3:::set-of.net/EXCEL/*",
+          "arn:aws:s3:::set-of.net/html/*",
+          "arn:aws:s3:::set-of.net/HTML/*"
         ]
         Condition = {
           StringEquals = {

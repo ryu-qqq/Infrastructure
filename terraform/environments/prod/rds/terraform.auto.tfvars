@@ -43,7 +43,7 @@ allowed_cidr_blocks = [
 
 identifier     = "shared-mysql"
 mysql_version  = "8.0.42"       # Auto-upgraded by AWS
-instance_class = "db.t4g.large" # 2 vCPU, 8GB RAM (콘솔에서 업그레이드됨)
+instance_class = "db.m5.large" # 2 vCPU, 8GB RAM - DMS 복제 지원
 
 # ============================================================================
 # Storage Configuration
@@ -115,7 +115,7 @@ parameters = [
   },
   {
     name  = "max_connections"
-    value = "200"
+    value = "683" # db.m5.large (8GiB): DBInstanceClassMemory/12582880
   },
   {
     name  = "innodb_buffer_pool_size"
@@ -132,6 +132,10 @@ parameters = [
   {
     name  = "log_queries_not_using_indexes"
     value = "1"
+  },
+  {
+    name  = "binlog_format"
+    value = "ROW"
   }
 ]
 
@@ -144,7 +148,7 @@ enable_cloudwatch_alarms = true
 cpu_utilization_threshold      = 80
 free_storage_threshold         = 5368709120 # 5GB
 freeable_memory_threshold      = 268435456  # 256MB
-database_connections_threshold = 180        # 90% of max_connections (200)
+database_connections_threshold = 615        # 90% of max_connections (683)
 
 # ============================================================================
 # Additional Tags
@@ -168,7 +172,7 @@ enable_rds_proxy = true
 # Proxy 설정
 proxy_debug_logging       = false # 운영 환경에서는 false 권장
 proxy_idle_client_timeout = 1800  # 30분
-proxy_require_tls         = true  # TLS 필수
+proxy_require_tls         = false # TLS 비활성 (앱 TLS 설정 확인 후 활성화)
 proxy_iam_auth            = false # Secrets Manager 인증 사용
 
 # 커넥션 풀 설정

@@ -396,7 +396,9 @@ resource "aws_iam_policy" "github-actions-infrastructure" {
           "arn:aws:iam::${local.account_id}:role/*-stage-*",
           "arn:aws:iam::${local.account_id}:role/*-stage",
           "arn:aws:iam::${local.account_id}:role/stage-*",
-          "arn:aws:iam::${local.account_id}:role/*-role-stage"
+          "arn:aws:iam::${local.account_id}:role/*-role-stage",
+          # CrawlingHub EventBridge Scheduler execution roles
+          "arn:aws:iam::${local.account_id}:role/crawlinghub-eventbridge-*"
         ]
       },
       {
@@ -871,9 +873,18 @@ resource "aws_iam_policy" "github-actions-services" {
           "scheduler:CreateSchedule",
           "scheduler:UpdateSchedule",
           "scheduler:DeleteSchedule",
-          "scheduler:ListSchedules"
+          "scheduler:ListSchedules",
+          "scheduler:GetScheduleGroup",
+          "scheduler:CreateScheduleGroup",
+          "scheduler:DeleteScheduleGroup",
+          "scheduler:TagResource",
+          "scheduler:UntagResource",
+          "scheduler:ListTagsForResource"
         ]
-        Resource = "arn:aws:scheduler:${var.aws_region}:${local.account_id}:schedule/*"
+        Resource = [
+          "arn:aws:scheduler:${var.aws_region}:${local.account_id}:schedule/*/*",
+          "arn:aws:scheduler:${var.aws_region}:${local.account_id}:schedule-group/*"
+        ]
       }
     ]
   })

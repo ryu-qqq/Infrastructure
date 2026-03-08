@@ -131,9 +131,9 @@ variable "mysql_version" {
 }
 
 variable "instance_class" {
-  description = "RDS instance class (e.g., db.t4g.small, db.t4g.medium)"
+  description = "RDS instance class (e.g., db.t4g.small, db.m5.large)"
   type        = string
-  default     = "db.t4g.small"
+  default     = "db.m5.large"
 }
 
 variable "allocated_storage" {
@@ -321,7 +321,7 @@ variable "parameters" {
     },
     {
       name  = "max_connections"
-      value = "200"
+      value = "683" # db.m5.large (8GiB): DBInstanceClassMemory/12582880
     },
     {
       name  = "innodb_buffer_pool_size"
@@ -338,6 +338,10 @@ variable "parameters" {
     {
       name  = "log_queries_not_using_indexes"
       value = "1"
+    },
+    {
+      name  = "binlog_format"
+      value = "ROW"
     }
   ]
 }

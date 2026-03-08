@@ -437,3 +437,4 @@ module "log_streaming" {
 - [CloudWatch Logs Filter Pattern Syntax](https://docs.aws.amazon.com/AmazonCloudWatch/latest/logs/FilterAndPatternSyntax.html)
 - [Kinesis Data Streams 문서](https://docs.aws.amazon.com/streams/latest/dev/what-is-this-service.html)
 - [OpenSearch 문서](https://opensearch.org/docs/latest/)
+c

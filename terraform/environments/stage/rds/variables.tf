@@ -133,7 +133,7 @@ variable "mysql_version" {
 variable "instance_class" {
   description = "RDS instance class (e.g., db.t4g.micro, db.t4g.small)"
   type        = string
-  default     = "db.t4g.small" # Upgraded from micro for connection capacity
+  default     = "db.t4g.medium" # Upgraded from small for Too Many Connections error
 }
 
 variable "allocated_storage" {
@@ -337,7 +337,7 @@ variable "parameters" {
     },
     {
       name  = "max_connections"
-      value = "100" # Reduced for staging
+      value = "341" # db.t4g.medium default (DBInstanceClassMemory/12582880)
     },
     {
       name  = "innodb_buffer_pool_size"
