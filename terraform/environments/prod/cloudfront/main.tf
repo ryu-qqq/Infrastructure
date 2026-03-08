@@ -489,6 +489,48 @@ resource "aws_route53_record" "cdn" {
 }
 
 # ============================================================================
+# KMS Key Policy for CloudFront Access
+# fileflow-uploads-prod bucket uses KMS encryption
+# CloudFront OAC needs kms:Decrypt to serve encrypted objects
+# ============================================================================
+
+data "aws_kms_key" "fileflow_uploads" {
+  key_id = "af78546f-6940-4ca8-83fa-29a9669fd270"
+}
+
+resource "aws_kms_key_policy" "fileflow_uploads_cloudfront" {
+  key_id = data.aws_kms_key.fileflow_uploads.id
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Id      = "key-default-1"
+    Statement = [
+      {
+        Sid       = "EnableIAMUserPermissions"
+        Effect    = "Allow"
+        Principal = { AWS = "arn:aws:iam::646886795421:root" }
+        Action    = "kms:*"
+        Resource  = "*"
+      },
+      {
+        Sid       = "AllowCloudFrontDecrypt"
+        Effect    = "Allow"
+        Principal = { Service = "cloudfront.amazonaws.com" }
+        Action = [
+          "kms:Decrypt",
+          "kms:GenerateDataKey*"
+        ]
+        Resource = "*"
+        Condition = {
+          StringEquals = {
+            "AWS:SourceArn" = aws_cloudfront_distribution.cdn.arn
+          }
+        }
+      }
+    ]
+  })
+}
+
+# ============================================================================
 # S3 Bucket Policies for CloudFront Access
 # ============================================================================
 
