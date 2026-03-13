@@ -608,19 +608,6 @@ resource "aws_iam_role_policy" "atlantis-terraform-operations" {
           "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/authhub-web-api-*"
         ]
         # Required for managing AuthHub ECS task and execution roles
-      },
-      {
-        Sid    = "ManageMarketplaceRoles"
-        Effect = "Allow"
-        Action = [
-          "iam:PassRole",
-          "iam:PutRolePolicy",
-          "iam:DeleteRolePolicy"
-        ]
-        Resource = [
-          "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/marketplace-*"
-        ]
-        # Required for managing Marketplace ECS task and execution roles
       }
     ]
   })
@@ -703,6 +690,44 @@ resource "aws_iam_policy" "atlantis-log-subscription" {
 resource "aws_iam_role_policy_attachment" "atlantis-log-subscription" {
   role       = module.atlantis_task_role.role_name
   policy_arn = aws_iam_policy.atlantis-log-subscription.arn
+}
+
+# Managed Policy for Marketplace IAM Role Management
+# Separated from inline policy to avoid 10KB limit
+resource "aws_iam_policy" "atlantis-marketplace-roles" {
+  name        = "atlantis-prod-marketplace-roles"
+  description = "Policy for managing Marketplace ECS task and execution roles"
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Sid    = "ManageMarketplaceRoles"
+        Effect = "Allow"
+        Action = [
+          "iam:PassRole",
+          "iam:PutRolePolicy",
+          "iam:DeleteRolePolicy"
+        ]
+        Resource = [
+          "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/marketplace-*"
+        ]
+      }
+    ]
+  })
+
+  tags = merge(
+    local.required_tags,
+    {
+      Name      = "atlantis-prod-marketplace-roles"
+      Component = "atlantis"
+    }
+  )
+}
+
+resource "aws_iam_role_policy_attachment" "atlantis-marketplace-roles" {
+  role       = module.atlantis_task_role.role_name
+  policy_arn = aws_iam_policy.atlantis-marketplace-roles.arn
 }
 
 # Outputs
