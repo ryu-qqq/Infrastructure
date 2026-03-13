@@ -93,6 +93,12 @@ resource "aws_iam_user_policy" "github-actions-admin-scheduler" {
   })
 }
 
+# CloudFront + WAFv2 권한 (github-actions-admin용)
+# NOTE: Managed policy 10개 제한 + inline policy 2048 bytes Terraform 제한으로
+# AWS 콘솔/CLI에서 직접 관리 (Terraform 외부)
+# - CloudFrontAccess: cloudfront:* (기존)
+# - WAFv2Access: wafv2:* (2026-03-09 추가, CloudFront routing 이전 작업용)
+
 # ============================================================================
 # GitHub Actions IAM Role (existing - keep PascalCase name for compatibility)
 # ============================================================================
