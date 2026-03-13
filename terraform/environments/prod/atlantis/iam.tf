@@ -608,6 +608,19 @@ resource "aws_iam_role_policy" "atlantis-terraform-operations" {
           "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/authhub-web-api-*"
         ]
         # Required for managing AuthHub ECS task and execution roles
+      },
+      {
+        Sid    = "ManageMarketplaceRoles"
+        Effect = "Allow"
+        Action = [
+          "iam:PassRole",
+          "iam:PutRolePolicy",
+          "iam:DeleteRolePolicy"
+        ]
+        Resource = [
+          "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/marketplace-*"
+        ]
+        # Required for managing Marketplace ECS task and execution roles
       }
     ]
   })
