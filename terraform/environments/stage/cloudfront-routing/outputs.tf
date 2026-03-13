@@ -33,6 +33,17 @@ output "route53_records" {
   }
 }
 
+# CDN Stage CloudFront Distribution
+output "cdn_stage_distribution_id" {
+  description = "CloudFront distribution ID for stage CDN (stage-cdn.set-of.com)"
+  value       = aws_cloudfront_distribution.cdn_stage.id
+}
+
+output "cdn_stage_distribution_domain_name" {
+  description = "CloudFront domain name for stage CDN"
+  value       = aws_cloudfront_distribution.cdn_stage.domain_name
+}
+
 # Routing Summary
 output "routing_summary" {
   description = "Summary of CloudFront path-based routing configuration"
@@ -48,6 +59,16 @@ output "routing_summary" {
       domains        = ["stage-admin.set-of.com"]
       default_origin = "Gateway ALB (Strangler Fig Pattern)"
       gateway_origin = data.aws_lb.gateway.dns_name
+    }
+    cdn_staging = {
+      domains        = ["stage-cdn.set-of.com"]
+      default_origin = "S3 stage-connectly"
+      paths = {
+        default     = "/* → stage-connectly S3"
+        otel_config = "/otel-config/* → stage-connectly S3"
+        public      = "/public/* → fileflow-uploads-stage S3"
+        internal    = "/internal/* → fileflow-uploads-stage S3 (Signed URL)"
+      }
     }
   }
 }

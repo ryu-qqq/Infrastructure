@@ -70,6 +70,35 @@ import {
   id = "Z104656329CL6XBYE8OIJ_stage-admin.set-of.com_A"
 }
 
+# ----------------------------------------------------------------------------
+# Import: stage-cdn.set-of.com 관련 리소스
+# ----------------------------------------------------------------------------
+
+import {
+  to = aws_cloudfront_distribution.cdn_stage
+  id = "ESSYK8T91BBIT"
+}
+
+import {
+  to = aws_cloudfront_origin_access_control.cdn_s3
+  id = "EFHBYTWRZOXTP"
+}
+
+import {
+  to = aws_cloudfront_public_key.internal
+  id = "KJ0NNHSGS7VAO"
+}
+
+import {
+  to = aws_cloudfront_key_group.internal
+  id = "f83a6869-0c74-4504-8f14-e70e9bc90735"
+}
+
+import {
+  to = aws_route53_record.cdn_stage
+  id = "Z104656329CL6XBYE8OIJ_stage-cdn.set-of.com_A"
+}
+
 # ============================================================================
 # Cache Policies
 # ============================================================================
@@ -611,4 +640,215 @@ resource "aws_route53_record" "admin_stage" {
     zone_id                = aws_cloudfront_distribution.admin_stage.hosted_zone_id
     evaluate_target_health = false
   }
+}
+
+# ============================================================================
+# CloudFront Distribution - stage-cdn.set-of.com (CDN for S3 Origins)
+# ============================================================================
+# S3 기반 정적 파일 서빙용 CDN
+# - /* (default) → stage-connectly S3
+# - /otel-config/* → stage-connectly S3
+# - /public/* → fileflow-uploads-stage S3
+# - /internal/* → fileflow-uploads-stage S3 (Signed URL)
+# ============================================================================
+
+# ----------------------------------------------------------------------------
+# Origin Access Control (OAC) for S3
+# ----------------------------------------------------------------------------
+resource "aws_cloudfront_origin_access_control" "cdn_s3" {
+  name                              = "${local.name_prefix}-s3-oac"
+  description                       = "OAC for S3 origins"
+  origin_access_control_origin_type = "s3"
+  signing_behavior                  = "always"
+  signing_protocol                  = "sigv4"
+}
+
+# ----------------------------------------------------------------------------
+# Public Key & Key Group for Signed URL (/internal/*)
+# ----------------------------------------------------------------------------
+resource "aws_cloudfront_public_key" "internal" {
+  name        = "${var.environment}-cloudfront-internal-public-key"
+  comment     = "Public key for /internal/* Signed URL verification"
+  encoded_key = <<-EOT
+-----BEGIN PUBLIC KEY-----
+MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAyNkVHz+L6M8EYsrDRpqa
+9kn0wTrxYQ/klsj8kLgtcmdIX3wRMM+7C/M/M67MxnU7DCRahT5hVhOeBAFcYvSD
+4mvupgYcJDjiqw6Fv/5aCZCtNd88ZTi7AOstHOYSyaznz6z5XFfHRc6ROtAvbCJy
+Wl6bAh2VHJfGzp+JnQPaKXMwL/uIogA95Y9paRm9zvuqAr8z72O/gDKqM/M0FaFM
+uXGL/Wi6myznuN5z6CKwnGirn4JOBARbPEUN/3bB9Y4fZDFbaxK7SE4S1tNx7eOX
+CFOI2q+1UcsQ207qLwzBvXv+yMQV7Urz50BkVSLR7etY4sHpNstHpHVnMgf13j6Z
+pQIDAQAB
+-----END PUBLIC KEY-----
+EOT
+}
+
+resource "aws_cloudfront_key_group" "internal" {
+  name    = "${var.environment}-cloudfront-internal-key-group"
+  comment = "Key group for /internal/* Signed URL access"
+  items   = [aws_cloudfront_public_key.internal.id]
+}
+
+# ----------------------------------------------------------------------------
+# CloudFront Distribution - stage-cdn.set-of.com
+# ----------------------------------------------------------------------------
+resource "aws_cloudfront_distribution" "cdn_stage" {
+  comment             = "Stage CDN for set-of.com - stage-cdn.set-of.com"
+  enabled             = true
+  is_ipv6_enabled     = true
+  http_version        = "http2and3"
+  price_class         = "PriceClass_200"
+  default_root_object = "index.html"
+  aliases             = ["stage-cdn.${var.domain_name}"]
+
+  # Origin 1: stage-connectly (Default)
+  origin {
+    domain_name              = "stage-connectly.s3.${var.aws_region}.amazonaws.com"
+    origin_id                = "S3-stage-connectly"
+    origin_access_control_id = aws_cloudfront_origin_access_control.cdn_s3.id
+  }
+
+  # Origin 2: fileflow-uploads-stage
+  origin {
+    domain_name              = "fileflow-uploads-stage.s3.${var.aws_region}.amazonaws.com"
+    origin_id                = "S3-fileflow-uploads-stage"
+    origin_access_control_id = aws_cloudfront_origin_access_control.cdn_s3.id
+  }
+
+  # Default → stage-connectly
+  default_cache_behavior {
+    allowed_methods        = ["GET", "HEAD", "OPTIONS"]
+    cached_methods         = ["GET", "HEAD"]
+    target_origin_id       = "S3-stage-connectly"
+    viewer_protocol_policy = "redirect-to-https"
+    compress               = true
+
+    cache_policy_id          = "658327ea-f89d-4fab-a63d-7e88639e58f6" # CachingOptimized
+    origin_request_policy_id = "88a5eaf4-2fd4-4709-b370-b4c650ea3fcf" # CORS-S3Origin
+  }
+
+  # /otel-config/* → stage-connectly
+  ordered_cache_behavior {
+    path_pattern           = "/otel-config/*"
+    allowed_methods        = ["GET", "HEAD", "OPTIONS"]
+    cached_methods         = ["GET", "HEAD"]
+    target_origin_id       = "S3-stage-connectly"
+    viewer_protocol_policy = "redirect-to-https"
+    compress               = true
+
+    cache_policy_id          = "658327ea-f89d-4fab-a63d-7e88639e58f6" # CachingOptimized
+    origin_request_policy_id = "88a5eaf4-2fd4-4709-b370-b4c650ea3fcf" # CORS-S3Origin
+  }
+
+  # /public/* → fileflow-uploads-stage
+  ordered_cache_behavior {
+    path_pattern           = "/public/*"
+    allowed_methods        = ["GET", "HEAD", "OPTIONS"]
+    cached_methods         = ["GET", "HEAD"]
+    target_origin_id       = "S3-fileflow-uploads-stage"
+    viewer_protocol_policy = "redirect-to-https"
+    compress               = true
+
+    cache_policy_id          = "658327ea-f89d-4fab-a63d-7e88639e58f6" # CachingOptimized
+    origin_request_policy_id = "88a5eaf4-2fd4-4709-b370-b4c650ea3fcf" # CORS-S3Origin
+  }
+
+  # /internal/* → fileflow-uploads-stage (Signed URL required)
+  ordered_cache_behavior {
+    path_pattern           = "/internal/*"
+    allowed_methods        = ["GET", "HEAD", "OPTIONS"]
+    cached_methods         = ["GET", "HEAD"]
+    target_origin_id       = "S3-fileflow-uploads-stage"
+    viewer_protocol_policy = "redirect-to-https"
+    compress               = true
+
+    cache_policy_id          = "658327ea-f89d-4fab-a63d-7e88639e58f6" # CachingOptimized
+    origin_request_policy_id = "88a5eaf4-2fd4-4709-b370-b4c650ea3fcf" # CORS-S3Origin
+
+    trusted_key_groups = [aws_cloudfront_key_group.internal.id]
+  }
+
+  # SSL/TLS
+  viewer_certificate {
+    acm_certificate_arn      = data.aws_acm_certificate.cloudfront.arn
+    ssl_support_method       = "sni-only"
+    minimum_protocol_version = "TLSv1.2_2021"
+  }
+
+  restrictions {
+    geo_restriction {
+      restriction_type = "none"
+    }
+  }
+
+  tags = merge(
+    local.required_tags,
+    {
+      Name      = "${local.name_prefix}-cdn"
+      Component = "cloudfront"
+    }
+  )
+}
+
+# ----------------------------------------------------------------------------
+# Route53 Record - stage-cdn.set-of.com
+# ----------------------------------------------------------------------------
+resource "aws_route53_record" "cdn_stage" {
+  zone_id = data.aws_route53_zone.main.zone_id
+  name    = "stage-cdn.${var.domain_name}"
+  type    = "A"
+
+  alias {
+    name                   = aws_cloudfront_distribution.cdn_stage.domain_name
+    zone_id                = aws_cloudfront_distribution.cdn_stage.hosted_zone_id
+    evaluate_target_health = false
+  }
+}
+
+# ----------------------------------------------------------------------------
+# S3 Bucket Policy - stage-connectly (CloudFront OAC access)
+# ----------------------------------------------------------------------------
+resource "aws_s3_bucket_policy" "stage_connectly" {
+  bucket = "stage-connectly"
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Sid       = "DenyInsecureTransport"
+        Effect    = "Deny"
+        Principal = "*"
+        Action    = "s3:*"
+        Resource = [
+          "arn:aws:s3:::stage-connectly",
+          "arn:aws:s3:::stage-connectly/*"
+        ]
+        Condition = {
+          Bool = { "aws:SecureTransport" = "false" }
+        }
+      },
+      {
+        Sid       = "DenyUnencryptedObjectUploads"
+        Effect    = "Deny"
+        Principal = "*"
+        Action    = "s3:PutObject"
+        Resource  = "arn:aws:s3:::stage-connectly/*"
+        Condition = {
+          StringNotEquals = {
+            "s3:x-amz-server-side-encryption" = "aws:kms"
+          }
+        }
+      },
+      {
+        Sid       = "AllowCloudFrontDefault"
+        Effect    = "Allow"
+        Principal = { Service = "cloudfront.amazonaws.com" }
+        Action    = "s3:GetObject"
+        Resource  = "arn:aws:s3:::stage-connectly/*"
+        Condition = {
+          StringEquals = {
+            "AWS:SourceArn" = aws_cloudfront_distribution.cdn_stage.arn
+          }
+        }
+      }
+    ]
+  })
 }
