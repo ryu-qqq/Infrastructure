@@ -71,17 +71,46 @@ variable "description" {
   default     = ""
 }
 
-variable "handler" {
-  description = "Lambda function handler (e.g., index.handler, lambda_function.lambda_handler)"
+variable "package_type" {
+  description = "Lambda deployment package type (Zip or Image)"
   type        = string
+  default     = "Zip"
+
+  validation {
+    condition     = contains(["Zip", "Image"], var.package_type)
+    error_message = "Package type must be Zip or Image."
+  }
+}
+
+variable "image_uri" {
+  description = "ECR image URI for container-based Lambda (package_type=Image일 때 필수)"
+  type        = string
+  default     = null
+}
+
+variable "image_config" {
+  description = "Container image configuration overrides"
+  type = object({
+    command           = optional(list(string))
+    entry_point       = optional(list(string))
+    working_directory = optional(string)
+  })
+  default = null
+}
+
+variable "handler" {
+  description = "Lambda function handler (package_type=Zip일 때 필수)"
+  type        = string
+  default     = null
 }
 
 variable "runtime" {
-  description = "Lambda runtime (e.g., python3.11, nodejs20.x)"
+  description = "Lambda runtime (package_type=Zip일 때 필수)"
   type        = string
+  default     = null
 
   validation {
-    condition = contains([
+    condition = var.runtime == null ? true : contains([
       "python3.9", "python3.10", "python3.11", "python3.12",
       "nodejs18.x", "nodejs20.x",
       "java17", "java21",

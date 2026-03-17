@@ -162,12 +162,27 @@ resource "aws_lambda_function" "this" {
   description   = var.description
   role          = var.create_role ? aws_iam_role.lambda[0].arn : var.lambda_role_arn
 
-  # Code deployment
-  filename          = var.filename
-  s3_bucket         = var.s3_bucket
-  s3_key            = var.s3_key
-  s3_object_version = var.s3_object_version
-  source_code_hash  = var.source_code_hash
+  # Package type (Zip or Image)
+  package_type = var.package_type
+
+  # Code deployment - Zip 패키지
+  filename          = var.package_type == "Zip" ? var.filename : null
+  s3_bucket         = var.package_type == "Zip" ? var.s3_bucket : null
+  s3_key            = var.package_type == "Zip" ? var.s3_key : null
+  s3_object_version = var.package_type == "Zip" ? var.s3_object_version : null
+  source_code_hash  = var.package_type == "Zip" ? var.source_code_hash : null
+
+  # Code deployment - Docker Image
+  image_uri = var.package_type == "Image" ? var.image_uri : null
+
+  dynamic "image_config" {
+    for_each = var.package_type == "Image" && var.image_config != null ? [var.image_config] : []
+    content {
+      command           = image_config.value.command
+      entry_point       = image_config.value.entry_point
+      working_directory = image_config.value.working_directory
+    }
+  }
 
   lifecycle {
     precondition {
@@ -176,24 +191,34 @@ resource "aws_lambda_function" "this" {
     }
 
     precondition {
-      condition     = var.filename != null || (var.s3_bucket != null && var.s3_key != null)
-      error_message = "Either 'filename' or both 's3_bucket' and 's3_key' must be provided for the Lambda function's source code."
+      condition     = var.package_type == "Image" || var.filename != null || (var.s3_bucket != null && var.s3_key != null)
+      error_message = "Zip 패키지일 때 'filename' 또는 's3_bucket'+'s3_key'가 필요합니다."
     }
 
     precondition {
-      condition     = var.filename == null || var.s3_bucket == null
-      error_message = "'filename' (for local file) and 's3_bucket' (for S3) are mutually exclusive. Please specify only one deployment method."
+      condition     = var.package_type == "Image" || var.filename == null || var.s3_bucket == null
+      error_message = "'filename'과 's3_bucket'은 동시에 사용할 수 없습니다."
     }
 
     precondition {
-      condition     = var.filename == null || var.source_code_hash != null
-      error_message = "When using 'filename' for local deployment, 'source_code_hash' must also be provided to track changes."
+      condition     = var.package_type == "Image" || var.filename == null || var.source_code_hash != null
+      error_message = "'filename' 사용 시 'source_code_hash'가 필요합니다."
+    }
+
+    precondition {
+      condition     = var.package_type != "Image" || var.image_uri != null
+      error_message = "Image 패키지일 때 'image_uri'가 필요합니다."
+    }
+
+    precondition {
+      condition     = var.package_type != "Zip" || (var.handler != null && var.runtime != null)
+      error_message = "Zip 패키지일 때 'handler'와 'runtime'이 필요합니다."
     }
   }
 
-  # Runtime configuration
-  handler       = var.handler
-  runtime       = var.runtime
+  # Runtime configuration (Zip일 때만 사용)
+  handler       = var.package_type == "Zip" ? var.handler : null
+  runtime       = var.package_type == "Zip" ? var.runtime : null
   architectures = var.architectures
   timeout       = var.timeout
   memory_size   = var.memory_size
@@ -251,11 +276,12 @@ resource "aws_lambda_function" "this" {
   tags = merge(
     local.required_tags,
     {
-      Name       = local.function_name
-      Runtime    = var.runtime
-      Handler    = var.handler
-      MemorySize = tostring(var.memory_size)
-      Timeout    = tostring(var.timeout)
+      Name        = local.function_name
+      PackageType = var.package_type
+      Runtime     = var.package_type == "Zip" ? var.runtime : "container"
+      Handler     = var.package_type == "Zip" ? var.handler : "container"
+      MemorySize  = tostring(var.memory_size)
+      Timeout     = tostring(var.timeout)
     }
   )
 
