@@ -4,6 +4,22 @@
 # - /* (default) → frontend-alb (Admin Frontend)
 
 # ============================================================================
+# Import Blocks (기존 리소스 import)
+# ============================================================================
+# cloudfront-routing 모듈에서 관리하던 admin distribution을 이 모듈로 이전
+# import 완료 후 이 블록들은 제거 가능
+
+import {
+  to = aws_cloudfront_distribution.admin
+  id = "E1XBS551INTJTQ"
+}
+
+import {
+  to = aws_route53_record.admin
+  id = "Z104656329CL6XBYE8OIJ_admin.set-of.com_A"
+}
+
+# ============================================================================
 # Data Sources
 # ============================================================================
 
