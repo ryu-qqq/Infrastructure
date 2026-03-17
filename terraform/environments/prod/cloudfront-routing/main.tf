@@ -21,11 +21,6 @@ import {
 }
 
 import {
-  to = aws_cloudfront_distribution.admin
-  id = "E1XBS551INTJTQ"
-}
-
-import {
   to = aws_cloudfront_cache_policy.api_no_cache
   id = "731b35f0-d9fa-4e25-8948-0c088d9420fa"
 }
@@ -53,11 +48,6 @@ import {
 import {
   to = aws_route53_record.prod_www
   id = "Z104656329CL6XBYE8OIJ_www.set-of.com_A"
-}
-
-import {
-  to = aws_route53_record.admin
-  id = "Z104656329CL6XBYE8OIJ_admin.set-of.com_A"
 }
 
 # ============================================================================
@@ -350,77 +340,6 @@ resource "aws_cloudfront_distribution" "prod" {
 }
 
 # ============================================================================
-# CloudFront Distribution - Admin (admin.set-of.com)
-# ============================================================================
-resource "aws_cloudfront_distribution" "admin" {
-  enabled             = true
-  is_ipv6_enabled     = true
-  comment             = "admin.set-of.com - Admin API Gateway routing"
-  default_root_object = ""
-  price_class         = "PriceClass_200"
-  aliases             = ["admin.set-of.com"]
-
-  # ----------------------------------------------------------------------------
-  # Origin: Gateway ALB
-  # ----------------------------------------------------------------------------
-  origin {
-    domain_name = data.aws_lb.gateway.dns_name
-    origin_id   = "gateway-alb"
-
-    custom_origin_config {
-      http_port              = 80
-      https_port             = 443
-      origin_protocol_policy = "http-only"
-      origin_ssl_protocols   = ["TLSv1.2"]
-    }
-
-    custom_header {
-      name  = "X-Forwarded-Host"
-      value = "admin.set-of.com"
-    }
-  }
-
-  # ----------------------------------------------------------------------------
-  # Default Cache Behavior → Gateway (API 전용, 캐싱 없음)
-  # ----------------------------------------------------------------------------
-  default_cache_behavior {
-    allowed_methods  = ["DELETE", "GET", "HEAD", "OPTIONS", "PATCH", "POST", "PUT"]
-    cached_methods   = ["GET", "HEAD"]
-    target_origin_id = "gateway-alb"
-
-    cache_policy_id            = aws_cloudfront_cache_policy.api_no_cache.id
-    origin_request_policy_id   = aws_cloudfront_origin_request_policy.api_all_viewer.id
-    response_headers_policy_id = aws_cloudfront_response_headers_policy.api_cors.id
-
-    viewer_protocol_policy = "https-only"
-    compress               = false
-  }
-
-  # ----------------------------------------------------------------------------
-  # SSL/TLS
-  # ----------------------------------------------------------------------------
-  viewer_certificate {
-    acm_certificate_arn      = data.aws_acm_certificate.cloudfront.arn
-    ssl_support_method       = "sni-only"
-    minimum_protocol_version = "TLSv1.2_2021"
-  }
-
-  restrictions {
-    geo_restriction {
-      restriction_type = "none"
-    }
-  }
-
-  tags = merge(
-    local.required_tags,
-    {
-      Name      = "${local.name_prefix}-admin"
-      Component = "cloudfront"
-    }
-  )
-}
-
-# ============================================================================
 # Route53 Records
 # ============================================================================
 
@@ -452,15 +371,3 @@ resource "aws_route53_record" "prod_www" {
   }
 }
 
-# admin.set-of.com → CloudFront
-resource "aws_route53_record" "admin" {
-  zone_id = data.aws_route53_zone.main.zone_id
-  name    = "admin.${var.domain_name}"
-  type    = "A"
-
-  alias {
-    name                   = aws_cloudfront_distribution.admin.domain_name
-    zone_id                = aws_cloudfront_distribution.admin.hosted_zone_id
-    evaluate_target_health = false
-  }
-}
