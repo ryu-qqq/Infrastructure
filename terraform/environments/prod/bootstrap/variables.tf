@@ -86,7 +86,8 @@ variable "allowed_github_repos" {
     "Gateway",
     "MarketPlace",
     "setof-commerce",
-    "conventionHub"
+    "conventionHub",
+    "shadow-traffic-comparator"
   ]
 }
 
